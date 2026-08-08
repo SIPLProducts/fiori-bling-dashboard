@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { MultiSelect } from "@/components/multi-select";
+import { ChartExportActions } from "@/components/chart-export-buttons";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,11 @@ function SalesAnalyticsPage() {
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
 
+  const monthlyRef = useRef<HTMLDivElement | null>(null);
+  const salesTypeRef = useRef<HTMLDivElement | null>(null);
+  const dimensionRef = useRef<HTMLDivElement | null>(null);
+  const segmentRef = useRef<HTMLDivElement | null>(null);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["zfisales", applied],
     queryFn: () => fetchAnalytics({ data: applied }),
@@ -120,6 +126,21 @@ function SalesAnalyticsPage() {
   });
 
   const options = data?.options;
+
+  const monthlyExportRows = useMemo(() => {
+    if (!data) return [] as Array<Record<string, unknown>>;
+    if (data.series.keys.length) {
+      return data.series.monthly.map((row: Record<string, unknown>) => {
+        const out: Record<string, unknown> = { Month: row['month'] };
+        for (const key of data.series.keys) {
+          out[data.series.keyLabels[key] ?? key] = row[key] ?? 0;
+        }
+        return out;
+      });
+    }
+    return data.monthly.map((row) => ({ Month: row.month, Revenue: row.revenue }));
+  }, [data]);
+
 
   const pick = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value ? [value] : [] }));
@@ -341,7 +362,15 @@ function SalesAnalyticsPage() {
                       : "Revenue by posting month"
                   }
                   className="lg:col-span-2"
+                  actions={
+                    <ChartExportActions
+                      rows={monthlyExportRows}
+                      filename="revenue-by-posting-month"
+                      containerRef={monthlyRef}
+                    />
+                  }
                 >
+                  <div ref={monthlyRef} className="bg-card">
                   <ResponsiveContainer width="100%" height={300}>
                     {data.series.keys.length ? (
                       <LineChart data={data.series.monthly}>
@@ -409,9 +438,20 @@ function SalesAnalyticsPage() {
                       </AreaChart>
                     )}
                   </ResponsiveContainer>
+                  </div>
                 </Panel>
 
-                <Panel title="Revenue by sales type">
+                <Panel
+                  title="Revenue by sales type"
+                  actions={
+                    <ChartExportActions
+                      rows={data.bySalesType.map((r) => ({ "Sales type": r.name, Revenue: r.value }))}
+                      filename="revenue-by-sales-type"
+                      containerRef={salesTypeRef}
+                    />
+                  }
+                >
+                  <div ref={salesTypeRef} className="bg-card">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -438,6 +478,7 @@ function SalesAnalyticsPage() {
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
+                  </div>
                 </Panel>
 
                 <Panel
@@ -448,7 +489,17 @@ function SalesAnalyticsPage() {
                         ? "Revenue by profit centre"
                         : "Revenue by profit centre"
                   }
+                  actions={
+                    <ChartExportActions
+                      rows={(data.series.keys.length ? data.series.byDimension : data.byProfitCentre).map(
+                        (r) => ({ Dimension: r.name, Revenue: r.value }),
+                      )}
+                      filename="revenue-by-dimension"
+                      containerRef={dimensionRef}
+                    />
+                  }
                 >
+                  <div ref={dimensionRef} className="bg-card">
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart
                       data={data.series.keys.length ? data.series.byDimension : data.byProfitCentre}
@@ -470,9 +521,20 @@ function SalesAnalyticsPage() {
                       <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 </Panel>
 
-                <Panel title="Revenue by segment">
+                <Panel
+                  title="Revenue by segment"
+                  actions={
+                    <ChartExportActions
+                      rows={data.bySegment.map((r) => ({ Segment: r.name, Revenue: r.value }))}
+                      filename="revenue-by-segment"
+                      containerRef={segmentRef}
+                    />
+                  }
+                >
+                  <div ref={segmentRef} className="bg-card">
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={data.bySegment}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -490,6 +552,7 @@ function SalesAnalyticsPage() {
                       <Bar dataKey="value" fill="var(--color-success)" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 </Panel>
 
                 <Panel title="Top customers">
