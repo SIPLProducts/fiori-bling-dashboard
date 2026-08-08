@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { downloadCsv } from "@/lib/chart-export";
 import type { SalesLine } from "@/lib/zfisales-types";
 
 function fmt(value: number) {
