@@ -113,6 +113,11 @@ function SalesAnalyticsPage() {
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
 
+  const monthlyRef = useRef<HTMLDivElement | null>(null);
+  const salesTypeRef = useRef<HTMLDivElement | null>(null);
+  const dimensionRef = useRef<HTMLDivElement | null>(null);
+  const segmentRef = useRef<HTMLDivElement | null>(null);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["zfisales", applied],
     queryFn: () => fetchAnalytics({ data: applied }),
@@ -120,6 +125,21 @@ function SalesAnalyticsPage() {
   });
 
   const options = data?.options;
+
+  const monthlyExportRows = useMemo(() => {
+    if (!data) return [] as Array<Record<string, unknown>>;
+    if (data.series.keys.length) {
+      return data.series.monthly.map((row: Record<string, unknown>) => {
+        const out: Record<string, unknown> = { Month: row.month };
+        for (const key of data.series.keys) {
+          out[data.series.keyLabels[key] ?? key] = row[key] ?? 0;
+        }
+        return out;
+      });
+    }
+    return data.monthly.map((row) => ({ Month: row.month, Revenue: row.revenue }));
+  }, [data]);
+
 
   const pick = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value ? [value] : [] }));
