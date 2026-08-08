@@ -141,7 +141,8 @@ function SalesAnalyticsPage() {
       applied.segments.length +
       (applied.postingFrom ? 1 : 0) +
       (applied.postingTo ? 1 : 0) +
-      (applied.search ? 1 : 0)
+      (applied.search ? 1 : 0) +
+      (applied.seriesBy !== "none" ? 1 : 0)
     );
   }, [applied]);
 
