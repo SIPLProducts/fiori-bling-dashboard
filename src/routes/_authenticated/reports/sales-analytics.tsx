@@ -204,56 +204,65 @@ function SalesAnalyticsPage() {
               </Field>
 
               <Field label="Company code">
-                <div className="flex flex-wrap gap-1.5">
+                <select
+                  value={draft.companyCodes[0] ?? ""}
+                  onChange={(e) => pick("companyCodes", e.target.value)}
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">All</option>
                   {(options?.companies ?? []).map((c) => (
-                    <Chip
-                      key={c.code}
-                      label={`${c.code} · ${c.name}`}
-                      active={draft.companyCodes.includes(c.code)}
-                      onClick={() => toggle("companyCodes", c.code)}
-                    />
+                    <option key={c.code} value={c.code}>
+                      {c.code} · {c.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </Field>
 
               <Field label="Profit centre">
-                <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                <select
+                  value={draft.profitCentres[0] ?? ""}
+                  onChange={(e) => pick("profitCentres", e.target.value)}
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">All</option>
                   {(options?.profitCentres ?? []).map((c) => (
-                    <Chip
-                      key={c.code}
-                      label={`${c.code} · ${c.name}`}
-                      active={draft.profitCentres.includes(c.code)}
-                      onClick={() => toggle("profitCentres", c.code)}
-                    />
+                    <option key={c.code} value={c.code}>
+                      {c.code} · {c.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </Field>
 
               <Field label="Sales type">
-                <div className="flex flex-wrap gap-1.5">
+                <select
+                  value={draft.salesTypes[0] ?? ""}
+                  onChange={(e) => pick("salesTypes", e.target.value)}
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">All</option>
                   {(options?.salesTypes ?? []).map((t) => (
-                    <Chip
-                      key={t}
-                      label={t}
-                      active={draft.salesTypes.includes(t)}
-                      onClick={() => toggle("salesTypes", t)}
-                    />
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
                   ))}
-                </div>
+                </select>
               </Field>
 
               <Field label="Segment">
-                <div className="flex flex-wrap gap-1.5">
+                <select
+                  value={draft.segments[0] ?? ""}
+                  onChange={(e) => pick("segments", e.target.value)}
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">All</option>
                   {(options?.segments ?? []).map((s) => (
-                    <Chip
-                      key={s}
-                      label={s}
-                      active={draft.segments.includes(s)}
-                      onClick={() => toggle("segments", s)}
-                    />
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
-                </div>
+                </select>
               </Field>
+
             </div>
 
             <div className="mt-4 flex gap-2">
