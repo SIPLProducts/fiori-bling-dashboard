@@ -102,6 +102,29 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
   const selectCls =
     "h-7 rounded-sm border border-input bg-background px-1.5 text-xs text-foreground";
 
+  const exportRows = () => {
+    const data = (invalidRange ? [] : filtered).map((r) => ({
+      [groupLabel]: labelFor ? labelFor(groupBy(r)) : groupBy(r),
+      ...(splitBy ? { [splitLabel ?? "Split"]: splitBy(r) } : {}),
+      "Posting date": r.postingDate,
+      "Document": r.docNo,
+      "Doc type": r.docType,
+      "Company code": r.companyCode,
+      "Company": r.companyName,
+      "Profit centre": r.profitCtr,
+      "Profit centre name": r.profitCtrName,
+      "Sales type": r.salesType,
+      "Segment": r.segment,
+      "Customer": r.customer,
+      "Customer name": r.customerName,
+      "Fiscal year": r.fiscalYear,
+      "Amount (LC)": r.amount,
+    }));
+    const slug = groupLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    downloadCsv(data, `drilldown-${slug}-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+
   return (
     <div className="mt-3 border-t border-border pt-2">
       <button
