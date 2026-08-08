@@ -361,6 +361,10 @@ function SalesAnalyticsPage() {
                 </Panel>
               </div>
 
+              <ComparisonPanel comparison={data.comparison} />
+
+
+
               <div className="grid gap-4 lg:grid-cols-3">
                 <Panel
                   title={
