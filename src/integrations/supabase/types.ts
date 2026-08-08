@@ -14,16 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tile_groups: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      tiles: {
+        Row: {
+          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          created_at: string
+          group_key: string
+          icon: string
+          id: string
+          kind: string
+          kpi_key: string | null
+          sort_order: number
+          subtitle: string | null
+          target_path: string | null
+          title: string
+        }
+        Insert: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          group_key: string
+          icon?: string
+          id?: string
+          kind?: string
+          kpi_key?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          target_path?: string | null
+          title: string
+        }
+        Update: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          group_key?: string
+          icon?: string
+          id?: string
+          kind?: string
+          kpi_key?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          target_path?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiles_group_key_fkey"
+            columns: ["group_key"]
+            isOneToOne: false
+            referencedRelation: "tile_groups"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "buyer" | "approver" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +277,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "buyer", "approver", "viewer"],
+    },
   },
 } as const
