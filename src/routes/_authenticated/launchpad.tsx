@@ -25,23 +25,30 @@ export const Route = createFileRoute("/_authenticated/launchpad")({
 });
 
 function Launchpad() {
-  const fetchLaunchpad = useServerFn(getLaunchpad);
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["launchpad"],
-    queryFn: () => fetchLaunchpad(),
-  });
+  const { data, isLoading, error } = useLaunchpad();
   const [activeGroup, setActiveGroup] = useState<string>("all");
 
-  const groups = data?.groups ?? [];
+  // Only show groups that actually contain tiles this role may see, ordered by role focus.
+  const groups = useMemo(() => {
+    if (!data) return [];
+    const withTiles = data.groups.filter((group) =>
+      data.tiles.some((tile) => tile.group_key === group.key),
+    );
+    return orderGroupsForRoles(withTiles, data.roles);
+  }, [data]);
+
   const tiles = useMemo(() => {
     if (!data) return [];
     if (activeGroup === "all") return data.tiles;
     return data.tiles.filter((tile) => tile.group_key === activeGroup);
   }, [data, activeGroup]);
 
+  const role = primaryRole(data?.roles);
+
   return (
     <div className="min-h-screen bg-background">
       <ShellBar title="Home" displayName={data?.profile?.display_name} roles={data?.roles} />
+
 
       <div className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4">
