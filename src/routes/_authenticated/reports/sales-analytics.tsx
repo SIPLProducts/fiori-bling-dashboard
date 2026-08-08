@@ -119,21 +119,54 @@ const BASIS_LABELS: Record<ComparisonBasis, string> = {
   mom: "Month over month (MoM)",
 };
 
+/** Start/end calendar dates covered by a comparison period key. */
+function periodRange(basis: ComparisonBasis, period: string) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const lastDay = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  if (basis === "yoy") return { start: `${period}-01-01`, end: `${period}-12-31` };
+  if (basis === "qoq") {
+    const [y, q] = period.split("-Q");
+    const startM = (Number(q) - 1) * 3 + 1;
+    const endM = startM + 2;
+    return { start: `${y}-${pad(startM)}-01`, end: `${y}-${pad(endM)}-${pad(lastDay(Number(y), endM))}` };
+  }
+  const [y, m] = period.split("-");
+  return { start: `${y}-${m}-01`, end: `${y}-${m}-${pad(lastDay(Number(y), Number(m)))}` };
+}
+
 function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
   const [basis, setBasis] = useState<ComparisonBasis>("yoy");
   const [scope, setScope] = useState<"all" | "selection">("all");
   const [limit, setLimit] = useState("12");
   const [trend, setTrend] = useState<"all" | "up" | "down">("all");
+  const [windowMode, setWindowMode] = useState<"auto" | "custom">("auto");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const chartRef = useRef<HTMLDivElement | null>(null);
+
+  const dateError =
+    windowMode === "custom" && customFrom && customTo && customFrom > customTo
+      ? "Start date must be on or before the end date."
+      : "";
 
   const points = useMemo(() => {
     const base = comparison[scope][basis];
-    const filtered = base.filter((p) =>
+    let filtered = base.filter((p) =>
       trend === "all" ? true : trend === "up" ? p.delta > 0 : p.delta < 0,
     );
+    if (windowMode === "custom" && !dateError && (customFrom || customTo)) {
+      filtered = filtered.filter((p) => {
+        const { start, end } = periodRange(basis, p.period);
+        if (customFrom && end < customFrom) return false;
+        if (customTo && start > customTo) return false;
+        return true;
+      });
+      return filtered;
+    }
     const n = Number(limit);
     return Number.isFinite(n) && n > 0 ? filtered.slice(-n) : filtered;
-  }, [comparison, scope, basis, limit, trend]);
+  }, [comparison, scope, basis, limit, trend, windowMode, customFrom, customTo, dateError]);
+
 
   const totals = useMemo(() => {
     const current = points.reduce((s, p) => s + p.current, 0);
@@ -183,14 +216,59 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
           </select>
         </label>
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          Periods shown
-          <select value={limit} onChange={(e) => setLimit(e.target.value)} className={selectCls}>
-            <option value="4">Last 4</option>
-            <option value="6">Last 6</option>
-            <option value="12">Last 12</option>
-            <option value="0">All</option>
+          Period window
+          <select
+            value={windowMode}
+            onChange={(e) => setWindowMode(e.target.value as "auto" | "custom")}
+            className={selectCls}
+          >
+            <option value="auto">Latest periods</option>
+            <option value="custom">Custom date range</option>
           </select>
         </label>
+        {windowMode === "auto" ? (
+          <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+            Periods shown
+            <select value={limit} onChange={(e) => setLimit(e.target.value)} className={selectCls}>
+              <option value="4">Last 4</option>
+              <option value="6">Last 6</option>
+              <option value="12">Last 12</option>
+              <option value="0">All</option>
+            </select>
+          </label>
+        ) : (
+          <>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Window start
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className={selectCls}
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Window end
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className={selectCls}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomFrom("");
+                setCustomTo("");
+              }}
+              className="h-8 rounded-sm border border-input px-2 text-xs text-muted-foreground hover:bg-muted"
+            >
+              Clear dates
+            </button>
+          </>
+        )}
+
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
           Movement
           <select value={trend} onChange={(e) => setTrend(e.target.value as "all" | "up" | "down")} className={selectCls}>
@@ -214,6 +292,13 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
           </span>
         </p>
       </div>
+
+      {dateError ? <p className="mb-2 text-xs text-destructive">{dateError}</p> : null}
+      {!dateError && windowMode === "custom" && points.length === 0 ? (
+        <p className="mb-2 text-xs text-muted-foreground">No {BASIS_LABELS[basis]} periods fall in the selected window.</p>
+      ) : null}
+
+
 
       <div ref={chartRef} className="bg-card">
         <ResponsiveContainer width="100%" height={280}>
