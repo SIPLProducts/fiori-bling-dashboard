@@ -58,6 +58,7 @@ const EMPTY: SalesFilters = {
   postingFrom: "",
   postingTo: "",
   search: "",
+  seriesBy: "none",
 };
 
 const PIE_COLORS = [
