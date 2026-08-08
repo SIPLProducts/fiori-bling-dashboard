@@ -112,7 +112,19 @@ export function TileCard({
     </div>
   );
 
-  if (to === "/reports/procurement" || to === "/reports/purchase-orders" || to === "/reports/suppliers") {
+  if (to === "/reports/purchase-orders") {
+    const focus = PO_FOCUS[tile.kpi_key ?? ""];
+    return (
+      <Link
+        to="/reports/purchase-orders"
+        search={focus ? { focus } : {}}
+        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {body}
+      </Link>
+    );
+  }
+  if (to === "/reports/procurement" || to === "/reports/suppliers" || to === "/admin/users") {
     return (
       <Link to={to} className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
         {body}
@@ -120,4 +132,5 @@ export function TileCard({
     );
   }
   return <div>{body}</div>;
+
 }
