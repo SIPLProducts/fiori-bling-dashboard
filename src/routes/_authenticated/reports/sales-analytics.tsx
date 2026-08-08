@@ -737,7 +737,9 @@ function SalesAnalyticsPage() {
                           stroke="var(--color-primary)"
                           strokeWidth={2}
                           fill="url(#sdFill)"
-                        />
+                        >
+                          <LabelList dataKey="revenue" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-foreground)" />
+                        </Area>
                       </AreaChart>
                     )}
                   </ResponsiveContainer>
