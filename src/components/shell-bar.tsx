@@ -41,9 +41,20 @@ export function ShellBar({
       </Link>
       <span className="hidden text-xs text-shell-muted sm:inline">Procurement Analytics</span>
 
-      <div className="mx-auto flex items-center gap-2">
-        <span className="text-sm font-medium">{title}</span>
-      </div>
+      <nav className="mx-auto hidden items-center gap-1 md:flex">
+        {navForRoles(roles).map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            activeProps={{ className: "bg-shell-foreground/15 text-shell-foreground" }}
+            className="rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <span className="mx-auto text-sm font-medium md:hidden">{title}</span>
+
 
       <div className="flex items-center gap-1">
         <button
