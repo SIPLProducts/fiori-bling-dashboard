@@ -843,7 +843,9 @@ function SalesAnalyticsPage() {
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]} />
+                      <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]}>
+                        <LabelList dataKey="value" formatter={(v: number) => inr(v)} position="right" fontSize={10} fill="var(--color-foreground)" />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                   </div>
