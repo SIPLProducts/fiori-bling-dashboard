@@ -50,7 +50,8 @@ function inlineComputedStyles(source: SVGSVGElement, clone: SVGSVGElement) {
     "font-size",
     "font-weight",
     "text-anchor",
-straight  ];
+  ];
+
   srcNodes.forEach((node, i) => {
     const dst = dstNodes[i] as HTMLElement | undefined;
     if (!dst || !(node instanceof Element)) return;
