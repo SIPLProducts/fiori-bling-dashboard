@@ -62,30 +62,26 @@ const REPORT_ROLES = {
   suppliers: ["admin", "buyer", "viewer"],
 } as const satisfies Record<string, readonly AppRole[]>;
 
-type RoleReader = {
-  from: (table: "user_roles") => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => PromiseLike<{ data: unknown }>;
-    };
-  };
-};
-
-async function assertReportAccess(
-  supabase: RoleReader,
-  userId: string,
-  report: keyof typeof REPORT_ROLES,
-) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+function assertReportAccess(roles: AppRole[], report: keyof typeof REPORT_ROLES) {
   const allowed = REPORT_ROLES[report] as readonly AppRole[];
   if (!roles.some((role) => allowed.includes(role))) throw new Error("FORBIDDEN_REPORT");
-  return roles;
+}
+
+async function rolesForUser(
+  supabase: { from: (table: "user_roles") => { select: (c: "role") => unknown } },
+  userId: string,
+): Promise<AppRole[]> {
+  const query = supabase.from("user_roles").select("role") as {
+    eq: (column: string, value: string) => PromiseLike<{ data: { role: AppRole }[] | null }>;
+  };
+  const { data } = await query.eq("user_id", userId);
+  return (data ?? []).map((r) => r.role);
 }
 
 export const getProcurementOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertReportAccess(context.supabase, context.userId, "procurement");
+    assertReportAccess(await rolesForUser(context.supabase, context.userId), "procurement");
     const provider = await import("./sap-provider.server");
     const [trend, categories, suppliers] = await Promise.all([
       provider.getSpendTrend(),
@@ -98,7 +94,7 @@ export const getProcurementOverview = createServerFn({ method: "GET" })
 export const getPurchaseOrderReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertReportAccess(context.supabase, context.userId, "purchaseOrders");
+    assertReportAccess(await rolesForUser(context.supabase, context.userId), "purchaseOrders");
     const provider = await import("./sap-provider.server");
     const items = await provider.getPurchaseOrderItems();
     return { items, providerMode: provider.providerMode() };
@@ -107,7 +103,7 @@ export const getPurchaseOrderReport = createServerFn({ method: "GET" })
 export const getSupplierReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertReportAccess(context.supabase, context.userId, "suppliers");
+    assertReportAccess(await rolesForUser(context.supabase, context.userId), "suppliers");
     const provider = await import("./sap-provider.server");
     const suppliers = await provider.getSupplierScorecards();
     return { suppliers, providerMode: provider.providerMode() };
@@ -118,8 +114,7 @@ export const getModuleReport = createServerFn({ method: "GET" })
   .inputValidator((input: { module: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const rolesRes = await supabase.from("user_roles").select("role").eq("user_id", userId);
-    const roles = (rolesRes.data ?? []).map((r) => r.role as AppRole);
+    const roles = await rolesForUser(supabase, userId);
     if (!canAccessModule(data.module, roles)) {
       throw new Error("FORBIDDEN_MODULE");
     }
