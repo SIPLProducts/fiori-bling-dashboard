@@ -257,6 +257,20 @@ function SalesAnalyticsPage() {
                 </select>
               </Field>
 
+              <Field label="Series by">
+                <select
+                  value={draft.seriesBy}
+                  onChange={(e) =>
+                    setDraft((p) => ({ ...p, seriesBy: e.target.value as SeriesBy }))
+                  }
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="none">None (aggregate)</option>
+                  <option value="companyCode">Company code</option>
+                  <option value="profitCentre">Profit centre</option>
+                </select>
+              </Field>
+
             </div>
 
             {dateError ? (
