@@ -69,7 +69,7 @@ export function TileCard({
   kpi,
 }: {
   tile: TileRecord;
-  kpi?: { value: number; unit?: string; footer?: string; trend?: number[] };
+  kpi: { value: number; unit?: string; footer?: string; trend?: number[] } | undefined;
 }) {
   const Icon = ICONS[tile.icon] ?? Grid3x3;
   const to = tile.target_path ?? "/launchpad";
