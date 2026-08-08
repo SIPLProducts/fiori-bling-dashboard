@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
+import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +34,24 @@ const AuthenticatedLaunchpadRoute = AuthenticatedLaunchpadRouteImport.update({
   path: '/launchpad',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsProcurementRoute =
+  AuthenticatedReportsProcurementRouteImport.update({
+    id: '/reports/procurement',
+    path: '/reports/procurement',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,14 +59,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/launchpad'
+  fullPaths: '/' | '/auth' | '/launchpad' | '/reports/procurement'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/launchpad'
+  to: '/' | '/auth' | '/launchpad' | '/reports/procurement'
   id:
-    '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/launchpad'
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/launchpad'
+    | '/_authenticated/reports/procurement'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,15 +111,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLaunchpadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/procurement': {
+      id: '/_authenticated/reports/procurement'
+      path: '/reports/procurement'
+      fullPath: '/reports/procurement'
+      preLoaderRoute: typeof AuthenticatedReportsProcurementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
+  AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLaunchpadRoute: AuthenticatedLaunchpadRoute,
+  AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
