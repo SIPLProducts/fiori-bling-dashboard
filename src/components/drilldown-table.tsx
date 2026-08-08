@@ -93,10 +93,13 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
     return [...map.values()].sort((a, b) =>
       a.key === b.key ? b.revenue - a.revenue : a.key.localeCompare(b.key),
     );
-  }, [rows, groupBy, splitBy]);
+  }, [filtered, invalidRange, groupBy, splitBy]);
 
   const toggle = (id: string) =>
     setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const selectCls =
+    "h-7 rounded-sm border border-input bg-background px-1.5 text-xs text-foreground";
 
   return (
     <div className="mt-3 border-t border-border pt-2">
@@ -107,12 +110,63 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
         aria-expanded={open}
       >
         {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-        Drill-down · {groups.length} {groupLabel.toLowerCase()} groups · {rows.length} line items
+        Drill-down · {groups.length} {groupLabel.toLowerCase()} groups · {filtered.length} line items
+        {activeCount > 0 ? ` · ${activeCount} filter${activeCount > 1 ? "s" : ""}` : ""}
       </button>
 
       {open ? (
-        <div className="mt-2 max-h-72 overflow-auto rounded-sm border border-border">
+        <>
+          <div className="mt-2 flex flex-wrap items-end gap-2 rounded-sm border border-border bg-muted/30 p-2">
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Posting from
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} />
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Posting to
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} />
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Sales type
+              <select value={salesType} onChange={(e) => setSalesType(e.target.value)} className={selectCls}>
+                <option value={ALL}>All</option>
+                {options.salesTypes.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Company code
+              <select value={companyCode} onChange={(e) => setCompanyCode(e.target.value)} className={selectCls}>
+                <option value={ALL}>All</option>
+                {options.companies.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              Profit centre
+              <select value={profitCtr} onChange={(e) => setProfitCtr(e.target.value)} className={selectCls}>
+                <option value={ALL}>All</option>
+                {options.profitCentres.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={activeCount === 0}
+              className="h-7 rounded-sm border border-border px-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              Clear
+            </button>
+            {invalidRange ? (
+              <p className="w-full text-[11px] text-destructive">Posting from must be on or before posting to.</p>
+            ) : null}
+          </div>
+          <div className="mt-2 max-h-72 overflow-auto rounded-sm border border-border">
           <table className="w-full text-xs">
+
             <thead className="sticky top-0 bg-muted/60">
               <tr className="text-left text-muted-foreground">
                 <th className="px-2 py-1.5 font-medium">{groupLabel}</th>
