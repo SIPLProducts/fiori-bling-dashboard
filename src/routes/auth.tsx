@@ -118,9 +118,29 @@ function AuthPage() {
             </Button>
           </form>
 
+          <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+            <p className="text-sm font-medium text-foreground">Demo access</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              User ID: <span className="font-mono">{DEMO_EMAIL}</span>
+              <br />
+              Password: <span className="font-mono">{DEMO_PASSWORD}</span>
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              disabled={busy}
+              onClick={() => void handleDemoLogin()}
+              onDoubleClick={() => void handleDemoLogin()}
+            >
+              {busy ? "Opening demo…" : "Login as Demo User"}
+            </Button>
+          </div>
+
           <p className="mt-6 text-xs text-muted-foreground">
             Portal access is provisioned by your administrator.
           </p>
+
         </div>
       </div>
     </div>
