@@ -4,6 +4,8 @@
  * route and the mock/OData provider so all three stay in sync.
  */
 
+export type ModuleRole = "admin" | "buyer" | "approver" | "viewer";
+
 export type ModuleKey = "sd" | "fi" | "co" | "pp" | "qm" | "ps";
 
 export type ModuleKpiDef = {
@@ -35,6 +37,26 @@ export type ModuleDef = {
   statuses: string[];
   kpis: ModuleKpiDef[];
 };
+
+/** Which roles may open each SAP module report. Mirrors tiles.allowed_roles. */
+export const MODULE_ROLES: Record<ModuleKey, ModuleRole[]> = {
+  sd: ["admin", "buyer", "viewer"],
+  fi: ["admin", "approver", "viewer"],
+  co: ["admin", "approver"],
+  pp: ["admin", "buyer"],
+  qm: ["admin", "buyer", "viewer"],
+  ps: ["admin", "approver", "viewer"],
+};
+
+export function canAccessModule(moduleKey: string, roles: readonly string[] | undefined): boolean {
+  const allowed = MODULE_ROLES[moduleKey as ModuleKey];
+  if (!allowed) return false;
+  return (roles ?? []).some((role) => allowed.includes(role as ModuleRole));
+}
+
+export function modulesForRoles(roles: readonly string[] | undefined): ModuleDef[] {
+  return MODULES.filter((mod) => canAccessModule(mod.key, roles));
+}
 
 export const MODULES: ModuleDef[] = [
   {

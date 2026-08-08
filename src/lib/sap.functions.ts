@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { canAccessModule } from "./sap-modules";
 
 export type AppRole = "admin" | "buyer" | "approver" | "viewer";
 
@@ -85,7 +86,13 @@ export const getSupplierReport = createServerFn({ method: "GET" })
 export const getModuleReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { module: string }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const rolesRes = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const roles = (rolesRes.data ?? []).map((r) => r.role as AppRole);
+    if (!canAccessModule(data.module, roles)) {
+      throw new Error("FORBIDDEN_MODULE");
+    }
     const provider = await import("./sap-provider.server");
     const report = await provider.getModuleReportData(data.module);
     return { report, providerMode: provider.providerMode() };
