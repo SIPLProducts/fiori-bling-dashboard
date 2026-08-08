@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-
-export const DEMO_EMAIL = "demo@nexus-portal.app";
-export const DEMO_PASSWORD = "NexusDemo!2026";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "./demo-config";
 
 /** Creates (or repairs) the shared demo account so anyone can one-click sign in. */
 export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async () => {
