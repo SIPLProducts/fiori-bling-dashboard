@@ -179,34 +179,23 @@ function SalesAnalyticsPage() {
               </Field>
 
               <Field label="Company code">
-                <select
-                  value={draft.companyCodes[0] ?? ""}
-                  onChange={(e) => pick("companyCodes", e.target.value)}
-                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
-                >
-                  <option value="">All</option>
-                  {(options?.companies ?? []).map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code} · {c.name}
-                    </option>
-                  ))}
-                </select>
+                <MultiSelect
+                  options={(options?.companies ?? []).map((c) => ({ value: c.code, label: `${c.code} · ${c.name}` }))}
+                  selected={draft.companyCodes}
+                  onChange={(next) => setDraft((p) => ({ ...p, companyCodes: next }))}
+                  placeholder="All company codes"
+                />
               </Field>
 
               <Field label="Profit centre">
-                <select
-                  value={draft.profitCentres[0] ?? ""}
-                  onChange={(e) => pick("profitCentres", e.target.value)}
-                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
-                >
-                  <option value="">All</option>
-                  {(options?.profitCentres ?? []).map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code} · {c.name}
-                    </option>
-                  ))}
-                </select>
+                <MultiSelect
+                  options={(options?.profitCentres ?? []).map((c) => ({ value: c.code, label: `${c.code} · ${c.name}` }))}
+                  selected={draft.profitCentres}
+                  onChange={(next) => setDraft((p) => ({ ...p, profitCentres: next }))}
+                  placeholder="All profit centres"
+                />
               </Field>
+
 
               <Field label="Sales type">
                 <select
