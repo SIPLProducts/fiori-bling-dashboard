@@ -17,13 +17,20 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/launchpad", label: "Home", roles: ["admin", "buyer", "approver", "viewer"] },
   { to: "/reports/procurement", label: "Procurement", roles: ["admin", "buyer", "approver"] },
   { to: "/reports/purchase-orders", label: "Purchase Orders", roles: ["admin", "buyer", "approver", "viewer"] },
-  { to: "/reports/suppliers", label: "Suppliers", roles: ["admin", "buyer", "approver", "viewer"] },
+  { to: "/reports/suppliers", label: "Suppliers", roles: ["admin", "buyer", "viewer"] },
   { to: "/admin/users", label: "Users & Roles", roles: ["admin"] },
 ];
 
 export function navForRoles(roles: readonly string[] | undefined): NavItem[] {
   if (!roles?.length) return NAV_ITEMS.filter((item) => item.to === "/launchpad");
   return NAV_ITEMS.filter((item) => item.roles.some((role) => roles.includes(role)));
+}
+
+/** Role gate for a top-level report/admin route. */
+export function canAccessPath(path: NavPath, roles: readonly string[] | undefined): boolean {
+  const item = NAV_ITEMS.find((nav) => nav.to === path);
+  if (!item) return false;
+  return item.roles.some((role) => (roles ?? []).includes(role));
 }
 
 /** Which tile groups matter most to each role — drives launchpad ordering. */

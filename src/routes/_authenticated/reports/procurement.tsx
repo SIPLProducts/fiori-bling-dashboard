@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { getProcurementOverview } from "@/lib/sap.functions";
-import { Panel, ReportShell } from "@/components/report-shell";
+import { Panel, ReportShell, AccessDenied } from "@/components/report-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/reports/procurement")({
