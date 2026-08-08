@@ -61,7 +61,16 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      const code = (error as { code?: string }).code;
+      if (code === "weak_password" || /weak|pwned/i.test(error.message)) {
+        toast.error(
+          "That password appears in known data breaches. Please choose a stronger, unique password.",
+        );
+      } else if (/already registered|already exists/i.test(error.message)) {
+        toast.error("An account with this email already exists — try signing in instead.");
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
     if (data.session) {
