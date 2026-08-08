@@ -10,33 +10,121 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
+import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
+import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedLaunchpadRoute = AuthenticatedLaunchpadRouteImport.update({
+  id: '/launchpad',
+  path: '/launchpad',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsProcurementRoute =
+  AuthenticatedReportsProcurementRouteImport.update({
+    id: '/reports/procurement',
+    path: '/reports/procurement',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsPurchaseOrdersRoute =
+  AuthenticatedReportsPurchaseOrdersRouteImport.update({
+    id: '/reports/purchase-orders',
+    path: '/reports/purchase-orders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsSuppliersRoute =
+  AuthenticatedReportsSuppliersRouteImport.update({
+    id: '/reports/suppliers',
+    path: '/reports/suppliers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
+  '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
+  '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
+  '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/launchpad'
+    | '/admin/users'
+    | '/reports/procurement'
+    | '/reports/purchase-orders'
+    | '/reports/suppliers'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/launchpad'
+    | '/admin/users'
+    | '/reports/procurement'
+    | '/reports/purchase-orders'
+    | '/reports/suppliers'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/launchpad'
+    | '/_authenticated/admin/users'
+    | '/_authenticated/reports/procurement'
+    | '/_authenticated/reports/purchase-orders'
+    | '/_authenticated/reports/suppliers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +136,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/launchpad': {
+      id: '/_authenticated/launchpad'
+      path: '/launchpad'
+      fullPath: '/launchpad'
+      preLoaderRoute: typeof AuthenticatedLaunchpadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/procurement': {
+      id: '/_authenticated/reports/procurement'
+      path: '/reports/procurement'
+      fullPath: '/reports/procurement'
+      preLoaderRoute: typeof AuthenticatedReportsProcurementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/purchase-orders': {
+      id: '/_authenticated/reports/purchase-orders'
+      path: '/reports/purchase-orders'
+      fullPath: '/reports/purchase-orders'
+      preLoaderRoute: typeof AuthenticatedReportsPurchaseOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/suppliers': {
+      id: '/_authenticated/reports/suppliers'
+      path: '/reports/suppliers'
+      fullPath: '/reports/suppliers'
+      preLoaderRoute: typeof AuthenticatedReportsSuppliersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
+  AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
+  AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLaunchpadRoute: AuthenticatedLaunchpadRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
+  AuthenticatedReportsPurchaseOrdersRoute:
+    AuthenticatedReportsPurchaseOrdersRoute,
+  AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
