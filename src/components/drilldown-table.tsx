@@ -184,6 +184,16 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
             >
               Clear
             </button>
+            <button
+              type="button"
+              onClick={exportRows}
+              disabled={invalidRange || filtered.length === 0}
+              title="Download the filtered drill-down rows as CSV"
+              className="inline-flex h-7 items-center gap-1 rounded-sm border border-border px-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <Download className="size-3" />
+              Export CSV ({filtered.length})
+            </button>
             {invalidRange ? (
               <p className="w-full text-[11px] text-destructive">Posting from must be on or before posting to.</p>
             ) : null}
