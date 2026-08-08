@@ -317,8 +317,12 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
               }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="previous" name="Previous period" fill="var(--color-muted-foreground)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="current" name="Current period" fill="var(--color-primary)" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="previous" name="Previous period" fill="var(--color-muted-foreground)" radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="previous" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-muted-foreground)" />
+            </Bar>
+            <Bar dataKey="current" name="Current period" fill="var(--color-primary)" radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="current" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-foreground)" />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
