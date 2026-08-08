@@ -122,11 +122,9 @@ function SalesAnalyticsPage() {
 
   const options = data?.options;
 
-  const toggle = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
-    setDraft((prev) => ({
-      ...prev,
-      [key]: prev[key].includes(value) ? prev[key].filter((v) => v !== value) : [...prev[key], value],
-    }));
+  const pick = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
+    setDraft((prev) => ({ ...prev, [key]: value ? [value] : [] }));
+
 
   const activeCount = useMemo(() => {
     return (
