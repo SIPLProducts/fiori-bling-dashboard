@@ -22,6 +22,7 @@ import {
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { MultiSelect } from "@/components/multi-select";
 import { ChartExportActions } from "@/components/chart-export-buttons";
+import { DrilldownTable } from "@/components/drilldown-table";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics } from "@/lib/zfisales.functions";
-import type { SalesFilters, SeriesBy } from "@/lib/zfisales-types";
+import type { SalesFilters, SalesLine, SeriesBy } from "@/lib/zfisales-types";
 
 export const Route = createFileRoute("/_authenticated/reports/sales-analytics")({
   head: () => {
@@ -464,6 +465,16 @@ function SalesAnalyticsPage() {
                     )}
                   </ResponsiveContainer>
                   </div>
+                  <DrilldownTable
+                    rows={data.rows}
+                    groupLabel="Month"
+                    groupBy={(r) => r.month}
+                    {...(data.series.dimension === "companyCode"
+                      ? { splitBy: (r: SalesLine) => `${r.companyCode} · ${r.companyName}`, splitLabel: "Company code" }
+                      : data.series.dimension === "profitCentre"
+                        ? { splitBy: (r: SalesLine) => `${r.profitCtr} · ${r.profitCtrName}`, splitLabel: "Profit centre" }
+                        : {})}
+                  />
                 </Panel>
 
                 <Panel
@@ -504,6 +515,7 @@ function SalesAnalyticsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                   </div>
+                  <DrilldownTable rows={data.rows} groupLabel="Sales type" groupBy={(r) => r.salesType} />
                 </Panel>
 
                 <Panel
@@ -547,6 +559,15 @@ function SalesAnalyticsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                   </div>
+                  <DrilldownTable
+                    rows={data.rows}
+                    groupLabel={data.series.dimension === "companyCode" ? "Company code" : "Profit centre"}
+                    groupBy={(r) =>
+                      data.series.dimension === "companyCode"
+                        ? `${r.companyCode} · ${r.companyName}`
+                        : `${r.profitCtr} · ${r.profitCtrName}`
+                    }
+                  />
                 </Panel>
 
                 <Panel
@@ -578,6 +599,7 @@ function SalesAnalyticsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                   </div>
+                  <DrilldownTable rows={data.rows} groupLabel="Segment" groupBy={(r) => r.segment} />
                 </Panel>
 
                 <Panel title="Top customers">
