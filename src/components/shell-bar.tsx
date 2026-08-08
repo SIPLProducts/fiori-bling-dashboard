@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, LogOut, Menu, Search, User } from "lucide-react";
+import { Bell, ChevronDown, HelpCircle, LogOut, Menu, Search, User } from "lucide-react";
 import { navForRoles } from "@/lib/nav";
+import { MODULES } from "@/lib/sap-modules";
 import { supabase } from "@/integrations/supabase/client";
 
 import {
@@ -52,6 +53,23 @@ export function ShellBar({
             {item.label}
           </Link>
         ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
+            Modules <ChevronDown className="size-3.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="w-64">
+            <DropdownMenuLabel>SAP business areas</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {MODULES.map((mod) => (
+              <DropdownMenuItem key={mod.key} asChild>
+                <Link to="/reports/module/$module" params={{ module: mod.key }}>
+                  <span className="mr-2 w-6 text-xs font-semibold text-primary">{mod.code}</span>
+                  {mod.title}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
       <span className="mx-auto text-sm font-medium md:hidden">{title}</span>
 

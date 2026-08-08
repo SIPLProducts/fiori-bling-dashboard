@@ -94,7 +94,7 @@ function ModuleReportPage() {
             {report.kpis.map((kpi) => (
               <Panel key={kpi.key} title={kpi.label}>
                 <p className="tabular text-3xl font-light text-primary">
-                  {kpi.value >= 1000 ? compact(kpi.value) : kpi.value}
+                  {kpi.unit || kpi.value < 1000 ? kpi.value.toLocaleString() : compact(kpi.value)}
                   {kpi.unit ? <span className="ml-1 text-xs text-muted-foreground">{kpi.unit}</span> : null}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">{kpi.subtitle}</p>
