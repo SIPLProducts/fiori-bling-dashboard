@@ -28,13 +28,54 @@ type Group = {
   rows: SalesLine[];
 };
 
+const ALL = "__all__";
+
 export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, splitLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [salesType, setSalesType] = useState(ALL);
+  const [companyCode, setCompanyCode] = useState(ALL);
+  const [profitCtr, setProfitCtr] = useState(ALL);
+
+  const options = useMemo(() => {
+    const uniq = (vals: string[]) => [...new Set(vals.filter(Boolean))].sort();
+    return {
+      salesTypes: uniq(rows.map((r) => r.salesType)),
+      companies: uniq(rows.map((r) => r.companyCode)),
+      profitCentres: uniq(rows.map((r) => r.profitCtr)),
+    };
+  }, [rows]);
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((r) => {
+        if (from && r.postingDate < from) return false;
+        if (to && r.postingDate > to) return false;
+        if (salesType !== ALL && r.salesType !== salesType) return false;
+        if (companyCode !== ALL && r.companyCode !== companyCode) return false;
+        if (profitCtr !== ALL && r.profitCtr !== profitCtr) return false;
+        return true;
+      }),
+    [rows, from, to, salesType, companyCode, profitCtr],
+  );
+
+  const invalidRange = Boolean(from && to && from > to);
+  const activeCount =
+    (from ? 1 : 0) + (to ? 1 : 0) + [salesType, companyCode, profitCtr].filter((v) => v !== ALL).length;
+
+  const resetFilters = () => {
+    setFrom("");
+    setTo("");
+    setSalesType(ALL);
+    setCompanyCode(ALL);
+    setProfitCtr(ALL);
+  };
 
   const groups = useMemo(() => {
     const map = new Map<string, Group>();
-    for (const row of rows) {
+    for (const row of invalidRange ? [] : filtered) {
       const key = groupBy(row);
       const split = splitBy ? splitBy(row) : "";
       const id = `${key}||${split}`;
