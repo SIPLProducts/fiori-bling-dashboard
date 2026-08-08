@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/reports/purchase-orders")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    focus: typeof search.focus === "string" ? search.focus : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Purchase Order Items — Nexus Analytics" },
@@ -31,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/reports/purchase-orders")(
   }),
   component: PurchaseOrderReport,
 });
+
 
 const STATUS_CLASS: Record<string, string> = {
   Open: "bg-primary/10 text-primary",
