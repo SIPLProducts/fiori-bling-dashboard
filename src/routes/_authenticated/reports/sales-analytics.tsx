@@ -450,7 +450,7 @@ function SalesAnalyticsPage() {
       ) : (
         <div className="space-y-4">
           {/* Selection screen */}
-          <section className="rounded-md border border-border bg-card p-4 shadow-tile">
+          <section className="sticky top-14 z-30 rounded-md border border-border bg-card p-4 shadow-tile">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-medium text-card-foreground">Selection criteria</h2>
               <span className="text-xs text-muted-foreground">
