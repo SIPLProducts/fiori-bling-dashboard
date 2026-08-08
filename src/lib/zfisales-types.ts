@@ -75,3 +75,31 @@ export type SalesAnalytics = {
   totalRows: number;
   series: SeriesAnalytics;
 };
+
+export type ComparisonBasis = "yoy" | "qoq" | "mom";
+
+export type ComparisonPoint = {
+  /** Sortable period key, e.g. 2026-03, 2026-Q1, 2026. */
+  period: string;
+  label: string;
+  current: number;
+  previous: number;
+  previousLabel: string;
+  delta: number;
+  /** Null when the previous period has no revenue. */
+  deltaPct: number | null;
+  documents: number;
+};
+
+export type ComparisonSet = {
+  yoy: ComparisonPoint[];
+  qoq: ComparisonPoint[];
+  mom: ComparisonPoint[];
+};
+
+export type SalesComparison = {
+  /** Periods across all history (filters other than fiscal year / posting date applied). */
+  all: ComparisonSet;
+  /** Periods restricted to the current selection. */
+  selection: ComparisonSet;
+};
