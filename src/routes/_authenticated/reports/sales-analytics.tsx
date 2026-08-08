@@ -782,9 +782,8 @@ function SalesAnalyticsPage() {
                         ))}
                         <LabelList
                           dataKey="value"
-                          nameKey="name"
-                          formatter={(_v: number, entry: { name: string; percent?: number }) =>
-                            `${entry.name}: ${Math.round((entry.percent ?? 0) * 100)}%`
+                          formatter={(value: number, _name: string, props: { percent?: number; payload?: { name: string } }) =>
+                            `${props?.payload?.name ?? _name}: ${Math.round((props?.percent ?? 0) * 100)}%`
                           }
                           position="outside"
                           fontSize={10}
