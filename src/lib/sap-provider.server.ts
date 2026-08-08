@@ -183,5 +183,6 @@ export async function getKpiValues() {
       unit: "/ 100",
     },
     ...moduleKpiValues(),
+    ...salesRegisterKpis(),
   } as Record<string, { value: number; unit?: string; footer?: string; trend?: number[] }>;
 }
