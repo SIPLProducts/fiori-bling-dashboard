@@ -175,7 +175,7 @@ function SalesAnalyticsPage() {
 
   return (
     <ReportShell
-      title="SD — ZFISALES Sales Analytics"
+      title="SD — Sales Analytics"
       description="Sales register analysis by posting date, company code, profit centre, fiscal year, segment and customer."
     >
       {!rolesLoading && !allowed ? (
