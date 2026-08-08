@@ -80,6 +80,16 @@ function Launchpad() {
           </div>
         ) : null}
 
+        {role ? (
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="rounded-sm bg-primary/10 px-2 py-1 text-xs font-medium tracking-wide text-primary uppercase">
+              {role}
+            </span>
+            <span className="text-sm text-muted-foreground">{ROLE_HEADLINE[role]}</span>
+          </div>
+        ) : null}
+
+
         {isLoading ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(212px,1fr))] gap-4">
             {Array.from({ length: 8 }).map((_, index) => (
