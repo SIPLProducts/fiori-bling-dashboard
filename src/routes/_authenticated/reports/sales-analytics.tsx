@@ -104,6 +104,13 @@ function SalesAnalyticsPage() {
   const pick = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value ? [value] : [] }));
 
+  const dateError = useMemo(() => {
+    if (!draft.postingFrom || !draft.postingTo) return "";
+    if (draft.postingFrom > draft.postingTo) {
+      return "Posting date from must be earlier than or equal to posting date to.";
+    }
+    return "";
+  }, [draft.postingFrom, draft.postingTo]);
 
   const activeCount = useMemo(() => {
     return (
@@ -231,8 +238,14 @@ function SalesAnalyticsPage() {
 
             </div>
 
+            {dateError ? (
+              <p className="mt-3 text-xs text-destructive" role="alert">
+                {dateError}
+              </p>
+            ) : null}
+
             <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching}>
+              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
                 {isFetching ? "Executing…" : "Execute"}
               </Button>
               <Button
