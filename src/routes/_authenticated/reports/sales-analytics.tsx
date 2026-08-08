@@ -390,8 +390,25 @@ function SalesAnalyticsPage() {
                           }}
                         />
                         <Legend
-                          formatter={(name) => data.series.keyLabels[name] ?? name}
-                          wrapperStyle={{ fontSize: 12 }}
+                          formatter={(name: string) => (
+                            <span
+                              style={{
+                                opacity: hiddenSeries.includes(name) ? 0.45 : 1,
+                                textDecoration: hiddenSeries.includes(name) ? "line-through" : "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {data.series.keyLabels[name] ?? name}
+                            </span>
+                          )}
+                          onClick={(entry) => {
+                            const key = String((entry as { dataKey?: string }).dataKey ?? "");
+                            if (!key) return;
+                            setHiddenSeries((prev) =>
+                              prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+                            );
+                          }}
+                          wrapperStyle={{ fontSize: 12, cursor: "pointer" }}
                         />
                         {data.series.keys.map((key, i) => (
                           <Line
@@ -403,8 +420,10 @@ function SalesAnalyticsPage() {
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 4 }}
+                            hide={hiddenSeries.includes(key)}
                           />
                         ))}
+
                       </LineChart>
                     ) : (
                       <AreaChart data={data.monthly}>
