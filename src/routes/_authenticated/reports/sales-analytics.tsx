@@ -10,6 +10,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -26,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics } from "@/lib/zfisales.functions";
-import type { SalesFilters } from "@/lib/zfisales-types";
+import type { SalesFilters, SeriesBy } from "@/lib/zfisales-types";
 
 export const Route = createFileRoute("/_authenticated/reports/sales-analytics")({
   head: () => {
