@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { downloadCsv } from "@/lib/chart-export";
 import type { SalesLine } from "@/lib/zfisales-types";
 
 function fmt(value: number) {
@@ -101,6 +102,29 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
   const selectCls =
     "h-7 rounded-sm border border-input bg-background px-1.5 text-xs text-foreground";
 
+  const exportRows = () => {
+    const data = (invalidRange ? [] : filtered).map((r) => ({
+      [groupLabel]: labelFor ? labelFor(groupBy(r)) : groupBy(r),
+      ...(splitBy ? { [splitLabel ?? "Split"]: splitBy(r) } : {}),
+      "Posting date": r.postingDate,
+      "Document": r.docNo,
+      "Doc type": r.docType,
+      "Company code": r.companyCode,
+      "Company": r.companyName,
+      "Profit centre": r.profitCtr,
+      "Profit centre name": r.profitCtrName,
+      "Sales type": r.salesType,
+      "Segment": r.segment,
+      "Customer": r.customer,
+      "Customer name": r.customerName,
+      "Fiscal year": r.fiscalYear,
+      "Amount (LC)": r.amount,
+    }));
+    const slug = groupLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    downloadCsv(data, `drilldown-${slug}-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+
   return (
     <div className="mt-3 border-t border-border pt-2">
       <button
@@ -159,6 +183,16 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
               className="h-7 rounded-sm border border-border px-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
             >
               Clear
+            </button>
+            <button
+              type="button"
+              onClick={exportRows}
+              disabled={invalidRange || filtered.length === 0}
+              title="Download the filtered drill-down rows as CSV"
+              className="inline-flex h-7 items-center gap-1 rounded-sm border border-border px-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <Download className="size-3" />
+              Export CSV ({filtered.length})
             </button>
             {invalidRange ? (
               <p className="w-full text-[11px] text-destructive">Posting from must be on or before posting to.</p>
