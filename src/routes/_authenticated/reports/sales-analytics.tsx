@@ -104,6 +104,13 @@ function SalesAnalyticsPage() {
   const pick = (key: "companyCodes" | "profitCentres" | "salesTypes" | "segments", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value ? [value] : [] }));
 
+  const dateError = useMemo(() => {
+    if (!draft.postingFrom || !draft.postingTo) return "";
+    if (draft.postingFrom > draft.postingTo) {
+      return "Posting date from must be earlier than or equal to posting date to.";
+    }
+    return "";
+  }, [draft.postingFrom, draft.postingTo]);
 
   const activeCount = useMemo(() => {
     return (
