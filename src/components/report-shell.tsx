@@ -46,18 +46,24 @@ export function Panel({
   title,
   children,
   className = "",
+  actions,
 }: {
   title: string;
   children: ReactNode;
   className?: string;
+  actions?: ReactNode;
 }) {
   return (
     <section className={`rounded-md border border-border bg-card p-4 shadow-tile ${className}`}>
-      <h2 className="mb-4 text-sm font-medium text-card-foreground">{title}</h2>
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <h2 className="text-sm font-medium text-card-foreground">{title}</h2>
+        {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
+      </div>
       {children}
     </section>
   );
 }
+
 
 export function AccessDenied({ area }: { area: string }) {
   return (
