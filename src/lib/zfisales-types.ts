@@ -74,6 +74,7 @@ export type SalesAnalytics = {
   rows: SalesLine[];
   totalRows: number;
   series: SeriesAnalytics;
+  comparison: SalesComparison;
 };
 
 export type ComparisonBasis = "yoy" | "qoq" | "mom";
