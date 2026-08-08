@@ -221,7 +221,8 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
               ) : null}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
