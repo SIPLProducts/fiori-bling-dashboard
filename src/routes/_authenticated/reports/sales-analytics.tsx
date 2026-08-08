@@ -238,8 +238,14 @@ function SalesAnalyticsPage() {
 
             </div>
 
+            {dateError ? (
+              <p className="mt-3 text-xs text-destructive" role="alert">
+                {dateError}
+              </p>
+            ) : null}
+
             <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching}>
+              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
                 {isFetching ? "Executing…" : "Execute"}
               </Button>
               <Button
