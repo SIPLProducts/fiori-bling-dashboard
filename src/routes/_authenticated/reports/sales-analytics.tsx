@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/reports/sales-analytics")(
   head: () => {
     const title = "Sales Analytics — Nexus";
     const description =
-      "Analytical dashboard for SAP sales register data: revenue by profit centre, segment, sales type and customer with posting-date, company code and fiscal-year filters.;
+      "Analytical dashboard for SAP sales register data: revenue by profit centre, segment, sales type and customer with posting-date, company code and fiscal-year filters.";
     return {
       meta: [
         { title },
