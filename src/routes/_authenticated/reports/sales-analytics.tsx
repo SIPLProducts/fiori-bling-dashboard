@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { MultiSelect } from "@/components/multi-select";
+import { ChartExportActions } from "@/components/chart-export-buttons";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -130,7 +131,7 @@ function SalesAnalyticsPage() {
     if (!data) return [] as Array<Record<string, unknown>>;
     if (data.series.keys.length) {
       return data.series.monthly.map((row: Record<string, unknown>) => {
-        const out: Record<string, unknown> = { Month: row.month };
+        const out: Record<string, unknown> = { Month: row['month'] };
         for (const key of data.series.keys) {
           out[data.series.keyLabels[key] ?? key] = row[key] ?? 0;
         }
