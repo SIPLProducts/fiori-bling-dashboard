@@ -703,7 +703,9 @@ function SalesAnalyticsPage() {
                             dot={false}
                             activeDot={{ r: 4 }}
                             hide={hiddenSeries.includes(key)}
-                          />
+                          >
+                            <LabelList dataKey={key} formatter={(v: number) => inr(v)} position="top" fontSize={9} fill={SERIES_COLORS[i % SERIES_COLORS.length]} />
+                          </Line>
                         ))}
 
                       </LineChart>
