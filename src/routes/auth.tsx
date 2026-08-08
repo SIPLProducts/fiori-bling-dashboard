@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -32,8 +31,6 @@ function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [company, setCompany] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleSignIn(event: React.FormEvent) {
@@ -45,50 +42,6 @@ function AuthPage() {
       toast.error(error.message);
       return;
     }
-    navigate({ to: "/launchpad" });
-  }
-
-  async function handleSignUp(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { display_name: displayName, company },
-      },
-    });
-    setBusy(false);
-    if (error) {
-      const code = (error as { code?: string }).code;
-      if (code === "weak_password" || /weak|pwned/i.test(error.message)) {
-        toast.error(
-          "That password appears in known data breaches. Please choose a stronger, unique password.",
-        );
-      } else if (/already registered|already exists/i.test(error.message)) {
-        toast.error("An account with this email already exists — try signing in instead.");
-      } else {
-        toast.error(error.message);
-      }
-      return;
-    }
-    if (data.session) {
-      navigate({ to: "/launchpad" });
-    } else {
-      toast.success("Check your email to confirm your account.");
-    }
-  }
-
-  async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Google sign-in failed. Please try again.");
-      return;
-    }
-    if (result.redirected) return;
     navigate({ to: "/launchpad" });
   }
 
@@ -117,93 +70,38 @@ function AuthPage() {
             Use your work account to access procurement analytics.
           </p>
 
-          <Tabs defaultValue="signin" className="mt-6">
-            <TabsList className="w-full">
-              <TabsTrigger value="signin" className="flex-1">
-                Sign in
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="flex-1">
-                Create account
-              </TabsTrigger>
-            </TabsList>
+          <form onSubmit={handleSignIn} className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Work email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Work email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? "Signing in…" : "Sign in"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Full name</Label>
-                  <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="company">Company</Label>
-                  <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email-up">Work email</Label>
-                  <Input
-                    id="email-up"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password-up">Password</Label>
-                  <Input
-                    id="password-up"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? "Creating account…" : "Create account"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <Button type="button" variant="outline" className="w-full" onClick={() => void handleGoogle()}>
-            Continue with Google
-          </Button>
+          <p className="mt-6 text-xs text-muted-foreground">
+            Portal access is provisioned by your administrator.
+          </p>
         </div>
       </div>
     </div>
   );
 }
+
