@@ -28,10 +28,10 @@ export function navForRoles(roles: readonly string[] | undefined): NavItem[] {
 
 /** Which tile groups matter most to each role — drives launchpad ordering. */
 const GROUP_PRIORITY: Record<AppRole, string[]> = {
-  admin: ["procurement-overview", "purchase-order", "purchase-requisition", "supplier-evaluation", "purchase-contract", "workflow"],
-  buyer: ["purchase-order", "purchase-requisition", "supplier-evaluation", "purchase-contract", "procurement-overview", "workflow"],
+  admin: ["procurement-overview", "purchase-order", "purchase-requisition", "supplier-evaluation", "purchase-contract", "workflow", "sales-distribution", "financial-accounting", "controlling", "production-planning", "quality-management", "project-systems"],
+  buyer: ["purchase-order", "purchase-requisition", "supplier-evaluation", "purchase-contract", "procurement-overview", "workflow", "sales-distribution", "financial-accounting", "controlling", "production-planning", "quality-management", "project-systems"],
   approver: ["workflow", "purchase-requisition", "purchase-order", "procurement-overview", "supplier-evaluation", "purchase-contract"],
-  viewer: ["procurement-overview", "purchase-order", "supplier-evaluation", "purchase-requisition", "purchase-contract", "workflow"],
+  viewer: ["procurement-overview", "purchase-order", "supplier-evaluation", "purchase-requisition", "purchase-contract", "workflow", "sales-distribution", "financial-accounting", "controlling", "production-planning", "quality-management", "project-systems"],
 };
 
 const ROLE_RANK: AppRole[] = ["approver", "buyer", "admin", "viewer"];

@@ -17,6 +17,7 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
 import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
 import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
+import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,6 +61,12 @@ const AuthenticatedReportsSuppliersRoute =
     path: '/reports/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsModuleModuleRoute =
+  AuthenticatedReportsModuleModuleRouteImport.update({
+    id: '/reports/module/$module',
+    path: '/reports/module/$module',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
+  '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
+  '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +98,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
+  '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/reports/procurement'
     | '/reports/purchase-orders'
     | '/reports/suppliers'
+    | '/reports/module/$module'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/reports/procurement'
     | '/reports/purchase-orders'
     | '/reports/suppliers'
+    | '/reports/module/$module'
   id:
     | '__root__'
     | '/'
@@ -119,6 +131,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/procurement'
     | '/_authenticated/reports/purchase-orders'
     | '/_authenticated/reports/suppliers'
+    | '/_authenticated/reports/module/$module'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/module/$module': {
+      id: '/_authenticated/reports/module/$module'
+      path: '/reports/module/$module'
+      fullPath: '/reports/module/$module'
+      preLoaderRoute: typeof AuthenticatedReportsModuleModuleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -194,6 +214,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
   AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
   AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
+  AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -203,6 +224,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsPurchaseOrdersRoute:
     AuthenticatedReportsPurchaseOrdersRoute,
   AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
+  AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

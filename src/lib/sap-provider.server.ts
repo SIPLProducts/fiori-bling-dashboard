@@ -21,6 +21,7 @@ import {
   type SupplierScorecard,
   type SupplierSpend,
 } from "./sap-mock";
+import { moduleKpiValues, moduleReport, type ModuleReport } from "./sap-mock-modules";
 
 export type ProviderMode = "mock" | "odata";
 
@@ -137,8 +138,14 @@ export async function getSupplierScorecards(): Promise<SupplierScorecard[]> {
   }));
 }
 
+/** Analytical report for one SAP module (SD, FI, CO, PP, QM, PS). */
+export async function getModuleReportData(key: string): Promise<ModuleReport | null> {
+  // Live SAP module reports plug in here; sample data until then.
+  return moduleReport(key);
+}
+
 export async function getKpiValues() {
-  if (providerMode() === "mock") return kpiValues();
+  if (providerMode() === "mock") return { ...kpiValues(), ...moduleKpiValues() };
   const [trend, items, suppliers] = await Promise.all([
     getSpendTrend(),
     getPurchaseOrderItems(),
@@ -153,5 +160,6 @@ export async function getKpiValues() {
         : 0,
       unit: "/ 100",
     },
+    ...moduleKpiValues(),
   } as Record<string, { value: number; unit?: string; footer?: string; trend?: number[] }>;
 }

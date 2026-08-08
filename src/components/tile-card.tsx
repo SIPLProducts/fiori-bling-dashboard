@@ -121,6 +121,18 @@ export function TileCard({
     </div>
   );
 
+  if (to.startsWith("/reports/module/")) {
+    const moduleKey = to.split("/").pop()!;
+    return (
+      <Link
+        to="/reports/module/$module"
+        params={{ module: moduleKey }}
+        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {body}
+      </Link>
+    );
+  }
   if (to === "/reports/purchase-orders") {
     const focus = PO_FOCUS[tile.kpi_key ?? ""];
     return (
