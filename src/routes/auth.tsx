@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ensureDemoUser } from "@/lib/demo.functions";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
 
 
 export const Route = createFileRoute("/auth")({
@@ -29,6 +32,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const provisionDemo = useServerFn(ensureDemoUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,6 +48,25 @@ function AuthPage() {
     }
     navigate({ to: "/launchpad" });
   }
+
+  async function handleDemoLogin() {
+    setBusy(true);
+    try {
+      const creds = await provisionDemo({ data: undefined });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+      if (error) throw error;
+      toast.success("Signed in as Demo User");
+      navigate({ to: "/launchpad" });
+    } catch {
+      toast.error("Demo sign-in failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -96,9 +119,29 @@ function AuthPage() {
             </Button>
           </form>
 
+          <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+            <p className="text-sm font-medium text-foreground">Demo access</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              User ID: <span className="font-mono">{DEMO_EMAIL}</span>
+              <br />
+              Password: <span className="font-mono">{DEMO_PASSWORD}</span>
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              disabled={busy}
+              onClick={() => void handleDemoLogin()}
+              onDoubleClick={() => void handleDemoLogin()}
+            >
+              {busy ? "Opening demo…" : "Login as Demo User"}
+            </Button>
+          </div>
+
           <p className="mt-6 text-xs text-muted-foreground">
             Portal access is provisioned by your administrator.
           </p>
+
         </div>
       </div>
     </div>
