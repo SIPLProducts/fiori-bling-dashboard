@@ -55,9 +55,29 @@ export const getLaunchpad = createServerFn({ method: "GET" })
     };
   });
 
+/** Roles allowed to read each report dataset — mirrors the launchpad tiles. */
+const REPORT_ROLES = {
+  procurement: ["admin", "buyer", "approver"],
+  purchaseOrders: ["admin", "buyer", "approver", "viewer"],
+  suppliers: ["admin", "buyer", "viewer"],
+} as const satisfies Record<string, readonly AppRole[]>;
+
+async function assertReportAccess(
+  supabase: { from: (t: "user_roles") => any },
+  userId: string,
+  report: keyof typeof REPORT_ROLES,
+) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roles = ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+  const allowed = REPORT_ROLES[report] as readonly AppRole[];
+  if (!roles.some((role) => allowed.includes(role))) throw new Error("FORBIDDEN_REPORT");
+  return roles;
+}
+
 export const getProcurementOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertReportAccess(context.supabase, context.userId, "procurement");
     const provider = await import("./sap-provider.server");
     const [trend, categories, suppliers] = await Promise.all([
       provider.getSpendTrend(),
@@ -69,7 +89,8 @@ export const getProcurementOverview = createServerFn({ method: "GET" })
 
 export const getPurchaseOrderReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertReportAccess(context.supabase, context.userId, "purchaseOrders");
     const provider = await import("./sap-provider.server");
     const items = await provider.getPurchaseOrderItems();
     return { items, providerMode: provider.providerMode() };
@@ -77,7 +98,8 @@ export const getPurchaseOrderReport = createServerFn({ method: "GET" })
 
 export const getSupplierReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertReportAccess(context.supabase, context.userId, "suppliers");
     const provider = await import("./sap-provider.server");
     const suppliers = await provider.getSupplierScorecards();
     return { suppliers, providerMode: provider.providerMode() };
