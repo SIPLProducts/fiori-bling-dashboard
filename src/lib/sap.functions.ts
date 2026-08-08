@@ -81,3 +81,12 @@ export const getSupplierReport = createServerFn({ method: "GET" })
     const suppliers = await provider.getSupplierScorecards();
     return { suppliers, providerMode: provider.providerMode() };
   });
+
+export const getModuleReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { module: string }) => input)
+  .handler(async ({ data }) => {
+    const provider = await import("./sap-provider.server");
+    const report = await provider.getModuleReportData(data.module);
+    return { report, providerMode: provider.providerMode() };
+  });
