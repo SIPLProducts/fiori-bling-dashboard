@@ -1,5 +1,5 @@
 import { SALES_ROWS, type SalesRow } from "./zfisales-data.server";
-import type { NamedValue, SalesAnalytics, SalesFilters } from "./zfisales-types";
+import type { NamedValue, SalesAnalytics, SalesFilters, SeriesBy } from "./zfisales-types";
 
 const MONTH_ORDER = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
