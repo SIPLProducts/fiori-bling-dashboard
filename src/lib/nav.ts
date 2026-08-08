@@ -5,6 +5,7 @@ export type NavPath =
   | "/reports/procurement"
   | "/reports/purchase-orders"
   | "/reports/suppliers"
+  | "/reports/sales-analytics"
   | "/admin/users";
 
 export type NavItem = {
@@ -18,8 +19,10 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/reports/procurement", label: "Procurement", roles: ["admin", "buyer", "approver"] },
   { to: "/reports/purchase-orders", label: "Purchase Orders", roles: ["admin", "buyer", "approver", "viewer"] },
   { to: "/reports/suppliers", label: "Suppliers", roles: ["admin", "buyer", "viewer"] },
+  { to: "/reports/sales-analytics", label: "Sales Analytics", roles: ["admin", "buyer", "viewer"] },
   { to: "/admin/users", label: "Users & Roles", roles: ["admin"] },
 ];
+
 
 export function navForRoles(roles: readonly string[] | undefined): NavItem[] {
   if (!roles?.length) return NAV_ITEMS.filter((item) => item.to === "/launchpad");
