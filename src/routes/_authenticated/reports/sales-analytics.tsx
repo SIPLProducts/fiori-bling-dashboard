@@ -30,7 +30,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics } from "@/lib/zfisales.functions";
-import type { SalesFilters, SalesLine, SeriesBy } from "@/lib/zfisales-types";
+import type {
+  ComparisonBasis,
+  SalesComparison,
+  SalesFilters,
+  SalesLine,
+  SeriesBy,
+} from "@/lib/zfisales-types";
 
 export const Route = createFileRoute("/_authenticated/reports/sales-analytics")({
   head: () => {
