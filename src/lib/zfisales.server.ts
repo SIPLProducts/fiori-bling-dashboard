@@ -1,5 +1,5 @@
 import { SALES_ROWS, type SalesRow } from "./zfisales-data.server";
-import type { NamedValue, SalesAnalytics, SalesFilters } from "./zfisales-types";
+import type { NamedValue, SalesAnalytics, SalesFilters, SeriesBy } from "./zfisales-types";
 
 const MONTH_ORDER = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -59,6 +59,8 @@ export function buildSalesAnalytics(filters: SalesFilters): SalesAnalytics {
   const centres = new Map(all.map((r) => [r.profitCtr, r.profitCtrName]));
   const postingDates = all.map((r) => r.postingDate).sort();
 
+  const series = buildSeriesAnalytics(rows, filters.seriesBy, { companies, centres });
+
   return {
     options: {
       fiscalYears: [...new Set(all.map((r) => r.fiscalYear))].sort(),
@@ -85,5 +87,51 @@ export function buildSalesAnalytics(filters: SalesFilters): SalesAnalytics {
     topCustomers: rollup(rows, (r) => r.customerName).slice(0, 8),
     rows: rows.slice(0, 500),
     totalRows: rows.length,
+    series,
   };
+}
+
+function buildSeriesAnalytics(
+  rows: SalesRow[],
+  seriesBy: SeriesBy,
+  lookups: { companies: Map<string, string>; centres: Map<string, string> },
+) {
+  if (seriesBy === "none" || rows.length === 0) {
+    return { dimension: "none" as SeriesBy, keys: [], keyLabels: {}, monthly: [], byDimension: [] };
+  }
+
+  const pickKey = seriesBy === "companyCode" ? (r: SalesRow) => r.companyCode : (r: SalesRow) => r.profitCtr;
+  const pickName = seriesBy === "companyCode" ? (r: SalesRow) => r.companyName : (r: SalesRow) => r.profitCtrName;
+  const lookup = seriesBy === "companyCode" ? lookups.companies : lookups.centres;
+
+  const presentKeys = [...new Set(rows.map(pickKey))];
+  const keyLabels: Record<string, string> = {};
+  for (const key of presentKeys) {
+    const rowName = rows.find((r) => pickKey(r) === key);
+    keyLabels[key] = rowName ? pickName(rowName) : lookup.get(key) ?? key;
+  }
+
+  // Monthly roll-up per series key
+  const monthMap = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    const key = pickKey(row);
+    const month = row.month;
+    const bucket = monthMap.get(month) ?? new Map<string, number>();
+    bucket.set(key, (bucket.get(key) ?? 0) + row.amount);
+    monthMap.set(month, bucket);
+  }
+
+  const monthly = [...monthMap.entries()]
+    .map(([month, bucket]) => {
+      const point: Record<string, number | string> = { month };
+      for (const key of presentKeys) {
+        point[key] = Math.round(bucket.get(key) ?? 0);
+      }
+      return point as { month: string } & Record<string, number>;
+    })
+    .sort((a, b) => monthKey(a.month) - monthKey(b.month));
+
+  const byDimension = rollup(rows, (r) => (seriesBy === "companyCode" ? r.companyName : r.profitCtrName));
+
+  return { dimension: seriesBy, keys: presentKeys, keyLabels, monthly, byDimension };
 }

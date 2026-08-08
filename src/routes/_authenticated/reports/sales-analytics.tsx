@@ -10,6 +10,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -26,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics } from "@/lib/zfisales.functions";
-import type { SalesFilters } from "@/lib/zfisales-types";
+import type { SalesFilters, SeriesBy } from "@/lib/zfisales-types";
 
 export const Route = createFileRoute("/_authenticated/reports/sales-analytics")({
   head: () => {
@@ -58,6 +60,7 @@ const EMPTY: SalesFilters = {
   postingFrom: "",
   postingTo: "",
   search: "",
+  seriesBy: "none",
 };
 
 const PIE_COLORS = [
@@ -67,6 +70,23 @@ const PIE_COLORS = [
   "var(--color-accent)",
   "var(--color-destructive)",
 ];
+
+const SERIES_COLORS = [
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#06B6D4",
+  "#F97316",
+  "#EC4899",
+];
+
+const SERIES_LABELS: Record<SeriesBy, string> = {
+  none: "None",
+  companyCode: "Company code",
+  profitCentre: "Profit centre",
+};
 
 function inr(value: number) {
   if (Math.abs(value) >= 10_000_000) return `${(value / 10_000_000).toFixed(2)} Cr`;
@@ -121,7 +141,8 @@ function SalesAnalyticsPage() {
       applied.segments.length +
       (applied.postingFrom ? 1 : 0) +
       (applied.postingTo ? 1 : 0) +
-      (applied.search ? 1 : 0)
+      (applied.search ? 1 : 0) +
+      (applied.seriesBy !== "none" ? 1 : 0)
     );
   }, [applied]);
 
@@ -236,6 +257,20 @@ function SalesAnalyticsPage() {
                 </select>
               </Field>
 
+              <Field label="Series by">
+                <select
+                  value={draft.seriesBy}
+                  onChange={(e) =>
+                    setDraft((p) => ({ ...p, seriesBy: e.target.value as SeriesBy }))
+                  }
+                  className="h-9 w-full rounded-sm border border-input bg-background px-2 text-sm"
+                >
+                  <option value="none">None (aggregate)</option>
+                  <option value="companyCode">Company code</option>
+                  <option value="profitCentre">Profit centre</option>
+                </select>
+              </Field>
+
             </div>
 
             {dateError ? (
@@ -299,37 +334,80 @@ function SalesAnalyticsPage() {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <Panel title="Revenue by posting month" className="lg:col-span-2">
+                <Panel
+                  title={
+                    data.series.keys.length
+                      ? `Revenue by posting month — ${SERIES_LABELS[data.series.dimension]}`
+                      : "Revenue by posting month"
+                  }
+                  className="lg:col-span-2"
+                >
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={data.monthly}>
-                      <defs>
-                        <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-                      <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-                      <Tooltip
-                        formatter={(value: number) => `${inr(value)} INR`}
-                        contentStyle={{
-                          background: "var(--color-card)",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: 6,
-                          fontSize: 12,
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area
-                        type="monotone"
-                        name="Revenue"
-                        dataKey="revenue"
-                        stroke="var(--color-primary)"
-                        strokeWidth={2}
-                        fill="url(#sdFill)"
-                      />
-                    </AreaChart>
+                    {data.series.keys.length ? (
+                      <LineChart data={data.series.monthly}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <Tooltip
+                          formatter={(value: number, name: string) => [
+                            `${inr(value)} INR`,
+                            data.series.keyLabels[name] ?? name,
+                          ]}
+                          contentStyle={{
+                            background: "var(--color-card)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Legend
+                          formatter={(name) => data.series.keyLabels[name] ?? name}
+                          wrapperStyle={{ fontSize: 12 }}
+                        />
+                        {data.series.keys.map((key, i) => (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={key}
+                            stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4 }}
+                          />
+                        ))}
+                      </LineChart>
+                    ) : (
+                      <AreaChart data={data.monthly}>
+                        <defs>
+                          <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
+                            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <Tooltip
+                          formatter={(value: number) => `${inr(value)} INR`}
+                          contentStyle={{
+                            background: "var(--color-card)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area
+                          type="monotone"
+                          name="Revenue"
+                          dataKey="revenue"
+                          stroke="var(--color-primary)"
+                          strokeWidth={2}
+                          fill="url(#sdFill)"
+                        />
+                      </AreaChart>
+                    )}
                   </ResponsiveContainer>
                 </Panel>
 
@@ -362,9 +440,21 @@ function SalesAnalyticsPage() {
                   </ResponsiveContainer>
                 </Panel>
 
-                <Panel title="Revenue by profit centre">
+                <Panel
+                  title={
+                    data.series.dimension === "companyCode"
+                      ? "Revenue by company code"
+                      : data.series.dimension === "profitCentre"
+                        ? "Revenue by profit centre"
+                        : "Revenue by profit centre"
+                  }
+                >
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={data.byProfitCentre} layout="vertical" margin={{ left: 24 }}>
+                    <BarChart
+                      data={data.series.keys.length ? data.series.byDimension : data.byProfitCentre}
+                      layout="vertical"
+                      margin={{ left: 24 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                       <XAxis type="number" tickFormatter={inr} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                       <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />

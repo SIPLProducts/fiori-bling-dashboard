@@ -23,6 +23,7 @@ const emptyFilters: SalesFilters = {
   postingFrom: "",
   postingTo: "",
   search: "",
+  seriesBy: "none",
 };
 
 export const getSalesAnalytics = createServerFn({ method: "POST" })

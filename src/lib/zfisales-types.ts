@@ -1,5 +1,7 @@
 /** Client-safe types for the ZFISALES sales analytics dashboard. */
 
+export type SeriesBy = "none" | "companyCode" | "profitCentre";
+
 export type SalesFilters = {
   fiscalYear: string;
   companyCodes: string[];
@@ -9,6 +11,7 @@ export type SalesFilters = {
   postingFrom: string;
   postingTo: string;
   search: string;
+  seriesBy: SeriesBy;
 };
 
 export type SalesLine = {
@@ -36,6 +39,14 @@ export type SalesLine = {
 
 export type NamedValue = { name: string; value: number; count?: number };
 
+export type SeriesAnalytics = {
+  dimension: SeriesBy;
+  keys: string[];
+  keyLabels: Record<string, string>;
+  monthly: Array<{ month: string } & Record<string, number>>;
+  byDimension: NamedValue[];
+};
+
 export type SalesAnalytics = {
   options: {
     fiscalYears: string[];
@@ -62,4 +73,5 @@ export type SalesAnalytics = {
   topCustomers: NamedValue[];
   rows: SalesLine[];
   totalRows: number;
+  series: SeriesAnalytics;
 };
