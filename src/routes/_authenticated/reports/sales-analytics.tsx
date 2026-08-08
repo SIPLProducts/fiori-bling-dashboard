@@ -18,6 +18,8 @@ import {
   YAxis,
 } from "recharts";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
+import { MultiSelect } from "@/components/multi-select";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
