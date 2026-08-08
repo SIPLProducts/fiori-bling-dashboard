@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { SalesLine } from "@/lib/zfisales-types";
 
@@ -85,9 +85,8 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
                 const id = `${g.key}||${g.split}`;
                 const isOpen = expanded.includes(id);
                 return (
-                  <>
+                  <Fragment key={id}>
                     <tr
-                      key={id}
                       className="cursor-pointer border-t border-border/60 hover:bg-muted/40"
                       onClick={() => toggle(id)}
                     >
@@ -115,7 +114,7 @@ export function DrilldownTable({ rows, groupLabel, groupBy, labelFor, splitBy, s
                           </tr>
                         ))
                       : null}
-                  </>
+                  </Fragment>
                 );
               })}
               {groups.length === 0 ? (
