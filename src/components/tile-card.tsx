@@ -64,7 +64,15 @@ function formatValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+/** KPI tiles drill into the PO report pre-filtered on the matching status. */
+const PO_FOCUS: Record<string, string> = {
+  po_overdue: "Overdue",
+  pending_confirmations: "Open",
+  pending_approvals: "Blocked",
+};
+
 export function TileCard({
+
   tile,
   kpi,
 }: {
