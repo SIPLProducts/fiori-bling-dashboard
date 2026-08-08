@@ -1,5 +1,12 @@
 import { SALES_ROWS, type SalesRow } from "./zfisales-data.server";
-import type { NamedValue, SalesAnalytics, SalesFilters, SeriesBy } from "./zfisales-types";
+import type {
+  ComparisonPoint,
+  ComparisonSet,
+  NamedValue,
+  SalesAnalytics,
+  SalesFilters,
+  SeriesBy,
+} from "./zfisales-types";
 
 const MONTH_ORDER = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -59,6 +66,21 @@ export function buildSalesAnalytics(filters: SalesFilters): SalesAnalytics {
   const centres = new Map(all.map((r) => [r.profitCtr, r.profitCtrName]));
   const postingDates = all.map((r) => r.postingDate).sort();
 
+  const comparisonBase = all.filter((r) => {
+    if (filters.companyCodes.length && !filters.companyCodes.includes(r.companyCode)) return false;
+    if (filters.profitCentres.length && !filters.profitCentres.includes(r.profitCtr)) return false;
+    if (filters.salesTypes.length && !filters.salesTypes.includes(r.salesType)) return false;
+    if (filters.segments.length && !filters.segments.includes(r.segment)) return false;
+    if (
+      term &&
+      ![r.customerName, r.customer, r.docNo, r.reference, r.glName, r.profitCtrName].some((v) =>
+        String(v).toLowerCase().includes(term),
+      )
+    )
+      return false;
+    return true;
+  });
+
   const series = buildSeriesAnalytics(rows, filters.seriesBy, { companies, centres });
 
   return {
@@ -88,6 +110,10 @@ export function buildSalesAnalytics(filters: SalesFilters): SalesAnalytics {
     rows: rows.slice(0, 500),
     totalRows: rows.length,
     series,
+    comparison: {
+      all: buildComparisonSet(comparisonBase),
+      selection: buildComparisonSet(rows),
+    },
   };
 }
 
@@ -134,4 +160,72 @@ function buildSeriesAnalytics(
   const byDimension = rollup(rows, (r) => (seriesBy === "companyCode" ? r.companyName : r.profitCtrName));
 
   return { dimension: seriesBy, keys: presentKeys, keyLabels, monthly, byDimension };
+}
+
+/** Bucket rows into a period, then compare each period with its predecessor. */
+function periodPoints(
+  rows: SalesRow[],
+  keyOf: (r: SalesRow) => string,
+  labelOf: (key: string) => string,
+): ComparisonPoint[] {
+  const map = new Map<string, { revenue: number; docs: Set<string> }>();
+  for (const row of rows) {
+    const key = keyOf(row);
+    if (!key) continue;
+    const entry = map.get(key) ?? { revenue: 0, docs: new Set<string>() };
+    entry.revenue += row.amount;
+    entry.docs.add(row.docNo);
+    map.set(key, entry);
+  }
+  const keys = [...map.keys()].sort();
+  return keys.map((key, i) => {
+    const current = Math.round(map.get(key)?.revenue ?? 0);
+    const prevKey = i > 0 ? keys[i - 1] : undefined;
+    const previous = prevKey ? Math.round(map.get(prevKey)?.revenue ?? 0) : 0;
+    const delta = current - previous;
+    return {
+      period: key,
+      label: labelOf(key),
+      current,
+      previous,
+      previousLabel: prevKey ? labelOf(prevKey) : "—",
+      delta,
+      deltaPct: prevKey && previous !== 0 ? Math.round((delta / Math.abs(previous)) * 1000) / 10 : null,
+      documents: map.get(key)?.docs.size ?? 0,
+    };
+  });
+}
+
+function parts(postingDate: string) {
+  const [y, m] = postingDate.split("-");
+  return { year: y ?? "", month: m ?? "" };
+}
+
+export function buildComparisonSet(rows: SalesRow[]): ComparisonSet {
+  const yoy = periodPoints(
+    rows,
+    (r) => parts(r.postingDate).year,
+    (key) => key,
+  );
+  const qoq = periodPoints(
+    rows,
+    (r) => {
+      const { year, month } = parts(r.postingDate);
+      if (!year || !month) return "";
+      return `${year}-Q${Math.floor((Number(month) - 1) / 3) + 1}`;
+    },
+    (key) => key.replace("-", " "),
+  );
+  const mom = periodPoints(
+    rows,
+    (r) => {
+      const { year, month } = parts(r.postingDate);
+      return year && month ? `${year}-${month}` : "";
+    },
+    (key) => {
+      const [y, m] = key.split("-");
+      return `${MONTH_ORDER[Number(m) - 1] ?? m} ${y}`;
+    },
+  );
+  return { yoy, qoq, mom };
 }
