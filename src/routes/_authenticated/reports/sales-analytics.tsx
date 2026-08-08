@@ -119,21 +119,54 @@ const BASIS_LABELS: Record<ComparisonBasis, string> = {
   mom: "Month over month (MoM)",
 };
 
+/** Start/end calendar dates covered by a comparison period key. */
+function periodRange(basis: ComparisonBasis, period: string) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const lastDay = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  if (basis === "yoy") return { start: `${period}-01-01`, end: `${period}-12-31` };
+  if (basis === "qoq") {
+    const [y, q] = period.split("-Q");
+    const startM = (Number(q) - 1) * 3 + 1;
+    const endM = startM + 2;
+    return { start: `${y}-${pad(startM)}-01`, end: `${y}-${pad(endM)}-${pad(lastDay(Number(y), endM))}` };
+  }
+  const [y, m] = period.split("-");
+  return { start: `${y}-${m}-01`, end: `${y}-${m}-${pad(lastDay(Number(y), Number(m)))}` };
+}
+
 function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
   const [basis, setBasis] = useState<ComparisonBasis>("yoy");
   const [scope, setScope] = useState<"all" | "selection">("all");
   const [limit, setLimit] = useState("12");
   const [trend, setTrend] = useState<"all" | "up" | "down">("all");
+  const [windowMode, setWindowMode] = useState<"auto" | "custom">("auto");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const chartRef = useRef<HTMLDivElement | null>(null);
+
+  const dateError =
+    windowMode === "custom" && customFrom && customTo && customFrom > customTo
+      ? "Start date must be on or before the end date."
+      : "";
 
   const points = useMemo(() => {
     const base = comparison[scope][basis];
-    const filtered = base.filter((p) =>
+    let filtered = base.filter((p) =>
       trend === "all" ? true : trend === "up" ? p.delta > 0 : p.delta < 0,
     );
+    if (windowMode === "custom" && !dateError && (customFrom || customTo)) {
+      filtered = filtered.filter((p) => {
+        const { start, end } = periodRange(basis, p.period);
+        if (customFrom && end < customFrom) return false;
+        if (customTo && start > customTo) return false;
+        return true;
+      });
+      return filtered;
+    }
     const n = Number(limit);
     return Number.isFinite(n) && n > 0 ? filtered.slice(-n) : filtered;
-  }, [comparison, scope, basis, limit, trend]);
+  }, [comparison, scope, basis, limit, trend, windowMode, customFrom, customTo, dateError]);
+
 
   const totals = useMemo(() => {
     const current = points.reduce((s, p) => s + p.current, 0);
