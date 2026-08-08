@@ -71,6 +71,23 @@ const PIE_COLORS = [
   "var(--color-destructive)",
 ];
 
+const SERIES_COLORS = [
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#06B6D4",
+  "#F97316",
+  "#EC4899",
+];
+
+const SERIES_LABELS: Record<SeriesBy, string> = {
+  none: "None",
+  companyCode: "Company code",
+  profitCentre: "Profit centre",
+};
+
 function inr(value: number) {
   if (Math.abs(value) >= 10_000_000) return `${(value / 10_000_000).toFixed(2)} Cr`;
   if (Math.abs(value) >= 100_000) return `${(value / 100_000).toFixed(2)} L`;
