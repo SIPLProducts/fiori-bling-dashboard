@@ -62,13 +62,21 @@ const REPORT_ROLES = {
   suppliers: ["admin", "buyer", "viewer"],
 } as const satisfies Record<string, readonly AppRole[]>;
 
+type RoleReader = {
+  from: (table: "user_roles") => {
+    select: (columns: "role") => {
+      eq: (column: "user_id", value: string) => PromiseLike<{ data: { role: AppRole }[] | null }>;
+    };
+  };
+};
+
 async function assertReportAccess(
-  supabase: { from: (t: "user_roles") => any },
+  supabase: RoleReader,
   userId: string,
   report: keyof typeof REPORT_ROLES,
 ) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+  const roles = (data ?? []).map((r) => r.role);
   const allowed = REPORT_ROLES[report] as readonly AppRole[];
   if (!roles.some((role) => allowed.includes(role))) throw new Error("FORBIDDEN_REPORT");
   return roles;
