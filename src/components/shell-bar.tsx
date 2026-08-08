@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, HelpCircle, LogOut, Menu, Search, User } from "lucide-react";
+import { navForRoles } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
