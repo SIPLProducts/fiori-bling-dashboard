@@ -293,6 +293,13 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
         </p>
       </div>
 
+      {dateError ? <p className="mb-2 text-xs text-destructive">{dateError}</p> : null}
+      {!dateError && windowMode === "custom" && points.length === 0 ? (
+        <p className="mb-2 text-xs text-muted-foreground">No {BASIS_LABELS[basis]} periods fall in the selected window.</p>
+      ) : null}
+
+
+
       <div ref={chartRef} className="bg-card">
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={points}>
