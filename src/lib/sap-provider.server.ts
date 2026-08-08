@@ -145,7 +145,7 @@ export async function getModuleReportData(key: string): Promise<ModuleReport | n
   return moduleReport(key);
 }
 
-/** ZFISALES sales-register KPIs surfaced as launchpad tiles. */
+/** Sales-register KPIs surfaced as launchpad tiles. */
 function salesRegisterKpis() {
 
   const revenue = SALES_ROWS.reduce((s, r) => s + r.amount, 0);
@@ -155,7 +155,7 @@ function salesRegisterKpis() {
     zfi_sales_revenue: {
       value: Math.round((revenue / 10_000_000) * 100) / 100,
       unit: "Cr INR",
-      footer: "Billed revenue (ZFISALES)",
+      footer: "Billed revenue",
     },
     zfi_sales_trend: {
       value: new Set(SALES_ROWS.map((r) => r.docNo)).size,
