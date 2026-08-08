@@ -14,11 +14,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ReportShell, Panel } from "@/components/report-shell";
+import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getModuleReport } from "@/lib/sap.functions";
-import { findModule } from "@/lib/sap-modules";
+import { findModule, canAccessModule } from "@/lib/sap-modules";
+import { useLaunchpad } from "@/lib/use-launchpad";
 
 export const Route = createFileRoute("/_authenticated/reports/module/$module")({
   head: ({ params }) => {
@@ -54,11 +55,14 @@ function ModuleReportPage() {
   const { module } = Route.useParams();
   const def = findModule(module)!;
   const fetchReport = useServerFn(getModuleReport);
+  const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
+  const allowed = canAccessModule(module, launchpad?.roles);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["module-report", module],
     queryFn: () => fetchReport({ data: { module } }),
+    enabled: allowed,
   });
 
   const report = data?.report ?? null;
@@ -82,7 +86,9 @@ function ModuleReportPage() {
       description={def.description}
       providerMode={data?.providerMode}
     >
-      {isLoading || !report ? (
+      {!rolesLoading && !allowed ? (
+        <AccessDenied area={`${def.code} — ${def.title}`} />
+      ) : isLoading || !report ? (
         <div className="grid gap-4 md:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24" />

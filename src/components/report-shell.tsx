@@ -58,3 +58,21 @@ export function Panel({
     </section>
   );
 }
+
+export function AccessDenied({ area }: { area: string }) {
+  return (
+    <section className="rounded-md border border-border bg-card p-8 text-center shadow-tile">
+      <h2 className="text-lg font-medium text-card-foreground">Not authorised</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        Your role does not include access to {area}. Ask a portal administrator to grant you the
+        required role.
+      </p>
+      <Link
+        to="/launchpad"
+        className="mt-4 inline-flex items-center gap-1 rounded-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+      >
+        Back to launchpad
+      </Link>
+    </section>
+  );
+}

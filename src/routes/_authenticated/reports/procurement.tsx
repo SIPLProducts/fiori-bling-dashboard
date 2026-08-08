@@ -16,7 +16,9 @@ import {
   YAxis,
 } from "recharts";
 import { getProcurementOverview } from "@/lib/sap.functions";
-import { Panel, ReportShell } from "@/components/report-shell";
+import { Panel, ReportShell, AccessDenied } from "@/components/report-shell";
+import { canAccessPath } from "@/lib/nav";
+import { useLaunchpad } from "@/lib/use-launchpad";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/reports/procurement")({
@@ -49,9 +51,12 @@ const money = (value: number) =>
 
 function ProcurementOverview() {
   const fetchOverview = useServerFn(getProcurementOverview);
+  const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
+  const allowed = canAccessPath("/reports/procurement", launchpad?.roles);
   const { data, isLoading } = useQuery({
     queryKey: ["procurement-overview"],
     queryFn: () => fetchOverview(),
+    enabled: allowed,
   });
 
   const totalSpend = data?.trend.reduce((sum, point) => sum + point.spend, 0) ?? 0;
@@ -63,7 +68,9 @@ function ProcurementOverview() {
       description="Spend, savings and supplier concentration across the last 12 months."
       providerMode={data?.providerMode}
     >
-      {isLoading ? (
+      {!rolesLoading && !allowed ? (
+        <AccessDenied area="this report" />
+      ) : isLoading ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <Skeleton className="h-80 rounded-md lg:col-span-2" />
           <Skeleton className="h-80 rounded-md" />

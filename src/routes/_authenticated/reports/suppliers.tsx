@@ -9,7 +9,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { getSupplierReport } from "@/lib/sap.functions";
-import { Panel, ReportShell } from "@/components/report-shell";
+import { Panel, ReportShell, AccessDenied } from "@/components/report-shell";
+import { canAccessPath } from "@/lib/nav";
+import { useLaunchpad } from "@/lib/use-launchpad";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/reports/suppliers")({
@@ -37,9 +39,12 @@ function scoreTone(score: number) {
 
 function SupplierReport() {
   const fetchReport = useServerFn(getSupplierReport);
+  const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
+  const allowed = canAccessPath("/reports/suppliers", launchpad?.roles);
   const { data, isLoading } = useQuery({
     queryKey: ["supplier-scorecards"],
     queryFn: () => fetchReport(),
+    enabled: allowed,
   });
 
   return (
@@ -48,7 +53,9 @@ function SupplierReport() {
       description="Evaluation results per supplier across quality, delivery and price dimensions."
       providerMode={data?.providerMode}
     >
-      {isLoading ? (
+      {!rolesLoading && !allowed ? (
+        <AccessDenied area="this report" />
+      ) : isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-72 rounded-md" />
