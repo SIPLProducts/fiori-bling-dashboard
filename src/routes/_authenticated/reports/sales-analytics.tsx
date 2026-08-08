@@ -334,37 +334,80 @@ function SalesAnalyticsPage() {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <Panel title="Revenue by posting month" className="lg:col-span-2">
+                <Panel
+                  title={
+                    data.series.keys.length
+                      ? `Revenue by posting month — ${SERIES_LABELS[data.series.dimension]}`
+                      : "Revenue by posting month"
+                  }
+                  className="lg:col-span-2"
+                >
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={data.monthly}>
-                      <defs>
-                        <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-                      <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-                      <Tooltip
-                        formatter={(value: number) => `${inr(value)} INR`}
-                        contentStyle={{
-                          background: "var(--color-card)",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: 6,
-                          fontSize: 12,
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area
-                        type="monotone"
-                        name="Revenue"
-                        dataKey="revenue"
-                        stroke="var(--color-primary)"
-                        strokeWidth={2}
-                        fill="url(#sdFill)"
-                      />
-                    </AreaChart>
+                    {data.series.keys.length ? (
+                      <LineChart data={data.series.monthly}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <Tooltip
+                          formatter={(value: number, name: string) => [
+                            `${inr(value)} INR`,
+                            data.series.keyLabels[name] ?? name,
+                          ]}
+                          contentStyle={{
+                            background: "var(--color-card)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Legend
+                          formatter={(name) => data.series.keyLabels[name] ?? name}
+                          wrapperStyle={{ fontSize: 12 }}
+                        />
+                        {data.series.keys.map((key, i) => (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={key}
+                            stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4 }}
+                          />
+                        ))}
+                      </LineChart>
+                    ) : (
+                      <AreaChart data={data.monthly}>
+                        <defs>
+                          <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
+                            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis tickFormatter={inr} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                        <Tooltip
+                          formatter={(value: number) => `${inr(value)} INR`}
+                          contentStyle={{
+                            background: "var(--color-card)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area
+                          type="monotone"
+                          name="Revenue"
+                          dataKey="revenue"
+                          stroke="var(--color-primary)"
+                          strokeWidth={2}
+                          fill="url(#sdFill)"
+                        />
+                      </AreaChart>
+                    )}
                   </ResponsiveContainer>
                 </Panel>
 
