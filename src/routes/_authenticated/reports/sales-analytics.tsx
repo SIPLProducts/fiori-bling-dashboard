@@ -780,6 +780,16 @@ function SalesAnalyticsPage() {
                         {data.bySalesType.map((entry, i) => (
                           <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                         ))}
+                        <LabelList
+                          dataKey="value"
+                          nameKey="name"
+                          formatter={(_v: number, entry: { name: string; percent?: number }) =>
+                            `${entry.name}: ${Math.round((entry.percent ?? 0) * 100)}%`
+                          }
+                          position="outside"
+                          fontSize={10}
+                          fill="var(--color-foreground)"
+                        />
                       </Pie>
                       <Tooltip
                         formatter={(value: number) => `${inr(value)} INR`}
