@@ -440,9 +440,21 @@ function SalesAnalyticsPage() {
                   </ResponsiveContainer>
                 </Panel>
 
-                <Panel title="Revenue by profit centre">
+                <Panel
+                  title={
+                    data.series.dimension === "companyCode"
+                      ? "Revenue by company code"
+                      : data.series.dimension === "profitCentre"
+                        ? "Revenue by profit centre"
+                        : "Revenue by profit centre"
+                  }
+                >
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={data.byProfitCentre} layout="vertical" margin={{ left: 24 }}>
+                    <BarChart
+                      data={data.series.keys.length ? data.series.byDimension : data.byProfitCentre}
+                      layout="vertical"
+                      margin={{ left: 24 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                       <XAxis type="number" tickFormatter={inr} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                       <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
