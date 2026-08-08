@@ -9,6 +9,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -316,8 +317,12 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
               }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="previous" name="Previous period" fill="var(--color-muted-foreground)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="current" name="Current period" fill="var(--color-primary)" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="previous" name="Previous period" fill="var(--color-muted-foreground)" radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="previous" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-muted-foreground)" />
+            </Bar>
+            <Bar dataKey="current" name="Current period" fill="var(--color-primary)" radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="current" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-foreground)" />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -698,7 +703,9 @@ function SalesAnalyticsPage() {
                             dot={false}
                             activeDot={{ r: 4 }}
                             hide={hiddenSeries.includes(key)}
-                          />
+                          >
+                            <LabelList dataKey={key} formatter={(v: number) => inr(v)} position="top" fontSize={9} fill={SERIES_COLORS[i % SERIES_COLORS.length]} />
+                          </Line>
                         ))}
 
                       </LineChart>
@@ -730,7 +737,9 @@ function SalesAnalyticsPage() {
                           stroke="var(--color-primary)"
                           strokeWidth={2}
                           fill="url(#sdFill)"
-                        />
+                        >
+                          <LabelList dataKey="revenue" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-foreground)" />
+                        </Area>
                       </AreaChart>
                     )}
                   </ResponsiveContainer>
@@ -767,6 +776,10 @@ function SalesAnalyticsPage() {
                         innerRadius={60}
                         outerRadius={100}
                         paddingAngle={2}
+                        label={(entry: { name: string; value: number; percent?: number }) =>
+                          `${entry.name}: ${Math.round((entry.percent ?? 0) * 100)}%`
+                        }
+                        labelLine
                       >
                         {data.bySalesType.map((entry, i) => (
                           <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -825,7 +838,9 @@ function SalesAnalyticsPage() {
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]} />
+                      <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]}>
+                        <LabelList dataKey="value" formatter={(v: number) => inr(v)} position="right" fontSize={10} fill="var(--color-foreground)" />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                   </div>
@@ -865,7 +880,9 @@ function SalesAnalyticsPage() {
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="value" fill="var(--color-success)" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="value" fill="var(--color-success)" radius={[3, 3, 0, 0]}>
+                        <LabelList dataKey="value" formatter={(v: number) => inr(v)} position="top" fontSize={10} fill="var(--color-foreground)" />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                   </div>
