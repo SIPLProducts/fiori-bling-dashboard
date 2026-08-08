@@ -145,7 +145,13 @@ export function TileCard({
       </Link>
     );
   }
-  if (to === "/reports/procurement" || to === "/reports/suppliers" || to === "/admin/users") {
+  if (
+    to === "/reports/procurement" ||
+    to === "/reports/suppliers" ||
+    to === "/reports/sales-analytics" ||
+    to === "/admin/users"
+  ) {
+
     return (
       <Link to={to} className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
         {body}

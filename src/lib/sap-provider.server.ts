@@ -1,3 +1,4 @@
+import { SALES_ROWS } from "./zfisales-data.server";
 /**
  * SAP data provider (server-only).
  *
@@ -144,8 +145,29 @@ export async function getModuleReportData(key: string): Promise<ModuleReport | n
   return moduleReport(key);
 }
 
+/** ZFISALES sales-register KPIs surfaced as launchpad tiles. */
+function salesRegisterKpis() {
+
+  const revenue = SALES_ROWS.reduce((s, r) => s + r.amount, 0);
+  const months = new Map<string, number>();
+  for (const row of SALES_ROWS) months.set(row.month, (months.get(row.month) ?? 0) + row.amount);
+  return {
+    zfi_sales_revenue: {
+      value: Math.round((revenue / 10_000_000) * 100) / 100,
+      unit: "Cr INR",
+      footer: "Billed revenue (ZFISALES)",
+    },
+    zfi_sales_trend: {
+      value: new Set(SALES_ROWS.map((r) => r.docNo)).size,
+      footer: "Billing documents by month",
+      trend: [...months.values()].map((v) => Math.round(v / 100000)),
+    },
+  };
+}
+
 export async function getKpiValues() {
-  if (providerMode() === "mock") return { ...kpiValues(), ...moduleKpiValues() };
+  if (providerMode() === "mock") return { ...kpiValues(), ...moduleKpiValues(), ...salesRegisterKpis() };
+
   const [trend, items, suppliers] = await Promise.all([
     getSpendTrend(),
     getPurchaseOrderItems(),
@@ -161,5 +183,6 @@ export async function getKpiValues() {
       unit: "/ 100",
     },
     ...moduleKpiValues(),
+    ...salesRegisterKpis(),
   } as Record<string, { value: number; unit?: string; footer?: string; trend?: number[] }>;
 }

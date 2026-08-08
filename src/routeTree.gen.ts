@@ -16,6 +16,7 @@ import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
 import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
+import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
 
@@ -55,6 +56,12 @@ const AuthenticatedReportsPurchaseOrdersRoute =
     path: '/reports/purchase-orders',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSalesAnalyticsRoute =
+  AuthenticatedReportsSalesAnalyticsRouteImport.update({
+    id: '/reports/sales-analytics',
+    path: '/reports/sales-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSuppliersRoute =
   AuthenticatedReportsSuppliersRouteImport.update({
     id: '/reports/suppliers',
@@ -75,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
@@ -85,6 +93,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
@@ -97,6 +106,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
+  '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
 }
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
+    | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
   fileRoutesByTo: FileRoutesByTo
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
+    | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
   id:
@@ -130,6 +142,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/reports/procurement'
     | '/_authenticated/reports/purchase-orders'
+    | '/_authenticated/reports/sales-analytics'
     | '/_authenticated/reports/suppliers'
     | '/_authenticated/reports/module/$module'
   fileRoutesById: FileRoutesById
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsPurchaseOrdersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sales-analytics': {
+      id: '/_authenticated/reports/sales-analytics'
+      path: '/reports/sales-analytics'
+      fullPath: '/reports/sales-analytics'
+      preLoaderRoute: typeof AuthenticatedReportsSalesAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/suppliers': {
       id: '/_authenticated/reports/suppliers'
       path: '/reports/suppliers'
@@ -213,6 +233,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
   AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
+  AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
   AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
 }
@@ -223,6 +244,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
   AuthenticatedReportsPurchaseOrdersRoute:
     AuthenticatedReportsPurchaseOrdersRoute,
+  AuthenticatedReportsSalesAnalyticsRoute:
+    AuthenticatedReportsSalesAnalyticsRoute,
   AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
 }
