@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -114,6 +114,8 @@ function SalesAnalyticsPage() {
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
 
+  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
+
   const monthlyRef = useRef<HTMLDivElement | null>(null);
   const salesTypeRef = useRef<HTMLDivElement | null>(null);
   const dimensionRef = useRef<HTMLDivElement | null>(null);
@@ -126,6 +128,10 @@ function SalesAnalyticsPage() {
   });
 
   const options = data?.options;
+
+  useEffect(() => {
+    setHiddenSeries([]);
+  }, [applied.seriesBy, applied.companyCodes, applied.profitCentres]);
 
   const monthlyExportRows = useMemo(() => {
     if (!data) return [] as Array<Record<string, unknown>>;
