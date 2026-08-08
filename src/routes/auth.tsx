@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ensureDemoUser, DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo.functions";
+import { ensureDemoUser } from "@/lib/demo.functions";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
 
 
 export const Route = createFileRoute("/auth")({
