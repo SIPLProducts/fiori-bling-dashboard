@@ -30,7 +30,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics } from "@/lib/zfisales.functions";
-import type { SalesFilters, SalesLine, SeriesBy } from "@/lib/zfisales-types";
+import type {
+  ComparisonBasis,
+  SalesComparison,
+  SalesFilters,
+  SalesLine,
+  SeriesBy,
+} from "@/lib/zfisales-types";
 
 export const Route = createFileRoute("/_authenticated/reports/sales-analytics")({
   head: () => {
@@ -106,6 +112,181 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+const BASIS_LABELS: Record<ComparisonBasis, string> = {
+  yoy: "Year over year (YoY)",
+  qoq: "Quarter over quarter (QoQ)",
+  mom: "Month over month (MoM)",
+};
+
+function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
+  const [basis, setBasis] = useState<ComparisonBasis>("yoy");
+  const [scope, setScope] = useState<"all" | "selection">("all");
+  const [limit, setLimit] = useState("12");
+  const [trend, setTrend] = useState<"all" | "up" | "down">("all");
+  const chartRef = useRef<HTMLDivElement | null>(null);
+
+  const points = useMemo(() => {
+    const base = comparison[scope][basis];
+    const filtered = base.filter((p) =>
+      trend === "all" ? true : trend === "up" ? p.delta > 0 : p.delta < 0,
+    );
+    const n = Number(limit);
+    return Number.isFinite(n) && n > 0 ? filtered.slice(-n) : filtered;
+  }, [comparison, scope, basis, limit, trend]);
+
+  const totals = useMemo(() => {
+    const current = points.reduce((s, p) => s + p.current, 0);
+    const previous = points.reduce((s, p) => s + p.previous, 0);
+    return {
+      current,
+      previous,
+      deltaPct: previous ? Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10 : null,
+    };
+  }, [points]);
+
+  const selectCls = "h-8 rounded-sm border border-input bg-background px-2 text-xs text-foreground";
+
+  return (
+    <Panel
+      title={`Period comparison — ${BASIS_LABELS[basis]}`}
+      actions={
+        <ChartExportActions
+          rows={points.map((p) => ({
+            Period: p.label,
+            "Compared with": p.previousLabel,
+            Current: p.current,
+            Previous: p.previous,
+            Delta: p.delta,
+            "Delta %": p.deltaPct ?? "",
+            Documents: p.documents,
+          }))}
+          filename={`comparison-${basis}-${scope}`}
+          containerRef={chartRef}
+        />
+      }
+    >
+      <div className="mb-3 flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          Comparison
+          <select value={basis} onChange={(e) => setBasis(e.target.value as ComparisonBasis)} className={selectCls}>
+            <option value="yoy">YoY — year over year</option>
+            <option value="qoq">QoQ — quarter over quarter</option>
+            <option value="mom">MoM — month over month</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          Period scope
+          <select value={scope} onChange={(e) => setScope(e.target.value as "all" | "selection")} className={selectCls}>
+            <option value="all">All history (ignores FY / posting dates)</option>
+            <option value="selection">Current selection only</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          Periods shown
+          <select value={limit} onChange={(e) => setLimit(e.target.value)} className={selectCls}>
+            <option value="4">Last 4</option>
+            <option value="6">Last 6</option>
+            <option value="12">Last 12</option>
+            <option value="0">All</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          Movement
+          <select value={trend} onChange={(e) => setTrend(e.target.value as "all" | "up" | "down")} className={selectCls}>
+            <option value="all">All periods</option>
+            <option value="up">Growth only</option>
+            <option value="down">Decline only</option>
+          </select>
+        </label>
+        <p className="ml-auto text-xs text-muted-foreground">
+          {inr(totals.current)} vs {inr(totals.previous)} INR ·{" "}
+          <span
+            className={
+              totals.deltaPct === null
+                ? "text-muted-foreground"
+                : totals.deltaPct >= 0
+                  ? "text-success"
+                  : "text-destructive"
+            }
+          >
+            {totals.deltaPct === null ? "—" : `${totals.deltaPct > 0 ? "+" : ""}${totals.deltaPct}%`}
+          </span>
+        </p>
+      </div>
+
+      <div ref={chartRef} className="bg-card">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={points}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+            <YAxis tickFormatter={inr} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+            <Tooltip
+              formatter={(value: number, name: string) => [`${inr(value)} INR`, name]}
+              contentStyle={{
+                background: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey="previous" name="Previous period" fill="var(--color-muted-foreground)" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="current" name="Current period" fill="var(--color-primary)" radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-3 max-h-64 overflow-auto rounded-sm border border-border">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-muted/60">
+            <tr className="text-left text-muted-foreground">
+              <th className="px-2 py-1.5 font-medium">Period</th>
+              <th className="px-2 py-1.5 font-medium">Compared with</th>
+              <th className="px-2 py-1.5 text-right font-medium">Current</th>
+              <th className="px-2 py-1.5 text-right font-medium">Previous</th>
+              <th className="px-2 py-1.5 text-right font-medium">Δ</th>
+              <th className="px-2 py-1.5 text-right font-medium">Δ %</th>
+              <th className="px-2 py-1.5 text-right font-medium">Documents</th>
+            </tr>
+          </thead>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.period} className="border-t border-border/60">
+                <td className="px-2 py-1.5">{p.label}</td>
+                <td className="px-2 py-1.5 text-muted-foreground">{p.previousLabel}</td>
+                <td className="px-2 py-1.5 text-right tabular">{inr(p.current)}</td>
+                <td className="px-2 py-1.5 text-right tabular">{inr(p.previous)}</td>
+                <td
+                  className={`px-2 py-1.5 text-right tabular ${p.delta >= 0 ? "text-success" : "text-destructive"}`}
+                >
+                  {p.delta > 0 ? "+" : ""}
+                  {inr(p.delta)}
+                </td>
+                <td
+                  className={`px-2 py-1.5 text-right tabular ${
+                    p.deltaPct === null ? "text-muted-foreground" : p.deltaPct >= 0 ? "text-success" : "text-destructive"
+                  }`}
+                >
+                  {p.deltaPct === null ? "—" : `${p.deltaPct > 0 ? "+" : ""}${p.deltaPct}%`}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular">{p.documents}</td>
+              </tr>
+            ))}
+            {points.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-2 py-4 text-center text-muted-foreground">
+                  No periods match this comparison.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
 
 function SalesAnalyticsPage() {
   const fetchAnalytics = useServerFn(getSalesAnalytics);
@@ -360,6 +541,10 @@ function SalesAnalyticsPage() {
                   </p>
                 </Panel>
               </div>
+
+              <ComparisonPanel comparison={data.comparison} />
+
+
 
               <div className="grid gap-4 lg:grid-cols-3">
                 <Panel
