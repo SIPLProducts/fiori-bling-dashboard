@@ -50,8 +50,10 @@ function PurchaseOrderReport() {
     queryKey: ["po-items"],
     queryFn: () => fetchReport(),
   });
+  const { focus } = Route.useSearch();
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(focus ?? "all");
+
 
   const rows = useMemo(() => {
     const items = data?.items ?? [];
