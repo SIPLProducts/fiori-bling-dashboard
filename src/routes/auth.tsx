@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ensureDemoUser, DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo.functions";
 
 
 export const Route = createFileRoute("/auth")({
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const provisionDemo = useServerFn(ensureDemoUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,6 +47,25 @@ function AuthPage() {
     }
     navigate({ to: "/launchpad" });
   }
+
+  async function handleDemoLogin() {
+    setBusy(true);
+    try {
+      const creds = await provisionDemo({ data: undefined });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+      if (error) throw error;
+      toast.success("Signed in as Demo User");
+      navigate({ to: "/launchpad" });
+    } catch {
+      toast.error("Demo sign-in failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
