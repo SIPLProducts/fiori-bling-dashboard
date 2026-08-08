@@ -64,7 +64,15 @@ function formatValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+/** KPI tiles drill into the PO report pre-filtered on the matching status. */
+const PO_FOCUS: Record<string, string> = {
+  po_overdue: "Overdue",
+  pending_confirmations: "Open",
+  pending_approvals: "Blocked",
+};
+
 export function TileCard({
+
   tile,
   kpi,
 }: {
@@ -73,6 +81,7 @@ export function TileCard({
 }) {
   const Icon = ICONS[tile.icon] ?? Grid3x3;
   const to = tile.target_path ?? "/launchpad";
+
 
   const body = (
     <div className="flex h-[152px] w-full flex-col justify-between rounded-md border border-border bg-card p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-tile-hover">
@@ -112,7 +121,19 @@ export function TileCard({
     </div>
   );
 
-  if (to === "/reports/procurement" || to === "/reports/purchase-orders" || to === "/reports/suppliers") {
+  if (to === "/reports/purchase-orders") {
+    const focus = PO_FOCUS[tile.kpi_key ?? ""];
+    return (
+      <Link
+        to="/reports/purchase-orders"
+        search={focus ? { focus } : {}}
+        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {body}
+      </Link>
+    );
+  }
+  if (to === "/reports/procurement" || to === "/reports/suppliers" || to === "/admin/users") {
     return (
       <Link to={to} className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
         {body}
@@ -120,4 +141,5 @@ export function TileCard({
     );
   }
   return <div>{body}</div>;
+
 }

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
+import { useLaunchpad } from "@/lib/use-launchpad";
 import type { ReactNode } from "react";
 
 export function ReportShell({
@@ -14,9 +15,11 @@ export function ReportShell({
   providerMode?: string | undefined;
   children: ReactNode;
 }) {
+  const { data: launchpad } = useLaunchpad();
   return (
     <div className="min-h-screen bg-background">
-      <ShellBar title={title} />
+      <ShellBar title={title} displayName={launchpad?.profile?.display_name} roles={launchpad?.roles} />
+
       <div className="border-b border-border bg-card">
         <div className="mx-auto max-w-[1400px] px-4 py-4">
           <Link

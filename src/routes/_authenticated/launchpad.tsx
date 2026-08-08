@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getLaunchpad } from "@/lib/sap.functions";
 import { ShellBar } from "@/components/shell-bar";
 import { TileCard } from "@/components/tile-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLaunchpad } from "@/lib/use-launchpad";
+import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
+
 
 export const Route = createFileRoute("/_authenticated/launchpad")({
   head: () => ({
@@ -25,23 +25,30 @@ export const Route = createFileRoute("/_authenticated/launchpad")({
 });
 
 function Launchpad() {
-  const fetchLaunchpad = useServerFn(getLaunchpad);
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["launchpad"],
-    queryFn: () => fetchLaunchpad(),
-  });
+  const { data, isLoading, error } = useLaunchpad();
   const [activeGroup, setActiveGroup] = useState<string>("all");
 
-  const groups = data?.groups ?? [];
+  // Only show groups that actually contain tiles this role may see, ordered by role focus.
+  const groups = useMemo(() => {
+    if (!data) return [];
+    const withTiles = data.groups.filter((group) =>
+      data.tiles.some((tile) => tile.group_key === group.key),
+    );
+    return orderGroupsForRoles(withTiles, data.roles);
+  }, [data]);
+
   const tiles = useMemo(() => {
     if (!data) return [];
     if (activeGroup === "all") return data.tiles;
     return data.tiles.filter((tile) => tile.group_key === activeGroup);
   }, [data, activeGroup]);
 
+  const role = primaryRole(data?.roles);
+
   return (
     <div className="min-h-screen bg-background">
       <ShellBar title="Home" displayName={data?.profile?.display_name} roles={data?.roles} />
+
 
       <div className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4">
@@ -72,6 +79,16 @@ function Launchpad() {
             Your account has no role assigned yet. Ask an administrator to grant you access.
           </div>
         ) : null}
+
+        {role ? (
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="rounded-sm bg-primary/10 px-2 py-1 text-xs font-medium tracking-wide text-primary uppercase">
+              {role}
+            </span>
+            <span className="text-sm text-muted-foreground">{ROLE_HEADLINE[role]}</span>
+          </div>
+        ) : null}
+
 
         {isLoading ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(212px,1fr))] gap-4">
