@@ -776,19 +776,14 @@ function SalesAnalyticsPage() {
                         innerRadius={60}
                         outerRadius={100}
                         paddingAngle={2}
+                        label={(entry: { name: string; value: number; percent?: number }) =>
+                          `${entry.name}: ${Math.round((entry.percent ?? 0) * 100)}%`
+                        }
+                        labelLine
                       >
                         {data.bySalesType.map((entry, i) => (
                           <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                         ))}
-                        <LabelList
-                          dataKey="value"
-                          formatter={(value: number, _name: string, props: { percent?: number; payload?: { name: string } }) =>
-                            `${props?.payload?.name ?? _name}: ${Math.round((props?.percent ?? 0) * 100)}%`
-                          }
-                          position="outside"
-                          fontSize={10}
-                          fill="var(--color-foreground)"
-                        />
                       </Pie>
                       <Tooltip
                         formatter={(value: number) => `${inr(value)} INR`}
