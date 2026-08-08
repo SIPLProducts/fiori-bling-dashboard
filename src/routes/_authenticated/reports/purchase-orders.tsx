@@ -17,8 +17,9 @@ import {
 
 export const Route = createFileRoute("/_authenticated/reports/purchase-orders")({
   validateSearch: (search: Record<string, unknown>) => ({
-    focus: typeof search.focus === "string" ? search.focus : undefined,
+    focus: typeof search["focus"] === "string" ? (search["focus"] as string) : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Purchase Order Items — Nexus Analytics" },
