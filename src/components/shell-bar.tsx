@@ -17,8 +17,8 @@ export function ShellBar({
   roles,
 }: {
   title: string;
-  displayName?: string | null;
-  roles?: string[];
+  displayName?: string | null | undefined;
+  roles?: string[] | undefined;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
