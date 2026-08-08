@@ -1,0 +1,1 @@
+delete from public.tiles where id in ('6865292b-dad6-4d09-852a-b25c75bb8e79','7aafed1d-e2b3-4497-9833-8ff1a3e954b7');
