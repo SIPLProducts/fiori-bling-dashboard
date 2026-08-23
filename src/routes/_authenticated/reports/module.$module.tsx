@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Area,
   AreaChart,
@@ -54,7 +53,7 @@ function compact(value: number) {
 function ModuleReportPage() {
   const { module } = Route.useParams();
   const def = findModule(module)!;
-  const fetchReport = useServerFn(getModuleReport);
+  const fetchReport = getModuleReport;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
   const allowed = canAccessModule(module, launchpad?.roles);
   const [search, setSearch] = useState("");

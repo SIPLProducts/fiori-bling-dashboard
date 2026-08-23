@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -38,7 +37,7 @@ function scoreTone(score: number) {
 }
 
 function SupplierReport() {
-  const fetchReport = useServerFn(getSupplierReport);
+  const fetchReport = getSupplierReport;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
   const allowed = canAccessPath("/reports/suppliers", launchpad?.roles);
   const { data, isLoading } = useQuery({
