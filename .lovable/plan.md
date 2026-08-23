@@ -1,99 +1,82 @@
-# Two exact causes found in the logs
+# Remaining blocker: Kong's `kong.yml` is a directory
 
-## 1. Kong: `kong.yml: Is a directory`
+Good progress — migrations applied cleanly (all 7 files, tables + seed rows
+created), so the database and its password are now correct.
 
-The file `/opt/MIS_Projects/Quality/backend/supabase/kong.yml` does not exist.
-When a bind-mount source is missing, Docker silently creates an empty
-**directory** with that name — Kong then tries to parse a directory and dies.
-That is the whole reason `:8000` times out and `/supabase/` returns 502.
-
-## 2. Auth + REST: wrong database password
+The only thing still broken is Kong, and its log named the cause exactly:
 
 ```
-password authentication failed for user "authenticator"
-password authentication failed for user "supabase_auth_admin"
+error parsing declarative config file /home/kong/kong.yml:
+/home/kong/kong.yml: Is a directory
 ```
 
-The Postgres volume `q_db_data` was initialised with an **earlier**
-`POSTGRES_PASSWORD`. Changing `.env` afterwards does not change the passwords
-already stored in the volume, so every service now presents the wrong one.
-Since the Quality database is empty (migrations never ran), the clean fix is to
-wipe the volume and let it initialise with the current password.
+`/opt/MIS_Projects/Quality/backend/supabase/kong.yml` does not exist as a file.
+When a bind-mount source is missing, Docker creates an empty **directory** with
+that name; Kong tries to parse it and crash-loops. That is why
+`127.0.0.1:8000` gives `000` and Nginx `/supabase/` gives `502` — nothing is
+listening behind them.
 
-## Fix — run in this order
+## Fix
 
-**Step A — put the real kong.yml in place.**
+**Step 1 — remove the fake directory.**
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
-ls -la supabase/            # you will see kong.yml listed as a DIRECTORY
-rmdir supabase/kong.yml     # remove the empty folder Docker created
+docker compose --env-file .env -f docker-compose.quality.yml stop kong
+ls -la supabase/            # kong.yml shows as a directory
+rmdir supabase/kong.yml
 ```
 
-Now upload the repo file `deploy/docker/supabase/kong.yml` to
-`/opt/MIS_Projects/Quality/backend/supabase/kong.yml` and confirm it is a file:
+If `rmdir` complains the directory is not empty, use
+`rm -rf supabase/kong.yml`.
+
+**Step 2 — upload the real file.** Copy the repo file
+`deploy/docker/supabase/kong.yml` to
+`/opt/MIS_Projects/Quality/backend/supabase/kong.yml`, then confirm:
 
 ```bash
-file supabase/kong.yml      # must say "ASCII text", not "directory"
-head -3 supabase/kong.yml   # must start with _format_version: "2.1"
+file supabase/kong.yml      # "ASCII text" — must NOT say "directory"
+head -3 supabase/kong.yml   # starts with: _format_version: "2.1"
 ```
 
-**Step B — check `.env` is final before wiping.** Confirm `POSTGRES_PASSWORD`,
-`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`, `DASHBOARD_USERNAME`,
-`DASHBOARD_PASSWORD` all hold real values with no `change-me`:
+**Step 3 — recreate Kong only.**
 
 ```bash
-grep -c 'change-me' .env    # must print 0
+docker compose --env-file .env -f docker-compose.quality.yml up -d --force-recreate kong
+sleep 10
+docker logs mis_q_kong --tail 20
 ```
 
-`ANON_KEY` and `SERVICE_ROLE_KEY` must be JWTs signed with this exact
-`JWT_SECRET` — if you regenerate `JWT_SECRET` you must regenerate both keys.
+No `init_by_lua error` should appear. If Kong still exits, the next likely
+message is about an empty consumer key — that means `ANON_KEY`,
+`SERVICE_ROLE_KEY`, `DASHBOARD_USERNAME` or `DASHBOARD_PASSWORD` is blank in
+`.env` (`grep -c 'change-me' .env` must print 0).
 
-**Step C — recreate the stack from scratch.**
+**Step 4 — verify the whole chain.**
 
 ```bash
-docker compose --env-file .env -f docker-compose.quality.yml down -v
-docker compose --env-file .env -f docker-compose.quality.yml up -d
-sleep 30
-docker compose --env-file .env -f docker-compose.quality.yml ps
+docker compose --env-file .env -f docker-compose.quality.yml ps        # all Up, none Restarting
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/       # 200 or 401
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/   # same
+docker logs mis_q_auth --tail 5                                        # no "fatal"
 ```
 
-`down -v` deletes `q_db_data` and `q_storage_data`. Safe here — the Quality
-database has no tables yet. Every container should now read **Up**, with no
-`Restarting`.
-
-**Step D — apply the migrations** (the mount path is fixed in the compose file
-you are about to upload, so re-upload `docker-compose.quality.yml` too if you
-have not):
-
-```bash
-docker compose --env-file .env -f docker-compose.quality.yml run --rm migrate
-```
-
-Expect seven `==> applying /migrations/20260808….sql` lines.
-
-**Step E — verify.**
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/      # 200 or 401
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/  # same
-docker logs mis_q_auth --tail 5                                              # no "fatal"
-```
-
-Then open `http://10.10.4.165/studio/` (basic-auth user `supabase`). Not
-`:8000` — that port is loopback-only by design.
+**Step 5 — open the portal.** `http://10.10.4.165/` for the app,
+`http://10.10.4.165/studio/` for Studio (basic-auth user `supabase`). Sign in
+with the demo account seeded by the migrations, or create your first user —
+the first user is granted the admin role automatically.
 
 ## Repo change
 
-Add a pre-flight section to `deploy/README.md`:
+Add a pre-flight checklist to `deploy/README.md` so this cannot recur:
 
-- The `supabase/kong.yml` bind mount must be a **file** before the first
-  `up -d`; if it is missing Docker creates a directory and Kong crash-loops with
+- Copy `supabase/kong.yml` into `backend/supabase/` **before** the first
+  `up -d`; a missing file becomes a directory and Kong fails with
   `kong.yml: Is a directory`.
-- Do not change `POSTGRES_PASSWORD` after the first start; a mismatch shows as
-  `password authentication failed for user "authenticator"` and requires
-  `down -v` to reset.
-- A short "check before first start" checklist covering both, plus the
-  migrations folder path.
+- Never change `POSTGRES_PASSWORD` after the first start — the volume keeps the
+  original; a mismatch shows as `password authentication failed for user
+  "authenticator"` and needs `down -v`.
+- Confirm the migrations folder resolves to `Quality/supabase/migrations`
+  (already fixed in the compose file).
 
 No application code changes.
