@@ -8,7 +8,7 @@ Generate or copy these from your local VS Code checkout, then upload via WinSCP:
 
 | Source in repo | Destination on server | What it is |
 | -------------- | --------------------- | ---------- |
-| `.output/` (after `npm run build`) | `Quality/frontend/` and `Production/frontend/` | Built TanStack Start app (HTML/JS/CSS/server bundle). |
+| `.output/` contents (after `npm run build`) | `Quality/frontend/dist/` and `Production/frontend/dist/` | Built TanStack Start app (HTML/JS/CSS/server bundle). |
 | `deploy/docker/Dockerfile` | `Quality/backend/` and `Production/backend/` | App runtime image build file. |
 | `deploy/docker/docker-compose.quality.yml` | `Quality/backend/docker-compose.yml` | Quality stack orchestration. |
 | `deploy/docker/docker-compose.production.yml` | `Production/backend/docker-compose.yml` | Production stack orchestration. |
@@ -21,10 +21,10 @@ Generate or copy these from your local VS Code checkout, then upload via WinSCP:
 
 ## What you do NOT need to copy
 
-- `deploy/docker/.dockerignore` — only used when building inside the repo; not needed on the server if you upload a pre-built `.output/`.
+- `deploy/docker/.dockerignore` — only used when building inside the repo; not needed on the server if you upload a pre-built `dist/`.
 - `deploy/README.md` — for reference only; already documented.
 - `node_modules/` — never upload; dependencies are installed at build time.
-- `src/`, `public/` — these are source files; the built app lives in `.output/`.
+- `src/`, `public/` — these are source files; the built app lives in `.output/` locally and is copied to `dist/` on the server.
 - Edge functions folder — this project has no edge functions.
 
 ## Is supabase the same as backend?
@@ -45,7 +45,8 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
 │   ├── mis-quality.conf
 │   └── mis-production.conf
 ├── Quality/
-│   ├── frontend/                 # .output/ contents (built app)
+│   ├── frontend/
+│   │   └── dist/                 # built app files copied from .output/
 │   ├── backend/
 │   │   ├── Dockerfile
 │   │   ├── docker-compose.yml    # renamed from docker-compose.quality.yml
@@ -55,7 +56,8 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
 │       ├── kong.yml
 │       └── migrations/*.sql
 └── Production/
-    ├── frontend/                 # .output/ contents (built app)
+    ├── frontend/
+    │   └── dist/                 # built app files copied from .output/
     ├── backend/
     │   ├── Dockerfile
     │   ├── docker-compose.yml    # renamed from docker-compose.production.yml
@@ -75,9 +77,9 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
    ```
    This creates `.output/` in your repo root.
 
-2. **Upload `.output/` contents**
-   - Copy everything inside `.output/` to `Quality/frontend/`.
-   - Copy the same contents to `Production/frontend/`.
+2. **Upload built app into `dist/`**
+   - Copy everything inside `.output/` to `Quality/frontend/dist/`.
+   - Copy the same contents to `Production/frontend/dist/`.
 
 3. **Upload Docker files**
    - Copy `deploy/docker/Dockerfile` to both `Quality/backend/` and `Production/backend/`.
@@ -104,6 +106,7 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
    docker compose up -d --build
    ```
 
-## Note on the docker-compose context path
+## Note on the Dockerfile
 
-The compose files in the repo assume the build context is the repo root. Since you are splitting files into `Quality/backend/` and `Production/backend/`, the `Dockerfile` must be able to find the `frontend/` folder one level up. The plan uses a relative path in the compose file so the app image builds from `../frontend/` as its source.
+The `Dockerfile` will be updated to copy the app from `../frontend/dist/` instead of the repo's `.output/` path, so it matches the server folder layout shown above.
+
