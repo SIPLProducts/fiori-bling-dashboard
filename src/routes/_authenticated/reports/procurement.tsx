@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Area,
   AreaChart,
@@ -50,7 +49,7 @@ const money = (value: number) =>
   new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 
 function ProcurementOverview() {
-  const fetchOverview = useServerFn(getProcurementOverview);
+  const fetchOverview = getProcurementOverview;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
   const allowed = canAccessPath("/reports/procurement", launchpad?.roles);
   const { data, isLoading } = useQuery({

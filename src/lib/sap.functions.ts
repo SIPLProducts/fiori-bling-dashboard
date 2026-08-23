@@ -1,6 +1,6 @@
-import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule } from "./sap-modules";
+import * as provider from "./sap-provider";
 
 export type AppRole = "admin" | "buyer" | "approver" | "viewer";
 
@@ -26,34 +26,42 @@ export type LaunchpadData = {
   providerMode: "mock" | "odata";
 };
 
-export const getLaunchpad = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<LaunchpadData> => {
-    const { supabase, userId } = context;
-    const provider = await import("./sap-provider.server");
+async function requireUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("NOT_AUTHENTICATED");
+  return data.user.id;
+}
 
-    const [rolesRes, profileRes, groupsRes, tilesRes, kpis] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("display_name, company, avatar_url").eq("id", userId).maybeSingle(),
-      supabase.from("tile_groups").select("key, title, sort_order").order("sort_order"),
-      supabase.from("tiles").select("*").order("sort_order"),
-      provider.getKpiValues(),
-    ]);
+async function rolesForUser(userId: string): Promise<AppRole[]> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return (data ?? []).map((r) => r.role as AppRole);
+}
 
-    const roles = (rolesRes.data ?? []).map((r) => r.role as AppRole);
-    const tiles = ((tilesRes.data ?? []) as TileRecord[]).filter((tile) =>
-      tile.allowed_roles.some((role) => roles.includes(role)),
-    );
+export async function getLaunchpad(): Promise<LaunchpadData> {
+  const userId = await requireUserId();
 
-    return {
-      roles,
-      profile: profileRes.data ?? null,
-      groups: groupsRes.data ?? [],
-      tiles,
-      kpis,
-      providerMode: provider.providerMode(),
-    };
-  });
+  const [rolesRes, profileRes, groupsRes, tilesRes, kpis] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.from("profiles").select("display_name, company, avatar_url").eq("id", userId).maybeSingle(),
+    supabase.from("tile_groups").select("key, title, sort_order").order("sort_order"),
+    supabase.from("tiles").select("*").order("sort_order"),
+    provider.getKpiValues(),
+  ]);
+
+  const roles = (rolesRes.data ?? []).map((r) => r.role as AppRole);
+  const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) =>
+    tile.allowed_roles.some((role) => roles.includes(role)),
+  );
+
+  return {
+    roles,
+    profile: profileRes.data ?? null,
+    groups: groupsRes.data ?? [],
+    tiles,
+    kpis,
+    providerMode: provider.providerMode(),
+  };
+}
 
 /** Roles allowed to read each report dataset — mirrors the launchpad tiles. */
 const REPORT_ROLES = {
@@ -62,63 +70,39 @@ const REPORT_ROLES = {
   suppliers: ["admin", "buyer", "viewer"],
 } as const satisfies Record<string, readonly AppRole[]>;
 
-function assertReportAccess(roles: AppRole[], report: keyof typeof REPORT_ROLES) {
+async function assertReportAccess(report: keyof typeof REPORT_ROLES) {
+  const roles = await rolesForUser(await requireUserId());
   const allowed = REPORT_ROLES[report] as readonly AppRole[];
   if (!roles.some((role) => allowed.includes(role))) throw new Error("FORBIDDEN_REPORT");
 }
 
-async function rolesForUser(
-  supabase: { from: (table: "user_roles") => { select: (c: "role") => unknown } },
-  userId: string,
-): Promise<AppRole[]> {
-  const query = supabase.from("user_roles").select("role") as {
-    eq: (column: string, value: string) => PromiseLike<{ data: { role: AppRole }[] | null }>;
-  };
-  const { data } = await query.eq("user_id", userId);
-  return (data ?? []).map((r) => r.role);
+export async function getProcurementOverview() {
+  await assertReportAccess("procurement");
+  const [trend, categories, suppliers] = await Promise.all([
+    provider.getSpendTrend(),
+    provider.getCategorySpend(),
+    provider.getTopSuppliers(8),
+  ]);
+  return { trend, categories, suppliers, providerMode: provider.providerMode() };
 }
 
-export const getProcurementOverview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    assertReportAccess(await rolesForUser(context.supabase, context.userId), "procurement");
-    const provider = await import("./sap-provider.server");
-    const [trend, categories, suppliers] = await Promise.all([
-      provider.getSpendTrend(),
-      provider.getCategorySpend(),
-      provider.getTopSuppliers(8),
-    ]);
-    return { trend, categories, suppliers, providerMode: provider.providerMode() };
-  });
+export async function getPurchaseOrderReport() {
+  await assertReportAccess("purchaseOrders");
+  const items = await provider.getPurchaseOrderItems();
+  return { items, providerMode: provider.providerMode() };
+}
 
-export const getPurchaseOrderReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    assertReportAccess(await rolesForUser(context.supabase, context.userId), "purchaseOrders");
-    const provider = await import("./sap-provider.server");
-    const items = await provider.getPurchaseOrderItems();
-    return { items, providerMode: provider.providerMode() };
-  });
+export async function getSupplierReport() {
+  await assertReportAccess("suppliers");
+  const suppliers = await provider.getSupplierScorecards();
+  return { suppliers, providerMode: provider.providerMode() };
+}
 
-export const getSupplierReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    assertReportAccess(await rolesForUser(context.supabase, context.userId), "suppliers");
-    const provider = await import("./sap-provider.server");
-    const suppliers = await provider.getSupplierScorecards();
-    return { suppliers, providerMode: provider.providerMode() };
-  });
-
-export const getModuleReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { module: string }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const roles = await rolesForUser(supabase, userId);
-    if (!canAccessModule(data.module, roles)) {
-      throw new Error("FORBIDDEN_MODULE");
-    }
-    const provider = await import("./sap-provider.server");
-    const report = await provider.getModuleReportData(data.module);
-    return { report, providerMode: provider.providerMode() };
-  });
+export async function getModuleReport(input: { data: { module: string } }) {
+  const roles = await rolesForUser(await requireUserId());
+  if (!canAccessModule(input.data.module, roles)) {
+    throw new Error("FORBIDDEN_MODULE");
+  }
+  const report = await provider.getModuleReportData(input.data.module);
+  return { report, providerMode: provider.providerMode() };
+}

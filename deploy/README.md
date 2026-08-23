@@ -31,7 +31,6 @@ deploy/
     mis-quality.conf              HTTP-only reverse proxy for Quality
     mis-production.conf           HTTP-only reverse proxy for Production
   docker/
-    Dockerfile                    runtime image (expects /app/dist volume)
     .dockerignore
     docker-compose.quality.yml    copy to Quality/backend/docker-compose.yml
     docker-compose.production.yml copy to Production/backend/docker-compose.yml
@@ -40,11 +39,15 @@ deploy/
     supabase/kong.yml             Supabase API gateway routes
 ```
 
+The portal is a **static SPA** — Nginx serves `frontend/dist/index.html` and the
+hashed assets directly. There is no Node app container and no Dockerfile for the
+frontend.
+
 ## Port matrix
 
 | Component        | Quality | Production |
 | ---------------- | ------- | ---------- |
-| Frontend / app   | 8081    | 9000       |
+| Frontend         | static files served by Nginx on port 80 | same |
 | Middleware       | 3002    | 3010       |
 | Backend          | 5000    | 5001       |
 | Supabase Kong    | 8000    | 9010       |
@@ -63,11 +66,12 @@ npm install
 npm run build
 ```
 
-This creates `.output/` in the repo root. Upload the **contents** of `.output/`
-to the server via WinSCP:
+This creates `dist/` in the repo root containing `index.html`, `assets/`,
+`favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server
+via WinSCP:
 
-- Copy `.output/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
-- Copy `.output/*` → `/opt/MIS_Projects/Production/frontend/dist/`
+- Copy `dist/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
+- Copy `dist/*` → `/opt/MIS_Projects/Production/frontend/dist/`
 
 > `VITE_*` values are inlined into the browser bundle at build time, so build
 > once per environment if the Supabase URLs/keys differ. If Quality and
@@ -93,13 +97,11 @@ and `SERVICE_ROLE_KEY`.
 
 ```bash
 # Quality
-cp deploy/docker/Dockerfile                     /opt/MIS_Projects/Quality/backend/Dockerfile
 cp deploy/docker/docker-compose.quality.yml   /opt/MIS_Projects/Quality/backend/docker-compose.yml
 cp deploy/docker/supabase/kong.yml              /opt/MIS_Projects/Quality/supabase/kong.yml
 cp -r supabase/migrations/*                     /opt/MIS_Projects/Quality/supabase/migrations/
 
 # Production
-cp deploy/docker/Dockerfile                     /opt/MIS_Projects/Production/backend/Dockerfile
 cp deploy/docker/docker-compose.production.yml /opt/MIS_Projects/Production/backend/docker-compose.yml
 cp deploy/docker/supabase/kong.yml              /opt/MIS_Projects/Production/supabase/kong.yml
 cp -r supabase/migrations/*                     /opt/MIS_Projects/Production/supabase/migrations/
@@ -110,11 +112,11 @@ cp -r supabase/migrations/*                     /opt/MIS_Projects/Production/sup
 ```bash
 # Quality
 cd /opt/MIS_Projects/Quality/backend
-docker compose --env-file .env -f docker-compose.yml up -d --build
+docker compose --env-file .env -f docker-compose.yml up -d
 
 # Production
 cd /opt/MIS_Projects/Production/backend
-docker compose --env-file .env -f docker-compose.yml up -d --build
+docker compose --env-file .env -f docker-compose.yml up -d
 ```
 
 Database migrations run automatically: the one-shot `migrate` service applies
@@ -126,10 +128,9 @@ Check status and logs:
 ```bash
 cd /opt/MIS_Projects/Quality/backend
 docker compose ps
-docker compose logs -f app
-docker logs mis_q_migrate           # migration output
-curl -I http://127.0.0.1:8081/      # app health (Quality)
-curl -I http://127.0.0.1:9000/      # app health (Production)
+docker logs mis_q_migrate               # migration output
+curl -I http://127.0.0.1:8000/          # Supabase Kong (Quality)
+curl -I http://127.0.0.1:9010/          # Supabase Kong (Production)
 ```
 
 ## 5. Nginx
@@ -138,8 +139,8 @@ The configs are **plain HTTP (port 80) only** — no `listen 443`, no
 `ssl_certificate`, no Certbot, no HTTPS redirect. TLS is terminated on your
 existing upstream load balancer / reverse proxy.
 
-Nginx serves static files directly from `frontend/dist/` and falls back to the
-app server for SSR and server functions.
+Nginx serves the SPA straight from `frontend/dist/` with a `try_files` fallback
+to `index.html`, so deep links such as `/launchpad` work on refresh.
 
 ```bash
 sudo cp deploy/nginx/mis-quality.conf    /etc/nginx/sites-available/
@@ -151,36 +152,32 @@ sudo nginx -t && sudo systemctl reload nginx
 
 Routes exposed by each server block:
 
-| Path           | Quality upstream | Production upstream |
+| Path           | Quality target   | Production target   |
 | -------------- | ---------------- | ------------------- |
-| `/`            | 8081 (app)       | 9000 (app)          |
-| `/_build/*`    | frontend/dist    | frontend/dist       |
+| `/`            | frontend/dist    | frontend/dist       |
+| `/assets/*`    | frontend/dist    | frontend/dist       |
 | `/middleware/` | 3002             | 3010                |
 | `/backend/`    | 5000             | 5001                |
 | `/supabase/`   | 8000 (Kong)      | 9010 (Kong)         |
 | `/studio/`     | 8082             | 9012                |
-| `/healthz`     | app root         | app root            |
+| `/healthz`     | Nginx            | Nginx               |
 
 If you serve by IP instead of a hostname, swap `server_name` for the commented
 `server_name _;` line in the config.
 
+Nothing listens on 8081 / 9000 any more — if Nginx already has a
+`listen 8081;` or `listen 9000;` block from an earlier setup, remove it.
+
 ## 6. Redeploy after a code change
 
-Only the frontend `dist/` files need to be replaced; the Docker image does not
-change.
+Only the static files change — no container restart is needed.
 
 ```bash
-# Upload new .output/* contents to /opt/MIS_Projects/Production/frontend/dist/
-# Then restart the app container so it picks up the new volume contents:
-cd /opt/MIS_Projects/Production/backend
-docker compose restart app
-```
+# locally
+npm run build
 
-If you also changed backend/server logic, rebuild the image:
-
-```bash
-cd /opt/MIS_Projects/Production/backend
-docker compose up -d --build app
+# upload new dist/* contents to /opt/MIS_Projects/Production/frontend/dist/
+# (replace the folder contents, then hard-refresh the browser)
 ```
 
 The database and its volume are untouched.

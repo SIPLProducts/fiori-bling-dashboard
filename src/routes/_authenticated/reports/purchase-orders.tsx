@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getPurchaseOrderReport } from "@/lib/sap.functions";
 import { Panel, ReportShell } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
@@ -45,7 +44,7 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 function PurchaseOrderReport() {
-  const fetchReport = useServerFn(getPurchaseOrderReport);
+  const fetchReport = getPurchaseOrderReport;
   const { data, isLoading } = useQuery({
     queryKey: ["po-items"],
     queryFn: () => fetchReport(),

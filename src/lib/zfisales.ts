@@ -1,4 +1,4 @@
-import { SALES_ROWS, type SalesRow } from "./zfisales-data.server";
+import { SALES_ROWS, type SalesRow } from "./zfisales-data";
 import type {
   ComparisonPoint,
   ComparisonSet,

@@ -186,26 +186,7 @@ services:
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: mis-portal:quality
-    container_name: mis_q_app
-    restart: unless-stopped
-    networks: [mis_quality]
-    depends_on: [kong]
-    ports:
-      - "127.0.0.1:8081:3000"
-    volumes:
-      - ../frontend/dist:/app/dist:ro
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      SUPABASE_URL: ${VITE_SUPABASE_URL}
-      SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
-      SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
-      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
-      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
-      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+# NOTE: there is no frontend container. The portal is a static build:
+# upload the contents of your local `dist/` folder to
+# /opt/MIS_Projects/Quality/frontend/dist and Nginx serves it directly
+# (see deploy/nginx/mis-quality.conf).

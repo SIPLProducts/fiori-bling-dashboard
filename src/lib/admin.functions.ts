@@ -1,5 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase } from "@/integrations/supabase/client";
 import type { AppRole } from "./sap.functions";
 
 export type PortalUser = {
@@ -9,53 +8,49 @@ export type PortalUser = {
   roles: AppRole[];
 };
 
-export const listPortalUsers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<PortalUser[]> => {
-    const { supabase, userId } = context;
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+async function requireAdmin(): Promise<string> {
+  const { data: auth, error } = await supabase.auth.getUser();
+  if (error || !auth.user) throw new Error("NOT_AUTHENTICATED");
+  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: auth.user.id, _role: "admin" });
+  if (!isAdmin) throw new Error("Forbidden: admin role required");
+  return auth.user.id;
+}
 
-    const [profilesRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("id, display_name, company").order("created_at"),
-      supabase.from("user_roles").select("user_id, role"),
-    ]);
-    if (profilesRes.error) throw profilesRes.error;
-    if (rolesRes.error) throw rolesRes.error;
+export async function listPortalUsers(): Promise<PortalUser[]> {
+  await requireAdmin();
 
-    return (profilesRes.data ?? []).map((profile) => ({
-      id: profile.id,
-      display_name: profile.display_name,
-      company: profile.company,
-      roles: (rolesRes.data ?? [])
-        .filter((r) => r.user_id === profile.id)
-        .map((r) => r.role as AppRole),
-    }));
-  });
+  const [profilesRes, rolesRes] = await Promise.all([
+    supabase.from("profiles").select("id, display_name, company").order("created_at"),
+    supabase.from("user_roles").select("user_id, role"),
+  ]);
+  if (profilesRes.error) throw profilesRes.error;
+  if (rolesRes.error) throw rolesRes.error;
 
-export const setUserRole = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string; role: AppRole; enabled: boolean }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+  return (profilesRes.data ?? []).map((profile) => ({
+    id: profile.id,
+    display_name: profile.display_name,
+    company: profile.company,
+    roles: (rolesRes.data ?? []).filter((r) => r.user_id === profile.id).map((r) => r.role as AppRole),
+  }));
+}
 
-    if (data.enabled) {
-      const { error } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: data.userId, role: data.role }, { onConflict: "user_id,role" });
-      if (error) throw error;
-    } else {
-      if (data.userId === userId && data.role === "admin") {
-        throw new Error("You cannot remove your own admin role");
-      }
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", data.userId)
-        .eq("role", data.role);
-      if (error) throw error;
+export async function setUserRole(input: {
+  data: { userId: string; role: AppRole; enabled: boolean };
+}) {
+  const currentUserId = await requireAdmin();
+  const { userId, role, enabled } = input.data;
+
+  if (enabled) {
+    const { error } = await supabase
+      .from("user_roles")
+      .upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+    if (error) throw error;
+  } else {
+    if (userId === currentUserId && role === "admin") {
+      throw new Error("You cannot remove your own admin role");
     }
-    return { ok: true };
-  });
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+    if (error) throw error;
+  }
+  return { ok: true };
+}
