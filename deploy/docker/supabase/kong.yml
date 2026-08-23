@@ -8,6 +8,10 @@ consumers:
   - username: service_role
     keyauth_credentials:
       - key: $SUPABASE_SERVICE_KEY
+  - username: DASHBOARD
+    basicauth_credentials:
+      - username: $DASHBOARD_USERNAME
+        password: $DASHBOARD_PASSWORD
 
 acls:
   - consumer: anon
@@ -115,3 +119,18 @@ services:
         config:
           hide_groups_header: true
           allow: [admin]
+
+  # Supabase Studio (dashboard) behind Kong basic auth.
+  # Credentials come from DASHBOARD_USERNAME / DASHBOARD_PASSWORD in .env.
+  # Keep this LAST — it is a catch-all route.
+  - name: dashboard
+    url: http://studio:3000/
+    routes:
+      - name: dashboard-all
+        strip_path: true
+        paths: [/]
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config:
+          hide_credentials: true
