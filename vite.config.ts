@@ -16,5 +16,5 @@ export default defineConfig({
     // app container.
     spa: { enabled: true, prerender: { outputPath: "/index.html" } },
   },
-  nitro: { preset: "node-server", output: { dir: "dist" } },
+  nitro: false,
 });
