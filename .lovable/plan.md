@@ -1,56 +1,69 @@
-# Supabase Studio (dashboard) — username and password
+# Add Studio dashboard login (DASHBOARD_USERNAME / DASHBOARD_PASSWORD)
 
-Self-hosted Supabase Studio does **not** have its own login system. There is no built-in Studio username or password.
+Your other project uses the **official Supabase docker-compose bundle**, which ships a Kong basic-auth layer in front of Studio. That is where `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` come from — they are not a Supabase product feature, they are a Kong basic-auth credential defined in that bundle's `kong.yml`.
 
-## How Studio connects
+Our MIS stack is a trimmed-down custom compose, so it has no dashboard credentials yet. This plan adds the same thing.
 
-Studio reaches the database through the `meta` container, which connects as the `supabase_admin` Postgres user. The only password it needs is already in your `.env`:
+## What gets added
+
+**1. `.env` (both environments)** — two new variables in `deploy/docker/.env.quality.example` and `.env.production.example`:
 
 ```
-POSTGRES_PASSWORD=37452b25853097e95ac863ec892ad82fa07dea1367e65b85
+DASHBOARD_USERNAME=supabase
+DASHBOARD_PASSWORD=<openssl rand -hex 12>
 ```
 
-So when you open `http://10.10.4.165/studio/`, you go straight into the dashboard — no login screen.
+**2. `deploy/docker/supabase/kong.yml`** — add a `dashboard` consumer with basic-auth credentials, and route Studio through Kong (mirrors the official bundle):
 
-## What you actually need to protect
+```yaml
+consumers:
+  - username: DASHBOARD
+    basicauth_credentials:
+      - username: $DASHBOARD_USERNAME
+        password: $DASHBOARD_PASSWORD
 
-Because there is no login, you must protect the `/studio/` path in Nginx. The recommended way is HTTP basic auth:
+services:
+  - name: dashboard
+    url: http://studio:3000/
+    routes:
+      - name: dashboard
+        strip_path: true
+        paths: [/]
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config: { hide_credentials: true }
+```
+
+**3. `docker-compose.quality.yml` / `docker-compose.production.yml`** — pass `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` into the `kong` service environment so Kong can substitute them.
+
+## Simpler alternative (recommended for our layout)
+
+Because Nginx already fronts everything and Studio is published on `127.0.0.1:8082` / `9012`, HTTP basic auth in Nginx gives the same protection with fewer moving parts:
 
 ```bash
-# Install htpasswd if not already installed
-sudo apt update && sudo apt install -y apache2-utils
-
-# Create a password file (change misadmin / choose a strong password)
-sudo htpasswd -c /etc/nginx/.mis-studio misadmin
-
-# Add more users later without -c
-sudo htpasswd /etc/nginx/.mis-studio anotheruser
+sudo apt install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.mis-studio supabase   # prompts for password
 ```
-
-Then add this inside the `/studio/` location block in `deploy/nginx/mis-quality.conf` and `mis-production.conf`:
 
 ```nginx
 location /studio/ {
     proxy_pass http://mis_q_studio/;
-
-    # Optional: restrict to office network
-    # allow 10.0.0.0/8;
-    # deny all;
-
     auth_basic "MIS Studio";
     auth_basic_user_file /etc/nginx/.mis-studio;
 }
 ```
 
-Reload Nginx:
+Then `http://10.10.4.165/studio/` asks for username + password.
 
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
+## Note on the other project's `.env`
 
-## Summary
+That file is for the official Supabase bundle and has extra services we do not run (pooler/Supavisor, Logflare analytics, imgproxy, vault, SMTP). Do not copy it into `/opt/MIS_Projects/Quality/backend/.env` — only the two dashboard variables are relevant.
 
-- Studio URL: `http://10.10.4.165/studio/` (Quality)
-- There is **no Supabase Studio username/password**.
-- The database password is `POSTGRES_PASSWORD` in `.env`.
-- Protect Studio at the Nginx level with basic auth, because anyone who can reach `/studio/` can access it.
+## Files to change
+
+- `deploy/docker/.env.quality.example`, `.env.production.example` — add `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD`.
+- `deploy/docker/supabase/kong.yml` — dashboard consumer + basic-auth route.
+- `deploy/docker/docker-compose.quality.yml`, `docker-compose.production.yml` — pass the two variables to Kong.
+- `deploy/nginx/mis-quality.conf`, `mis-production.conf` — basic-auth block on `/studio/`.
+- `deploy/README.md` — section on Studio credentials and how to create/rotate them.
