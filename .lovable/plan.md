@@ -68,6 +68,39 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
         └── migrations/*.sql
 ```
 
+## Nginx frontend handling
+
+Nginx will serve static files directly from `frontend/dist/` and fall back to the app server for SSR/server functions:
+
+```nginx
+root /opt/MIS_Projects/Quality/frontend/dist;
+
+# Static assets with long cache
+location /_build/ {
+    try_files $uri $uri/ =404;
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000, immutable";
+}
+
+# Everything else goes to the TanStack Start app for SSR and server functions
+location / {
+    try_files $uri $uri/ @app;
+}
+
+location @app {
+    proxy_pass http://mis_q_app;
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade           $http_upgrade;
+    proxy_set_header Connection        $connection_upgrade_q;
+}
+```
+
+The Production config is identical except the root path and upstream names point to `Production/frontend/dist` and port 9000.
+
 ## Steps to deploy
 
 1. **Build locally in VS Code**
@@ -109,4 +142,5 @@ The `backend` container needs to reach the `supabase` Kong container so the app 
 ## Note on the Dockerfile
 
 The `Dockerfile` will be updated to copy the app from `../frontend/dist/` instead of the repo's `.output/` path, so it matches the server folder layout shown above.
+
 
