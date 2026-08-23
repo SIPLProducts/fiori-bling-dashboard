@@ -1,75 +1,88 @@
-# Quality stack — next steps after `docker compose up`
+# Fix the Quality stack: Kong down + migrations never applied
 
-## What the screenshot shows
+Your output tells us three concrete things:
 
-`http://10.10.4.165:8000` times out because the API gateway (Kong) is published
-as `127.0.0.1:8000` — loopback only, deliberately. It is not reachable from your
-laptop and it should not be. Everything goes through Nginx on port 80:
+| Symptom | Meaning |
+| --- | --- |
+| `open .../docker-compose.yml: no such file` | The compose file on the server is not named `docker-compose.yml` |
+| `curl 127.0.0.1:8000/rest/v1/` → `000` | The API gateway (Kong) container is **not running** |
+| `/supabase/rest/v1/` → `502` | Nginx is fine; its upstream (Kong) is dead — same root cause |
+| `ls: cannot access '/migrations/*.sql'` | The migration container mounted an **empty** folder — your database has **no tables** |
+| `127.0.0.1:8082` → `307` | Studio is up (307 is normal) |
 
-| What | Correct URL |
-| ---- | ----------- |
-| Portal | `http://10.10.4.165/` (or `:8081` if you keep that block) |
-| Supabase API | `http://10.10.4.165/supabase/` |
-| Studio dashboard | `http://10.10.4.165/studio/` |
+So nothing is broken in the app — the backend was never fully brought up, and the
+schema was never created.
 
-So "Supabase unable to login" is expected on `:8000` — use `/studio/`.
-
-## Also: your compose is the old one
-
-The output still starts `mis_q_app`. The frontend is now a static `dist/`
-served by Nginx, so that container should be gone. Re-upload
-`deploy/docker/docker-compose.quality.yml` as
-`/opt/MIS_Projects/Quality/backend/docker-compose.yml` and recreate.
-
-## Steps to run on the server
+## Step 1 — find the real compose file name
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
-
-# 1. drop the obsolete frontend container
-docker compose --env-file .env -f docker-compose.yml up -d --remove-orphans
-docker rm -f mis_q_app 2>/dev/null || true
-
-# 2. confirm the gateway answers locally
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8082/
-
-# 3. confirm it answers through Nginx
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/
-curl -s -o /dev/null -w '%{http_code}\n' -u supabase:<studio-pass> http://127.0.0.1/studio/
-
-# 4. migrations actually applied?
-docker logs mis_q_migrate --tail 30
+ls -la
 ```
 
-## Studio login
+Use whatever it is called (likely `docker-compose.quality.yml`) in every command
+below; I will write `-f docker-compose.quality.yml`.
 
-Two layers guard `/studio/`:
+## Step 2 — get the SQL onto the server
 
-1. **Nginx basic auth** — create the file if you have not yet:
-   ```bash
-   sudo apt install -y apache2-utils
-   sudo htpasswd -c /etc/nginx/.mis-studio supabase
-   sudo nginx -t && sudo systemctl reload nginx
-   ```
-2. **Kong basic auth** — `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from
-   `.env`. If either is still `change-me-…`, set a real value and restart Kong:
-   ```bash
-   docker compose --env-file .env -f docker-compose.yml up -d --force-recreate kong studio
-   ```
+The migrate container mounts `../../supabase/migrations` relative to the compose
+file. That path is empty on your server. Fix by uploading the repo's
+`supabase/migrations/*.sql` to:
 
-Studio itself has no login screen — if the browser prompt is rejected, the
-password is wrong in one of those two layers.
+```
+/opt/MIS_Projects/Quality/supabase/migrations/
+```
 
-## Frontend must point at the Nginx path
+(i.e. two levels up from `backend/`, matching the compose mount), then verify:
 
-`VITE_SUPABASE_URL` is baked in at build time. It must be
-`http://10.10.4.165/supabase` (or `http://quality.siplproducts.com/supabase`),
-never `:8000`. If the current `dist/` was built with the Lovable cloud URL,
-rebuild with the Quality values and re-upload `dist/`.
+```bash
+ls /opt/MIS_Projects/Quality/supabase/migrations/*.sql
+```
 
-## Repo changes in this plan
+If you would rather keep the SQL beside the compose file, tell me and I will
+change the mount in `deploy/docker/docker-compose.quality.yml` to
+`./migrations:/migrations:ro`.
 
-None required unless step 4 shows failed migrations, or you want the port-8081
-Nginx block folded into the main `mis-quality.conf` — say the word and I will
-adjust `deploy/nginx/mis-quality.conf` to listen on 8081 as well.
+## Step 3 — bring everything up and re-run migrations
+
+```bash
+docker compose --env-file .env -f docker-compose.quality.yml up -d --remove-orphans
+docker compose --env-file .env -f docker-compose.quality.yml run --rm migrate
+docker compose --env-file .env -f docker-compose.quality.yml ps
+```
+
+`ps` must show `mis_q_kong` as **running**. If it exited:
+
+```bash
+docker logs mis_q_kong --tail 50
+```
+
+The usual cause is a placeholder still left in `.env` — `ANON_KEY` /
+`SERVICE_ROLE_KEY` must be real JWTs signed with `JWT_SECRET`, and
+`DASHBOARD_PASSWORD` must not be `change-me-…`.
+
+## Step 4 — re-verify
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/        # expect 200/401
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/    # expect same
+curl -s -o /dev/null -w '%{http_code}\n' -u supabase:YOURPASSWORD http://127.0.0.1/studio/
+```
+
+Note the earlier `-u supabase:<studio-pass>` failed only because `<` is shell
+redirection — type the literal password, no angle brackets.
+
+## Step 5 — Studio login
+
+Basic-auth file is now created (`htpasswd` succeeded on the third try). Studio
+has two gates: the Nginx prompt (`supabase` + the password you just set) and
+Kong's `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from `.env`. Keep them the
+same to avoid confusion. Browse to `http://10.10.4.165/studio/` — never
+`:8000`, which is loopback-only by design.
+
+## Repo change in this plan
+
+Only if you choose the alternative in Step 2: adjust the `migrate` service
+volume in `deploy/docker/docker-compose.quality.yml` (and the production twin)
+to mount `./migrations` instead of `../../supabase/migrations`, plus a matching
+note in `deploy/README.md`. Otherwise this is server-side only — no code edits.
