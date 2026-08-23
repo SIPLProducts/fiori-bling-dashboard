@@ -138,7 +138,7 @@ export function TileCard({
     return (
       <Link
         to="/reports/purchase-orders"
-        search={(prev) => ({ ...prev, ...(focus ? { focus } : {}) })}
+        search={{ focus: focus ?? undefined }}
         className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {body}
