@@ -44,7 +44,10 @@ Plus: `VITE_*` are baked in at build time (rebuild after changing them), key/JWT
 6. Self-hosted Postgres + Supabase Docker stacks (Quality and Production compose files)
 7. Applying database migrations to each stack
 8. Building and running the app (PM2 ecosystem per environment)
-9. Nginx server blocks + Certbot SSL for both domains
+9. Nginx — two complete, copy-paste server blocks:
+   - `mis-quality.conf` for `quality.siplproducts.com` → app on `127.0.0.1:8081`, `/supabase/` → Kong `:8000`, optional `/middleware/` → `:3002`
+   - `mis-production.conf` for `mis.siplproducts.com` → app on `127.0.0.1:9000`, `/supabase/` → Kong `:9010`, optional `/middleware/` → `:3010`
+   Both include HTTP→HTTPS redirect, WebSocket upgrade headers, proxy timeouts, gzip, static asset caching, security headers, client body size for uploads, plus enable/test commands and Certbot issuance and auto-renewal
 10. Backups, zero-downtime deploys, health checks, reboot/recovery SOP
 11. Troubleshooting
 
