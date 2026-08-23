@@ -1,59 +1,66 @@
-# Fix: Nginx is holding port 8081
+# Build into `dist/` instead of `.output/`
 
-`ss` shows the listener on `0.0.0.0:8081` is **Nginx**, not a stray container.
-An existing Nginx server block has `listen 8081;` and proxies to `mis_q_app`,
-so Nginx and the app container are fighting over the same port.
+## Why `.output/` appears today
 
-That block is a leftover from the earlier setup. Our `mis-quality.conf` listens on
-port 80 and proxies to `127.0.0.1:8081`, so 8081 must belong to the container only.
+`npm run build` runs Vite + Nitro, and Nitro's default output folder is `.output/`.
+That is why you keep seeing `.output/public`, `.output/server`, `nitro.json`.
 
-## 1. Find the offending server block
+## Why there is no `index.html`
 
-```bash
-sudo grep -rn "listen 8081" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ /etc/nginx/nginx.conf
+This portal is **server-rendered** (TanStack Start). The launchpad, the reports and
+the demo login all call server functions (`src/lib/sap.functions.ts`,
+`zfisales.functions.ts`, `admin.functions.ts`, `demo.functions.ts`), and pages are
+rendered on the server per request. So the build produces a Node server bundle plus
+static assets — not a single static `index.html`. Serving a bare `index.html` folder
+would break login, the launchpad tiles and every report.
+
+## What will change
+
+**1. `vite.config.ts`** — tell Nitro to emit into `dist/`:
+
+```ts
+export default defineConfig({
+  tanstackStart: { server: { entry: "server" } },
+  nitro: { output: { dir: "dist" } },
+});
 ```
 
-## 2. Disable it
+After that, `npm run build` produces:
 
-If it is an old Quality site file that our `mis-quality.conf` replaces:
-
-```bash
-sudo rm /etc/nginx/sites-enabled/<old-file>
+```text
+dist/
+  public/        static assets (JS, CSS, images)
+  server/
+    index.mjs    the app server entry
+  nitro.json
+  package.json
 ```
 
-If you want to keep the file but only drop the port, edit it and delete the
-`listen 8081;` line (keep `listen 80;`).
+You then upload the **contents of `dist/`** straight into
+`/opt/MIS_Projects/Quality/frontend/dist/` — no renaming step, WinSCP path matches
+one-to-one.
 
-Make sure the enabled set is what you expect, then reload:
+**2. `deploy/docker/Dockerfile`** — start command stays `node dist/server/index.mjs`
+(the volume mounts `frontend/dist` at `/app/dist`), so no change needed; the README
+wording is updated to say `dist/` instead of `.output/`.
 
-```bash
-ls -l /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo ss -ltnp | grep 8081     # should now print nothing
+**3. `deploy/nginx/mis-quality.conf` / `mis-production.conf`** — static root must
+point at the `public` subfolder:
+
+```nginx
+root /opt/MIS_Projects/Quality/frontend/dist/public;
 ```
 
-## 3. Start the app container
+Assets live under `dist/public/_build/...`, so this makes the `/_build/` location
+resolve correctly and everything else falls back to the app server.
 
-```bash
-cd /opt/MIS_Projects/Quality/backend
-docker compose --env-file .env up -d app
-docker compose ps
-docker compose logs -f app
-```
+**4. `deploy/README.md`** — replace the `.output/` upload instructions with `dist/`.
 
-## 4. Verify end to end
+**5. `.gitignore` / `.dockerignore`** — ignore the new `dist/` build folder.
 
-```bash
-curl -I http://127.0.0.1:8081/    # app container directly
-curl -I http://127.0.0.1:8000/    # Kong
-curl -I http://10.10.4.165/       # portal through Nginx on port 80
-docker logs mis_q_migrate         # expect "migrations complete"
-```
+## If you really want a static-only build
 
-## Fallback if 8081 must stay on Nginx
-
-Remap the container instead: `"127.0.0.1:8091:3000"` in the `app` service, and
-point the Nginx upstream at `127.0.0.1:8091`. The repo copies
-(`deploy/docker/docker-compose.quality.yml`, `deploy/nginx/mis-quality.conf`)
-would be updated to match. Removing the duplicate block (step 2) is cleaner and
-keeps the approved port matrix intact.
+That would mean turning off SSR and moving every server function to the browser or
+to a separate API. It removes the secure server-side role checks and the SAP data
+gateway, so it is not recommended. Say the word if you want that path costed out
+separately.
