@@ -194,3 +194,51 @@ docker exec mis_p_db pg_dump -U postgres postgres | gzip > mis-prod-$(date +%F).
 # Restore
 gunzip -c mis-prod-2026-08-23.sql.gz | docker exec -i mis_p_db psql -U postgres -d postgres
 ```
+
+## 8. Supabase Studio (dashboard) credentials
+
+Self-hosted Studio has **no login of its own**. Access is protected in two
+layers by this deployment:
+
+1. **Kong basic auth** — set in each environment's `.env`:
+
+   ```bash
+   DASHBOARD_USERNAME=supabase
+   DASHBOARD_PASSWORD=$(openssl rand -hex 12)
+   ```
+
+   Kong reads these into the `DASHBOARD` consumer defined in
+   `supabase/kong.yml`. Change the values and restart Kong to rotate:
+
+   ```bash
+   cd /opt/MIS_Projects/Quality/backend
+   docker compose --env-file .env up -d --force-recreate kong
+   ```
+
+2. **Nginx basic auth on `/studio/`** — create the password file once per
+   server:
+
+   ```bash
+   sudo apt update && sudo apt install -y apache2-utils
+   sudo htpasswd -c /etc/nginx/.mis-studio supabase   # prompts for password
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+Studio URLs: Quality `http://<host>/studio/` (container `127.0.0.1:8082`),
+Production `http://<host>/studio/` (container `127.0.0.1:9012`).
+
+### Database credentials
+
+There is no separate DB user/password setting — the stack uses:
+
+| Item     | Quality           | Production        |
+| -------- | ----------------- | ----------------- |
+| Host     | `127.0.0.1:5432`  | `127.0.0.1:5433`  |
+| Database | `postgres`        | `postgres`        |
+| User     | `postgres`        | `postgres`        |
+| Password | `POSTGRES_PASSWORD` from `.env` | `POSTGRES_PASSWORD` from `.env` |
+
+```bash
+docker exec -it mis_q_db psql -U postgres -d postgres   # Quality
+docker exec -it mis_p_db psql -U postgres -d postgres   # Production
+```
