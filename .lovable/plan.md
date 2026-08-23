@@ -1,53 +1,76 @@
-# Start the Quality Docker stack
+# Fix: port 127.0.0.1:8081 already in use
 
-After editing `/opt/MIS_Projects/Quality/backend/.env`, run the following commands on the server.
+Everything in the Quality stack started except `mis_q_app` — Docker could not bind
+`127.0.0.1:8081` because another process on the server already holds that port.
 
-## 1. Start the Quality stack
+## 1. Find what is holding 8081
+
+```bash
+sudo ss -ltnp | grep 8081
+docker ps -a --format '{{.Names}}\t{{.Ports}}' | grep 8081
+```
+
+Two likely cases:
+
+- **A leftover Docker container** from an earlier attempt or another stack.
+- **A non-Docker service** (an old Node/PM2 process, or an Nginx server block that
+  itself listens on 8081).
+
+## 2a. If it is a container
+
+```bash
+docker stop <name> && docker rm <name>
+```
+
+## 2b. If it is a host process
+
+```bash
+sudo kill <pid>          # PID comes from the ss output
+```
+
+If it is an Nginx `listen 8081;` block, remove/disable that site and reload Nginx —
+our Quality config only needs `listen 80`.
+
+## 3. Bring the app container up
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
-docker compose --env-file .env -f docker-compose.yml up -d --build
-```
-
-This starts: Postgres, migrations, GoTrue (auth), PostgREST, Realtime, Storage, Meta, Kong, Studio, and the app container.
-
-## 2. Verify the services are healthy
-
-```bash
+docker compose --env-file .env up -d app
 docker compose ps
 docker compose logs -f app
 ```
 
-Wait for `mis_q_migrate` to finish (it exits after running migrations).
+## Alternative: move the app to a different host port
 
-## 3. Health checks
+If 8081 must stay with the other service, change the app port mapping in
+`docker-compose.yml`:
 
-```bash
-# App
-curl -I http://127.0.0.1:8081/
-
-# Kong / Supabase API
-curl -I http://127.0.0.1:8000/
-
-# Studio (will prompt for basic auth)
-curl -I http://127.0.0.1:8082/
+```yaml
+  app:
+    ports:
+      - "127.0.0.1:8091:3000"
 ```
 
-## 4. Reload Nginx (if config changed)
+and update the Nginx upstream in `/etc/nginx/sites-available/mis-quality.conf`:
 
-```bash
-sudo nginx -t && sudo systemctl reload nginx
+```nginx
+upstream mis_q_app { server 127.0.0.1:8091; keepalive 32; }
 ```
 
-## Public URLs
+then `sudo nginx -t && sudo systemctl reload nginx`.
+The repo files `deploy/docker/docker-compose.quality.yml` and
+`deploy/nginx/mis-quality.conf` would be updated to match.
 
-| Path | URL |
-| ---- | --- |
-| Portal | `http://10.10.4.165/` |
-| Supabase API | `http://10.10.4.165/supabase/` |
-| Studio | `http://10.10.4.165/studio/` |
+## 4. Verify
 
-## Notes
+```bash
+curl -I http://127.0.0.1:8081/       # app (or 8091 if you moved it)
+curl -I http://127.0.0.1:8000/       # Kong
+curl -I http://10.10.4.165/          # through Nginx
+docker logs mis_q_migrate            # migrations should say "migrations complete"
+```
 
-- `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` in `.env` are enforced by Kong basic auth on the Studio route.
-- Nginx basic auth on `/studio/` is an additional layer; create the password file with `htpasswd` if not already done.
+## Recommendation
+
+Free port 8081 (step 2) rather than remapping — the port matrix you approved
+assigns 8081 to the Quality frontend/app, and keeping it avoids touching Nginx.
