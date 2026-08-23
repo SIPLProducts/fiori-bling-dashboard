@@ -40,7 +40,7 @@ services:
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ../../supabase/migrations:/migrations:ro
+      - ../supabase/migrations:/migrations:ro
     entrypoint:
       - bash
       - -c

@@ -24,6 +24,18 @@ This README assumes you keep the existing server layout:
     └── supabase/
 ```
 
+**Two paths the compose file depends on — get these exactly right:**
+
+| Compose mount | Must exist on the server |
+| --- | --- |
+| `../supabase/migrations` | `/opt/MIS_Projects/Quality/supabase/migrations/*.sql` |
+| `./supabase/kong.yml` | `/opt/MIS_Projects/Quality/backend/supabase/kong.yml` |
+
+(Same shape under `Production/`.) If `docker logs mis_q_migrate` prints
+`ls: cannot access '/migrations/*.sql'`, the SQL files are not in the folder
+above and **no tables were created**.
+
+
 ```
 deploy/
   README.md
