@@ -130,7 +130,7 @@ services:
       TENANT_ID: production
       REGION: local
       GLOBAL_S3_BUCKET: stub
-GLOBAL_S3_PROTOCOL: http
+      GLOBAL_S3_PROTOCOL: http
     volumes:
       - p_storage_data:/var/lib/storage
 
