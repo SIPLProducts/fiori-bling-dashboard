@@ -3,6 +3,27 @@
 Everything needed to run the MIS portal on your own Ubuntu server, in two fully
 isolated stacks: **Quality** and **Production**.
 
+This README assumes you keep the existing server layout:
+
+```text
+/opt/MIS_Projects/
+├── nginx/
+├── Quality/
+│   ├── frontend/
+│   │   └── dist/          # built app files (uploaded from VS Code)
+│   ├── backend/           # docker-compose + Dockerfile + .env
+│   ├── middleware/        # only if you have a middleware service
+│   └── supabase/
+│       ├── kong.yml
+│       └── migrations/
+└── Production/
+    ├── frontend/
+    │   └── dist/
+    ├── backend/
+    ├── middleware/
+    └── supabase/
+```
+
 ```
 deploy/
   README.md
@@ -10,12 +31,12 @@ deploy/
     mis-quality.conf              HTTP-only reverse proxy for Quality
     mis-production.conf           HTTP-only reverse proxy for Production
   docker/
-    Dockerfile                    multi-stage build of the app
+    Dockerfile                    runtime image (expects /app/dist volume)
     .dockerignore
-    docker-compose.quality.yml
-    docker-compose.production.yml
-    .env.quality.example
-    .env.production.example
+    docker-compose.quality.yml    copy to Quality/backend/docker-compose.yml
+    docker-compose.production.yml copy to Production/backend/docker-compose.yml
+    .env.quality.example          copy to Quality/backend/.env
+    .env.production.example        copy to Production/backend/.env
     supabase/kong.yml             Supabase API gateway routes
 ```
 
@@ -33,31 +54,67 @@ deploy/
 All container ports are published to `127.0.0.1` only — Nginx is the single
 public entry point.
 
-## 1. Environment files
+## 1. Build the frontend locally
+
+In VS Code / your local repo:
 
 ```bash
-cd /opt/MIS_Projects/fiori-bling-dashboard      # your git checkout
-cp deploy/docker/.env.quality.example    deploy/docker/.env.quality
-cp deploy/docker/.env.production.example deploy/docker/.env.production
+npm install
+npm run build
+```
+
+This creates `.output/` in the repo root. Upload the **contents** of `.output/`
+to the server via WinSCP:
+
+- Copy `.output/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
+- Copy `.output/*` → `/opt/MIS_Projects/Production/frontend/dist/`
+
+> `VITE_*` values are inlined into the browser bundle at build time, so build
+> once per environment if the Supabase URLs/keys differ. If Quality and
+> Production share the same self-hosted Supabase, one build is enough.
+
+## 2. Environment files
+
+On the server:
+
+```bash
+cd /opt/MIS_Projects/Quality/backend
+cp deploy/docker/.env.quality.example .env
+
+cd /opt/MIS_Projects/Production/backend
+cp deploy/docker/.env.production.example .env
 ```
 
 Fill in the secrets (generation commands are inside each file). Quality and
-Production must use **different** `POSTGRES_PASSWORD`, `JWT_SECRET`,
-`ANON_KEY` and `SERVICE_ROLE_KEY`.
+Production must use **different** `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`
+and `SERVICE_ROLE_KEY`.
 
-> `VITE_*` values are inlined into the browser bundle at build time, so they are
-> passed as build args. Changing them requires `--build`, not just a restart.
-
-## 2. Start the stacks
+## 3. Copy Docker and Supabase files
 
 ```bash
 # Quality
-docker compose --env-file deploy/docker/.env.quality \
-  -f deploy/docker/docker-compose.quality.yml up -d --build
+cp deploy/docker/Dockerfile                     /opt/MIS_Projects/Quality/backend/Dockerfile
+cp deploy/docker/docker-compose.quality.yml   /opt/MIS_Projects/Quality/backend/docker-compose.yml
+cp deploy/docker/supabase/kong.yml              /opt/MIS_Projects/Quality/supabase/kong.yml
+cp -r supabase/migrations/*                     /opt/MIS_Projects/Quality/supabase/migrations/
 
 # Production
-docker compose --env-file deploy/docker/.env.production \
-  -f deploy/docker/docker-compose.production.yml up -d --build
+cp deploy/docker/Dockerfile                     /opt/MIS_Projects/Production/backend/Dockerfile
+cp deploy/docker/docker-compose.production.yml /opt/MIS_Projects/Production/backend/docker-compose.yml
+cp deploy/docker/supabase/kong.yml              /opt/MIS_Projects/Production/supabase/kong.yml
+cp -r supabase/migrations/*                     /opt/MIS_Projects/Production/supabase/migrations/
+```
+
+## 4. Start the stacks
+
+```bash
+# Quality
+cd /opt/MIS_Projects/Quality/backend
+docker compose --env-file .env -f docker-compose.yml up -d --build
+
+# Production
+cd /opt/MIS_Projects/Production/backend
+docker compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
 Database migrations run automatically: the one-shot `migrate` service applies
@@ -67,18 +124,22 @@ healthy. There are no edge functions in this project.
 Check status and logs:
 
 ```bash
-docker compose -f deploy/docker/docker-compose.quality.yml ps
-docker compose -f deploy/docker/docker-compose.quality.yml logs -f app
+cd /opt/MIS_Projects/Quality/backend
+docker compose ps
+docker compose logs -f app
 docker logs mis_q_migrate           # migration output
 curl -I http://127.0.0.1:8081/      # app health (Quality)
 curl -I http://127.0.0.1:9000/      # app health (Production)
 ```
 
-## 3. Nginx
+## 5. Nginx
 
 The configs are **plain HTTP (port 80) only** — no `listen 443`, no
 `ssl_certificate`, no Certbot, no HTTPS redirect. TLS is terminated on your
 existing upstream load balancer / reverse proxy.
+
+Nginx serves static files directly from `frontend/dist/` and falls back to the
+app server for SSR and server functions.
 
 ```bash
 sudo cp deploy/nginx/mis-quality.conf    /etc/nginx/sites-available/
@@ -93,6 +154,7 @@ Routes exposed by each server block:
 | Path           | Quality upstream | Production upstream |
 | -------------- | ---------------- | ------------------- |
 | `/`            | 8081 (app)       | 9000 (app)          |
+| `/_build/*`    | frontend/dist    | frontend/dist       |
 | `/middleware/` | 3002             | 3010                |
 | `/backend/`    | 5000             | 5001                |
 | `/supabase/`   | 8000 (Kong)      | 9010 (Kong)         |
@@ -102,17 +164,28 @@ Routes exposed by each server block:
 If you serve by IP instead of a hostname, swap `server_name` for the commented
 `server_name _;` line in the config.
 
-## 4. Redeploy after a code change
+## 6. Redeploy after a code change
+
+Only the frontend `dist/` files need to be replaced; the Docker image does not
+change.
 
 ```bash
-git pull
-docker compose --env-file deploy/docker/.env.production \
-  -f deploy/docker/docker-compose.production.yml up -d --build app
+# Upload new .output/* contents to /opt/MIS_Projects/Production/frontend/dist/
+# Then restart the app container so it picks up the new volume contents:
+cd /opt/MIS_Projects/Production/backend
+docker compose restart app
 ```
 
-Only the `app` service is rebuilt; the database and its volume are untouched.
+If you also changed backend/server logic, rebuild the image:
 
-## 5. Backup / restore
+```bash
+cd /opt/MIS_Projects/Production/backend
+docker compose up -d --build app
+```
+
+The database and its volume are untouched.
+
+## 7. Backup / restore
 
 ```bash
 # Backup (Production)

@@ -1,7 +1,6 @@
 # MIS Portal — QUALITY stack (isolated network + volumes)
-# Run from the REPO ROOT:
-#   docker compose --env-file deploy/docker/.env.quality \
-#     -f deploy/docker/docker-compose.quality.yml up -d --build
+# Run from /opt/MIS_Projects/Quality/backend:
+#   docker compose --env-file .env -f docker-compose.quality.yml up -d --build
 name: mis-quality
 
 networks:
@@ -187,12 +186,8 @@ services:
 
   app:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile
-      args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
-        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+      context: .
+      dockerfile: Dockerfile
     image: mis-portal:quality
     container_name: mis_q_app
     restart: unless-stopped
@@ -200,6 +195,8 @@ services:
     depends_on: [kong]
     ports:
       - "127.0.0.1:8081:3000"
+    volumes:
+      - ../frontend/dist:/app/dist:ro
     environment:
       NODE_ENV: production
       PORT: 3000
