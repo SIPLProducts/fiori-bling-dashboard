@@ -51,7 +51,7 @@ function AuthPage() {
   async function handleDemoLogin() {
     setBusy(true);
     try {
-      const creds = await provisionDemo({ data: undefined });
+      const creds = await provisionDemo();
       const { error } = await supabase.auth.signInWithPassword({
         email: creds.email,
         password: creds.password,
