@@ -1,18 +1,7 @@
-import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule } from "./sap-modules";
+import { buildSalesAnalytics } from "./zfisales";
 import type { SalesFilters, SalesAnalytics } from "./zfisales-types";
-
-async function rolesForUser(
-  supabase: { from: (table: "user_roles") => { select: (c: "role") => unknown } },
-  userId: string,
-): Promise<string[]> {
-  const query = supabase.from("user_roles").select("role") as {
-    eq: (column: string, value: string) => PromiseLike<{ data: { role: string }[] | null }>;
-  };
-  const { data } = await query.eq("user_id", userId);
-  return (data ?? []).map((r) => r.role);
-}
 
 const emptyFilters: SalesFilters = {
   fiscalYear: "",
@@ -26,12 +15,15 @@ const emptyFilters: SalesFilters = {
   seriesBy: "none",
 };
 
-export const getSalesAnalytics = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: Partial<SalesFilters> | undefined) => ({ ...emptyFilters, ...(input ?? {}) }))
-  .handler(async ({ data, context }): Promise<SalesAnalytics> => {
-    const roles = await rolesForUser(context.supabase, context.userId);
-    if (!canAccessModule("sd", roles)) throw new Error("FORBIDDEN_MODULE");
-    const { buildSalesAnalytics } = await import("./zfisales.server");
-    return buildSalesAnalytics(data);
-  });
+export async function getSalesAnalytics(input?: {
+  data?: Partial<SalesFilters>;
+}): Promise<SalesAnalytics> {
+  const { data: auth, error } = await supabase.auth.getUser();
+  if (error || !auth.user) throw new Error("NOT_AUTHENTICATED");
+
+  const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id);
+  const roles = (roleRows ?? []).map((r) => r.role as string);
+  if (!canAccessModule("sd", roles)) throw new Error("FORBIDDEN_MODULE");
+
+  return buildSalesAnalytics({ ...emptyFilters, ...(input?.data ?? {}) });
+}
