@@ -1,66 +1,96 @@
-# Build into `dist/` instead of `.output/`
+# Static `dist/` build with `index.html`
 
-## Why `.output/` appears today
+Goal: `npm run build` produces a plain `dist/` folder containing `index.html` plus
+the JS/CSS/asset files, which you upload to
+`/opt/MIS_Projects/Quality/frontend/dist/` and Nginx serves directly — no Node app
+container needed for the frontend.
 
-`npm run build` runs Vite + Nitro, and Nitro's default output folder is `.output/`.
-That is why you keep seeing `.output/public`, `.output/server`, `nitro.json`.
+## What this means
 
-## Why there is no `index.html`
+Today the portal is server-rendered, so the build emits a Node server bundle
+(`.output/server`) instead of an `index.html`. To get a static `dist/index.html`
+the app must switch to **SPA mode**: the browser downloads `index.html`, React
+boots, and all data is fetched from your self-hosted Supabase through Kong.
 
-This portal is **server-rendered** (TanStack Start). The launchpad, the reports and
-the demo login all call server functions (`src/lib/sap.functions.ts`,
-`zfisales.functions.ts`, `admin.functions.ts`, `demo.functions.ts`), and pages are
-rendered on the server per request. So the build produces a Node server bundle plus
-static assets — not a single static `index.html`. Serving a bare `index.html` folder
-would break login, the launchpad tiles and every report.
+## Changes
 
-## What will change
+**1. Turn on SPA / static output**
 
-**1. `vite.config.ts`** — tell Nitro to emit into `dist/`:
+`vite.config.ts`:
 
 ```ts
 export default defineConfig({
-  tanstackStart: { server: { entry: "server" } },
+  tanstackStart: {
+    spa: { enabled: true },          // emits a static index.html shell
+    prerender: { enabled: false },
+  },
   nitro: { output: { dir: "dist" } },
 });
 ```
 
-After that, `npm run build` produces:
+Result:
 
 ```text
 dist/
-  public/        static assets (JS, CSS, images)
-  server/
-    index.mjs    the app server entry
-  nitro.json
-  package.json
+  index.html
+  assets/…            JS, CSS, fonts, favicon
 ```
 
-You then upload the **contents of `dist/`** straight into
-`/opt/MIS_Projects/Quality/frontend/dist/` — no renaming step, WinSCP path matches
-one-to-one.
+**2. Move the four server-function modules to browser-side Supabase calls**
 
-**2. `deploy/docker/Dockerfile`** — start command stays `node dist/server/index.mjs`
-(the volume mounts `frontend/dist` at `/app/dist`), so no change needed; the README
-wording is updated to say `dist/` instead of `.output/`.
+These currently run on the server and would have no server to run on:
 
-**3. `deploy/nginx/mis-quality.conf` / `mis-production.conf`** — static root must
-point at the `public` subfolder:
+| File | New behaviour |
+| ---- | ------------- |
+| `src/lib/sap.functions.ts` | Read launchpad groups/tiles + report data via the browser Supabase client (RLS enforces role access). |
+| `src/lib/zfisales.functions.ts` | Sales Analytics dataset served from a Supabase table/RPC, queried client-side with the same filters. |
+| `src/lib/demo.functions.ts` | Demo login calls `signInWithPassword` directly; the demo user is created once by a migration instead of on demand. |
+| `src/lib/admin.functions.ts` | User admin screen reads `profiles` / `user_roles` via RLS-protected queries. Any action that truly needs the service role is dropped from the static build. |
+
+Access control stops being enforced by server code, so it must be enforced by
+**RLS policies and the `has_role()` function** in the database. That is the main
+trade-off of going static — worth flagging explicitly.
+
+**3. Routes**
+
+Route `loader`s that call server functions become `useQuery` calls in the
+components, so nothing runs at build time.
+
+**4. Nginx — pure static, no app upstream**
+
+`deploy/nginx/mis-quality.conf` / `mis-production.conf`:
 
 ```nginx
-root /opt/MIS_Projects/Quality/frontend/dist/public;
+root /opt/MIS_Projects/Quality/frontend/dist;
+index index.html;
+
+location / {
+    try_files $uri $uri/ /index.html;   # SPA fallback
+}
+
+location /assets/ {
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000, immutable";
+}
 ```
 
-Assets live under `dist/public/_build/...`, so this makes the `/_build/` location
-resolve correctly and everything else falls back to the app server.
+`/supabase/`, `/studio/`, `/middleware/`, `/backend/` locations stay as they are.
 
-**4. `deploy/README.md`** — replace the `.output/` upload instructions with `dist/`.
+**5. Docker**
 
-**5. `.gitignore` / `.dockerignore`** — ignore the new `dist/` build folder.
+The `app` service (port 8081 / 9000) is no longer needed for the frontend — it is
+removed from `docker-compose.quality.yml` and `docker-compose.production.yml`,
+along with the `Dockerfile`. That also clears the 8081 port clash you hit, since
+Nginx keeps the port.
 
-## If you really want a static-only build
+**6. `deploy/README.md`**
 
-That would mean turning off SSR and moving every server function to the browser or
-to a separate API. It removes the secure server-side role checks and the SAP data
-gateway, so it is not recommended. Say the word if you want that path costed out
-separately.
+Rewritten upload flow: build → upload `dist/*` → reload Nginx. No container
+rebuild, no `docker compose restart app`.
+
+## Confirm before I build
+
+Going static removes the server-side layer, so all role checks rely on database
+RLS. If you would rather keep server-side enforcement, the alternative is to keep
+SSR and simply rename the output folder to `dist/` (server bundle inside it) — say
+which you prefer and I will adjust.
