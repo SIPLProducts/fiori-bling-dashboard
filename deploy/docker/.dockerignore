@@ -1,0 +1,12 @@
+node_modules
+.output
+.vite
+dist
+.git
+.env
+.env.*
+*.log
+/mnt
+deploy/docker/.env.*
+!deploy/docker/.env.*.example
+tsconfig.tsbuildinfo
