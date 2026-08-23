@@ -11,5 +11,9 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Static SPA build: emits a prerendered index.html shell plus client assets,
+    // so the portal can be served straight from Nginx (frontend/dist) with no
+    // Node app container.
+    spa: { enabled: true },
   },
 });
