@@ -1,85 +1,99 @@
-# Fix the Quality stack: migrations mount + Kong down
+# Fix Quality: wrong migrations path, stale compose, restarting services
 
-Your `ls` confirms the layout, and it explains the failures:
+Now we can see exactly what is wrong.
 
-```text
-/opt/MIS_Projects/Quality/backend/
-  docker-compose.quality.yml
-  .env
-  supabase/            <- only kong.yml lives here today
-```
+**1. The SQL is one level up from where compose looks.**
+Your files are in `/opt/MIS_Projects/Quality/supabase/migrations/` (7 `.sql`
+files). The compose mount `../../supabase/migrations` resolves to
+`/opt/MIS_Projects/supabase/migrations` — one directory too high, so the
+container sees an empty folder. **Your database still has no tables.**
 
-| Symptom | Cause |
-| --- | --- |
-| `no such file: docker-compose.yml` | File is named `docker-compose.quality.yml` |
-| `ls: cannot access '/migrations/*.sql'` | Compose mounts `../../supabase/migrations`, which resolves to `/opt/MIS_Projects/supabase/migrations` — a folder that does not exist on your server. **Your database has no tables.** |
-| `127.0.0.1:8000` → `000`, `/supabase/` → `502` | Kong container is not running (Nginx itself is fine) |
-| `127.0.0.1:8082` → `307` | Studio is up — that is normal |
+**2. The compose file on the server is the old one** — it still starts
+`mis_q_app`, which is why port 8081 clashes with Nginx. The updated file has no
+frontend container.
 
-## Repo change I will make
+**3. `auth`, `rest` and `kong` are all in `Restarting (1)`.** That is what makes
+`:8000` time out and `/supabase/` return 502. Three services failing together
+almost always means bad values in `.env` (JWT secret / keys) — we read their
+logs to confirm.
 
-Change the `migrate` service volume in both
-`deploy/docker/docker-compose.quality.yml` and
-`deploy/docker/docker-compose.production.yml`:
+## Repo change
+
+In `deploy/docker/docker-compose.quality.yml` and
+`deploy/docker/docker-compose.production.yml`, fix the migrate volume:
 
 ```yaml
     volumes:
-      - ./supabase/migrations:/migrations:ro
+      - ../supabase/migrations:/migrations:ro
 ```
 
-so the SQL sits next to the compose file, beside `supabase/kong.yml` — matching
-the folder you already have. `deploy/README.md` gets the matching upload step.
+matching your actual `Quality/supabase/migrations` layout, and note the expected
+folder structure in `deploy/README.md`.
 
 ## Steps on the server
 
-**1. Upload the SQL.** Copy every file from the repo's `supabase/migrations/`
-into:
-
-```
-/opt/MIS_Projects/Quality/backend/supabase/migrations/
-```
-
-Then re-upload the updated `docker-compose.quality.yml`. Verify:
-
-```bash
-ls /opt/MIS_Projects/Quality/backend/supabase/migrations/*.sql
-```
-
-**2. Bring the stack up and apply migrations.**
+**Step 1 — replace the compose file.** Upload the updated
+`deploy/docker/docker-compose.quality.yml` over
+`/opt/MIS_Projects/Quality/backend/docker-compose.quality.yml`, then:
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
+docker rm -f mis_q_app
 docker compose --env-file .env -f docker-compose.quality.yml up -d --remove-orphans
+```
+
+No more 8081 clash — Nginx keeps that port and serves `frontend/dist`.
+
+**Step 2 — read why auth/rest/kong die.**
+
+```bash
+docker logs mis_q_rest --tail 30
+docker logs mis_q_auth --tail 30
+docker logs mis_q_kong --tail 30
+```
+
+Expected findings and their fixes:
+
+| Log line | Fix in `.env` |
+| --- | --- |
+| `JWT secret ... too short` / `Expected 3 parts in JWT` | `ANON_KEY` / `SERVICE_ROLE_KEY` must be real JWTs signed with `JWT_SECRET` (HS256), not placeholders |
+| `password authentication failed for user "authenticator"` | `POSTGRES_PASSWORD` in `.env` differs from the password the DB volume was created with — recreate the volume (see Step 4) or reset the role |
+| Kong `failed to parse declarative config` / empty key | `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` or the key vars are still `change-me-…` |
+
+Paste the log output back to me and I will pin the exact cause.
+
+**Step 3 — apply the migrations** (after the mount fix is uploaded):
+
+```bash
 docker compose --env-file .env -f docker-compose.quality.yml run --rm migrate
-docker compose --env-file .env -f docker-compose.quality.yml ps
 ```
 
-`ps` must show `mis_q_kong` running. If it exited:
+You should see `==> applying /migrations/20260808090228_….sql` seven times — not
+`ls: cannot access`.
+
+**Step 4 — only if the DB password mismatched.** The volume keeps the original
+password, so a changed `POSTGRES_PASSWORD` breaks `rest`/`auth`. Wipe and
+rebuild (destroys Quality data, which is empty anyway):
 
 ```bash
-docker logs mis_q_kong --tail 50
+docker compose --env-file .env -f docker-compose.quality.yml down -v
+docker compose --env-file .env -f docker-compose.quality.yml up -d
+docker compose --env-file .env -f docker-compose.quality.yml run --rm migrate
 ```
 
-Kong almost always dies because `.env` still has placeholders — `ANON_KEY` and
-`SERVICE_ROLE_KEY` must be real JWTs signed with your `JWT_SECRET`, and
-`DASHBOARD_PASSWORD` must not be `change-me-…`.
-
-**3. Verify.**
+**Step 5 — verify.**
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/       # expect 200 or 401
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/   # same
-curl -s -o /dev/null -w '%{http_code}\n' -u supabase:YOURPASSWORD http://127.0.0.1/studio/
+docker compose --env-file .env -f docker-compose.quality.yml ps   # all Up
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/
 ```
 
-Earlier the studio curl failed only because `<studio-pass>` was read by bash as
-a file redirect — type the literal password without angle brackets.
-
-**4. Open Studio** at `http://10.10.4.165/studio/`. Never `:8000` — Kong is
-bound to loopback on purpose, which is exactly what your screenshot showed.
+Then open Studio at `http://10.10.4.165/studio/` — not `:8000`, which is
+loopback-only by design and is what your screenshot hit.
 
 ## Files changed
 
-- `deploy/docker/docker-compose.quality.yml` — migrate volume path
+- `deploy/docker/docker-compose.quality.yml` — migrate volume `../supabase/migrations`
 - `deploy/docker/docker-compose.production.yml` — same
-- `deploy/README.md` — upload the migrations folder alongside the compose file
+- `deploy/README.md` — document the expected server folder layout
