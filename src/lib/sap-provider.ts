@@ -1,4 +1,4 @@
-import { SALES_ROWS } from "./zfisales-data.server";
+import { SALES_ROWS } from "./zfisales-data";
 /**
  * SAP data provider (server-only).
  *
