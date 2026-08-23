@@ -31,7 +31,6 @@ deploy/
     mis-quality.conf              HTTP-only reverse proxy for Quality
     mis-production.conf           HTTP-only reverse proxy for Production
   docker/
-    Dockerfile                    runtime image (expects /app/dist volume)
     .dockerignore
     docker-compose.quality.yml    copy to Quality/backend/docker-compose.yml
     docker-compose.production.yml copy to Production/backend/docker-compose.yml
@@ -40,11 +39,15 @@ deploy/
     supabase/kong.yml             Supabase API gateway routes
 ```
 
+The portal is a **static SPA** — Nginx serves `frontend/dist/index.html` and the
+hashed assets directly. There is no Node app container and no Dockerfile for the
+frontend.
+
 ## Port matrix
 
 | Component        | Quality | Production |
 | ---------------- | ------- | ---------- |
-| Frontend / app   | 8081    | 9000       |
+| Frontend         | static files served by Nginx on port 80 | same |
 | Middleware       | 3002    | 3010       |
 | Backend          | 5000    | 5001       |
 | Supabase Kong    | 8000    | 9010       |
@@ -63,11 +66,12 @@ npm install
 npm run build
 ```
 
-This creates `.output/` in the repo root. Upload the **contents** of `.output/`
-to the server via WinSCP:
+This creates `dist/` in the repo root containing `index.html`, `assets/`,
+`favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server
+via WinSCP:
 
-- Copy `.output/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
-- Copy `.output/*` → `/opt/MIS_Projects/Production/frontend/dist/`
+- Copy `dist/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
+- Copy `dist/*` → `/opt/MIS_Projects/Production/frontend/dist/`
 
 > `VITE_*` values are inlined into the browser bundle at build time, so build
 > once per environment if the Supabase URLs/keys differ. If Quality and
