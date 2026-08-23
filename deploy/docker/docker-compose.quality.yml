@@ -130,7 +130,7 @@ services:
       TENANT_ID: quality
       REGION: local
       GLOBAL_S3_BUCKET: stub
-ようこそ: ""
+GLOBAL_S3_PROTOCOL: http
     volumes:
       - q_storage_data:/var/lib/storage
 
