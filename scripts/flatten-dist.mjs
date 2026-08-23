@@ -33,4 +33,9 @@ for (const entry of readdirSync(client)) {
 rmSync(client, { recursive: true, force: true });
 rmSync(join(dist, "server"), { recursive: true, force: true });
 
+// The SPA shell is emitted as _shell.html; Nginx serves it as index.html.
+if (!existsSync(join(dist, "index.html")) && existsSync(join(dist, "_shell.html"))) {
+  renameSync(join(dist, "_shell.html"), join(dist, "index.html"));
+}
+
 console.log("[flatten-dist] dist/ now contains index.html and the client assets");
