@@ -6,15 +6,18 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Inside the Lovable build the platform pins its own server target; every other
+// build (your local `npm run build`) produces a static SPA that Nginx can serve
+// straight from `frontend/dist`.
+const isLovableBuild = Boolean(process.env["LOVABLE_NITRO_PRESET"]);
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
-    // Static SPA build: emits an index.html shell plus client assets, so the
-    // portal can be served straight from Nginx (frontend/dist) with no Node
-    // app container.
-    spa: { enabled: true, prerender: { outputPath: "/index.html" } },
+    // Static SPA shell: emits dist/index.html plus the client assets.
+    spa: { enabled: true },
   },
-  nitro: false,
+  ...(isLovableBuild ? {} : { nitro: false as const }),
 });
