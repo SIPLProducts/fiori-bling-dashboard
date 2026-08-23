@@ -1,43 +1,33 @@
-import { createServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "./demo-config";
 
-/** Creates (or repairs) the shared demo account so anyone can one-click sign in. */
-export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+/**
+ * Signs the shared demo account in. If the account does not exist yet (fresh
+ * self-hosted database) it is created through the normal sign-up flow — the
+ * database trigger provisions the profile and role.
+ */
+export async function ensureDemoUser() {
+  const signIn = await supabase.auth.signInWithPassword({
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+  });
+  if (!signIn.error) return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
 
-  const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-  const existing = list?.users.find((u) => u.email?.toLowerCase() === DEMO_EMAIL);
+  const signUp = await supabase.auth.signUp({
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+    options: {
+      emailRedirectTo: `${window.location.origin}/launchpad`,
+      data: { display_name: "Demo User", company: "Nexus Demo Co." },
+    },
+  });
+  if (signUp.error) throw signUp.error;
 
-  let userId = existing?.id;
-
-  if (!userId) {
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-      email_confirm: true,
-      user_metadata: { display_name: "Demo User", company: "Nexus Demo Co." },
-    });
-    if (error) throw error;
-    userId = data.user?.id;
-  } else {
-    await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: DEMO_PASSWORD,
-      email_confirm: true,
-    });
-  }
-
-  if (!userId) throw new Error("Unable to provision demo user");
-
-  await supabaseAdmin
-    .from("profiles")
-    .upsert(
-      { id: userId, display_name: "Demo User", company: "Nexus Demo Co." },
-      { onConflict: "id" },
-    );
-
-  await supabaseAdmin
-    .from("user_roles")
-    .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id,role" });
+  const retry = await supabase.auth.signInWithPassword({
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+  });
+  if (retry.error) throw retry.error;
 
   return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
-});
+}
