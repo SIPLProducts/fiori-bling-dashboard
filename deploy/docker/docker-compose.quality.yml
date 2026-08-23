@@ -1,7 +1,6 @@
 # MIS Portal — QUALITY stack (isolated network + volumes)
-# Run from the REPO ROOT:
-#   docker compose --env-file deploy/docker/.env.quality \
-#     -f deploy/docker/docker-compose.quality.yml up -d --build
+# Run from /opt/MIS_Projects/Quality/backend:
+#   docker compose --env-file .env -f docker-compose.quality.yml up -d --build
 name: mis-quality
 
 networks:

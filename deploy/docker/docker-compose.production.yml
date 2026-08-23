@@ -1,7 +1,6 @@
 # MIS Portal — PRODUCTION stack (isolated network + volumes)
-# Run from the REPO ROOT:
-#   docker compose --env-file deploy/docker/.env.production \
-#     -f deploy/docker/docker-compose.production.yml up -d --build
+# Run from /opt/MIS_Projects/Production/backend:
+#   docker compose --env-file .env -f docker-compose.production.yml up -d --build
 name: mis-production
 
 networks:
