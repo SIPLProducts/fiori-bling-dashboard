@@ -25,12 +25,13 @@ services:
       JWT_SECRET: ${JWT_SECRET}
     volumes:
       - p_db_data:/var/lib/postgresql/data
-      - ./supabase/roles.sql:/docker-entrypoint-initdb.d/99-roles.sql:ro
+      - ./supabase/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U supabase_admin -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 60s
 
   migrate:
     image: supabase/postgres:15.8.1.049
@@ -49,7 +50,7 @@ services:
         set -e
         for f in $$(ls /migrations/*.sql | sort); do
           echo "==> applying $$f"
-          psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -f "$$f"
+          psql -h db -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -f "$$f"
         done
         echo "migrations complete"
     restart: "no"
