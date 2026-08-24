@@ -1,68 +1,86 @@
-# Kong is fixed — next: confirm auth / rest / storage stay up
+# Root cause: Supabase's internal DB roles never got a password
 
-Kong loaded `kong.yml` successfully (`declarative config loaded`), so the
-`basic-auth` plugin fix worked. The `curl` result was cut off in your paste, and
-`rest`, `auth` and `storage` were all restarting before this, so the next step
-is to confirm whether they are now healthy or still crash-looping.
+The log is conclusive:
 
-## Step 1 — status and logs
+```
+password authentication failed for user "supabase_storage_admin"  (code 28P01)
+```
+
+`POSTGRES_PASSWORD` only sets the password for the `postgres` superuser. The
+Supabase image also ships internal roles — `authenticator`, `supabase_auth_admin`,
+`supabase_storage_admin`, `supabase_admin`, `pgbouncer` — and those are created
+**without** a password. Our compose file points `rest`, `auth` and `storage` at
+those roles with `${POSTGRES_PASSWORD}`, so every one of them fails to log in and
+crash-loops. This is a gap in our deploy files, not something wrong on your
+server, and it explains all three restarting containers (and, indirectly, the
+`Connection refused` the migrate container hit while Postgres was busy).
+
+## Repo change
+
+**1. New file `deploy/docker/supabase/roles.sql`** — the standard Supabase
+self-hosting init script that assigns `POSTGRES_PASSWORD` to every internal role:
+
+```sql
+\set pgpass `echo "$POSTGRES_PASSWORD"`
+
+ALTER USER authenticator            WITH PASSWORD :'pgpass';
+ALTER USER pgbouncer                WITH PASSWORD :'pgpass';
+ALTER USER supabase_auth_admin      WITH PASSWORD :'pgpass';
+ALTER USER supabase_functions_admin WITH PASSWORD :'pgpass';
+ALTER USER supabase_storage_admin   WITH PASSWORD :'pgpass';
+ALTER USER supabase_admin           WITH PASSWORD :'pgpass';
+```
+
+**2. Mount it into the `db` service** in both
+`docker-compose.production.yml` and `docker-compose.quality.yml`:
+
+```yaml
+    volumes:
+      - p_db_data:/var/lib/postgresql/data
+      - ./supabase/roles.sql:/docker-entrypoint-initdb.d/99-roles.sql:ro
+```
+
+(Quality uses `q_db_data`.) Scripts in `/docker-entrypoint-initdb.d` run **only
+on first initialisation of an empty data volume**, which is why the environment
+must be recreated with `down -v`.
+
+**3. `deploy/README.md`** — add `supabase/roles.sql` to the required-files list
+next to `kong.yml`, and note that changing `POSTGRES_PASSWORD` after first start
+requires `down -v`.
+
+## On the server (Production — no data yet, safe to wipe)
 
 ```bash
 cd /opt/MIS_Projects/Production/backend
-docker compose --env-file .env -f docker-compose.production.yml ps
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/
-docker logs mis_p_rest --tail 20
-docker logs mis_p_auth --tail 20
-docker logs mis_p_storage --tail 20
-docker logs mis_p_migrate --tail 20
-```
+# upload the updated docker-compose.production.yml AND the new supabase/roles.sql
+ls -l supabase/            # must show kong.yml AND roles.sql as FILES, not directories
 
-What each result means:
-
-- `9010/rest/v1/` returns `200` or `401` → the API gateway chain works.
-- `9010` returns `502` → Kong is up but `rest` is down; read the `rest` log.
-- `ps` shows `Restarting` for auth/rest/storage → go to Step 2.
-
-## Step 2 — if the logs say `password authentication failed`
-
-The Postgres volume was initialised with a different `POSTGRES_PASSWORD` than
-the one currently in `.env`. Production has no real data yet, so reset cleanly:
-
-```bash
 docker compose --env-file .env -f docker-compose.production.yml down -v
 docker compose --env-file .env -f docker-compose.production.yml up -d
-sleep 30
+sleep 40
 docker compose --env-file .env -f docker-compose.production.yml ps
-docker logs mis_p_migrate --tail 30
 ```
 
-`down -v` deletes the database volume — safe only because this environment is
-brand new. After this, `POSTGRES_PASSWORD` must never be changed again.
+Expect `db`, `auth`, `rest`, `storage`, `realtime`, `meta`, `kong`, `studio` all
+`Up` and none `Restarting`.
 
-## Step 3 — if `mis_p_migrate` found no SQL
+```bash
+docker logs mis_p_migrate --tail 30   # "==> applying" per file, then "migrations complete"
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/    # 200 or 401
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/
+```
 
-`ls: cannot access '/migrations/*.sql'` means the migration files are missing
-from `/opt/MIS_Projects/Production/supabase/migrations/`. Copy the repo's
-`supabase/migrations/*.sql` there, then:
+If `migrate` shows `Connection refused` again, rerun it once — it is one-shot and
+harmless to repeat:
 
 ```bash
 docker compose --env-file .env -f docker-compose.production.yml run --rm migrate
 ```
 
-Expect one `==> applying` line per file, then `migrations complete`.
+## Quality environment
 
-## Step 4 — end-to-end check through Nginx
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/   # 200 or 401
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/studio/             # 401 until you send basic-auth creds
-```
-
-Then open `http://mis.siplproducts.com/` for the portal and `/studio/` for the
-dashboard (user `supabase`, password from `DASHBOARD_PASSWORD`). Sign in with
-the demo account seeded by the migrations, or create the first user — the first
-user is granted the admin role automatically.
-
-Paste the Step 1 output and I will tell you which branch applies.
+Quality has the same defect. Apply the same fix there whenever you next rebuild
+it — but only with `down -v` if you are willing to lose its database, since that
+one already has data.
 
 No application code changes.
