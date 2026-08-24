@@ -1,59 +1,47 @@
-# Fix Production database initialization
+# Fix Production database initialization (and protect Quality)
 
-## Confirmed cause
+## Why Quality works and Production does not
 
-The latest output confirms the problem:
+Quality's database volume was initialized **before** the `roles.sql` mount was ever added, so its containers still run from that earlier, working initialization. Nothing on Quality has been re-created since — that is the only reason it is fine.
 
-- `supabase/roles.sql` is a **directory**, not a file. Docker created it automatically because the source file was missing when Compose first ran.
-- That directory was mounted where a database initialization SQL file was expected, so the internal service-role passwords were never set. This explains the auth and storage password failures.
-- This database image's administrative role is `supabase_admin`; the current migration and healthcheck incorrectly use `postgres`, which the log confirms does not exist.
-- The `.env` password itself is present without trailing spaces.
+Production, in contrast, was started fresh **with** the new mount, and the FileZilla view confirms the cause: `supabase/roles.sql` was never uploaded to the server, so Docker created it as an empty **directory** and mounted that where an initialization SQL file was expected. As a result:
 
-## Changes to make in the repository
+- the internal service roles never got a password → auth and storage fail with password authentication errors,
+- the migration step connects as `postgres`, a role this database image does not create (its admin role is `supabase_admin`) → `role "postgres" does not exist`,
+- Kong and Studio never start because the first `up` aborts while the database is still initializing.
 
-1. Restore `deploy/docker/supabase/roles.sql` as a real SQL file using the official internal-role password statements.
-2. Mount it at the image's correct init-script location:
-   `/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro`.
-3. Change the database healthcheck and migration connection from `postgres` to `supabase_admin` in both Production and Quality compose files.
-4. Add a cold-start grace period to the database healthcheck so the first `up` waits for initialization instead of aborting early.
-5. Update the deployment README with a mandatory file check before first startup so Docker cannot silently replace `roles.sql` or `kong.yml` with directories again.
+Important: Quality carries the exact same mount line. The next time Quality is re-created without that file present, it will fail in precisely the same way.
 
-## Server recovery after the corrected files are uploaded
+## Repository changes
 
-The existing Production volume must be recreated because it was initialized without the required role-password script.
+1. Keep `deploy/docker/supabase/roles.sql` as a real SQL file with the official internal-role password statements, and mount it at the image's correct location: `/docker-entrypoint-initdb.d/init-scripts/99-roles.sql`.
+2. Change the database healthcheck and the migration step to connect as `supabase_admin` instead of `postgres`, in both Production and Quality compose files.
+3. Add a cold-start grace period to the database healthcheck so the first `up` no longer aborts with "db is unhealthy".
+4. Update `deploy/README.md` with a mandatory pre-start file check (`ls -l supabase/`) so a missing file can never silently become a directory again, plus a clear note that Quality must not be re-created until the corrected files are uploaded there too.
+
+## Server steps — Production only
 
 ```bash
 cd /opt/MIS_Projects/Production/backend
-
-# Stop first, then remove the accidental directory.
 docker compose --env-file .env -f docker-compose.production.yml down -v
 sudo rm -rf supabase/roles.sql
 
-# Upload the corrected repository files now:
-# docker-compose.production.yml
-# supabase/roles.sql
+# Upload from the repo: docker-compose.production.yml and supabase/roles.sql
 
-# Verify both mounts are regular files. The first character must be "-", not "d".
-ls -l supabase/roles.sql supabase/kong.yml
+ls -l supabase/            # both entries must start with "-", not "d"
 
-# Start from a clean database volume.
 docker compose --env-file .env -f docker-compose.production.yml up -d
 sleep 90
-
-# Verify.
 docker compose --env-file .env -f docker-compose.production.yml ps
 docker logs mis_p_migrate --tail 30
-docker logs mis_p_auth --tail 20
-docker logs mis_p_rest --tail 20
-docker logs mis_p_storage --tail 20
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/
 ```
 
-Expected result:
+Expected: `migrate` exits 0 with `migrations complete`, all other containers stay `Up`, and the curl returns `401` instead of `000`.
 
-- `migrate` exits with code 0 after printing `migrations complete`.
-- Auth, REST, Storage, Realtime, Kong, and Studio remain `Up` rather than restarting.
-- Port `9010` returns an HTTP response such as `401`, not `000`.
+## Quality — no redeploy now
+
+Leave Quality running as-is. Only upload the corrected `docker-compose.quality.yml` and `supabase/roles.sql` so they are in place for whenever Quality is next rebuilt. Do not run `down -v` on Quality.
 
 ## Files touched
 
