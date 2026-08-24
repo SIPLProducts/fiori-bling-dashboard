@@ -1,71 +1,80 @@
-# Production: Kong returns 000 — diagnose before changing anything
+# Kong: `basic-auth` plugin not enabled (repo bug) + auth/rest/storage restarting
 
-The stack came up, but `curl 127.0.0.1:9010/rest/v1/` returning `000` means
-nothing is listening on that port — Kong is not running (it either exited or is
-crash-looping). Quality showed the same symptom, and there the cause was
-`supabase/kong.yml` existing as an empty **directory** instead of a file. That is
-the most likely cause here too, but it is unconfirmed for Production, so step 1
-is to read the logs rather than assume.
+The Kong log names the cause exactly:
 
-## Step 1 — confirm the cause
+```
+plugin 'basic-auth' not enabled; add it to the 'plugins' configuration property
+in 'consumers': in 'basicauth_credentials': unknown field
+```
+
+`kong.yml` uses the `basic-auth` plugin for the Studio dashboard route, but the
+compose file's `KONG_PLUGINS` list does not include it, so Kong refuses to load
+the config and crash-loops. This is a bug in our repo files, not in your server
+setup — `kong.yml` itself is fine (`file` confirms it is UTF-8 text).
+
+## Repo change
+
+In both `deploy/docker/docker-compose.production.yml` and
+`deploy/docker/docker-compose.quality.yml`, change the Kong plugin list:
+
+```yaml
+KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+```
+
+That is the only edit needed to fix Kong.
+
+## On the server
 
 ```bash
 cd /opt/MIS_Projects/Production/backend
-docker compose --env-file .env -f docker-compose.production.yml ps
-docker logs mis_p_kong --tail 30
-file supabase/kong.yml
-```
-
-Expected outcomes:
-
-- `kong.yml: ASCII text` and Kong `Up` → different problem; paste the log.
-- `kong.yml: directory` → the file was never uploaded; go to Step 2.
-- Log mentions an empty consumer key → a blank `ANON_KEY`,
-  `SERVICE_ROLE_KEY`, `DASHBOARD_USERNAME` or `DASHBOARD_PASSWORD` in `.env`.
-
-## Step 2 — if `kong.yml` is a directory
-
-```bash
-docker compose --env-file .env -f docker-compose.production.yml stop kong
-rm -rf supabase/kong.yml
-# upload repo file deploy/docker/supabase/kong.yml to
-#   /opt/MIS_Projects/Production/backend/supabase/kong.yml
-file supabase/kong.yml      # must say: ASCII text
-head -3 supabase/kong.yml   # must start with: _format_version: "2.1"
+# upload the updated docker-compose.production.yml over the old one
 docker compose --env-file .env -f docker-compose.production.yml up -d --force-recreate kong
 sleep 10
-docker logs mis_p_kong --tail 20
+docker logs mis_p_kong --tail 20        # no init_by_lua error
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/
 ```
 
-## Step 3 — check the keys are in place
+Optional: convert the file's CRLF line endings to LF (`sed -i 's/\r$//'
+supabase/kong.yml`). Kong parsed it fine, so this is cosmetic.
 
-Production `.env` must contain the ANON / SERVICE_ROLE JWTs generated for the
-production `JWT_SECRET` (both were produced in the previous step), plus:
+## Second problem — auth, rest and storage are also restarting
+
+Those three are the services that connect to Postgres with role-specific
+passwords, and Quality failed the same way with
+`password authentication failed for user "authenticator"`. Their cause here is
+not yet confirmed, so read the logs before changing anything:
 
 ```bash
-grep -c 'change-me' .env    # must print 0
-grep -c '^ANON_KEY=eyJ' .env            # 1
-grep -c '^SERVICE_ROLE_KEY=eyJ' .env    # 1
+docker logs mis_p_auth --tail 20
+docker logs mis_p_rest --tail 20
+docker logs mis_p_storage --tail 20
+docker logs mis_p_migrate --tail 20
 ```
 
-If Kong started before these were filled in, recreate it so it picks them up.
+- If they say `password authentication failed`, the Postgres volume was
+  initialised with a different `POSTGRES_PASSWORD` than the one now in `.env`.
+  Since Production has no real data yet, the fix is a clean reset:
 
-## Step 4 — verify the chain
+  ```bash
+  docker compose --env-file .env -f docker-compose.production.yml down -v
+  docker compose --env-file .env -f docker-compose.production.yml up -d
+  ```
+
+  `down -v` deletes the database volume — only safe because this environment is
+  brand new.
+
+- If `mis_p_migrate` printed `ls: cannot access '/migrations/*.sql'`, the SQL
+  files are missing from `/opt/MIS_Projects/Production/supabase/migrations/`
+  and no tables exist; copy them there before restarting.
+
+Paste those four logs and I will confirm which branch applies.
+
+## Final verification
 
 ```bash
 docker compose --env-file .env -f docker-compose.production.yml ps   # all Up, none Restarting
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/       # 200 or 401
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9012/               # 200/307 Studio
-docker logs mis_p_migrate --tail 20     # expect "==> applying" lines, then "migrations complete"
-docker logs mis_p_auth --tail 10        # no "fatal"
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/   # 200 or 401
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/
 ```
-
-`000` on 9010 after this means Kong is still not up — send the Kong log.
-
-## Note on the migrate container
-
-`mis_p_migrate` is one-shot. Confirm it actually applied SQL; if it printed
-`ls: cannot access '/migrations/*.sql'`, the SQL files are not in
-`/opt/MIS_Projects/Production/supabase/migrations/` and the database is empty.
 
 No application code changes.
