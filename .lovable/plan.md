@@ -1,82 +1,52 @@
-# Remaining blocker: Kong's `kong.yml` is a directory
+# Production ANON / SERVICE_ROLE keys
 
-Good progress — migrations applied cleanly (all 7 files, tables + seed rows
-created), so the database and its password are now correct.
+Generated as HS256 JWTs signed with the production `JWT_SECRET` you supplied
+(10-year expiry, `iss: supabase`). Paste these into
+`/opt/MIS_Projects/Production/backend/.env`.
 
-The only thing still broken is Kong, and its log named the cause exactly:
+## Keys
+
+ANON_KEY
 
 ```
-error parsing declarative config file /home/kong/kong.yml:
-/home/kong/kong.yml: Is a directory
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3NTYwNzA0LCJleHAiOjIxMDI5MjA3MDR9.zPlqhkVrG7i4iBRIx-k6oHF0n7_Sc_ra5crWOa2R68k
 ```
 
-`/opt/MIS_Projects/Quality/backend/supabase/kong.yml` does not exist as a file.
-When a bind-mount source is missing, Docker creates an empty **directory** with
-that name; Kong tries to parse it and crash-loops. That is why
-`127.0.0.1:8000` gives `000` and Nginx `/supabase/` gives `502` — nothing is
-listening behind them.
+SERVICE_ROLE_KEY
 
-## Fix
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODc1NjA3MDQsImV4cCI6MjEwMjkyMDcwNH0.W8NKY5APMwETPG9-akrqj7Lab7l0vs1-p_09LKQOtLU
+```
 
-**Step 1 — remove the fake directory.**
+## .env lines to set
+
+```
+ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3NTYwNzA0LCJleHAiOjIxMDI5MjA3MDR9.zPlqhkVrG7i4iBRIx-k6oHF0n7_Sc_ra5crWOa2R68k
+SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODc1NjA3MDQsImV4cCI6MjEwMjkyMDcwNH0.W8NKY5APMwETPG9-akrqj7Lab7l0vs1-p_09LKQOtLU
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3NTYwNzA0LCJleHAiOjIxMDI5MjA3MDR9.zPlqhkVrG7i4iBRIx-k6oHF0n7_Sc_ra5crWOa2R68k
+```
+
+`VITE_SUPABASE_PUBLISHABLE_KEY` must equal `ANON_KEY` — the browser bundle uses it.
+`SERVICE_ROLE_KEY` bypasses RLS: server-side only, never in the frontend build.
+
+## Rules that apply
+
+- These keys are valid only while `JWT_SECRET` stays exactly as it is now.
+  Changing `JWT_SECRET` invalidates both keys and requires regenerating them.
+- Also required in the same `.env`: `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`
+  (Studio basic auth), `SITE_URL`, `API_EXTERNAL_URL`.
+- Before the first `up -d`, copy `deploy/docker/supabase/kong.yml` into
+  `/opt/MIS_Projects/Production/backend/supabase/kong.yml`, otherwise Docker
+  creates it as a directory and Kong crash-loops.
+
+## Apply on the server
 
 ```bash
-cd /opt/MIS_Projects/Quality/backend
-docker compose --env-file .env -f docker-compose.quality.yml stop kong
-ls -la supabase/            # kong.yml shows as a directory
-rmdir supabase/kong.yml
+cd /opt/MIS_Projects/Production/backend
+nano .env                       # paste the three lines above
+grep -c 'change-me' .env        # must print 0
+docker compose --env-file .env -f docker-compose.production.yml up -d --force-recreate kong rest auth storage studio
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/   # 200 or 401
 ```
-
-If `rmdir` complains the directory is not empty, use
-`rm -rf supabase/kong.yml`.
-
-**Step 2 — upload the real file.** Copy the repo file
-`deploy/docker/supabase/kong.yml` to
-`/opt/MIS_Projects/Quality/backend/supabase/kong.yml`, then confirm:
-
-```bash
-file supabase/kong.yml      # "ASCII text" — must NOT say "directory"
-head -3 supabase/kong.yml   # starts with: _format_version: "2.1"
-```
-
-**Step 3 — recreate Kong only.**
-
-```bash
-docker compose --env-file .env -f docker-compose.quality.yml up -d --force-recreate kong
-sleep 10
-docker logs mis_q_kong --tail 20
-```
-
-No `init_by_lua error` should appear. If Kong still exits, the next likely
-message is about an empty consumer key — that means `ANON_KEY`,
-`SERVICE_ROLE_KEY`, `DASHBOARD_USERNAME` or `DASHBOARD_PASSWORD` is blank in
-`.env` (`grep -c 'change-me' .env` must print 0).
-
-**Step 4 — verify the whole chain.**
-
-```bash
-docker compose --env-file .env -f docker-compose.quality.yml ps        # all Up, none Restarting
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/rest/v1/       # 200 or 401
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1/supabase/rest/v1/   # same
-docker logs mis_q_auth --tail 5                                        # no "fatal"
-```
-
-**Step 5 — open the portal.** `http://10.10.4.165/` for the app,
-`http://10.10.4.165/studio/` for Studio (basic-auth user `supabase`). Sign in
-with the demo account seeded by the migrations, or create your first user —
-the first user is granted the admin role automatically.
-
-## Repo change
-
-Add a pre-flight checklist to `deploy/README.md` so this cannot recur:
-
-- Copy `supabase/kong.yml` into `backend/supabase/` **before** the first
-  `up -d`; a missing file becomes a directory and Kong fails with
-  `kong.yml: Is a directory`.
-- Never change `POSTGRES_PASSWORD` after the first start — the volume keeps the
-  original; a mismatch shows as `password authentication failed for user
-  "authenticator"` and needs `down -v`.
-- Confirm the migrations folder resolves to `Quality/supabase/migrations`
-  (already fixed in the compose file).
 
 No application code changes.
