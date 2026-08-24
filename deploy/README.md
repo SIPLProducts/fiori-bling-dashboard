@@ -38,16 +38,40 @@ above and **no tables were created**.
 
 Upload `kong.yml` and `roles.sql` **before** the first `up -d`. When a bind-mount
 source is missing, Docker creates an empty *directory* with that name: Kong then
-fails with `kong.yml: Is a directory`, and the roles script silently does nothing.
+fails with `kong.yml: Is a directory`, and the roles script silently does nothing
+(auth/rest/storage then crash-loop with `password authentication failed`).
 
-`roles.sql` runs only on first initialisation of an empty database volume. It
-gives `authenticator`, `supabase_auth_admin`, `supabase_storage_admin` and the
-other internal roles the `POSTGRES_PASSWORD` — without it, `rest`, `auth` and
-`storage` crash-loop with `password authentication failed`.
+**Mandatory pre-start check** — every entry must start with `-`, never `d`:
+
+```bash
+ls -l supabase/
+# -rw-rw-r-- ... kong.yml
+# -rw-rw-r-- ... roles.sql
+```
+
+If either shows as a directory: stop the stack, `sudo rm -rf supabase/<name>`,
+upload the real file, then start again.
+
+`roles.sql` is mounted at `/docker-entrypoint-initdb.d/init-scripts/99-roles.sql`
+so it runs after the image creates its internal roles, and only on first
+initialisation of an empty database volume. It gives `authenticator`,
+`supabase_auth_admin`, `supabase_storage_admin` and the other internal roles the
+`POSTGRES_PASSWORD`.
+
+The database image's superuser is `supabase_admin`, **not** `postgres` — the
+healthcheck and the migration step both connect as `supabase_admin`. A
+`role "postgres" does not exist` error means an older compose file is still on
+the server.
 
 **Never change `POSTGRES_PASSWORD` after the first start.** The volume keeps the
 original; a mismatch shows the same authentication failure and can only be fixed
 with `docker compose ... down -v`, which deletes the database.
+
+> **Quality is currently running on an older initialisation and is healthy.**
+> Upload the corrected `docker-compose.quality.yml` and `supabase/roles.sql` so
+> they are in place for the next rebuild, but do **not** run `down -v` on
+> Quality — that would wipe its working database.
+
 
 
 
