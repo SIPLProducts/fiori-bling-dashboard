@@ -24,16 +24,31 @@ This README assumes you keep the existing server layout:
     └── supabase/
 ```
 
-**Two paths the compose file depends on — get these exactly right:**
+**Three paths the compose file depends on — get these exactly right:**
 
 | Compose mount | Must exist on the server |
 | --- | --- |
 | `../supabase/migrations` | `/opt/MIS_Projects/Quality/supabase/migrations/*.sql` |
 | `./supabase/kong.yml` | `/opt/MIS_Projects/Quality/backend/supabase/kong.yml` |
+| `./supabase/roles.sql` | `/opt/MIS_Projects/Quality/backend/supabase/roles.sql` |
 
 (Same shape under `Production/`.) If `docker logs mis_q_migrate` prints
 `ls: cannot access '/migrations/*.sql'`, the SQL files are not in the folder
 above and **no tables were created**.
+
+Upload `kong.yml` and `roles.sql` **before** the first `up -d`. When a bind-mount
+source is missing, Docker creates an empty *directory* with that name: Kong then
+fails with `kong.yml: Is a directory`, and the roles script silently does nothing.
+
+`roles.sql` runs only on first initialisation of an empty database volume. It
+gives `authenticator`, `supabase_auth_admin`, `supabase_storage_admin` and the
+other internal roles the `POSTGRES_PASSWORD` — without it, `rest`, `auth` and
+`storage` crash-loop with `password authentication failed`.
+
+**Never change `POSTGRES_PASSWORD` after the first start.** The volume keeps the
+original; a mismatch shows the same authentication failure and can only be fixed
+with `docker compose ... down -v`, which deletes the database.
+
 
 
 ```
