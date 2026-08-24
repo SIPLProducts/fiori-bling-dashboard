@@ -1,51 +1,68 @@
-# Fix: auth / rest / storage keep restarting on Production
+# Fix: Production stack — password authentication failing for every service
 
-## What the output shows
+## What the latest run tells us
+
+The volumes were wiped and recreated, yet:
 
 - `mis_p_db` is up and healthy, `mis_p_meta` is healthy.
-- `mis_p_auth`, `mis_p_rest`, `mis_p_storage` are in `Restarting (1)` loops — the same signature as before: the internal database roles (`authenticator`, `supabase_auth_admin`, `supabase_storage_admin`) still have no usable password.
-- `mis_p_kong` and `mis_p_studio` never started because the first `up` aborted with "container mis_p_db is unhealthy" (the db just needed more than the initial grace period).
-- `curl 127.0.0.1:9010/rest/v1/` returns `000` because Kong was never created in this run.
+- `mis_p_auth` and `mis_p_storage` restart in a loop; `rest`, `kong`, `studio`, `realtime` were only *created*, never started, because the first `up` aborted on "container mis_p_db is unhealthy" (the db needs longer than the current healthcheck grace period on a cold init).
+- `mis_p_migrate` now fails with **`password authentication failed for user "postgres"`**.
 
-So the password bootstrap in `supabase/roles.sql` is not taking effect. Running it as an `initdb` script is fragile: the Supabase Postgres image creates several of those roles in its own init phase, so an `ALTER USER` that runs too early either fails or is later overwritten.
+That last line is the important change. It is no longer only the internal service roles — even the superuser password does not match. So the password the containers send (`POSTGRES_PASSWORD` from `.env`) is not the password the database was initialised with. Two things can cause that, and we need to see which before changing anything:
 
-## Plan
+1. `POSTGRES_PASSWORD` in `.env` is being read differently than expected (quoting, trailing whitespace, a `#`, or the value was edited after the volume was first created).
+2. The `roles.sql` init mount is not a real file on the server (same trap as `kong.yml` earlier — Docker silently creates a *directory* when the file is missing), so the role bootstrap never ran and something in init aborted early.
 
-1. **Stop bootstrapping passwords through `docker-entrypoint-initdb.d`.**
-   Remove the `./supabase/roles.sql:/docker-entrypoint-initdb.d/99-roles.sql` mount from `db` in both `deploy/docker/docker-compose.production.yml` and `docker-compose.quality.yml`.
+`mis_p_roles` does not exist yet — that service is part of this plan, not something already deployed.
 
-2. **Add a one-shot `roles` service** (same pattern as `migrate`) that waits for the db to be healthy and then applies the passwords over a superuser connection, so it always runs after the image finished creating its roles:
-   - image: `supabase/postgres:15.8.1.049`, `restart: "no"`
-   - `depends_on: db: {condition: service_healthy}`
-   - runs `psql -h db -U postgres` with the `ALTER USER ... WITH PASSWORD` statements from `roles.sql`, guarded so a role that doesn't exist is skipped instead of aborting.
-   - `migrate`, `auth`, `rest`, `storage`, `realtime` then depend on `roles` completing successfully.
+## Step 1 — Diagnose (you run, paste output)
 
-3. **Make `roles.sql` idempotent and non-fatal** — wrap each `ALTER USER` in a `DO` block that checks `pg_roles` first, and read the password from the `PGPASSWORD`/env value passed to the container rather than a backtick shell expansion.
+```bash
+cd /opt/MIS_Projects/Production/backend
+ls -l supabase/                       # roles.sql and kong.yml must be FILES, not dirs
+grep -n '^POSTGRES_PASSWORD' .env | cat -A | head -1   # reveals quotes/trailing spaces
+docker exec mis_p_db printenv POSTGRES_PASSWORD
+docker logs mis_p_db 2>&1 | grep -iE 'roles|error|fatal|initdb' | tail -30
+```
 
-4. **Give the db a startup grace period** so the first `up` doesn't abort: add `start_period: 30s` to the db healthcheck (retries stay as-is).
+If `supabase/roles.sql` shows as a directory, `rm -rf supabase/roles.sql` and re-upload the real file from the repo before anything else.
 
-5. **Redeploy sequence for you to run** (wipes the Production data volume, which is fine — no real data yet):
+## Step 2 — Repo changes (I make these)
 
-   ```bash
-   cd /opt/MIS_Projects/Production/backend
-   docker compose --env-file .env -f docker-compose.production.yml down -v
-   docker compose --env-file .env -f docker-compose.production.yml up -d
-   sleep 60
-   docker compose --env-file .env -f docker-compose.production.yml ps
-   docker logs mis_p_roles --tail 20
-   docker logs mis_p_migrate --tail 20
-   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/
-   ```
+1. **Move the role-password bootstrap out of `docker-entrypoint-initdb.d`.**
+   Remove the `./supabase/roles.sql:/docker-entrypoint-initdb.d/99-roles.sql` mount from `db` in both `docker-compose.production.yml` and `docker-compose.quality.yml`. A missing/mis-mounted file there can break initialisation itself, which is exactly the failure mode we keep hitting.
 
-   Expected: `roles` and `migrate` exited 0, all other containers `Up`, and the curl returns `401` (Kong reachable, key required) — not `000`.
+2. **Add a one-shot `roles` service** (`mis_p_roles` / `mis_q_roles`), same pattern as `migrate`:
+   - waits for `db: service_healthy`, connects as superuser, and applies `ALTER USER ... WITH PASSWORD` for `postgres`, `authenticator`, `pgbouncer`, `supabase_auth_admin`, `supabase_functions_admin`, `supabase_storage_admin`, `supabase_admin`, each guarded by a `pg_roles` existence check so a missing role is skipped instead of aborting.
+   - the SQL is passed inline in the compose entrypoint, so there is **no host file to mis-mount**.
+   - `migrate`, `auth`, `rest`, `storage`, `realtime` gain `depends_on: roles: {condition: service_completed_successfully}`.
 
-6. Repeat the same two file changes for Quality and note the same reset command in `deploy/README.md`.
+3. **Give the db a real cold-start window**: add `start_period: 60s` to the db healthcheck so the first `up` no longer aborts with "db is unhealthy" and Kong/Studio actually start.
+
+4. Delete `deploy/docker/supabase/roles.sql` and update `deploy/README.md` (file list + the reset procedure below).
+
+## Step 3 — Redeploy
+
+```bash
+cd /opt/MIS_Projects/Production/backend
+docker compose --env-file .env -f docker-compose.production.yml down -v
+docker compose --env-file .env -f docker-compose.production.yml up -d
+sleep 90
+docker compose --env-file .env -f docker-compose.production.yml ps
+docker logs mis_p_roles --tail 30
+docker logs mis_p_migrate --tail 30
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9010/rest/v1/
+```
+
+Expected: `roles` and `migrate` exited 0, everything else `Up`, and the curl returns `401` (Kong reachable, API key required) instead of `000`.
+
+Same changes are applied to the Quality compose file so both environments stay identical.
 
 ## Files touched
 
 - `deploy/docker/docker-compose.production.yml`
 - `deploy/docker/docker-compose.quality.yml`
-- `deploy/docker/supabase/roles.sql`
+- `deploy/docker/supabase/roles.sql` (removed)
 - `deploy/README.md`
 
 No application code changes.
