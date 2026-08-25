@@ -10,6 +10,7 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
 
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — Nexus Procurement Analytics" },
