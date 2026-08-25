@@ -1,29 +1,19 @@
-# Explain edge functions in the deployment runbook
+# Fix: login page intermittently shows "This page didn't load"
 
-Update the MIS deployment runbook so it clearly explains why this project has no Supabase Edge Functions and what replaces them.
+## What's happening
 
-## Background
+The sign-in page renders fine most of the time, but on a cold server render it can fail and fall back to the app-wide error screen ("This page didn't load"). Reproduced once: the very first request to `/auth` after the server started returned a page with no sign-in content, while later requests rendered normally.
 
-The repository has no `supabase/functions/` directory and no Edge Function logic. All backend behaviour is implemented with TanStack server functions (`createServerFn`) that live inside the application source and are bundled with the frontend build. The only database/SQL artefacts that must be applied per environment are the migrations in `supabase/migrations/`.
+The sign-in page is a browser-only screen — it depends on the auth client and browser storage — so rendering it on the server adds risk with no benefit. The protected area of the app already opts out of server rendering for exactly this reason.
 
-## Changes to make
+## The fix
 
-1. **Add a dedicated "Server architecture" section near the start of the runbook** that states:
-   - This is a single full-stack TanStack Start application.
-   - Backend logic is served by the same app process as the UI, using `createServerFn` RPC calls.
-   - No Supabase Edge Functions are present or required.
-   - The only backend SQL artefact to deploy is `supabase/migrations/*.sql`.
+1. Mark the `/auth` route as client-rendered (`ssr: false`), matching what the protected layout already does. Page metadata (title/description/OG tags) stays intact for sharing and SEO.
+2. Keep the auth client usage inside event handlers only, so nothing auth-related runs during page setup.
+3. Verify: load `/auth` cold (fresh server) several times and confirm the sign-in form appears every time with no console errors, then confirm normal sign-in and the demo login still land on the launchpad.
 
-2. **Remove any remaining Edge Function references** from the Markdown runbook and the PDF:
-   - No Edge Function build step.
-   - No Edge Function deploy command.
-   - No Edge Function environment variables.
+## Technical notes
 
-3. **Keep the rest of the runbook intact** — server provisioning, Docker stacks, `.env` templates, Nginx configs, backups, troubleshooting, and the port matrix.
-
-## Deliverables
-
-- `MIS-Deployment-Runbook-v2.md` with the updated server-architecture explanation.
-- `MIS-Deployment-Runbook-v2.pdf` regenerated from the updated Markdown.
-
-No application code changes.
+- `src/routes/auth.tsx`: add `ssr: false` to the `createFileRoute("/auth")` options, alongside the existing `head()` and `component`.
+- No change to `src/routes/__root.tsx`, `src/start.ts`, or `src/server.ts`; the error boundary stays as the last-resort fallback.
+- No backend, schema, or deployment changes.
