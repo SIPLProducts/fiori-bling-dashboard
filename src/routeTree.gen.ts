@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
+import { Route as AuthenticatedAdminSapApiRouteImport } from './routes/_authenticated/admin/sap-api'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
 import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
@@ -52,6 +53,12 @@ const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminSapApiRoute =
+  AuthenticatedAdminSapApiRouteImport.update({
+    id: '/admin/sap-api',
+    path: '/admin/sap-api',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -107,6 +115,7 @@ export interface FileRoutesByTo {
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -122,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/_authenticated/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/launchpad'
     | '/admin/permissions'
     | '/admin/roles'
+    | '/admin/sap-api'
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/launchpad'
     | '/admin/permissions'
     | '/admin/roles'
+    | '/admin/sap-api'
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/launchpad'
     | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/roles'
+    | '/_authenticated/admin/sap-api'
     | '/_authenticated/admin/users'
     | '/_authenticated/reports/procurement'
     | '/_authenticated/reports/purchase-orders'
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/sap-api': {
+      id: '/_authenticated/admin/sap-api'
+      path: '/admin/sap-api'
+      fullPath: '/admin/sap-api'
+      preLoaderRoute: typeof AuthenticatedAdminSapApiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -271,6 +291,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
+  AuthenticatedAdminSapApiRoute: typeof AuthenticatedAdminSapApiRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
   AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -283,6 +304,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLaunchpadRoute: AuthenticatedLaunchpadRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
+  AuthenticatedAdminSapApiRoute: AuthenticatedAdminSapApiRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
   AuthenticatedReportsPurchaseOrdersRoute:
