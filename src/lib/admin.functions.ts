@@ -84,7 +84,8 @@ function validate(input: UserFormInput, requirePassword: boolean) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())) errors.push("A valid email is required");
   if (!input.contact.trim()) errors.push("Contact is required");
   if (!input.status) errors.push("Status is required");
-  if (requirePassword || input.password) {
+  if (!input.roleKey) errors.push("A role is required");
+  if (requirePassword || input.password || input.confirmPassword) {
     if (input.password.length < 8) errors.push("Password must be at least 8 characters");
     if (input.password !== input.confirmPassword) errors.push("Passwords do not match");
   }
@@ -104,12 +105,9 @@ async function assertUsernameFree(username: string, ignoreUserId?: string) {
   }
 }
 
-async function assertAssignableRoles(roleKeys: string[]) {
+async function assertAssignableRole(roleKey: string) {
   const roles = await listRoles();
-  const valid = new Set(roles.map((role) => role.key));
-  for (const key of roleKeys) {
-    if (!valid.has(key)) throw new Error(`Unknown role: ${key}`);
-  }
+  if (!roles.some((role) => role.key === roleKey)) throw new Error(`Unknown role: ${roleKey}`);
 }
 
 export async function createPortalUser(input: { data: UserFormInput }) {
@@ -117,7 +115,8 @@ export async function createPortalUser(input: { data: UserFormInput }) {
   const form = input.data;
   validate(form, true);
   await assertUsernameFree(form.username);
-  await assertAssignableRoles(form.roles);
+  await assertAssignableRole(form.roleKey);
+
 
   const signUp = await signUpClient().auth.signUp({
     email: form.email.trim(),
