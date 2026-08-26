@@ -32,8 +32,9 @@ export type UserFormInput = {
   department: string;
   password: string;
   confirmPassword: string;
-  roles: string[];
+  roleKey: string;
 };
+
 
 async function requireSuperAdmin(): Promise<string> {
   const { data: auth, error } = await supabase.auth.getUser();
