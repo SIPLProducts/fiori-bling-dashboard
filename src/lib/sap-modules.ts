@@ -38,25 +38,21 @@ export type ModuleDef = {
   kpis: ModuleKpiDef[];
 };
 
-/** Which roles may open each SAP module report. Mirrors tiles.allowed_roles. */
-export const MODULE_ROLES: Record<ModuleKey, ModuleRole[]> = {
-  sd: ["admin", "buyer", "viewer"],
-  fi: ["admin", "approver", "viewer"],
-  co: ["admin", "approver"],
-  pp: ["admin", "buyer"],
-  qm: ["admin", "buyer", "viewer"],
-  ps: ["admin", "approver", "viewer"],
-};
-
-export function canAccessModule(moduleKey: string, roles: readonly string[] | undefined): boolean {
-  const allowed = MODULE_ROLES[moduleKey as ModuleKey];
-  if (!allowed) return false;
-  return (roles ?? []).some((role) => allowed.includes(role as ModuleRole));
+/** Screen permission key for a module report. */
+export function moduleScreenKey(moduleKey: string): string {
+  return `module.${moduleKey}`;
 }
 
-export function modulesForRoles(roles: readonly string[] | undefined): ModuleDef[] {
-  return MODULES.filter((mod) => canAccessModule(mod.key, roles));
+/** Module access is granted through screen permissions on the role. */
+export function canAccessModule(moduleKey: string, screens: readonly string[] | undefined): boolean {
+  if (!MODULES.some((mod) => mod.key === moduleKey)) return false;
+  return (screens ?? []).includes(moduleScreenKey(moduleKey));
 }
+
+export function modulesForScreens(screens: readonly string[] | undefined): ModuleDef[] {
+  return MODULES.filter((mod) => canAccessModule(mod.key, screens));
+}
+
 
 export const MODULES: ModuleDef[] = [
   {

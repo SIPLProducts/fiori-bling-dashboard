@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
+import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
+import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
 import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
@@ -37,6 +39,17 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedLaunchpadRoute = AuthenticatedLaunchpadRouteImport.update({
   id: '/launchpad',
   path: '/launchpad',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminPermissionsRoute =
+  AuthenticatedAdminPermissionsRouteImport.update({
+    id: '/admin/permissions',
+    path: '/admin/permissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
+  id: '/admin/roles',
+  path: '/admin/roles',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
@@ -79,6 +92,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -90,6 +105,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -103,6 +120,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
   '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -116,6 +135,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/launchpad'
+    | '/admin/permissions'
+    | '/admin/roles'
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
@@ -127,6 +148,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/launchpad'
+    | '/admin/permissions'
+    | '/admin/roles'
     | '/admin/users'
     | '/reports/procurement'
     | '/reports/purchase-orders'
@@ -139,6 +162,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/launchpad'
+    | '/_authenticated/admin/permissions'
+    | '/_authenticated/admin/roles'
     | '/_authenticated/admin/users'
     | '/_authenticated/reports/procurement'
     | '/_authenticated/reports/purchase-orders'
@@ -181,6 +206,20 @@ declare module '@tanstack/react-router' {
       path: '/launchpad'
       fullPath: '/launchpad'
       preLoaderRoute: typeof AuthenticatedLaunchpadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/permissions': {
+      id: '/_authenticated/admin/permissions'
+      path: '/admin/permissions'
+      fullPath: '/admin/permissions'
+      preLoaderRoute: typeof AuthenticatedAdminPermissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/roles': {
+      id: '/_authenticated/admin/roles'
+      path: '/admin/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -230,6 +269,8 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
+  AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
+  AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
   AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
@@ -240,6 +281,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLaunchpadRoute: AuthenticatedLaunchpadRoute,
+  AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
+  AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
   AuthenticatedReportsPurchaseOrdersRoute:

@@ -47,7 +47,7 @@ function Launchpad() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ShellBar title="Home" displayName={data?.profile?.display_name} roles={data?.roles} />
+      <ShellBar title="Home" displayName={data?.profile?.display_name} screens={data?.screens} />
 
 
       <div className="border-b border-border bg-card">

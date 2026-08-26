@@ -380,7 +380,7 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
 function SalesAnalyticsPage() {
   const fetchAnalytics = getSalesAnalytics;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessModule("sd", launchpad?.roles);
+  const allowed = canAccessModule("sd", launchpad?.screens);
 
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);

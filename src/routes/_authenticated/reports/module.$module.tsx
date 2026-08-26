@@ -55,7 +55,7 @@ function ModuleReportPage() {
   const def = findModule(module)!;
   const fetchReport = getModuleReport;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessModule(module, launchpad?.roles);
+  const allowed = canAccessModule(module, launchpad?.screens);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({

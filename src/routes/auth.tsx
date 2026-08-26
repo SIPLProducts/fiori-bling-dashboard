@@ -33,20 +33,33 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const provisionDemo = ensureDemoUser;
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleSignIn(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      let loginEmail = identifier.trim();
+      if (!loginEmail.includes("@")) {
+        const { data, error } = await supabase.rpc("resolve_login_email", {
+          _identifier: loginEmail,
+        });
+        if (error || !data) throw new Error("Invalid credentials or the account is inactive");
+        loginEmail = data;
+      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      });
+      if (error) throw new Error(error.message);
+      navigate({ to: "/launchpad" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setBusy(false);
     }
-    navigate({ to: "/launchpad" });
   }
 
   async function handleDemoLogin() {
@@ -95,13 +108,14 @@ function AuthPage() {
 
           <form onSubmit={handleSignIn} className="mt-6 space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Work email</Label>
+              <Label htmlFor="identifier">Email or username</Label>
               <Input
-                id="email"
-                type="email"
+                id="identifier"
+                type="text"
+                autoComplete="username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
