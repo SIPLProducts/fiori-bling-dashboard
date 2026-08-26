@@ -121,6 +121,183 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_endpoints: {
+        Row: {
+          auth_type: string
+          body_template: string | null
+          created_at: string
+          description: string | null
+          endpoint_path: string
+          headers: Json
+          http_method: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          last_run_status: string | null
+          last_synced_at: string | null
+          last_test_duration_ms: number | null
+          last_test_message: string | null
+          last_test_status: string | null
+          module_key: string
+          name: string
+          query_params: Json
+          response_notes: string | null
+          response_root: string | null
+          sample_response: string | null
+          schedule_expression: string | null
+          scheduler_enabled: boolean
+          system_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_type?: string
+          body_template?: string | null
+          created_at?: string
+          description?: string | null
+          endpoint_path?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_status?: string | null
+          last_synced_at?: string | null
+          last_test_duration_ms?: number | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          module_key?: string
+          name: string
+          query_params?: Json
+          response_notes?: string | null
+          response_root?: string | null
+          sample_response?: string | null
+          schedule_expression?: string | null
+          scheduler_enabled?: boolean
+          system_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_type?: string
+          body_template?: string | null
+          created_at?: string
+          description?: string | null
+          endpoint_path?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_status?: string | null
+          last_synced_at?: string | null
+          last_test_duration_ms?: number | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          module_key?: string
+          name?: string
+          query_params?: Json
+          response_notes?: string | null
+          response_root?: string | null
+          sample_response?: string | null
+          schedule_expression?: string | null
+          scheduler_enabled?: boolean
+          system_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sap_middleware_config: {
+        Row: {
+          connection_mode: string
+          created_at: string
+          deployment_mode: string
+          id: string
+          last_test_at: string | null
+          last_test_message: string | null
+          last_test_status: string | null
+          middleware_port: number
+          middleware_url: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          connection_mode?: string
+          created_at?: string
+          deployment_mode?: string
+          id?: string
+          last_test_at?: string | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          middleware_port?: number
+          middleware_url?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          connection_mode?: string
+          created_at?: string
+          deployment_mode?: string
+          id?: string
+          last_test_at?: string | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          middleware_port?: number
+          middleware_url?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sap_systems: {
+        Row: {
+          base_url: string
+          created_at: string
+          environment: string
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          last_test_at: string | null
+          last_test_message: string | null
+          last_test_status: string | null
+          sap_client: string | null
+          sort_order: number
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          base_url?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          last_test_at?: string | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          sap_client?: string | null
+          sort_order?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          base_url?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          last_test_at?: string | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          sap_client?: string | null
+          sort_order?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       tile_groups: {
         Row: {
           created_at: string
