@@ -19,7 +19,9 @@ export type TileRecord = {
 };
 
 export type LaunchpadData = {
-  roles: AppRole[];
+  roles: string[];
+  isSuperAdmin: boolean;
+  screens: string[];
   profile: { display_name: string | null; company: string | null; avatar_url: string | null } | null;
   groups: { key: string; title: string; sort_order: number }[];
   tiles: TileRecord[];
@@ -33,29 +35,38 @@ async function requireUserId(): Promise<string> {
   return data.user.id;
 }
 
-async function rolesForUser(userId: string): Promise<AppRole[]> {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  return (data ?? []).map((r) => r.role as AppRole);
+async function screensForUser(userId: string): Promise<string[]> {
+  return (await accessForUser(userId)).screens;
 }
+
+/** Tile group -> module screen key, so module permissions also gate module tiles. */
+const GROUP_SCREEN: Record<string, string> = Object.fromEntries(
+  MODULES.map((mod) => [mod.groupKey, `module.${mod.key}`]),
+);
 
 export async function getLaunchpad(): Promise<LaunchpadData> {
   const userId = await requireUserId();
 
-  const [rolesRes, profileRes, groupsRes, tilesRes, kpis] = await Promise.all([
-    supabase.from("user_roles").select("role").eq("user_id", userId),
+  const [access, profileRes, groupsRes, tilesRes, kpis] = await Promise.all([
+    accessForUser(userId),
     supabase.from("profiles").select("display_name, company, avatar_url").eq("id", userId).maybeSingle(),
     supabase.from("tile_groups").select("key, title, sort_order").order("sort_order"),
     supabase.from("tiles").select("*").order("sort_order"),
     provider.getKpiValues(),
   ]);
 
-  const roles = (rolesRes.data ?? []).map((r) => r.role as AppRole);
-  const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) =>
-    tile.allowed_roles.some((role) => roles.includes(role)),
-  );
+  const { roleKeys, isSuperAdmin, screens } = access;
+  const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) => {
+    if (isSuperAdmin) return true;
+    const moduleScreen = GROUP_SCREEN[tile.group_key];
+    if (moduleScreen) return screens.includes(moduleScreen);
+    return tile.allowed_roles.some((role) => roleKeys.includes(role));
+  });
 
   return {
-    roles,
+    roles: roleKeys,
+    isSuperAdmin,
+    screens,
     profile: profileRes.data ?? null,
     groups: groupsRes.data ?? [],
     tiles,
