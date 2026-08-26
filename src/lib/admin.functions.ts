@@ -153,18 +153,18 @@ export async function createPortalUser(input: { data: UserFormInput }) {
     .eq("id", userId);
   if (profileUpdate.error) throw profileUpdate.error;
 
-  await replaceRoleAssignments(userId, form.roles);
+  await setRoleAssignment(userId, form.roleKey);
   return { ok: true, id: userId };
 }
 
 export async function updatePortalUser(input: {
-  data: { id: string } & Omit<UserFormInput, "password" | "confirmPassword" | "email">;
+  data: { id: string } & Omit<UserFormInput, "email">;
 }) {
   await requireSuperAdmin();
   const form = input.data;
-  validate({ ...form, email: "placeholder@example.com", password: "", confirmPassword: "" }, false);
+  validate({ ...form, email: "placeholder@example.com" }, false);
   await assertUsernameFree(form.username, form.id);
-  await assertAssignableRoles(form.roles);
+  await assertAssignableRole(form.roleKey);
 
   const { error } = await supabase
     .from("profiles")
@@ -181,7 +181,16 @@ export async function updatePortalUser(input: {
     .eq("id", form.id);
   if (error) throw error;
 
-  await replaceRoleAssignments(form.id, form.roles);
+  await setRoleAssignment(form.id, form.roleKey);
+
+  if (form.password) {
+    const { error: pwError } = await supabase.rpc("admin_set_user_password", {
+      _user_id: form.id,
+      _new_password: form.password,
+    });
+    if (pwError) throw new Error(pwError.message);
+  }
+
   return { ok: true };
 }
 
@@ -198,21 +207,23 @@ export async function setUserStatus(input: { data: { id: string; status: UserSta
   return { ok: true };
 }
 
-async function replaceRoleAssignments(userId: string, roleKeys: string[]) {
+/** A user holds exactly one role; this replaces any previous assignment. */
+async function setRoleAssignment(userId: string, roleKey: string) {
   const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-  if (userId === currentUserId && !roleKeys.includes(SUPER_ADMIN_ROLE_KEY)) {
+  if (userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
     throw new Error("You cannot remove your own Sharvi Admin role");
   }
 
   const del = await supabase.from("user_role_assignments").delete().eq("user_id", userId);
   if (del.error) throw del.error;
-  if (!roleKeys.length) return;
+  if (!roleKey) return;
 
   const ins = await supabase
     .from("user_role_assignments")
-    .insert(roleKeys.map((role_key) => ({ user_id: userId, role_key })));
+    .insert({ user_id: userId, role_key: roleKey });
   if (ins.error) throw ins.error;
 }
+
 
 /* ---------------------------------- roles --------------------------------- */
 
