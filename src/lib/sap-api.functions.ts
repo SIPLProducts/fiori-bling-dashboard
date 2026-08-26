@@ -1,0 +1,384 @@
+/**
+ * SAP API Settings data access.
+ *
+ * Stores only non-secret configuration (URLs, paths, headers, mappings).
+ * SAP technical-user passwords and the proxy secret live exclusively in the
+ * Node.js middleware's own .env file — never in this database.
+ */
+import { supabase } from "@/integrations/supabase/client";
+import { accessForUser } from "./access";
+
+export type KeyValue = { key: string; value: string };
+
+export type SapSystem = {
+  id: string;
+  key: string;
+  label: string;
+  environment: string;
+  base_url: string;
+  sap_client: string | null;
+  username: string | null;
+  is_active: boolean;
+  last_test_status: string | null;
+  last_test_message: string | null;
+  last_test_at: string | null;
+  sort_order: number;
+};
+
+export type SapEndpoint = {
+  id: string;
+  name: string;
+  module_key: string;
+  description: string | null;
+  endpoint_path: string;
+  system_key: string | null;
+  http_method: string;
+  auth_type: string;
+  query_params: KeyValue[];
+  headers: KeyValue[];
+  body_template: string | null;
+  response_root: string | null;
+  response_notes: string | null;
+  sample_response: string | null;
+  scheduler_enabled: boolean;
+  schedule_expression: string | null;
+  last_run_at: string | null;
+  last_run_status: string | null;
+  is_active: boolean;
+  last_test_status: string | null;
+  last_test_message: string | null;
+  last_test_duration_ms: number | null;
+  last_synced_at: string | null;
+};
+
+export type MiddlewareConfig = {
+  id: string;
+  connection_mode: string;
+  deployment_mode: string;
+  middleware_port: number;
+  middleware_url: string;
+  last_test_status: string | null;
+  last_test_message: string | null;
+  last_test_at: string | null;
+};
+
+export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+export const AUTH_TYPES = [
+  { value: "basic", label: "Basic (via middleware)" },
+  { value: "proxy", label: "Proxy / Middleware" },
+  { value: "none", label: "None" },
+] as const;
+export const ENVIRONMENTS = ["DEV", "QUALITY", "PROD"] as const;
+export const CONNECTION_MODES = [
+  { value: "proxy", label: "Via Proxy Server" },
+  { value: "direct", label: "Direct to SAP" },
+] as const;
+export const DEPLOYMENT_MODES = [
+  { value: "self_hosted", label: "Self-hosted (on-prem)" },
+  { value: "cloud", label: "Cloud" },
+] as const;
+
+async function requireSuperAdmin(): Promise<void> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("NOT_AUTHENTICATED");
+  const access = await accessForUser(data.user.id);
+  if (!access.isSuperAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+}
+
+function kv(raw: unknown): KeyValue[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((row): row is KeyValue => !!row && typeof row === "object" && "key" in row)
+    .map((row) => ({ key: String(row.key ?? ""), value: String(row.value ?? "") }));
+}
+
+/* ------------------------------- endpoints ------------------------------- */
+
+export async function listSapEndpoints(): Promise<SapEndpoint[]> {
+  await requireSuperAdmin();
+  const { data, error } = await supabase.from("sap_endpoints").select("*").order("name");
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    ...(row as unknown as SapEndpoint),
+    query_params: kv((row as { query_params: unknown }).query_params),
+    headers: kv((row as { headers: unknown }).headers),
+  }));
+}
+
+export type EndpointInput = {
+  name: string;
+  module_key: string;
+  description: string;
+  endpoint_path: string;
+  system_key: string;
+  http_method: string;
+  auth_type: string;
+  query_params: KeyValue[];
+  headers: KeyValue[];
+  body_template: string;
+  response_root: string;
+  response_notes: string;
+  scheduler_enabled: boolean;
+  schedule_expression: string;
+  is_active: boolean;
+};
+
+function endpointPayload(input: EndpointInput) {
+  return {
+    name: input.name.trim(),
+    module_key: input.module_key,
+    description: input.description.trim() || null,
+    endpoint_path: input.endpoint_path.trim(),
+    system_key: input.system_key || null,
+    http_method: input.http_method,
+    auth_type: input.auth_type,
+    query_params: input.query_params.filter((row) => row.key.trim()),
+    headers: input.headers.filter((row) => row.key.trim()),
+    body_template: input.body_template.trim() || null,
+    response_root: input.response_root.trim() || null,
+    response_notes: input.response_notes.trim() || null,
+    scheduler_enabled: input.scheduler_enabled,
+    schedule_expression: input.schedule_expression.trim() || null,
+    is_active: input.is_active,
+  };
+}
+
+export async function createSapEndpoint(input: EndpointInput): Promise<string> {
+  await requireSuperAdmin();
+  if (!input.name.trim()) throw new Error("Name is required");
+  if (!input.endpoint_path.trim()) throw new Error("Endpoint path or URL is required");
+  const { data, error } = await supabase
+    .from("sap_endpoints")
+    .insert(endpointPayload(input))
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function updateSapEndpoint(id: string, input: EndpointInput): Promise<void> {
+  await requireSuperAdmin();
+  const { error } = await supabase.from("sap_endpoints").update(endpointPayload(input)).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSapEndpoint(id: string): Promise<void> {
+  await requireSuperAdmin();
+  const { error } = await supabase.from("sap_endpoints").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/* -------------------------------- systems -------------------------------- */
+
+export async function listSapSystems(): Promise<SapSystem[]> {
+  await requireSuperAdmin();
+  const { data, error } = await supabase.from("sap_systems").select("*").order("sort_order").order("label");
+  if (error) throw error;
+  return (data ?? []) as unknown as SapSystem[];
+}
+
+export type SystemInput = {
+  key: string;
+  label: string;
+  environment: string;
+  base_url: string;
+  sap_client: string;
+  username: string;
+  is_active: boolean;
+};
+
+export async function saveSapSystem(id: string | null, input: SystemInput): Promise<void> {
+  await requireSuperAdmin();
+  if (!input.label.trim()) throw new Error("Label is required");
+  const payload = {
+    key: (input.key || input.label).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    label: input.label.trim(),
+    environment: input.environment,
+    base_url: input.base_url.trim(),
+    sap_client: input.sap_client.trim() || null,
+    username: input.username.trim() || null,
+    is_active: input.is_active,
+  };
+  const { error } = id
+    ? await supabase.from("sap_systems").update(payload).eq("id", id)
+    : await supabase.from("sap_systems").insert(payload);
+  if (error) throw error;
+  if (input.is_active) {
+    await supabase.from("sap_systems").update({ is_active: false }).neq("key", payload.key);
+  }
+}
+
+export async function deleteSapSystem(id: string): Promise<void> {
+  await requireSuperAdmin();
+  const { error } = await supabase.from("sap_systems").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/* ------------------------------ middleware ------------------------------ */
+
+export async function getMiddlewareConfig(): Promise<MiddlewareConfig> {
+  await requireSuperAdmin();
+  const { data, error } = await supabase.from("sap_middleware_config").select("*").limit(1).maybeSingle();
+  if (error) throw error;
+  if (data) return data as unknown as MiddlewareConfig;
+  const created = await supabase.from("sap_middleware_config").insert({}).select("*").single();
+  if (created.error) throw created.error;
+  return created.data as unknown as MiddlewareConfig;
+}
+
+export type MiddlewareInput = {
+  connection_mode: string;
+  deployment_mode: string;
+  middleware_port: number;
+  middleware_url: string;
+};
+
+export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): Promise<void> {
+  await requireSuperAdmin();
+  if (input.connection_mode === "proxy" && !input.middleware_url.trim()) {
+    throw new Error("Node.js middleware URL is required in proxy mode");
+  }
+  const { error } = await supabase
+    .from("sap_middleware_config")
+    .update({
+      connection_mode: input.connection_mode,
+      deployment_mode: input.deployment_mode,
+      middleware_port: input.middleware_port,
+      middleware_url: input.middleware_url.trim().replace(/\/+$/, ""),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/* ----------------------------- connectivity ----------------------------- */
+
+export type TestResult = {
+  ok: boolean;
+  status: number | null;
+  message: string;
+  durationMs: number;
+  body?: string;
+};
+
+async function bearer(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("NOT_AUTHENTICATED");
+  return token;
+}
+
+async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
+  const config = await getMiddlewareConfig();
+  const base = config.middleware_url.trim().replace(/\/+$/, "");
+  if (!base) {
+    return {
+      ok: false,
+      status: null,
+      message: "Set the Node.js middleware URL under Middleware Configuration first.",
+      durationMs: 0,
+    };
+  }
+  const started = Date.now();
+  try {
+    const res = await fetch(`${base}${path}`, {
+      method: body ? "POST" : "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await bearer()}`,
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    const text = await res.text();
+    return {
+      ok: res.ok,
+      status: res.status,
+      message: res.ok ? "Reachable" : `HTTP ${res.status}`,
+      durationMs: Date.now() - started,
+      body: text.slice(0, 4000),
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: null,
+      message: err instanceof Error ? err.message : "Request failed",
+      durationMs: Date.now() - started,
+    };
+  }
+}
+
+export async function testMiddleware(): Promise<TestResult> {
+  await requireSuperAdmin();
+  const result = await callMiddleware("/health");
+  const config = await getMiddlewareConfig();
+  await supabase
+    .from("sap_middleware_config")
+    .update({
+      last_test_status: result.ok ? "ok" : "error",
+      last_test_message: result.message,
+      last_test_at: new Date().toISOString(),
+    })
+    .eq("id", config.id);
+  return result;
+}
+
+export async function testSapSystem(system: SapSystem): Promise<TestResult> {
+  await requireSuperAdmin();
+  const result = await callMiddleware("/sap/test", {
+    systemKey: system.key,
+    baseUrl: system.base_url,
+    sapClient: system.sap_client,
+    username: system.username,
+  });
+  await supabase
+    .from("sap_systems")
+    .update({
+      last_test_status: result.ok ? "ok" : "error",
+      last_test_message: result.message,
+      last_test_at: new Date().toISOString(),
+    })
+    .eq("id", system.id);
+  return result;
+}
+
+/** Resolve the final URL an endpoint will hit, given the systems list. */
+export function resolveEndpointUrl(endpoint: {
+  endpoint_path: string;
+  system_key: string | null;
+}, systems: SapSystem[]): string {
+  const path = endpoint.endpoint_path.trim();
+  if (/^https?:\/\//i.test(path)) return path;
+  const system =
+    systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active) ?? systems[0];
+  if (!system) return path || "—";
+  const base = system.base_url.replace(/\/+$/, "");
+  const client = system.sap_client ? `?sap-client=${system.sap_client}` : "";
+  return `${base}${path.startsWith("/") ? path : `/${path}`}${client}`;
+}
+
+export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[]): Promise<TestResult> {
+  await requireSuperAdmin();
+  const system = systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active);
+  const result = await callMiddleware("/sap/call", {
+    systemKey: system?.key ?? null,
+    baseUrl: system?.base_url ?? null,
+    sapClient: system?.sap_client ?? null,
+    path: endpoint.endpoint_path,
+    method: endpoint.http_method,
+    authType: endpoint.auth_type,
+    query: Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value])),
+    headers: Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value])),
+    body: endpoint.body_template ?? undefined,
+    dryRun: true,
+  });
+  await supabase
+    .from("sap_endpoints")
+    .update({
+      last_test_status: result.ok ? "ok" : "error",
+      last_test_message: result.message,
+      last_test_duration_ms: result.durationMs,
+      last_synced_at: result.ok ? new Date().toISOString() : endpoint.last_synced_at,
+      sample_response: result.body ?? endpoint.sample_response,
+    })
+    .eq("id", endpoint.id);
+  return result;
+}

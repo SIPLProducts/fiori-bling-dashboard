@@ -6,7 +6,8 @@ export type NavPath =
   | "/reports/sales-analytics"
   | "/admin/users"
   | "/admin/roles"
-  | "/admin/permissions";
+  | "/admin/permissions"
+  | "/admin/sap-api";
 
 export type NavItem = {
   to: NavPath;
@@ -27,6 +28,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { to: "/admin/users", label: "User Management", screen: "admin.users" },
   { to: "/admin/roles", label: "Roles", screen: "admin.roles" },
   { to: "/admin/permissions", label: "Screen Permissions", screen: "admin.permissions" },
+  { to: "/admin/sap-api", label: "SAP API Settings", screen: "admin.sap-api" },
 ];
 
 /** Main navigation entries the user's screen permissions allow. */
