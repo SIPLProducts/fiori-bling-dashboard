@@ -868,15 +868,17 @@ function SystemFields({
 
 /* ------------------------------- middleware ------------------------------ */
 
+type MiddlewareForm = {
+  connection_mode: string;
+  deployment_mode: string;
+  middleware_port: number;
+  middleware_url: string;
+};
+
 function MiddlewareTab() {
   const queryClient = useQueryClient();
   const configQuery = useQuery({ queryKey: ["sap-middleware"], queryFn: getMiddlewareConfig });
-  const [form, setForm] = useState<{
-    connection_mode: string;
-    deployment_mode: string;
-    middleware_port: number;
-    middleware_url: string;
-  } | null>(null);
+  const [form, setForm] = useState<MiddlewareForm | null>(null);
 
   const current =
     form ??
