@@ -53,6 +53,12 @@ export function PasswordStrength({ password }: { password: string }) {
         </div>
         <span className={cn("text-xs font-medium", level.text)}>{level.label}</span>
       </div>
+      {common ? (
+        <p className="flex items-center gap-1.5 text-[11px] text-destructive" aria-live="polite">
+          <X className="h-3 w-3" />
+          This password is too common — please choose a different one
+        </p>
+      ) : null}
       <ul className="grid grid-cols-1 gap-0.5">
         {RULES.map((rule, i) => (
           <li
