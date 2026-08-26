@@ -397,6 +397,7 @@ function AdminUsers() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
+                <PasswordStrength password={form.password} />
               </Field>
               <Field label={editing ? "Confirm New Password" : "Confirm Password *"}>
                 <Input
@@ -404,6 +405,10 @@ function AdminUsers() {
                   autoComplete="new-password"
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                />
+                <PasswordMatchHint
+                  password={form.password}
+                  confirmPassword={form.confirmPassword}
                 />
               </Field>
             </Section>
