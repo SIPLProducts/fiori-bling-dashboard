@@ -18,25 +18,102 @@ export type Database = {
         Row: {
           avatar_url: string | null
           company: string | null
+          contact: string | null
           created_at: string
+          department: string | null
           display_name: string | null
+          employee_id: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
+          status: string
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           company?: string | null
+          contact?: string | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
+          employee_id?: string | null
+          first_name?: string | null
           id: string
+          last_name?: string | null
+          status?: string
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           company?: string | null
+          contact?: string | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
+          employee_id?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          status?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      role_screens: {
+        Row: {
+          created_at: string
+          role_key: string
+          screen_key: string
+        }
+        Insert: {
+          created_at?: string
+          role_key: string
+          screen_key: string
+        }
+        Update: {
+          created_at?: string
+          role_key?: string
+          screen_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_screens_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          is_system: boolean
+          key: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          is_system?: boolean
+          key: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          is_system?: boolean
+          key?: string
+          name?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -115,6 +192,35 @@ export type Database = {
           },
         ]
       }
+      user_role_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          role_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_role_assignments_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -148,6 +254,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_screen: {
+        Args: { _screen: string; _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      resolve_login_email: { Args: { _identifier: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "buyer" | "approver" | "viewer"
