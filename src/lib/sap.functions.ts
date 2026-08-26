@@ -75,17 +75,16 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
   };
 }
 
-/** Roles allowed to read each report dataset — mirrors the launchpad tiles. */
-const REPORT_ROLES = {
-  procurement: ["admin", "buyer", "approver"],
-  purchaseOrders: ["admin", "buyer", "approver", "viewer"],
-  suppliers: ["admin", "buyer", "viewer"],
-} as const satisfies Record<string, readonly AppRole[]>;
+/** Screen permission required for each report dataset. */
+const REPORT_SCREENS = {
+  procurement: "reports.procurement",
+  purchaseOrders: "reports.purchase-orders",
+  suppliers: "reports.suppliers",
+} as const;
 
-async function assertReportAccess(report: keyof typeof REPORT_ROLES) {
-  const roles = await rolesForUser(await requireUserId());
-  const allowed = REPORT_ROLES[report] as readonly AppRole[];
-  if (!roles.some((role) => allowed.includes(role))) throw new Error("FORBIDDEN_REPORT");
+async function assertReportAccess(report: keyof typeof REPORT_SCREENS) {
+  const screens = await screensForUser(await requireUserId());
+  if (!screens.includes(REPORT_SCREENS[report])) throw new Error("FORBIDDEN_REPORT");
 }
 
 export async function getProcurementOverview() {
