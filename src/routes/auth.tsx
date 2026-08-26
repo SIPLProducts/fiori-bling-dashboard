@@ -33,20 +33,33 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const provisionDemo = ensureDemoUser;
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleSignIn(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      let loginEmail = identifier.trim();
+      if (!loginEmail.includes("@")) {
+        const { data, error } = await supabase.rpc("resolve_login_email", {
+          _identifier: loginEmail,
+        });
+        if (error || !data) throw new Error("Invalid credentials or the account is inactive");
+        loginEmail = data;
+      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      });
+      if (error) throw new Error(error.message);
+      navigate({ to: "/launchpad" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setBusy(false);
     }
-    navigate({ to: "/launchpad" });
   }
 
   async function handleDemoLogin() {
