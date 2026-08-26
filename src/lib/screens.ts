@@ -29,6 +29,7 @@ export const SCREENS: ScreenDef[] = [
   { key: "admin.users", label: "User Management", group: "Administration" },
   { key: "admin.roles", label: "Roles", group: "Administration" },
   { key: "admin.permissions", label: "Screen Permissions", group: "Administration" },
+  { key: "admin.sap-api", label: "SAP API Settings", group: "Administration" },
 ];
 
 export const SCREEN_GROUPS: ScreenGroup[] = ["Home", "Reports", "SAP modules", "Administration"];
