@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Search, UserPlus } from "lucide-react";
 import {
   createPortalUser,
   listPortalUsers,
-  setUserStatus,
   updatePortalUser,
   type PortalUser,
   type UserFormInput,
@@ -15,7 +15,6 @@ import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -50,10 +48,10 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
       { title: "User Management — Nexus Analytics" },
       {
         name: "description",
-        content: "Create portal users, capture employee details and assign one or more roles.",
+        content: "Create portal users, capture employee details and assign a single role.",
       },
       { property: "og:title", content: "User Management — Nexus Analytics" },
-      { property: "og:description", content: "Administer portal users and their role assignments." },
+      { property: "og:description", content: "Administer portal users and their role assignment." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -72,7 +70,7 @@ const EMPTY_FORM: UserFormInput = {
   department: "",
   password: "",
   confirmPassword: "",
-  roles: [],
+  roleKey: "",
 };
 
 function AdminUsers() {
@@ -83,6 +81,7 @@ function AdminUsers() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PortalUser | null>(null);
   const [form, setForm] = useState<UserFormInput>(EMPTY_FORM);
+  const [search, setSearch] = useState("");
 
   const usersQuery = useQuery({ queryKey: ["portal-users"], queryFn: () => listPortalUsers() });
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: () => listRoles() });
@@ -92,6 +91,29 @@ function AdminUsers() {
     [rolesQuery.data, isSuperAdmin],
   );
 
+  const roleName = (key: string) =>
+    (rolesQuery.data ?? []).find((role) => role.key === key)?.name ?? key;
+
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const all = usersQuery.data ?? [];
+    if (!term) return all;
+    return all.filter((user) =>
+      [
+        user.first_name,
+        user.last_name,
+        user.display_name,
+        user.username,
+        user.email,
+        user.employee_id,
+        user.department,
+        ...user.roles.map(roleName),
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term)),
+    );
+  }, [usersQuery.data, search, rolesQuery.data]);
+
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["portal-users"] });
     queryClient.invalidateQueries({ queryKey: ["launchpad"] });
@@ -100,7 +122,7 @@ function AdminUsers() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editing) {
-        const { password: _p, confirmPassword: _c, email: _e, ...rest } = form;
+        const { email: _email, ...rest } = form;
         return updatePortalUser({ data: { id: editing.id, ...rest } });
       }
       return createPortalUser({ data: form });
@@ -115,18 +137,9 @@ function AdminUsers() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const statusMutation = useMutation({
-    mutationFn: (input: { id: string; status: UserStatus }) => setUserStatus({ data: input }),
-    onSuccess: () => {
-      toast.success("Status updated");
-      refresh();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
   function openCreate() {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, roleKey: assignableRoles[0]?.key ?? "" });
     setOpen(true);
   }
 
@@ -143,16 +156,9 @@ function AdminUsers() {
       department: user.department ?? "",
       password: "",
       confirmPassword: "",
-      roles: user.roles,
+      roleKey: user.roles[0] ?? "",
     });
     setOpen(true);
-  }
-
-  function toggleRole(key: string, checked: boolean) {
-    setForm((prev) => ({
-      ...prev,
-      roles: checked ? [...new Set([...prev.roles, key])] : prev.roles.filter((r) => r !== key),
-    }));
   }
 
   if (launchpad && !isSuperAdmin) {
@@ -166,7 +172,7 @@ function AdminUsers() {
   return (
     <ReportShell
       title="User Management"
-      description="Create users, capture employee details and assign roles."
+      description="Create users, capture employee details and assign a role."
     >
       {usersQuery.error ? (
         <p className="text-sm text-destructive">
@@ -177,66 +183,103 @@ function AdminUsers() {
       ) : (
         <Panel
           title={`${usersQuery.data?.length ?? 0} users`}
-          actions={<Button size="sm" onClick={openCreate}>Create user</Button>}
+          actions={
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search users…"
+                  className="h-8 w-52 pl-8 text-xs"
+                />
+              </div>
+              <Button size="sm" onClick={openCreate}>
+                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                Create user
+              </Button>
+            </div>
+          }
         >
-          <div className="overflow-auto rounded-sm border border-border">
+          <div className="overflow-auto rounded-md border border-border bg-card">
             <Table>
-              <TableHeader className="bg-muted">
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead />
+              <TableHeader className="bg-muted/70">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    User
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Username
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Contact
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Employee ID
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Department
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Role
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-right text-[11px] font-semibold tracking-wide uppercase">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(usersQuery.data ?? []).map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {[user.first_name, user.last_name].filter(Boolean).join(" ") ||
-                        user.display_name ||
-                        "—"}
-                    </TableCell>
-                    <TableCell>{user.username ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email ?? "—"}</TableCell>
-                    <TableCell>{user.contact ?? "—"}</TableCell>
-                    <TableCell>{user.employee_id ?? "—"}</TableCell>
-                    <TableCell>{user.department ?? "—"}</TableCell>
-                    <TableCell className="text-xs">
-                      {user.roles.length
-                        ? user.roles
-                            .map(
-                              (key) =>
-                                (rolesQuery.data ?? []).find((role) => role.key === key)?.name ?? key,
-                            )
-                            .join(", ")
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={user.status === "active"}
-                        disabled={statusMutation.isPending}
-                        aria-label={`Active status for ${user.username ?? user.id}`}
-                        onCheckedChange={(checked) =>
-                          statusMutation.mutate({
-                            id: user.id,
-                            status: checked ? "active" : "inactive",
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(user)}>
-                        Edit
-                      </Button>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                      No users match your search.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  rows.map((user) => (
+                    <TableRow key={user.id} className="transition-colors hover:bg-accent/40">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                            {initials(user)}
+                          </span>
+                          <div className="leading-tight">
+                            <div className="font-medium">
+                              {[user.first_name, user.last_name].filter(Boolean).join(" ") ||
+                                user.display_name ||
+                                "—"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{user.email ?? "—"}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{user.username ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{user.contact ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{user.employee_id ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{user.department ?? "—"}</TableCell>
+                      <TableCell>
+                        {user.roles.length ? (
+                          <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                            {roleName(user.roles[0]!)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <StatusText status={user.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -244,110 +287,129 @@ function AdminUsers() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit user" : "Create user"}</DialogTitle>
-            <DialogDescription>
-              Fields marked * are mandatory. Roles are maintained on the Roles screen.
+        <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="border-b border-border bg-muted/40 px-6 py-4">
+            <DialogTitle className="text-base">{editing ? "Edit user" : "Create user"}</DialogTitle>
+            <DialogDescription className="text-xs">
+              Fields marked * are mandatory. Roles are maintained on the Roles screen and each user
+              holds exactly one role.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Username">
-              <Input
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="jdoe"
-              />
-            </Field>
-            <Field label="Employee ID">
-              <Input
-                value={form.employee_id}
-                onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
-              />
-            </Field>
-            <Field label="First Name *">
-              <Input
-                value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-              />
-            </Field>
-            <Field label="Last Name *">
-              <Input
-                value={form.last_name}
-                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-              />
-            </Field>
-            <Field label="Email *">
-              <Input
-                type="email"
-                value={form.email}
-                disabled={!!editing}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </Field>
-            <Field label="Contact *">
-              <Input
-                value={form.contact}
-                onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              />
-            </Field>
-            <Field label="Department">
-              <Input
-                value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value })}
-              />
-            </Field>
-            <Field label="Status *">
-              <Select
-                value={form.status}
-                onValueChange={(value) => setForm({ ...form, status: value as UserStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            {editing ? null : (
-              <>
-                <Field label="Password *">
-                  <Input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  />
-                </Field>
-                <Field label="Confirm Password *">
-                  <Input
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                  />
-                </Field>
-              </>
-            )}
+          <div className="max-h-[62vh] space-y-6 overflow-auto px-6 py-5">
+            <Section title="Identity">
+              <Field label="First Name *">
+                <Input
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </Field>
+              <Field label="Last Name *">
+                <Input
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </Field>
+              <Field label="Username">
+                <Input
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  placeholder="jdoe"
+                />
+              </Field>
+              <Field label="Email *">
+                <Input
+                  type="email"
+                  value={form.email}
+                  disabled={!!editing}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </Field>
+            </Section>
+
+            <Section title="Contact & organisation">
+              <Field label="Contact *">
+                <Input
+                  value={form.contact}
+                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                />
+              </Field>
+              <Field label="Employee ID">
+                <Input
+                  value={form.employee_id}
+                  onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+                />
+              </Field>
+              <Field label="Department">
+                <Input
+                  value={form.department}
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                />
+              </Field>
+              <Field label="Status *">
+                <Select
+                  value={form.status}
+                  onValueChange={(value) => setForm({ ...form, status: value as UserStatus })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </Section>
+
+            <Section title="Access">
+              <Field label="Role *">
+                <Select
+                  value={form.roleKey}
+                  onValueChange={(value) => setForm({ ...form, roleKey: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignableRoles.map((role) => (
+                      <SelectItem key={role.key} value={role.key}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </Section>
+
+            <Section
+              title={editing ? "Reset password (optional)" : "Password"}
+              hint={
+                editing
+                  ? "Leave both fields blank to keep the current password."
+                  : "Minimum 8 characters."
+              }
+            >
+              <Field label={editing ? "New Password" : "Password *"}>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+              </Field>
+              <Field label={editing ? "Confirm New Password" : "Confirm Password *"}>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                />
+              </Field>
+            </Section>
           </div>
 
-          <div>
-            <Label className="text-xs tracking-wide text-muted-foreground uppercase">Roles</Label>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              {assignableRoles.map((role) => (
-                <label key={role.key} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.roles.includes(role.key)}
-                    onCheckedChange={(checked) => toggleRole(role.key, checked === true)}
-                  />
-                  <span>{role.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="border-t border-border bg-muted/40 px-6 py-3">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
@@ -358,6 +420,61 @@ function AdminUsers() {
         </DialogContent>
       </Dialog>
     </ReportShell>
+  );
+}
+
+function initials(user: PortalUser) {
+  const source =
+    [user.first_name, user.last_name].filter(Boolean).join(" ") ||
+    user.display_name ||
+    user.username ||
+    user.email ||
+    "?";
+  return source
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");
+}
+
+function StatusText({ status }: { status: UserStatus }) {
+  const active = status === "active";
+  return (
+    <span
+      className={
+        active
+          ? "inline-flex items-center gap-1.5 text-sm font-medium text-success"
+          : "inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
+      }
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${active ? "bg-success" : "bg-muted-foreground"}`}
+      />
+      {active ? "Active" : "Inactive"}
+    </span>
+  );
+}
+
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+          {title}
+        </h3>
+        {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
