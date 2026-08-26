@@ -39,7 +39,7 @@ function scoreTone(score: number) {
 function SupplierReport() {
   const fetchReport = getSupplierReport;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessPath("/reports/suppliers", launchpad?.roles);
+  const allowed = canAccessPath("/reports/suppliers", launchpad?.screens);
   const { data, isLoading } = useQuery({
     queryKey: ["supplier-scorecards"],
     queryFn: () => fetchReport(),

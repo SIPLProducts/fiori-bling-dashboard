@@ -51,7 +51,7 @@ const money = (value: number) =>
 function ProcurementOverview() {
   const fetchOverview = getProcurementOverview;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessPath("/reports/procurement", launchpad?.roles);
+  const allowed = canAccessPath("/reports/procurement", launchpad?.screens);
   const { data, isLoading } = useQuery({
     queryKey: ["procurement-overview"],
     queryFn: () => fetchOverview(),
