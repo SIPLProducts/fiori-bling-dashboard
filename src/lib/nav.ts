@@ -6,7 +6,8 @@ export type NavPath =
   | "/reports/sales-analytics"
   | "/admin/users"
   | "/admin/roles"
-  | "/admin/permissions";
+  | "/admin/permissions"
+  | "/admin/sap-api";
 
 export type NavItem = {
   to: NavPath;
