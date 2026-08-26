@@ -110,7 +110,7 @@ export async function getSupplierReport() {
 }
 
 export async function getModuleReport(input: { data: { module: string } }) {
-  const roles = await rolesForUser(await requireUserId());
+  const roles = await screensForUser(await requireUserId());
   if (!canAccessModule(input.data.module, roles)) {
     throw new Error("FORBIDDEN_MODULE");
   }
