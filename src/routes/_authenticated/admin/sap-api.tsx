@@ -914,8 +914,9 @@ function MiddlewareTab() {
 
   if (!current) return <Skeleton className="h-56 w-full" />;
 
-  function set<K extends keyof typeof current>(key: K, value: (typeof current)[K]) {
-    setForm({ ...current!, [key]: value });
+  const active: MiddlewareForm = current;
+  function set<K extends keyof MiddlewareForm>(key: K, value: MiddlewareForm[K]) {
+    setForm({ ...active, [key]: value });
   }
 
   return (
