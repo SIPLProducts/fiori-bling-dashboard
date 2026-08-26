@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, HelpCircle, LogOut, Menu, Search, User } from "lucide-react";
-import { navForRoles } from "@/lib/nav";
-import { modulesForRoles } from "@/lib/sap-modules";
+import { Bell, ChevronDown, HelpCircle, LogOut, Search, Settings, User } from "lucide-react";
+import { adminNavForScreens, navForScreens } from "@/lib/nav";
+import { modulesForScreens } from "@/lib/sap-modules";
 import { supabase } from "@/integrations/supabase/client";
 
 import {
@@ -17,14 +17,17 @@ import {
 export function ShellBar({
   title,
   displayName,
-  roles,
+  screens,
 }: {
   title: string;
   displayName?: string | null | undefined;
-  roles?: string[] | undefined;
+  screens?: string[] | undefined;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const modules = modulesForScreens(screens);
+  const adminItems = adminNavForScreens(screens);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -43,7 +46,7 @@ export function ShellBar({
       <span className="hidden text-xs text-shell-muted sm:inline">Procurement Analytics</span>
 
       <nav className="mx-auto hidden items-center gap-1 md:flex">
-        {navForRoles(roles).map((item) => (
+        {navForScreens(screens).map((item) => (
           <Link
             key={item.to}
             to={item.to}
@@ -53,28 +56,43 @@ export function ShellBar({
             {item.label}
           </Link>
         ))}
-        {modulesForRoles(roles).length ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
-            Modules <ChevronDown className="size-3.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="w-64">
-            <DropdownMenuLabel>SAP business areas</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {modulesForRoles(roles).map((mod) => (
-              <DropdownMenuItem key={mod.key} asChild>
-                <Link to="/reports/module/$module" params={{ module: mod.key }}>
-                  <span className="mr-2 w-6 text-xs font-semibold text-primary">{mod.code}</span>
-                  {mod.title}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {modules.length ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
+              Modules <ChevronDown className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-64">
+              <DropdownMenuLabel>SAP business areas</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {modules.map((mod) => (
+                <DropdownMenuItem key={mod.key} asChild>
+                  <Link to="/reports/module/$module" params={{ module: mod.key }}>
+                    <span className="mr-2 w-6 text-xs font-semibold text-primary">{mod.code}</span>
+                    {mod.title}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+        {adminItems.length ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
+              <Settings className="size-3.5" /> Administration <ChevronDown className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56">
+              <DropdownMenuLabel>Administration</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {adminItems.map((item) => (
+                <DropdownMenuItem key={item.to} asChild>
+                  <Link to={item.to}>{item.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </nav>
       <span className="mx-auto text-sm font-medium md:hidden">{title}</span>
-
 
       <div className="flex items-center gap-1">
         <button
@@ -87,46 +105,30 @@ export function ShellBar({
         <button
           type="button"
           aria-label="Notifications"
-          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:block"
+          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
         >
           <Bell className="size-[18px]" />
         </button>
         <button
           type="button"
           aria-label="Help"
-          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:block"
+          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
         >
           <HelpCircle className="size-[18px]" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label="Account menu"
-            className="ml-1 flex size-9 items-center justify-center rounded-full bg-shell-foreground/15 transition-colors hover:bg-shell-foreground/25"
+            aria-label="Account"
+            className="ml-1 flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-shell-foreground/10"
           >
-            <User className="size-[18px]" />
+            <span className="grid size-8 place-items-center rounded-full bg-shell-foreground/15">
+              <User className="size-4" />
+            </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="text-sm font-medium">{displayName ?? "Signed in"}</div>
-              <div className="text-xs font-normal text-muted-foreground">
-                {roles?.length ? roles.join(", ") : "no role assigned"}
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuLabel className="truncate">{displayName ?? "Signed in"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/launchpad">
-                <Menu className="mr-2 size-4" /> Launchpad
-              </Link>
-            </DropdownMenuItem>
-            {roles?.includes("admin") ? (
-              <DropdownMenuItem asChild>
-                <Link to="/admin/users">
-                  <User className="mr-2 size-4" /> Users &amp; roles
-                </Link>
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void handleSignOut()}>
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 size-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
