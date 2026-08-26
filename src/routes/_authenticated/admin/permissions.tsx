@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -103,8 +103,8 @@ function AdminPermissions() {
                   const screens = SCREENS.filter((screen) => screen.group === group);
                   if (!screens.length) return null;
                   return (
-                    <>
-                      <TableRow key={group} className="bg-muted/50">
+                    <Fragment key={group}>
+                      <TableRow className="bg-muted/50">
                         <TableCell
                           colSpan={roles.length + 1}
                           className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
@@ -136,7 +136,7 @@ function AdminPermissions() {
                           })}
                         </TableRow>
                       ))}
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>
