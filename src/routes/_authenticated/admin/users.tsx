@@ -15,6 +15,7 @@ import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
+import { PasswordMatchHint, PasswordStrength } from "@/components/password-strength";
 import {
   Dialog,
   DialogContent,
