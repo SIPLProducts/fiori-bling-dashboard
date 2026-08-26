@@ -18,7 +18,7 @@ export function ReportShell({
   const { data: launchpad } = useLaunchpad();
   return (
     <div className="min-h-screen bg-background">
-      <ShellBar title={title} displayName={launchpad?.profile?.display_name} roles={launchpad?.roles} />
+      <ShellBar title={title} displayName={launchpad?.profile?.display_name} screens={launchpad?.screens} />
 
       <div className="border-b border-border bg-card">
         <div className="mx-auto max-w-[1400px] px-4 py-4">
