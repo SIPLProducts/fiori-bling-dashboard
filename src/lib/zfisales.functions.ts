@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule } from "./sap-modules";
+import { accessForUser } from "./access";
 import { buildSalesAnalytics } from "./zfisales";
 import type { SalesFilters, SalesAnalytics } from "./zfisales-types";
 
