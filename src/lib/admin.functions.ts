@@ -19,6 +19,8 @@ export type PortalUser = {
   plant: string | null;
   purchase_group: string | null;
   distribution_channel: string | null;
+  info1: string | null;
+  info2: string | null;
   company: string | null;
   status: UserStatus;
   roles: string[];
@@ -35,6 +37,8 @@ export type UserFormInput = {
   plant: string;
   purchase_group: string;
   distribution_channel: string;
+  info1: string;
+  info2: string;
   password: string;
   confirmPassword: string;
   roleKey: string;
@@ -65,7 +69,7 @@ export async function listPortalUsers(): Promise<PortalUser[]> {
     supabase
       .from("profiles")
       .select(
-        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status, plant, purchase_group, distribution_channel",
+        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status, plant, purchase_group, distribution_channel, info1, info2",
       )
       .order("created_at"),
     supabase.from("user_role_assignments").select("user_id, role_key"),
@@ -137,6 +141,8 @@ export async function createPortalUser(input: { data: UserFormInput }) {
         plant: form.plant.trim() || null,
         purchase_group: form.purchase_group.trim() || null,
         distribution_channel: form.distribution_channel.trim() || null,
+        info1: form.info1.trim() || null,
+        info2: form.info2.trim() || null,
         status: form.status,
       },
     },
@@ -162,6 +168,8 @@ export async function createPortalUser(input: { data: UserFormInput }) {
       plant: form.plant.trim() || null,
       purchase_group: form.purchase_group.trim() || null,
       distribution_channel: form.distribution_channel.trim() || null,
+      info1: form.info1.trim() || null,
+      info2: form.info2.trim() || null,
       status: form.status,
     })
     .eq("id", userId);
@@ -192,6 +200,8 @@ export async function updatePortalUser(input: {
       plant: form.plant.trim() || null,
       purchase_group: form.purchase_group.trim() || null,
       distribution_channel: form.distribution_channel.trim() || null,
+      info1: form.info1.trim() || null,
+      info2: form.info2.trim() || null,
       status: form.status,
     })
     .eq("id", form.id);

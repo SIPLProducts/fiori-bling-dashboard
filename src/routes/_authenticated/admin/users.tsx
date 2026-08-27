@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, UserPlus } from "lucide-react";
+import { Loader2, Search, UserPlus } from "lucide-react";
 import {
   createPortalUser,
   listPortalUsers,
@@ -71,6 +71,8 @@ const EMPTY_FORM: UserFormInput = {
   plant: "",
   purchase_group: "",
   distribution_channel: "",
+  info1: "",
+  info2: "",
   password: "",
   confirmPassword: "",
   roleKey: "",
@@ -159,6 +161,8 @@ function AdminUsers() {
       plant: user.plant ?? "",
       purchase_group: user.purchase_group ?? "",
       distribution_channel: user.distribution_channel ?? "",
+      info1: user.info1 ?? "",
+      info2: user.info2 ?? "",
 
       password: "",
       confirmPassword: "",
@@ -294,12 +298,20 @@ function AdminUsers() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="border-b border-border bg-muted/40 px-6 py-4">
-            <DialogTitle className="text-base">{editing ? "Edit user" : "Create user"}</DialogTitle>
-            <DialogDescription className="text-xs">
-              Fields marked * are mandatory. Roles are maintained on the Roles screen and each user
-              holds exactly one role.
-            </DialogDescription>
+          <DialogHeader className="border-b border-border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                {editing ? initials(editing) : <UserPlus className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0 text-left">
+                <DialogTitle className="text-base">
+                  {editing ? "Edit user" : "Create user"}
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Fields marked * are mandatory. Each user holds exactly one role.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
           <div className="max-h-[62vh] space-y-6 overflow-auto px-6 py-5">
@@ -333,6 +345,20 @@ function AdminUsers() {
                   placeholder="Enter Email"
                   disabled={!!editing}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </Field>
+              <Field label="Info 1">
+                <Input
+                  value={form.info1}
+                  placeholder="Enter Info 1"
+                  onChange={(e) => setForm({ ...form, info1: e.target.value })}
+                />
+              </Field>
+              <Field label="Info 2">
+                <Input
+                  value={form.info2}
+                  placeholder="Enter Info 2"
+                  onChange={(e) => setForm({ ...form, info2: e.target.value })}
                 />
               </Field>
             </Section>
@@ -389,7 +415,14 @@ function AdminUsers() {
               </Field>
             </Section>
 
-            <Section title="Access">
+            <Section
+              title="Access"
+              hint={
+                editing
+                  ? "Leave both password fields blank to keep the current password."
+                  : "Password must be at least 8 characters."
+              }
+            >
               <Field label="Role *">
                 <Select
                   value={form.roleKey}
@@ -407,16 +440,6 @@ function AdminUsers() {
                   </SelectContent>
                 </Select>
               </Field>
-            </Section>
-
-            <Section
-              title={editing ? "Reset password (optional)" : "Password"}
-              hint={
-                editing
-                  ? "Leave both fields blank to keep the current password."
-                  : "Minimum 8 characters."
-              }
-            >
               <Field label={editing ? "New Password" : "Password *"}>
                 <Input
                   type="password"
@@ -447,8 +470,20 @@ function AdminUsers() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-              {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Create user"}
+            <Button
+              className="min-w-32"
+              disabled={saveMutation.isPending}
+              onClick={() => saveMutation.mutate()}
+            >
+              {saveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving…
+                </>
+              ) : editing ? (
+                "Save changes"
+              ) : (
+                "Create user"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -500,9 +535,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div>
-        <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+    <section className="space-y-3 rounded-lg border border-border/70 bg-card/60 p-4">
+      <div className="border-b border-border/60 pb-2">
+        <h3 className="text-[11px] font-semibold tracking-wider text-primary uppercase">
           {title}
         </h3>
         {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}

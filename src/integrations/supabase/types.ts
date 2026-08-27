@@ -27,6 +27,8 @@ export type Database = {
           employee_id: string | null
           first_name: string | null
           id: string
+          info1: string | null
+          info2: string | null
           last_name: string | null
           plant: string | null
           purchase_group: string | null
@@ -46,6 +48,8 @@ export type Database = {
           employee_id?: string | null
           first_name?: string | null
           id: string
+          info1?: string | null
+          info2?: string | null
           last_name?: string | null
           plant?: string | null
           purchase_group?: string | null
@@ -65,6 +69,8 @@ export type Database = {
           employee_id?: string | null
           first_name?: string | null
           id?: string
+          info1?: string | null
+          info2?: string | null
           last_name?: string | null
           plant?: string | null
           purchase_group?: string | null
