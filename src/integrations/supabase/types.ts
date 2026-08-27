@@ -427,6 +427,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_confirm_user_email: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       admin_set_user_password: {
         Args: { _new_password: string; _user_id: string }
         Returns: undefined
