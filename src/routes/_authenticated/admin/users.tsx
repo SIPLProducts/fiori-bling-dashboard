@@ -316,6 +316,7 @@ function AdminUsers() {
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   placeholder="jdoe"
+                   disabled={!!editing}
                 />
               </Field>
               <Field label="Email *">

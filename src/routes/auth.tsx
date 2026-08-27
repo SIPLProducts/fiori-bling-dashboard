@@ -11,6 +11,10 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) throw redirect({ to: "/launchpad" });
+  },
   head: () => ({
     meta: [
       { title: "Sign in — Nexus Procurement Analytics" },
