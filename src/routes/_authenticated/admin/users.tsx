@@ -67,8 +67,10 @@ const EMPTY_FORM: UserFormInput = {
   email: "",
   contact: "",
   status: "active",
-  employee_id: "",
   department: "",
+  plant: "",
+  purchase_group: "",
+  distribution_channel: "",
   password: "",
   confirmPassword: "",
   roleKey: "",
@@ -106,8 +108,8 @@ function AdminUsers() {
         user.display_name,
         user.username,
         user.email,
-        user.employee_id,
         user.department,
+        user.plant,
         ...user.roles.map(roleName),
       ]
         .filter(Boolean)
@@ -259,7 +261,7 @@ function AdminUsers() {
                       </TableCell>
                       <TableCell className="text-sm">{user.username ?? "—"}</TableCell>
                       <TableCell className="text-sm">{user.contact ?? "—"}</TableCell>
-                      <TableCell className="text-sm">{user.employee_id ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{user.plant ?? "—"}</TableCell>
                       <TableCell className="text-sm">{user.department ?? "—"}</TableCell>
                       <TableCell>
                         {user.roles.length ? (
@@ -288,7 +290,7 @@ function AdminUsers() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-3xl">
           <DialogHeader className="border-b border-border bg-muted/40 px-6 py-4">
             <DialogTitle className="text-base">{editing ? "Edit user" : "Create user"}</DialogTitle>
             <DialogDescription className="text-xs">
@@ -302,27 +304,30 @@ function AdminUsers() {
               <Field label="First Name *">
                 <Input
                   value={form.first_name}
+                  placeholder="Enter First Name"
                   onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                 />
               </Field>
               <Field label="Last Name *">
                 <Input
                   value={form.last_name}
+                  placeholder="Enter Last Name"
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                 />
               </Field>
-              <Field label="Username">
+              <Field label="Username *">
                 <Input
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder="jdoe"
-                   disabled={!!editing}
+                  placeholder="Enter Username"
+                  disabled={!!editing}
                 />
               </Field>
               <Field label="Email *">
                 <Input
                   type="email"
                   value={form.email}
+                  placeholder="Enter Email"
                   disabled={!!editing}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
@@ -333,19 +338,36 @@ function AdminUsers() {
               <Field label="Contact *">
                 <Input
                   value={form.contact}
+                  placeholder="Enter Contact"
                   onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                />
-              </Field>
-              <Field label="Employee ID">
-                <Input
-                  value={form.employee_id}
-                  onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
                 />
               </Field>
               <Field label="Department">
                 <Input
                   value={form.department}
+                  placeholder="Enter Department"
                   onChange={(e) => setForm({ ...form, department: e.target.value })}
+                />
+              </Field>
+              <Field label="Plant">
+                <Input
+                  value={form.plant}
+                  placeholder="Enter Plant"
+                  onChange={(e) => setForm({ ...form, plant: e.target.value })}
+                />
+              </Field>
+              <Field label="Purchase Group">
+                <Input
+                  value={form.purchase_group}
+                  placeholder="Enter Purchase Group"
+                  onChange={(e) => setForm({ ...form, purchase_group: e.target.value })}
+                />
+              </Field>
+              <Field label="Distribution Channel">
+                <Input
+                  value={form.distribution_channel}
+                  placeholder="Enter Distribution Channel"
+                  onChange={(e) => setForm({ ...form, distribution_channel: e.target.value })}
                 />
               </Field>
               <Field label="Status *">
@@ -371,7 +393,7 @@ function AdminUsers() {
                   onValueChange={(value) => setForm({ ...form, roleKey: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue placeholder="Select Role" />
                   </SelectTrigger>
                   <SelectContent>
                     {assignableRoles.map((role) => (
@@ -397,6 +419,7 @@ function AdminUsers() {
                   type="password"
                   autoComplete="new-password"
                   value={form.password}
+                  placeholder="Enter Password"
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
                 <PasswordStrength password={form.password} />
@@ -406,6 +429,7 @@ function AdminUsers() {
                   type="password"
                   autoComplete="new-password"
                   value={form.confirmPassword}
+                  placeholder="Enter Confirm Password"
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                 />
                 <PasswordMatchHint
@@ -480,7 +504,7 @@ function Section({
         </h3>
         {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </section>
   );
 }
