@@ -68,10 +68,7 @@ export function ShellBar({
               <DropdownMenuSeparator />
               {sdReports.map((report) => (
                 <DropdownMenuItem key={report.screen} asChild>
-                  <Link to={report.to} className="flex flex-col items-start gap-0.5">
-                    <span>{report.title}</span>
-                    <span className="text-[11px] tracking-wide text-muted-foreground">{report.tcode}</span>
-                  </Link>
+                  <Link to={report.to}>{report.title}</Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
