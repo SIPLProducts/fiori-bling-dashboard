@@ -5,10 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ensureDemoUser } from "@/lib/demo.functions";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
+import hblLogoAsset from "@/assets/hbl-logo.png.asset.json";
 
+const hblLogo = hblLogoAsset.url;
+const REMEMBER_KEY = "hbl-remembered-identifier";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -18,15 +22,15 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — Nexus Procurement Analytics" },
+      { title: "Sign in — HBL MIS Portal" },
       {
         name: "description",
-        content: "Sign in to the Nexus procurement analytics portal to view SAP spend, order and supplier reports.",
+        content: "Sign in to the HBL MIS Portal to view SAP KPI dashboards and analytics reports.",
       },
-      { property: "og:title", content: "Sign in — Nexus Procurement Analytics" },
+      { property: "og:title", content: "Sign in — HBL MIS Portal" },
       {
         property: "og:description",
-        content: "Access role-based SAP procurement dashboards and analytics reports.",
+        content: "Access role-based SAP MIS dashboards and analytics reports.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -38,8 +42,13 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const provisionDemo = ensureDemoUser;
-  const [identifier, setIdentifier] = useState("");
+  const [identifier, setIdentifier] = useState(
+    () => localStorage.getItem(REMEMBER_KEY) ?? "",
+  );
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(
+    () => Boolean(localStorage.getItem(REMEMBER_KEY)),
+  );
   const [busy, setBusy] = useState(false);
 
   async function handleSignIn(event: React.FormEvent) {
@@ -59,6 +68,8 @@ function AuthPage() {
         password,
       });
       if (error) throw new Error(error.message);
+      if (remember) localStorage.setItem(REMEMBER_KEY, identifier.trim());
+      else localStorage.removeItem(REMEMBER_KEY);
       navigate({ to: "/launchpad" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
@@ -85,74 +96,122 @@ function AuthPage() {
     }
   }
 
-
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-shell p-10 text-shell-foreground lg:flex">
-        <span className="rounded-sm bg-primary px-2 py-1 text-[13px] font-bold tracking-[0.18em] text-primary-foreground self-start">
-          NEXUS
+      {/* Left branding panel */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-shell p-10 text-shell-foreground lg:flex">
+        {/* faint watermark */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 -right-8 text-[22rem] leading-none font-black tracking-tighter text-shell-foreground/[0.04] select-none"
+        >
+          HBL
         </span>
-        <div>
-          <h2 className="max-w-md text-3xl leading-tight font-light">
-            Your SAP procurement data, in a launchpad your team already knows how to use.
+        {/* radial glow behind logo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gold/10 blur-3xl"
+        />
+
+        <div className="relative">
+          <span className="inline-flex items-center gap-3 rounded-lg border border-shell-foreground/15 bg-shell-foreground/[0.06] px-4 py-3 backdrop-blur-sm">
+            <img src={hblLogo} alt="HBL logo" className="h-8 w-auto invert" />
+          </span>
+        </div>
+
+        <div className="relative">
+          <div className="flex items-center gap-3">
+            <span className="h-1 w-12 rounded-full bg-gold" />
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-shell-muted">
+              Management Information System
+            </p>
+          </div>
+          <h2 className="mt-5 max-w-md text-3xl leading-tight font-light">
+            HBL MIS Portal — SAP reports, KPIs and analytics in one launchpad.
           </h2>
           <p className="mt-4 max-w-md text-sm text-shell-muted">
-            Role-based tile groups, live KPIs and drill-down analytics for purchase orders, suppliers
-            and contracts.
+            Role-based tiles, live KPIs and drill-down analytics across Sales, Finance, Quality,
+            Production and more — delivered straight from your SAP landscape.
           </p>
         </div>
-        <p className="text-xs text-shell-muted">Nexus Analytics Portal</p>
+
+        <p className="relative text-xs text-shell-muted">HBL MIS Portal</p>
       </div>
 
-      <div className="flex items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm">
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-ink/5">
+      {/* Right sign-in panel */}
+      <div className="flex items-center justify-center bg-surface p-6">
+        <div className="w-full max-w-md">
+          <div className="rounded-3xl bg-card p-9 shadow-[var(--shadow-soft-card)]">
             <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
               Welcome back
             </h1>
-            <div className="mt-3 h-1 w-10 rounded-full bg-gold" />
+            <div className="mt-2 h-0.5 w-10 rounded-full bg-gold" />
             <p className="mt-3 text-sm text-muted-foreground">
-              Use your work account to access procurement analytics.
+              Please sign in to access your dashboard.
             </p>
 
             <form onSubmit={handleSignIn} className="mt-6 space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="identifier">Email or username</Label>
+                <Label htmlFor="identifier" className="text-xs font-semibold text-foreground">
+                  Email or username <span className="text-destructive">*</span>
+                </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="identifier"
                     type="text"
                     autoComplete="username"
-                    placeholder="Enter email or username"
+                    placeholder="Enter your username"
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="pl-9"
+                    className="h-11 rounded-lg border-transparent bg-muted pl-10 focus-visible:border-gold focus-visible:ring-gold/40"
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+                  Password <span className="text-destructive">*</span>
+                </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter password"
+                    placeholder="Enter your password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-9"
+                    className="h-11 rounded-lg border-transparent bg-muted pl-10 focus-visible:border-gold focus-visible:ring-gold/40"
                   />
                 </div>
               </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={remember}
+                    onCheckedChange={(checked) => setRemember(checked === true)}
+                  />
+                  Remember me
+                </label>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-ink hover:underline"
+                  onClick={() =>
+                    toast.info("Please contact your administrator to reset your password.")
+                  }
+                >
+                  Forgot password?
+                </button>
+              </div>
+
               <Button
                 type="submit"
-                className="w-full bg-ink text-ink-foreground hover:bg-ink/90"
+                className="h-11 w-full rounded-lg bg-ink text-sm font-semibold text-ink-foreground shadow-md shadow-ink/20 hover:bg-ink/90"
                 disabled={busy}
               >
-                {busy ? "Signing in…" : "Sign in"}
+                {busy ? "Signing in…" : "Sign In"}
               </Button>
             </form>
           </div>
@@ -184,4 +243,3 @@ function AuthPage() {
     </div>
   );
 }
-
