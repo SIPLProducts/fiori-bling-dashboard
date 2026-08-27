@@ -4,6 +4,7 @@
  * Screen Permissions matrix so all four stay in sync.
  */
 import { MODULES } from "./sap-modules";
+import { SD_REPORTS } from "./sd-reports";
 
 export type ScreenGroup =
   | "Home"
@@ -42,7 +43,13 @@ export const SCREENS: ScreenDef[] = [
   { key: "admin.sap-api", label: "SAP API Settings", group: "Administration" },
 ];
 
-export const SCREEN_GROUPS: ScreenGroup[] = ["Home", "Reports", "SAP modules", "Administration"];
+export const SCREEN_GROUPS: ScreenGroup[] = [
+  "Home",
+  "Reports",
+  "Sales Distribution Reports",
+  "SAP modules",
+  "Administration",
+];
 
 export function screenLabel(key: string): string {
   return SCREENS.find((screen) => screen.key === key)?.label ?? key;
