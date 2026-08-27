@@ -39,6 +39,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-gold: var(--gold);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
   --color-shell: var(--shell);
   --color-shell-foreground: var(--shell-foreground);
   --color-shell-muted: var(--shell-muted);
@@ -85,6 +88,9 @@
   --success-foreground: oklch(0.99 0.002 247);
   --warning: oklch(0.72 0.15 70);
   --warning-foreground: oklch(0.24 0.02 253);
+  --gold: oklch(0.72 0.15 70);
+  --ink: oklch(0.25 0.04 250);
+  --ink-foreground: oklch(0.98 0.002 247);
   --shell: oklch(0.4 0.033 251);
   --shell-foreground: oklch(0.98 0.002 247);
   --shell-muted: oklch(0.8 0.018 251);
@@ -127,6 +133,9 @@
   --success-foreground: oklch(0.16 0.02 253);
   --warning: oklch(0.78 0.14 70);
   --warning-foreground: oklch(0.18 0.02 253);
+  --gold: oklch(0.78 0.14 70);
+  --ink: oklch(0.2 0.03 250);
+  --ink-foreground: oklch(0.96 0.003 247);
   --shell: oklch(0.25 0.023 253);
   --shell-foreground: oklch(0.96 0.003 247);
   --shell-muted: oklch(0.72 0.016 251);
