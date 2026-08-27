@@ -104,39 +104,58 @@ function AuthPage() {
         <p className="text-xs text-shell-muted">Nexus Analytics Portal</p>
       </div>
 
-      <div className="flex items-center justify-center p-6">
+      <div className="flex items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-light text-foreground">Sign in to the portal</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use your work account to access procurement analytics.
-          </p>
+          <div className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-ink/5">
+            <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
+              Welcome back
+            </h1>
+            <div className="mt-3 h-1 w-10 rounded-full bg-gold" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Use your work account to access procurement analytics.
+            </p>
 
-          <form onSubmit={handleSignIn} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="identifier">Email or username</Label>
-              <Input
-                id="identifier"
-                type="text"
-                autoComplete="username"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
+            <form onSubmit={handleSignIn} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="identifier">Email or username</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="identifier"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="Enter email or username"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-ink text-ink-foreground hover:bg-ink/90"
+                disabled={busy}
+              >
+                {busy ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          </div>
 
           <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
             <p className="text-sm font-medium text-foreground">Demo access</p>
@@ -157,10 +176,9 @@ function AuthPage() {
             </Button>
           </div>
 
-          <p className="mt-6 text-xs text-muted-foreground">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Portal access is provisioned by your administrator.
           </p>
-
         </div>
       </div>
     </div>
