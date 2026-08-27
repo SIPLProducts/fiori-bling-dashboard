@@ -22,11 +22,14 @@ export type Database = {
           created_at: string
           department: string | null
           display_name: string | null
+          distribution_channel: string | null
           email: string | null
           employee_id: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          plant: string | null
+          purchase_group: string | null
           status: string
           updated_at: string
           username: string | null
@@ -38,11 +41,14 @@ export type Database = {
           created_at?: string
           department?: string | null
           display_name?: string | null
+          distribution_channel?: string | null
           email?: string | null
           employee_id?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          plant?: string | null
+          purchase_group?: string | null
           status?: string
           updated_at?: string
           username?: string | null
@@ -54,11 +60,14 @@ export type Database = {
           created_at?: string
           department?: string | null
           display_name?: string | null
+          distribution_channel?: string | null
           email?: string | null
           employee_id?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          plant?: string | null
+          purchase_group?: string | null
           status?: string
           updated_at?: string
           username?: string | null
