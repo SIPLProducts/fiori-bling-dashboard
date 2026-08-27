@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
-import { MODULES } from "@/lib/sap-modules";
 import {
   AUTH_TYPES,
   CONNECTION_MODES,
@@ -29,6 +28,8 @@ import {
   getMiddlewareConfig,
   listSapEndpoints,
   listSapSystems,
+  listStoredCredentialKeys,
+  MIDDLEWARE_CREDENTIAL_KEY,
   resolveEndpointUrl,
   saveMiddlewareConfig,
   saveSapSystem,
@@ -77,11 +78,6 @@ export const Route = createFileRoute("/_authenticated/admin/sap-api")({
   }),
   component: SapApiSettings,
 });
-
-const MODULE_OPTIONS = [
-  { key: "common", label: "Common" },
-  ...MODULES.map((mod) => ({ key: mod.key, label: `${mod.code} — ${mod.title}` })),
-];
 
 const emptyEndpoint: EndpointInput = {
   name: "",
@@ -243,9 +239,6 @@ function ApiList({
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-sm font-semibold text-card-foreground">{endpoint.name}</h3>
                 <div className="flex flex-col items-end gap-1">
-                  <Badge variant="secondary" className="uppercase">
-                    {endpoint.module_key}
-                  </Badge>
                   <Badge variant="outline">{endpoint.auth_type}</Badge>
                 </div>
               </div>
@@ -407,9 +400,6 @@ function EndpointDetail({
           </Button>
           <div>
             <h2 className="text-2xl font-light text-foreground">{form.name || "New endpoint"}</h2>
-            <Badge variant="secondary" className="mt-1 uppercase">
-              {form.module_key}
-            </Badge>
           </div>
         </div>
         <div className="flex gap-2">
@@ -441,20 +431,6 @@ function EndpointDetail({
           <div className="grid gap-4 rounded-md border border-border bg-card p-5 shadow-tile md:grid-cols-2">
             <Field label="Name">
               <Input value={form.name} onChange={(e) => set("name", e.target.value)} />
-            </Field>
-            <Field label="Module">
-              <Select value={form.module_key} onValueChange={(v) => set("module_key", v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODULE_OPTIONS.map((option) => (
-                    <SelectItem key={option.key} value={option.key}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Field>
             <Field label="Description" className="md:col-span-2">
               <Textarea
@@ -578,7 +554,7 @@ function EndpointDetail({
                 ?.username ?? "not configured"}
             </p>
             <p className="text-muted-foreground">
-              SAP passwords and the proxy secret are held only in the Node.js middleware environment
+              SAP passwords and the proxy secret are stored encrypted and used only by the middleware
               file (<code>deploy/middleware/.env</code>) — they are never stored in this portal or sent
               to the browser. Change them on the middleware server and restart the service.
             </p>
@@ -670,17 +646,24 @@ const emptySystem = {
   base_url: "",
   sap_client: "",
   username: "",
+  password: "",
   is_active: false,
 };
 
 function SystemsTab() {
   const queryClient = useQueryClient();
   const systemsQuery = useQuery({ queryKey: ["sap-systems"], queryFn: listSapSystems });
+  const credentialsQuery = useQuery({
+    queryKey: ["sap-credential-keys"],
+    queryFn: listStoredCredentialKeys,
+  });
+  const storedKeys = credentialsQuery.data ?? [];
   const [drafts, setDrafts] = useState<Record<string, typeof emptySystem>>({});
   const [adding, setAdding] = useState<typeof emptySystem | null>(null);
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["sap-systems"] });
+    queryClient.invalidateQueries({ queryKey: ["sap-credential-keys"] });
   }
 
   const saveMutation = useMutation({
@@ -724,6 +707,7 @@ function SystemsTab() {
         base_url: system.base_url,
         sap_client: system.sap_client ?? "",
         username: system.username ?? "",
+        password: "",
         is_active: system.is_active,
       }
     );
@@ -744,7 +728,7 @@ function SystemsTab() {
                 <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
                   Base URL, client and technical user for this SAP system. Endpoints that store a
                   relative path inherit this Base URL automatically — switching DEV → Quality is a
-                  one-field change. Passwords stay in the middleware environment.
+                  one-field change. The password is stored encrypted and never shown again.
                 </p>
               </div>
               <div className="flex gap-2">
@@ -768,6 +752,7 @@ function SystemsTab() {
             </div>
             <SystemFields
               value={draft}
+              hasStoredPassword={storedKeys.includes(system.key)}
               onChange={(next) => setDrafts((prev) => ({ ...prev, [system.id]: next }))}
             />
             <div className="mt-4 flex items-center justify-between">
@@ -816,9 +801,11 @@ function SystemsTab() {
 function SystemFields({
   value,
   onChange,
+  hasStoredPassword = false,
 }: {
   value: typeof emptySystem;
   onChange: (next: typeof emptySystem) => void;
+  hasStoredPassword?: boolean;
 }) {
   function set<K extends keyof typeof emptySystem>(key: K, next: (typeof emptySystem)[K]) {
     onChange({ ...value, [key]: next });
@@ -856,7 +843,15 @@ function SystemFields({
         <Input value={value.username} onChange={(e) => set("username", e.target.value)} />
       </Field>
       <Field label="SAP password">
-        <Input disabled value="" placeholder="Managed in middleware .env" />
+        <Input
+          type="password"
+          autoComplete="new-password"
+          value={value.password}
+          placeholder={
+            hasStoredPassword ? "Password saved — leave blank to keep" : "Enter SAP password"
+          }
+          onChange={(e) => set("password", e.target.value)}
+        />
       </Field>
       <div className="flex items-center gap-3">
         <Switch checked={value.is_active} onCheckedChange={(v) => set("is_active", v)} />
@@ -873,11 +868,17 @@ type MiddlewareForm = {
   deployment_mode: string;
   middleware_port: number;
   middleware_url: string;
+  proxy_secret: string;
 };
 
 function MiddlewareTab() {
   const queryClient = useQueryClient();
   const configQuery = useQuery({ queryKey: ["sap-middleware"], queryFn: getMiddlewareConfig });
+  const credentialsQuery = useQuery({
+    queryKey: ["sap-credential-keys"],
+    queryFn: listStoredCredentialKeys,
+  });
+  const hasStoredSecret = (credentialsQuery.data ?? []).includes(MIDDLEWARE_CREDENTIAL_KEY);
   const [form, setForm] = useState<MiddlewareForm | null>(null);
 
   const current =
@@ -888,6 +889,7 @@ function MiddlewareTab() {
           deployment_mode: configQuery.data.deployment_mode,
           middleware_port: configQuery.data.middleware_port,
           middleware_url: configQuery.data.middleware_url,
+          proxy_secret: "",
         }
       : null);
 
@@ -898,6 +900,8 @@ function MiddlewareTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sap-middleware"] });
+      queryClient.invalidateQueries({ queryKey: ["sap-credential-keys"] });
+      setForm((prev) => (prev ? { ...prev, proxy_secret: "" } : prev));
       toast.success("Middleware settings saved");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -987,7 +991,13 @@ function MiddlewareTab() {
           />
         </Field>
         <Field label="Proxy secret / SAP password" className="md:col-span-2">
-          <Input disabled value="" placeholder="Managed in deploy/middleware/.env — never stored here" />
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={current.proxy_secret}
+            placeholder={hasStoredSecret ? "Secret saved — leave blank to keep" : "Enter proxy secret"}
+            onChange={(e) => set("proxy_secret", e.target.value)}
+          />
         </Field>
       </div>
 
