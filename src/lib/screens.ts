@@ -29,7 +29,7 @@ export const SCREENS: ScreenDef[] = [
   { key: "reports.sales-analytics", label: "Sales Analytics", group: "Reports" },
   ...SD_REPORTS.map((report) => ({
     key: report.screen,
-    label: `${report.title} (${report.tcode})`,
+    label: report.title,
     group: "Sales Distribution Reports" as const,
   })),
   ...MODULES.map((mod) => ({
