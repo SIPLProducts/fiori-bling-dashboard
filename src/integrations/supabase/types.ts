@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_crypto_keys: {
+        Row: {
+          key_value: string
+          name: string
+        }
+        Insert: {
+          key_value: string
+          name: string
+        }
+        Update: {
+          key_value?: string
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -132,6 +147,24 @@ export type Database = {
           key?: string
           name?: string
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sap_credentials: {
+        Row: {
+          cred_key: string
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          cred_key: string
+          secret: string
+          updated_at?: string
+        }
+        Update: {
+          cred_key?: string
+          secret?: string
           updated_at?: string
         }
         Relationships: []
@@ -450,6 +483,7 @@ export type Database = {
         Args: { _new_password: string; _user_id: string }
         Returns: undefined
       }
+      get_sap_credential: { Args: { _cred_key: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -462,7 +496,12 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_sap_credential_keys: { Args: never; Returns: string[] }
       resolve_login_email: { Args: { _identifier: string }; Returns: string }
+      set_sap_credential: {
+        Args: { _cred_key: string; _secret: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "buyer" | "approver" | "viewer"
