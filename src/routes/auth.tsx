@@ -99,7 +99,7 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left branding panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-shell p-10 text-shell-foreground lg:flex">
+      <div className="relative hidden flex-col overflow-hidden bg-shell p-10 text-shell-foreground lg:flex">
         {/* faint watermark */}
         <span
           aria-hidden
@@ -110,21 +110,20 @@ function AuthPage() {
         {/* radial glow behind logo */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gold/10 blur-3xl"
+          className="pointer-events-none absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/10 blur-3xl"
         />
 
-        <div className="relative">
-          <span className="inline-flex items-center gap-3 rounded-lg border border-shell-foreground/15 bg-shell-foreground/[0.06] px-4 py-3 backdrop-blur-sm">
-            <img src={hblLogo} alt="HBL logo" className="h-8 w-auto invert brightness-0" />
+        <div className="relative flex flex-1 flex-col items-center justify-center text-center">
+          <span className="inline-flex items-center gap-3 rounded-xl border border-shell-foreground/15 bg-shell-foreground/[0.06] px-6 py-4 backdrop-blur-sm">
+            <img src={hblLogo} alt="HBL logo" className="h-10 w-auto invert brightness-0" />
           </span>
-        </div>
 
-        <div className="relative">
-          <div className="flex items-center gap-3">
+          <div className="mt-10 flex items-center justify-center gap-3">
             <span className="h-1 w-12 rounded-full bg-gold" />
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-shell-muted">
               Management Information System
             </p>
+            <span className="h-1 w-12 rounded-full bg-gold" />
           </div>
           <h2 className="mt-5 max-w-md text-3xl leading-tight font-light">
             HBL MIS Portal — SAP reports, KPIs and analytics in one launchpad.
@@ -135,7 +134,7 @@ function AuthPage() {
           </p>
         </div>
 
-        <p className="relative text-xs text-shell-muted">HBL MIS Portal</p>
+        <p className="relative text-center text-xs text-shell-muted">HBL MIS Portal</p>
       </div>
 
       {/* Right sign-in panel */}
