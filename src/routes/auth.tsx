@@ -140,7 +140,7 @@ function AuthPage() {
       {/* Right sign-in panel */}
       <div className="flex items-center justify-center bg-surface p-6">
         <div className="w-full max-w-md">
-          <div className="rounded-3xl bg-card p-9 shadow-[var(--shadow-soft-card)]">
+          <div className="rounded-3xl bg-card-raised p-9 shadow-[var(--shadow-soft-card)] ring-1 ring-ink/5">
             <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
               Welcome back
             </h1>

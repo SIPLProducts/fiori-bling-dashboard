@@ -46,6 +46,7 @@
   --color-shell-foreground: var(--shell-foreground);
   --color-shell-muted: var(--shell-muted);
   --color-surface: var(--surface);
+  --color-card-raised: var(--card-raised);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
