@@ -93,7 +93,7 @@
   --gold: oklch(0.72 0.15 70);
   --ink: oklch(0.25 0.04 250);
   --ink-foreground: oklch(0.98 0.002 247);
-  --shell: oklch(0.4 0.033 251);
+  --shell: oklch(0.45 0.135 255);
   --shell-foreground: oklch(0.98 0.002 247);
   --shell-muted: oklch(0.8 0.018 251);
   --surface: oklch(0.952 0.01 255);
