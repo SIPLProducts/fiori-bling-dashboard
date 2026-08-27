@@ -94,6 +94,11 @@
   --shell: oklch(0.4 0.033 251);
   --shell-foreground: oklch(0.98 0.002 247);
   --shell-muted: oklch(0.8 0.018 251);
+  --surface: oklch(0.952 0.01 255);
+  --shadow-soft-card:
+    0 30px 60px -18px color-mix(in oklab, var(--ink) 24%, transparent),
+    0 12px 28px -12px color-mix(in oklab, var(--ink) 16%, transparent),
+    inset 0 1px 0 color-mix(in oklab, oklch(1 0 0) 70%, transparent);
   --border: oklch(0.885 0.007 247);
   --input: oklch(0.86 0.008 247);
   --ring: oklch(0.548 0.163 254);
