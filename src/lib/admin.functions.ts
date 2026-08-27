@@ -16,6 +16,9 @@ export type PortalUser = {
   contact: string | null;
   employee_id: string | null;
   department: string | null;
+  plant: string | null;
+  purchase_group: string | null;
+  distribution_channel: string | null;
   company: string | null;
   status: UserStatus;
   roles: string[];
@@ -28,8 +31,10 @@ export type UserFormInput = {
   email: string;
   contact: string;
   status: UserStatus;
-  employee_id: string;
   department: string;
+  plant: string;
+  purchase_group: string;
+  distribution_channel: string;
   password: string;
   confirmPassword: string;
   roleKey: string;
@@ -60,7 +65,7 @@ export async function listPortalUsers(): Promise<PortalUser[]> {
     supabase
       .from("profiles")
       .select(
-        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status",
+        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status, plant, purchase_group, distribution_channel",
       )
       .order("created_at"),
     supabase.from("user_role_assignments").select("user_id, role_key"),
@@ -89,6 +94,7 @@ function validate(input: UserFormInput, requirePassword: boolean) {
     if (input.password.length < 8) errors.push("Password must be at least 8 characters");
     if (input.password !== input.confirmPassword) errors.push("Passwords do not match");
   }
+  if (!input.username.trim()) errors.push("Username is required");
   if (input.username && !/^[a-zA-Z0-9._-]{3,}$/.test(input.username.trim())) {
     errors.push("Username must be at least 3 characters (letters, numbers, dot, dash, underscore)");
   }
@@ -127,8 +133,10 @@ export async function createPortalUser(input: { data: UserFormInput }) {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         contact: form.contact.trim(),
-        employee_id: form.employee_id.trim() || null,
         department: form.department.trim() || null,
+        plant: form.plant.trim() || null,
+        purchase_group: form.purchase_group.trim() || null,
+        distribution_channel: form.distribution_channel.trim() || null,
         status: form.status,
       },
     },
@@ -150,8 +158,10 @@ export async function createPortalUser(input: { data: UserFormInput }) {
       last_name: form.last_name.trim(),
       display_name: `${form.first_name.trim()} ${form.last_name.trim()}`.trim(),
       contact: form.contact.trim(),
-      employee_id: form.employee_id.trim() || null,
       department: form.department.trim() || null,
+      plant: form.plant.trim() || null,
+      purchase_group: form.purchase_group.trim() || null,
+      distribution_channel: form.distribution_channel.trim() || null,
       status: form.status,
     })
     .eq("id", userId);
@@ -178,8 +188,10 @@ export async function updatePortalUser(input: {
       last_name: form.last_name.trim(),
       display_name: `${form.first_name.trim()} ${form.last_name.trim()}`.trim(),
       contact: form.contact.trim(),
-      employee_id: form.employee_id.trim() || null,
       department: form.department.trim() || null,
+      plant: form.plant.trim() || null,
+      purchase_group: form.purchase_group.trim() || null,
+      distribution_channel: form.distribution_channel.trim() || null,
       status: form.status,
     })
     .eq("id", form.id);

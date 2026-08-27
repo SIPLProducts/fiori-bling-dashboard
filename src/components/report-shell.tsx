@@ -7,11 +7,13 @@ import type { ReactNode } from "react";
 export function ReportShell({
   title,
   description,
+  tcode,
   providerMode,
   children,
 }: {
   title: string;
   description: string;
+  tcode?: string | undefined;
   providerMode?: string | undefined;
   children: ReactNode;
 }) {
@@ -29,9 +31,15 @@ export function ReportShell({
             <ChevronLeft className="size-3.5" /> Launchpad
           </Link>
           <h1 className="mt-1 text-2xl font-light text-foreground">{title}</h1>
+          {tcode ? (
+            <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              {tcode}
+            </p>
+          ) : null}
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
+
       <main className="mx-auto max-w-[1400px] px-4 py-6">{children}</main>
       {providerMode ? (
         <p className="mx-auto max-w-[1400px] px-4 pb-8 text-xs text-muted-foreground">
