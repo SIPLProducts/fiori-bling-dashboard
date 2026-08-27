@@ -1,9 +1,9 @@
 /**
  * SAP API Settings data access.
  *
- * Stores only non-secret configuration (URLs, paths, headers, mappings).
- * SAP technical-user passwords and the proxy secret live exclusively in the
- * Node.js middleware's own .env file — never in this database.
+ * Stores non-secret configuration (URLs, paths, headers, mappings) plus
+ * write-only credentials: SAP passwords and the proxy secret are encrypted by
+ * a security-definer database function and can never be read back by the UI.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { accessForUser } from "./access";
@@ -184,8 +184,27 @@ export type SystemInput = {
   base_url: string;
   sap_client: string;
   username: string;
+  password: string;
   is_active: boolean;
 };
+
+/** Credential keys that currently have a stored (encrypted) secret. */
+export const MIDDLEWARE_CREDENTIAL_KEY = "__middleware__";
+
+export async function listStoredCredentialKeys(): Promise<string[]> {
+  await requireSuperAdmin();
+  const { data, error } = await supabase.rpc("list_sap_credential_keys");
+  if (error) throw error;
+  return (data ?? []) as string[];
+}
+
+async function saveCredential(credKey: string, secret: string): Promise<void> {
+  const { error } = await supabase.rpc("set_sap_credential", {
+    _cred_key: credKey,
+    _secret: secret,
+  });
+  if (error) throw error;
+}
 
 export async function saveSapSystem(id: string | null, input: SystemInput): Promise<void> {
   await requireSuperAdmin();
@@ -203,6 +222,7 @@ export async function saveSapSystem(id: string | null, input: SystemInput): Prom
     ? await supabase.from("sap_systems").update(payload).eq("id", id)
     : await supabase.from("sap_systems").insert(payload);
   if (error) throw error;
+  if (input.password.trim()) await saveCredential(payload.key, input.password);
   if (input.is_active) {
     await supabase.from("sap_systems").update({ is_active: false }).neq("key", payload.key);
   }
@@ -231,6 +251,7 @@ export type MiddlewareInput = {
   deployment_mode: string;
   middleware_port: number;
   middleware_url: string;
+  proxy_secret: string;
 };
 
 export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): Promise<void> {
@@ -248,6 +269,7 @@ export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): 
     })
     .eq("id", id);
   if (error) throw error;
+  if (input.proxy_secret.trim()) await saveCredential(MIDDLEWARE_CREDENTIAL_KEY, input.proxy_secret);
 }
 
 /* ----------------------------- connectivity ----------------------------- */
