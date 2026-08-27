@@ -97,7 +97,7 @@
   --shell-foreground: oklch(0.98 0.002 247);
   --shell-muted: oklch(0.8 0.018 251);
   --surface: oklch(0.952 0.01 255);
-  --card-raised: oklch(0.995 0.004 90);
+  --card-raised: oklch(0.972 0.009 252);
   --shadow-soft-card:
     0 34px 70px -16px color-mix(in oklab, var(--ink) 30%, transparent),
     0 14px 32px -12px color-mix(in oklab, var(--ink) 18%, transparent),
