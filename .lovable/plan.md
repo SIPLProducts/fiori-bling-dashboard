@@ -2,7 +2,7 @@
 
 ## Left panel (branding)
 - Remove the "NEXUS" badge and all Nexus wording.
-- Show the uploaded HBL logo (uploaded as a CDN asset) on the dark navy panel, with "HBL MIS Portal" as the brand title beneath it.
+- Dark navy panel with the HBL logo (uploaded as a CDN asset) placed at the left of the description block, "HBL MIS Portal" as the brand title, with an aesthetic layered look: soft radial glow behind the logo, gold accent line, and a large faint "HBL" watermark in the panel background.
 - Replace the paragraph copy with MIS-portal wording (SAP MIS reports, KPIs and analytics for your team).
 - Footer line becomes "HBL MIS Portal".
 
