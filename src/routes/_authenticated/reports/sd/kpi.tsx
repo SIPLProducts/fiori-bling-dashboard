@@ -159,7 +159,7 @@ function SalesKpiPage() {
     : [];
 
   return (
-    <ReportShell title={`${DEF.title} · ${DEF.tcode}`} description={DEF.description}>
+    <ReportShell title={DEF.title} tcode={DEF.tcode} description={DEF.description}>
       {!accessLoading && !allowed ? (
         <AccessDenied area={DEF.title} />
       ) : (
