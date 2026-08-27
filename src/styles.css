@@ -133,6 +133,9 @@
   --success-foreground: oklch(0.16 0.02 253);
   --warning: oklch(0.78 0.14 70);
   --warning-foreground: oklch(0.18 0.02 253);
+  --gold: oklch(0.78 0.14 70);
+  --ink: oklch(0.2 0.03 250);
+  --ink-foreground: oklch(0.96 0.003 247);
   --shell: oklch(0.25 0.023 253);
   --shell-foreground: oklch(0.96 0.003 247);
   --shell-muted: oklch(0.72 0.016 251);
