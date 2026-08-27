@@ -115,7 +115,7 @@ function AuthPage() {
 
         <div className="relative">
           <span className="inline-flex items-center gap-3 rounded-lg border border-shell-foreground/15 bg-shell-foreground/[0.06] px-4 py-3 backdrop-blur-sm">
-            <img src={hblLogo} alt="HBL logo" className="h-8 w-auto invert" />
+            <img src={hblLogo} alt="HBL logo" className="h-8 w-auto invert brightness-0" />
           </span>
         </div>
 
