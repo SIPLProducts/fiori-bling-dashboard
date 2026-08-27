@@ -28,7 +28,7 @@ function SalesRegisterPage() {
   const allowed = canAccessSdReport("register", launchpad?.screens);
 
   return (
-    <ReportShell title={DEF.title} description={DEF.description}>
+    <ReportShell title={DEF.title} tcode={DEF.tcode} description={DEF.description}>
       {!isLoading && !allowed ? <AccessDenied area={DEF.title} /> : <SdComingSoon def={DEF} />}
     </ReportShell>
   );
