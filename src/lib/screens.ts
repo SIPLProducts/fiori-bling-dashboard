@@ -5,7 +5,12 @@
  */
 import { MODULES } from "./sap-modules";
 
-export type ScreenGroup = "Home" | "Reports" | "SAP modules" | "Administration";
+export type ScreenGroup =
+  | "Home"
+  | "Reports"
+  | "Sales Distribution Reports"
+  | "SAP modules"
+  | "Administration";
 
 export type ScreenDef = {
   key: string;
