@@ -22,6 +22,7 @@ import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
+import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +95,12 @@ const AuthenticatedReportsModuleModuleRoute =
     path: '/reports/module/$module',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSdFinanceGstRoute =
+  AuthenticatedReportsSdFinanceGstRouteImport.update({
+    id: '/reports/sd/finance-gst',
+    path: '/reports/sd/finance-gst',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -138,6 +147,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
+    | '/reports/sd/finance-gst'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
+    | '/reports/sd/finance-gst'
   id:
     | '__root__'
     | '/'
@@ -183,6 +195,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sales-analytics'
     | '/_authenticated/reports/suppliers'
     | '/_authenticated/reports/module/$module'
+    | '/_authenticated/reports/sd/finance-gst'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsModuleModuleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sd/finance-gst': {
+      id: '/_authenticated/reports/sd/finance-gst'
+      path: '/reports/sd/finance-gst'
+      fullPath: '/reports/sd/finance-gst'
+      preLoaderRoute: typeof AuthenticatedReportsSdFinanceGstRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -298,6 +318,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
   AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
+  AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -313,6 +334,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsSalesAnalyticsRoute,
   AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
+  AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
