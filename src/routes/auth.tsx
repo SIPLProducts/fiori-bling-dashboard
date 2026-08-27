@@ -100,23 +100,21 @@ function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left branding panel */}
       <div className="relative hidden flex-col overflow-hidden bg-shell p-10 text-shell-foreground lg:flex">
-        {/* faint watermark */}
-        <span
+        {/* centered HBL logo watermark behind the description */}
+        <img
           aria-hidden
-          className="pointer-events-none absolute -bottom-16 -right-8 text-[22rem] leading-none font-black tracking-tighter text-shell-foreground/[0.04] select-none"
-        >
-          HBL
-        </span>
-        {/* radial glow behind logo */}
+          src={hblLogo}
+          alt=""
+          className="pointer-events-none absolute left-1/2 top-1/2 w-[30rem] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-[0.07] invert brightness-0 select-none"
+        />
+        {/* radial glow behind copy */}
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/10 blur-3xl"
         />
 
         <div className="relative flex flex-1 flex-col items-center justify-center text-center">
-          <span className="inline-flex items-center gap-3 rounded-xl border border-shell-foreground/15 bg-shell-foreground/[0.06] px-6 py-4 backdrop-blur-sm">
-            <img src={hblLogo} alt="HBL logo" className="h-10 w-auto invert brightness-0" />
-          </span>
+
 
           <div className="mt-10 flex items-center justify-center gap-3">
             <span className="h-1 w-12 rounded-full bg-gold" />
@@ -138,7 +136,12 @@ function AuthPage() {
       </div>
 
       {/* Right sign-in panel */}
-      <div className="flex items-center justify-center bg-surface p-6">
+      <div className="relative flex items-center justify-center bg-surface p-6">
+        <img
+          src={hblLogo}
+          alt="HBL logo"
+          className="absolute right-6 top-6 h-9 w-auto"
+        />
         <div className="w-full max-w-md">
           <div className="rounded-3xl bg-card-raised p-9 shadow-[var(--shadow-soft-card)] ring-1 ring-ink/5">
             <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
