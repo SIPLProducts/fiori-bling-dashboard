@@ -58,6 +58,25 @@ export function ShellBar({
             {item.label}
           </Link>
         ))}
+        {sdReports.length ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
+              Sales Distribution <ChevronDown className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-72">
+              <DropdownMenuLabel>{SD_MODULE_TITLE}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {sdReports.map((report) => (
+                <DropdownMenuItem key={report.screen} asChild>
+                  <Link to={report.to} className="flex flex-col items-start gap-0.5">
+                    <span>{report.title}</span>
+                    <span className="text-[11px] tracking-wide text-muted-foreground">{report.tcode}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
         {modules.length ? (
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
