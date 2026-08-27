@@ -71,6 +71,8 @@ const EMPTY_FORM: UserFormInput = {
   plant: "",
   purchase_group: "",
   distribution_channel: "",
+  info1: "",
+  info2: "",
   password: "",
   confirmPassword: "",
   roleKey: "",
@@ -159,6 +161,8 @@ function AdminUsers() {
       plant: user.plant ?? "",
       purchase_group: user.purchase_group ?? "",
       distribution_channel: user.distribution_channel ?? "",
+      info1: user.info1 ?? "",
+      info2: user.info2 ?? "",
 
       password: "",
       confirmPassword: "",
@@ -335,6 +339,20 @@ function AdminUsers() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
               </Field>
+              <Field label="Info 1">
+                <Input
+                  value={form.info1}
+                  placeholder="Enter Info 1"
+                  onChange={(e) => setForm({ ...form, info1: e.target.value })}
+                />
+              </Field>
+              <Field label="Info 2">
+                <Input
+                  value={form.info2}
+                  placeholder="Enter Info 2"
+                  onChange={(e) => setForm({ ...form, info2: e.target.value })}
+                />
+              </Field>
             </Section>
 
             <Section title="Contact & organisation">
@@ -389,7 +407,14 @@ function AdminUsers() {
               </Field>
             </Section>
 
-            <Section title="Access">
+            <Section
+              title="Access"
+              hint={
+                editing
+                  ? "Leave both password fields blank to keep the current password."
+                  : "Password must be at least 8 characters."
+              }
+            >
               <Field label="Role *">
                 <Select
                   value={form.roleKey}
@@ -407,16 +432,6 @@ function AdminUsers() {
                   </SelectContent>
                 </Select>
               </Field>
-            </Section>
-
-            <Section
-              title={editing ? "Reset password (optional)" : "Password"}
-              hint={
-                editing
-                  ? "Leave both fields blank to keep the current password."
-                  : "Minimum 8 characters."
-              }
-            >
               <Field label={editing ? "New Password" : "Password *"}>
                 <Input
                   type="password"
