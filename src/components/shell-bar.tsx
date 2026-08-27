@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Bell, ChevronDown, HelpCircle, LogOut, Search, Settings, User } from "lucide-react";
 import { adminNavForScreens, navForScreens } from "@/lib/nav";
 import { modulesForScreens } from "@/lib/sap-modules";
+import { SD_MODULE_TITLE, sdReportsForScreens } from "@/lib/sd-reports";
 import { supabase } from "@/integrations/supabase/client";
 
 import {
@@ -28,6 +29,7 @@ export function ShellBar({
 
   const modules = modulesForScreens(screens);
   const adminItems = adminNavForScreens(screens);
+  const sdReports = sdReportsForScreens(screens);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -56,6 +58,25 @@ export function ShellBar({
             {item.label}
           </Link>
         ))}
+        {sdReports.length ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
+              Sales Distribution <ChevronDown className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-72">
+              <DropdownMenuLabel>{SD_MODULE_TITLE}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {sdReports.map((report) => (
+                <DropdownMenuItem key={report.screen} asChild>
+                  <Link to={report.to} className="flex flex-col items-start gap-0.5">
+                    <span>{report.title}</span>
+                    <span className="text-[11px] tracking-wide text-muted-foreground">{report.tcode}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
         {modules.length ? (
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">

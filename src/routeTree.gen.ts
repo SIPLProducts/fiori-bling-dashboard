@@ -22,6 +22,9 @@ import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
+import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
+import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
+import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +97,24 @@ const AuthenticatedReportsModuleModuleRoute =
     path: '/reports/module/$module',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSdFinanceGstRoute =
+  AuthenticatedReportsSdFinanceGstRouteImport.update({
+    id: '/reports/sd/finance-gst',
+    path: '/reports/sd/finance-gst',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsSdKpiRoute =
+  AuthenticatedReportsSdKpiRouteImport.update({
+    id: '/reports/sd/kpi',
+    path: '/reports/sd/kpi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsSdRegisterRoute =
+  AuthenticatedReportsSdRegisterRouteImport.update({
+    id: '/reports/sd/register',
+    path: '/reports/sd/register',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +129,9 @@ export interface FileRoutesByFullPath {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
+  '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,6 +146,9 @@ export interface FileRoutesByTo {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
+  '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -138,6 +165,9 @@ export interface FileRoutesById {
   '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
+  '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -154,6 +184,9 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
+    | '/reports/sd/finance-gst'
+    | '/reports/sd/kpi'
+    | '/reports/sd/register'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -168,6 +201,9 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/reports/module/$module'
+    | '/reports/sd/finance-gst'
+    | '/reports/sd/kpi'
+    | '/reports/sd/register'
   id:
     | '__root__'
     | '/'
@@ -183,6 +219,9 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sales-analytics'
     | '/_authenticated/reports/suppliers'
     | '/_authenticated/reports/module/$module'
+    | '/_authenticated/reports/sd/finance-gst'
+    | '/_authenticated/reports/sd/kpi'
+    | '/_authenticated/reports/sd/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -284,6 +323,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsModuleModuleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sd/finance-gst': {
+      id: '/_authenticated/reports/sd/finance-gst'
+      path: '/reports/sd/finance-gst'
+      fullPath: '/reports/sd/finance-gst'
+      preLoaderRoute: typeof AuthenticatedReportsSdFinanceGstRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/sd/kpi': {
+      id: '/_authenticated/reports/sd/kpi'
+      path: '/reports/sd/kpi'
+      fullPath: '/reports/sd/kpi'
+      preLoaderRoute: typeof AuthenticatedReportsSdKpiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/sd/register': {
+      id: '/_authenticated/reports/sd/register'
+      path: '/reports/sd/register'
+      fullPath: '/reports/sd/register'
+      preLoaderRoute: typeof AuthenticatedReportsSdRegisterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -298,6 +358,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
   AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
+  AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
+  AuthenticatedReportsSdKpiRoute: typeof AuthenticatedReportsSdKpiRoute
+  AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -313,6 +376,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsSalesAnalyticsRoute,
   AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
+  AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
+  AuthenticatedReportsSdKpiRoute: AuthenticatedReportsSdKpiRoute,
+  AuthenticatedReportsSdRegisterRoute: AuthenticatedReportsSdRegisterRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
