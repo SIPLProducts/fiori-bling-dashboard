@@ -155,8 +155,11 @@ function AdminUsers() {
       email: user.email ?? "",
       contact: user.contact ?? "",
       status: user.status,
-      employee_id: user.employee_id ?? "",
       department: user.department ?? "",
+      plant: user.plant ?? "",
+      purchase_group: user.purchase_group ?? "",
+      distribution_channel: user.distribution_channel ?? "",
+
       password: "",
       confirmPassword: "",
       roleKey: user.roles[0] ?? "",
