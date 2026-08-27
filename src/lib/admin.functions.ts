@@ -137,6 +137,10 @@ export async function createPortalUser(input: { data: UserFormInput }) {
   const userId = signUp.data.user?.id;
   if (!userId) throw new Error("The account was created but needs email confirmation before use.");
 
+  // Admin-created users skip the email confirmation flow — confirm immediately.
+  const confirm = await supabase.rpc("admin_confirm_user_email", { _user_id: userId });
+  if (confirm.error) throw confirm.error;
+
   const profileUpdate = await supabase
     .from("profiles")
     .update({
