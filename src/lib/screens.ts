@@ -26,6 +26,11 @@ export const SCREENS: ScreenDef[] = [
   { key: "reports.purchase-orders", label: "Purchase Orders", group: "Reports" },
   { key: "reports.suppliers", label: "Suppliers", group: "Reports" },
   { key: "reports.sales-analytics", label: "Sales Analytics", group: "Reports" },
+  ...SD_REPORTS.map((report) => ({
+    key: report.screen,
+    label: `${report.title} (${report.tcode})`,
+    group: "Sales Distribution Reports" as const,
+  })),
   ...MODULES.map((mod) => ({
     key: `module.${mod.key}`,
     label: `${mod.code} — ${mod.title}`,
