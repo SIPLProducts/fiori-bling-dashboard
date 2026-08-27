@@ -221,7 +221,7 @@ function AdminUsers() {
                     Contact
                   </TableHead>
                   <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
-                    Employee ID
+                    Plant
                   </TableHead>
                   <TableHead className="text-[11px] font-semibold tracking-wide uppercase">
                     Department
