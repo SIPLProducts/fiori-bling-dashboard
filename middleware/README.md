@@ -101,3 +101,40 @@ location /sap-middleware/ {
   whose portal calls this instance.
 - Rotate any SAP password or JWT secret that has been shared outside the
   server.
+
+## Did the request actually reach SAP?
+
+Every response carries a `stage` field, and the portal toast now names it:
+
+| stage | meaning |
+| --- | --- |
+| `origin-blocked` | The browser origin is not in `ALLOWED_ORIGINS`. **SAP was not contacted.** |
+| `token-rejected` | Missing/invalid portal token, or `SUPABASE_JWT_SECRET` not set. **SAP was not contacted.** |
+| `sap-unreachable` | DNS/connect/timeout to the SAP host. **SAP was not contacted.** |
+| `sap-http-error` | SAP answered, with a non-2xx status. **SAP was reached.** |
+| `ok` | SAP answered 2xx. |
+
+### Logs
+
+Each SAP round trip gets a short trace id and is written to the console *and* to
+`middleware/logs/sap-YYYY-MM-DD.log` (rotated at 5 MB, git-ignored):
+
+```text
+[a1b2c3] -> SAP GET http://10.10.4.18:8000/fisales_detail/report?sap-client=234
+[a1b2c3]    system=dev auth=basic user=SIPL_MOUNIKA password=set timeout=30000ms
+[a1b2c3] <- 200 in 412ms, 18342 bytes, content-type application/json
+[a1b2c3]    body[0..300]: {"d":{"results":[{...
+```
+
+`xx` instead of `<-` means the request never got an answer from SAP.
+Passwords, tokens and the JWT secret are never logged.
+
+The last 400 lines are also served by `GET /logs/recent?limit=80` (bearer token
+required) and are shown in the portal under **SAP API Settings → endpoint →
+Connectivity → Recent middleware activity**.
+
+### Is the SAP host reachable at all?
+
+`GET /diag/sap?system=dev` performs a bare probe of the SAP base URL — no report
+call — and reports host, port, status and connect time. The portal exposes it as
+the **Ping SAP host** button next to Test connection.
