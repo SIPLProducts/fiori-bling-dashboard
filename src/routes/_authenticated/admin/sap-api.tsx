@@ -79,23 +79,78 @@ export const Route = createFileRoute("/_authenticated/admin/sap-api")({
   component: SapApiSettings,
 });
 
-const emptyEndpoint: EndpointInput = {
-  name: "",
-  module_key: "common",
-  description: "",
-  endpoint_path: "",
-  system_key: "",
-  http_method: "GET",
-  auth_type: "basic",
-  query_params: [],
-  headers: [],
-  body_template: "",
-  response_root: "",
-  response_notes: "",
-  scheduler_enabled: false,
-  schedule_expression: "",
-  is_active: true,
-};
+/* ------------------------- posting date helpers ------------------------- */
+
+/** `YYYY-MM-DD` (date input) -> `YYYYMMDD` (SAP payload). */
+function toSapDate(iso: string): string {
+  return iso.replace(/-/g, "");
+}
+
+/** `YYYYMMDD` (SAP payload) -> `YYYY-MM-DD` (date input). */
+function fromSapDate(sap: string): string {
+  const value = (sap ?? "").trim();
+  if (!/^\d{8}$/.test(value)) return "";
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+}
+
+function isoDaysAgo(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+/** Parse a payload string into a flat string map; null when it is not a JSON object. */
+function parsePayload(raw: string): Record<string, string> | null {
+  const text = (raw ?? "").trim();
+  if (!text) return null;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>).map(([key, value]) => [
+        key,
+        value === null || value === undefined ? "" : String(value),
+      ]),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Replace matching header rows and append the ones that do not exist yet. */
+function mergeHeaders(rows: KeyValue[], values: Record<string, string>): KeyValue[] {
+  const next = rows.map((row) =>
+    row.key in values ? { key: row.key, value: values[row.key] as string } : row,
+  );
+  for (const [key, value] of Object.entries(values)) {
+    if (!next.some((row) => row.key === key)) next.push({ key, value });
+  }
+  return next;
+}
+
+function defaultEndpoint(): EndpointInput {
+  const payload = { BUDAT_F: toSapDate(isoDaysAgo(7)), BUDAT_T: toSapDate(isoDaysAgo(0)) };
+  return {
+    name: "",
+    module_key: "common",
+    description: "",
+    endpoint_path: "",
+    system_key: "",
+    http_method: "GET",
+    auth_type: "basic",
+    query_params: [],
+    headers: mergeHeaders([], payload),
+    body_template: JSON.stringify(payload, null, 2),
+    response_root: "",
+    response_notes: "",
+    scheduler_enabled: false,
+    schedule_expression: "",
+    is_active: true,
+  };
+}
+
 
 function SapApiSettings() {
   const { data: launchpad } = useLaunchpad();
@@ -134,7 +189,7 @@ function SapApiSettings() {
           </TabsList>
 
           <TabsContent value="apis">
-            <ApiList onNew={() => setEditing({ id: null, input: emptyEndpoint })} onEdit={setEditing} />
+            <ApiList onNew={() => setEditing({ id: null, input: defaultEndpoint() })} onEdit={setEditing} />
           </TabsContent>
           <TabsContent value="systems">
             <SystemsTab />
@@ -344,7 +399,61 @@ function KeyValueRows({
   );
 }
 
+/** Paste or upload an API payload and push its values into the form. */
+function PayloadLoader({ onLoad }: { onLoad: (values: Record<string, string>) => void }) {
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+
+  function load(raw: string) {
+    const parsed = parsePayload(raw);
+    if (!parsed) {
+      setError("That is not a valid JSON object — nothing was changed.");
+      return;
+    }
+    setError("");
+    onLoad(parsed);
+    toast.success(`Loaded ${Object.keys(parsed).length} field(s) from the payload`);
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-dashed border-border bg-muted/40 p-4">
+      <Label className="text-sm">Load API payload</Label>
+      <p className="text-xs text-muted-foreground">
+        Paste the payload (or pick a .json file) — its values fill the header fields and the posting
+        dates automatically.
+      </p>
+      <Textarea
+        rows={5}
+        className="bg-background font-mono text-xs"
+        placeholder={'{\n  "BUKRS": "1000",\n  "BUDAT_F": "20250831",\n  "BUDAT_T": "20250831",\n  "PRCTR": "PGNLB12001",\n  "WERKS": "1200"\n}'}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={() => load(text)}>
+          Load payload
+        </Button>
+        <Input
+          type="file"
+          accept="application/json,.json"
+          className="h-9 max-w-xs cursor-pointer text-xs"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const raw = await file.text();
+            setText(raw);
+            load(raw);
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </div>
+  );
+}
+
 function EndpointDetail({
+
   id,
   input,
   onClose,
@@ -363,9 +472,29 @@ function EndpointDetail({
     [endpointsQuery.data, id],
   );
 
+  const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
+
+  function payloadValue(key: string): string {
+    return payload?.[key] ?? form.headers.find((row) => row.key === key)?.value ?? "";
+  }
+
+  /** Write values into both the payload body and the matching header rows. */
+  function applyPayloadValues(values: Record<string, string>) {
+    setForm((prev) => {
+      const base = parsePayload(prev.body_template) ?? {};
+      const next = { ...base, ...values };
+      return {
+        ...prev,
+        body_template: JSON.stringify(next, null, 2),
+        headers: mergeHeaders(prev.headers, values),
+      };
+    });
+  }
+
   function set<K extends keyof EndpointInput>(key: K, value: EndpointInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
 
   const saveMutation = useMutation({
     mutationFn: async () => (id ? updateSapEndpoint(id, form) : createSapEndpoint(form)),
@@ -422,7 +551,7 @@ function EndpointDetail({
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="request">Request</TabsTrigger>
           <TabsTrigger value="response">Response</TabsTrigger>
-          <TabsTrigger value="credentials">Credentials</TabsTrigger>
+          
           <TabsTrigger value="scheduler">Scheduler</TabsTrigger>
           <TabsTrigger value="connectivity">Connectivity</TabsTrigger>
         </TabsList>
@@ -505,6 +634,36 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Posting From Date" hint="Sent as BUDAT_F (YYYYMMDD).">
+                <Input
+                  type="date"
+                  value={fromSapDate(payloadValue("BUDAT_F"))}
+                  onChange={(e) => applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) })}
+                />
+              </Field>
+              <Field label="Posting To Date" hint="Sent as BUDAT_T (YYYYMMDD).">
+                <Input
+                  type="date"
+                  value={fromSapDate(payloadValue("BUDAT_T"))}
+                  onChange={(e) => applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) })}
+                />
+              </Field>
+            </div>
+
+            <PayloadLoader onLoad={applyPayloadValues} />
+
+            <Field
+              label="Request payload"
+              hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+            >
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                value={form.body_template}
+                onChange={(e) => set("body_template", e.target.value)}
+              />
+            </Field>
             <Field label="Query parameters">
               <KeyValueRows
                 rows={form.query_params}
@@ -512,19 +671,12 @@ function EndpointDetail({
                 onChange={(rows) => set("query_params", rows)}
               />
             </Field>
-            <Field label="Headers">
+            <Field label="Headers" hint="Values found in an uploaded payload are filled in here automatically.">
               <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
-            </Field>
-            <Field label="Request body template" hint="Sent for POST/PUT/PATCH requests.">
-              <Textarea
-                rows={6}
-                className="font-mono text-xs"
-                value={form.body_template}
-                onChange={(e) => set("body_template", e.target.value)}
-              />
             </Field>
           </div>
         </TabsContent>
+
 
         <TabsContent value="response">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
@@ -546,20 +698,6 @@ function EndpointDetail({
           </div>
         </TabsContent>
 
-        <TabsContent value="credentials">
-          <div className="space-y-3 rounded-md border border-border bg-card p-5 text-sm shadow-tile">
-            <p className="font-medium text-card-foreground">
-              Technical user:{" "}
-              {(systems.find((s) => s.key === form.system_key) ?? systems.find((s) => s.is_active))
-                ?.username ?? "not configured"}
-            </p>
-            <p className="text-muted-foreground">
-              SAP passwords and the proxy secret are stored encrypted and used only by the middleware
-              file (<code>deploy/middleware/.env</code>) — they are never stored in this portal or sent
-              to the browser. Change them on the middleware server and restart the service.
-            </p>
-          </div>
-        </TabsContent>
 
         <TabsContent value="scheduler">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
@@ -593,6 +731,14 @@ function EndpointDetail({
                 systems,
               )}
             </p>
+            <p className="border-t border-border pt-3 text-muted-foreground">
+              SAP user:{" "}
+              <span className="font-medium text-card-foreground">
+                {(systems.find((s) => s.key === form.system_key) ?? systems.find((s) => s.is_active))
+                  ?.username ?? "not configured"}
+              </span>{" "}
+              — username and password are maintained per system in the SAP Systems tab.
+            </p>
             <div className="grid gap-2 border-t border-border pt-3 md:grid-cols-3">
               <Meta label="Last test" value={stored?.last_test_status ?? "—"} />
               <Meta
@@ -601,6 +747,7 @@ function EndpointDetail({
               />
               <Meta label="Message" value={stored?.last_test_message ?? "—"} />
             </div>
+
           </div>
         </TabsContent>
       </Tabs>

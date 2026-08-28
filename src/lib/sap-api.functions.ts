@@ -390,8 +390,8 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
     query: Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value])),
     headers: Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value])),
     body: endpoint.body_template ?? undefined,
-    dryRun: true,
   });
+
   await supabase
     .from("sap_endpoints")
     .update({
