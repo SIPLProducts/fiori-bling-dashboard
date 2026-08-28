@@ -698,20 +698,6 @@ function EndpointDetail({
           </div>
         </TabsContent>
 
-        <TabsContent value="credentials">
-          <div className="space-y-3 rounded-md border border-border bg-card p-5 text-sm shadow-tile">
-            <p className="font-medium text-card-foreground">
-              Technical user:{" "}
-              {(systems.find((s) => s.key === form.system_key) ?? systems.find((s) => s.is_active))
-                ?.username ?? "not configured"}
-            </p>
-            <p className="text-muted-foreground">
-              SAP passwords and the proxy secret are stored encrypted and used only by the middleware
-              file (<code>deploy/middleware/.env</code>) — they are never stored in this portal or sent
-              to the browser. Change them on the middleware server and restart the service.
-            </p>
-          </div>
-        </TabsContent>
 
         <TabsContent value="scheduler">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
