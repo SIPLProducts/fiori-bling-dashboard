@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Lock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,6 @@ const REMEMBER_KEY = "hbl-remembered-identifier";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/launchpad" });
-  },
   head: () => ({
     meta: [
       { title: "Sign in — HBL MIS Portal" },
@@ -50,6 +46,20 @@ function AuthPage() {
     () => Boolean(localStorage.getItem(REMEMBER_KEY)),
   );
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void supabase.auth.getUser().then(({ data, error }) => {
+      if (active && !error && data.user) {
+        void navigate({ to: "/launchpad", replace: true });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   async function handleSignIn(event: React.FormEvent) {
     event.preventDefault();
