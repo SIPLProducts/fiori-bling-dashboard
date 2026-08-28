@@ -551,7 +551,7 @@ function EndpointDetail({
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="request">Request</TabsTrigger>
           <TabsTrigger value="response">Response</TabsTrigger>
-          <TabsTrigger value="credentials">Credentials</TabsTrigger>
+          
           <TabsTrigger value="scheduler">Scheduler</TabsTrigger>
           <TabsTrigger value="connectivity">Connectivity</TabsTrigger>
         </TabsList>
