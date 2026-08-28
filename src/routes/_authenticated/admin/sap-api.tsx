@@ -731,6 +731,14 @@ function EndpointDetail({
                 systems,
               )}
             </p>
+            <p className="border-t border-border pt-3 text-muted-foreground">
+              SAP user:{" "}
+              <span className="font-medium text-card-foreground">
+                {(systems.find((s) => s.key === form.system_key) ?? systems.find((s) => s.is_active))
+                  ?.username ?? "not configured"}
+              </span>{" "}
+              — username and password are maintained per system in the SAP Systems tab.
+            </p>
             <div className="grid gap-2 border-t border-border pt-3 md:grid-cols-3">
               <Meta label="Last test" value={stored?.last_test_status ?? "—"} />
               <Meta
@@ -739,6 +747,7 @@ function EndpointDetail({
               />
               <Meta label="Message" value={stored?.last_test_message ?? "—"} />
             </div>
+
           </div>
         </TabsContent>
       </Tabs>
