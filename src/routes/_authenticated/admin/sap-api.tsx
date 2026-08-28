@@ -189,7 +189,7 @@ function SapApiSettings() {
           </TabsList>
 
           <TabsContent value="apis">
-            <ApiList onNew={() => setEditing({ id: null, input: emptyEndpoint })} onEdit={setEditing} />
+            <ApiList onNew={() => setEditing({ id: null, input: defaultEndpoint() })} onEdit={setEditing} />
           </TabsContent>
           <TabsContent value="systems">
             <SystemsTab />
