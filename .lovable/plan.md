@@ -57,3 +57,21 @@ The middleware `.env` only defines `PORT`, which controls the local listening so
 - It is used for startup diagnostics and for the health response, so the value configured in the portal's **Node.js middleware URL** field can be confirmed against what the service itself believes it is serving.
 - `ALLOWED_ORIGINS` stays separate: it lists the portal origins allowed to call this service, not the middleware's own URL.
 - Startup logs will print the listening port and the configured public base URL together, so a mismatch between them and the portal setting is immediately visible.
+
+## Addendum: middleware moves to a top-level folder
+
+The middleware currently sits under `deploy/middleware/`, which makes it easy to miss. Move it to a top-level `middleware/` folder at the project root, alongside `src/`, so it is visible as a first-class part of the project:
+
+```text
+middleware/
+  server.mjs
+  package.json
+  .env.example
+  Dockerfile
+  README.md
+```
+
+- All files move as-is; only the location changes, plus the new startup/`APP_BASE_URL` improvements described above.
+- References to the old path in the deployment docs, Docker Compose files, and Nginx notes are updated to `middleware/`.
+- The real `.env` stays on the middleware server and is never committed.
+- Run commands become `cd middleware`, `npm install`, `npm start`.
