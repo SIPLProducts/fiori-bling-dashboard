@@ -15,9 +15,9 @@ This folder lives at the project root (`middleware/`), next to `src/`.
 | POST   | `/sap/call`  | Generic proxy — method, path, query, headers, body. Adds basic auth and `sap-client`. |
 
 Every request must send the signed-in portal user's access token as
-`Authorization: Bearer <token>`. The token is verified with
-`SUPABASE_JWT_SECRET`; unverified requests get 401. CORS is restricted to
-`ALLOWED_ORIGINS`.
+`Authorization: Bearer <token>`. The token is verified against the portal
+backend's public signing keys (JWKS); unverified requests get 401. CORS is
+restricted to `ALLOWED_ORIGINS`.
 
 ## Configuration
 
@@ -25,12 +25,15 @@ Every request must send the signed-in portal user's access token as
 | -------- | ------- |
 | `PORT` | Local listening port (default 3008). |
 | `APP_BASE_URL` | Public URL the portal uses to reach this service (ngrok / LAN / nginx path). Must match the portal's **Node.js middleware URL**. |
-| `SUPABASE_JWT_SECRET` | Portal JWT verification secret for the matching environment. A placeholder makes every call return 401. |
+| `PORTAL_BACKEND_URL` | Portal backend URL used only to retrieve public token-signing keys (JWKS). No private JWT secret is required. |
 | `ALLOWED_ORIGINS` | Comma-separated portal origins allowed to call this service. **Empty = every browser call fails with "Failed to fetch".** |
 | `SAP_*_BASE_URL` / `_CLIENT` / `_USER` / `_PASSWORD` | Per-environment SAP connection and technical user. |
 
-`ALLOWED_ORIGINS` is the site the browser loads the portal from — never this
-service's own URL.
+The three URL settings have different purposes:
+
+- `APP_BASE_URL`: the public ngrok/server URL of this middleware.
+- `ALLOWED_ORIGINS`: the browser origins where the portal is loaded.
+- `PORTAL_BACKEND_URL`: the portal backend URL used to verify signed-in users.
 
 ## Run locally
 
@@ -49,7 +52,7 @@ node .\server.mjs
 ```
 
 Both commands load `.env` from this folder. On startup the service prints
-whether the `.env` was found, the public base URL, whether the JWT secret is
+whether the `.env` was found, the public base URL, whether JWKS verification is
 configured, the allowed origins and which SAP systems have a password — values
 themselves are never printed.
 
@@ -89,7 +92,7 @@ location /sap-middleware/ {
 | `Failed to fetch` | The service is unreachable at the configured URL, or the portal origin is not in `ALLOWED_ORIGINS`. |
 | `HTTP 403 Origin not allowed` | Add the portal origin to `ALLOWED_ORIGINS` and restart. |
 | `HTTP 401 Invalid or expired token` | `SUPABASE_JWT_SECRET` does not match this portal environment. |
-| `HTTP 500 SUPABASE_JWT_SECRET not configured` | The secret is missing from `.env`. |
+| `HTTP 503 Portal token verification not configured` | Set `PORTAL_BACKEND_URL` in `.env` and restart. SAP was not contacted. |
 | `HTTP 502 No SAP base URL configured` | The selected SAP system has no base URL. |
 
 ## Security notes
@@ -97,8 +100,8 @@ location /sap-middleware/ {
 - Never commit `.env`; keep it `chmod 600` and owned by the service user.
 - Keep the service on the internal network where possible; expose it only
   through the portal's nginx with TLS.
-- `SUPABASE_JWT_SECRET` must match the environment (quality vs production)
-  whose portal calls this instance.
+- `PORTAL_BACKEND_URL` must identify the backend for the portal environment
+  whose users call this middleware.
 - Rotate any SAP password or JWT secret that has been shared outside the
   server.
 

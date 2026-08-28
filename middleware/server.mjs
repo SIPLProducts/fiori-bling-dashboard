@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,7 +42,11 @@ function loadEnvFile(file = path.join(HERE, ".env")) {
 const ENV_LOADED = loadEnvFile();
 
 const PORT = Number(process.env.PORT || 3008);
-const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || "";
+const PORTAL_BACKEND_URL = (process.env.PORTAL_BACKEND_URL || "").trim().replace(/\/+$/, "");
+const PORTAL_JWT_ISSUER = PORTAL_BACKEND_URL ? `${PORTAL_BACKEND_URL}/auth/v1` : "";
+const PORTAL_JWKS = PORTAL_BACKEND_URL
+  ? createRemoteJWKSet(new URL(`${PORTAL_JWT_ISSUER}/.well-known/jwks.json`))
+  : null;
 /** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
 const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
@@ -159,23 +163,27 @@ app.use((req, _res, next) => {
   next();
 });
 
-function requirePortalToken(req, res, next) {
+async function requirePortalToken(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!token) {
     logLine("token-rejected: missing bearer token — SAP was NOT called");
     return res.status(401).json({ stage: "token-rejected", error: "Missing bearer token" });
   }
-  if (!JWT_SECRET) {
-    logLine("token-rejected: SUPABASE_JWT_SECRET not configured — SAP was NOT called");
-    return res.status(500).json({
+  if (!PORTAL_JWKS) {
+    logLine("token-rejected: PORTAL_BACKEND_URL not configured — SAP was NOT called");
+    return res.status(503).json({
       stage: "token-rejected",
-      error: "SUPABASE_JWT_SECRET not configured",
-      message: "Set the portal's JWT verification secret in the middleware .env and restart.",
+      error: "Portal token verification not configured",
+      message: "Set PORTAL_BACKEND_URL in the middleware .env and restart. SAP was not contacted.",
     });
   }
   try {
-    req.claims = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, PORTAL_JWKS, {
+      issuer: PORTAL_JWT_ISSUER,
+      audience: "authenticated",
+    });
+    req.claims = payload;
     return next();
   } catch (err) {
     logLine(`token-rejected: ${err?.message ?? "verification failed"} — SAP was NOT called`);
@@ -424,7 +432,7 @@ app.listen(PORT, () => {
   console.log(`[mis-sap-middleware] .env file            : ${ENV_LOADED ? "loaded" : "NOT FOUND"}`);
   console.log(`[mis-sap-middleware] public base URL      : ${APP_BASE_URL || "NOT SET (set APP_BASE_URL)"}`);
   console.log(
-    `[mis-sap-middleware] portal JWT secret    : ${JWT_SECRET ? "configured" : "NOT CONFIGURED"}`,
+    `[mis-sap-middleware] portal token verify  : ${PORTAL_JWKS ? "JWKS configured" : "NOT CONFIGURED (set PORTAL_BACKEND_URL)"}`,
   );
   console.log(
     `[mis-sap-middleware] allowed origins      : ${

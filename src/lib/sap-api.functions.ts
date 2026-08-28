@@ -435,8 +435,11 @@ export function resolveEndpointUrl(endpoint: {
     systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active) ?? systems[0];
   if (!system) return path || "—";
   const base = system.base_url.replace(/\/+$/, "");
-  const client = system.sap_client ? `?sap-client=${system.sap_client}` : "";
-  return `${base}${path.startsWith("/") ? path : `/${path}`}${client}`;
+  const resolved = new URL(`${base}${path.startsWith("/") ? path : `/${path}`}`);
+  if (system.sap_client && !resolved.searchParams.has("sap-client")) {
+    resolved.searchParams.set("sap-client", system.sap_client);
+  }
+  return resolved.toString();
 }
 
 export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[]): Promise<TestResult> {
