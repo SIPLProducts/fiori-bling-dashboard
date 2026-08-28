@@ -18,6 +18,21 @@ The middleware is up and reachable through ngrok. It refuses the browser because
 
 Fixing those clears the 403. The next wall is `SUPABASE_JWT_SECRET=123456` — portal sign-in tokens are not signed with that value, so calls would then fail token verification instead. The raw signing secret is not handed out on this platform, so the middleware must stop relying on it.
 
+## Your newest log — the 403 is gone, a 500 replaced it
+
+```text
+15:38  POST /sap/call  403 Forbidden      (origin still blocked)
+15:42  POST /sap/call  500 Internal Server Error
+```
+
+The origin fix worked: the request now gets past CORS and into the handler, and fails inside it. Two things in the handler can throw a 500 with your current setup, and both are addressed by the changes below:
+
+- token verification against the placeholder secret,
+- the saved endpoint path `/fisales_detail/report?sap-client=234`, which the service appends `sap-client` to again — the APIs card shows the doubled result `...report?sap-client=234?sap-client=234`, which is not a valid URL. The path field will be normalised (query string parsed properly, `sap-client` never added twice), and the middleware will return the real reason with the SAP status instead of a bare 500.
+
+**And to answer your question directly: no, nothing is being stored yet.** There is no `sales_reports_kpi` table and no sync job in the project — Test connection only calls SAP and shows the response in the Response tab. Storage is Changes 3 and 4 below.
+
+
 ## Change 1 — verify portal tokens the supported way
 
 `middleware/server.mjs` verifies the caller's token against the backend's published public signing keys (JWKS), cached in memory. No secret to copy. `SUPABASE_JWT_SECRET` is removed from `.env.example` and the README; the project URL replaces it. The allow-list also accepts wildcard entries such as `https://*.lovableproject.com`, so a changing preview URL no longer means editing `.env`.
