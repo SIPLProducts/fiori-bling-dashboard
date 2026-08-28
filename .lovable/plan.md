@@ -48,3 +48,12 @@ The token-verification value must be the real backend JWT verification secret fo
 ## Security action
 
 The SAP password and token-verification value were pasted into chat. Rotate both before using this configuration in Quality or Production, and keep the replacements only in the middleware server’s uncommitted `.env`.
+
+## Addendum: middleware public base URL
+
+The middleware `.env` only defines `PORT`, which controls the local listening socket. It does not describe how the portal reaches the service. Add an explicit public base URL setting (`APP_BASE_URL`) to the middleware environment and startup output:
+
+- `APP_BASE_URL` is the externally reachable address of this middleware — for example the ngrok HTTPS URL, `http://10.200.1.5:3008`, or `https://mis.siplproducts.com/sap-middleware`.
+- It is used for startup diagnostics and for the health response, so the value configured in the portal's **Node.js middleware URL** field can be confirmed against what the service itself believes it is serving.
+- `ALLOWED_ORIGINS` stays separate: it lists the portal origins allowed to call this service, not the middleware's own URL.
+- Startup logs will print the listening port and the configured public base URL together, so a mismatch between them and the portal setting is immediately visible.
