@@ -4,7 +4,8 @@
  * The portal is a static SPA, so it must never hold SAP credentials. This
  * service is the only component that knows them: they live in its own .env
  * file. Every request must carry the caller's portal access token, which is
- * verified against the Supabase JWT secret before any SAP call is made.
+ * verified against the portal backend's public signing keys before any SAP
+ * call is made.
  */
 import fs from "node:fs";
 import path from "node:path";

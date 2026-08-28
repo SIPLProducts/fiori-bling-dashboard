@@ -39,7 +39,7 @@ The three URL settings have different purposes:
 
 ```bash
 cd middleware
-cp .env.example .env      # fill in SAP passwords + JWT secret + APP_BASE_URL
+cp .env.example .env      # fill in SAP passwords and all three URL settings
 npm install
 npm start                 # listens on :3008
 ```
@@ -91,7 +91,7 @@ location /sap-middleware/ {
 | -------------- | ----- |
 | `Failed to fetch` | The service is unreachable at the configured URL, or the portal origin is not in `ALLOWED_ORIGINS`. |
 | `HTTP 403 Origin not allowed` | Add the portal origin to `ALLOWED_ORIGINS` and restart. |
-| `HTTP 401 Invalid or expired token` | `SUPABASE_JWT_SECRET` does not match this portal environment. |
+| `HTTP 401 Invalid or expired token` | The bearer token is expired, malformed, or was issued by a different portal backend. |
 | `HTTP 503 Portal token verification not configured` | Set `PORTAL_BACKEND_URL` in `.env` and restart. SAP was not contacted. |
 | `HTTP 502 No SAP base URL configured` | The selected SAP system has no base URL. |
 
@@ -102,8 +102,8 @@ location /sap-middleware/ {
   through the portal's nginx with TLS.
 - `PORTAL_BACKEND_URL` must identify the backend for the portal environment
   whose users call this middleware.
-- Rotate any SAP password or JWT secret that has been shared outside the
-  server.
+- Rotate any SAP password or token-verification value that has been shared
+  outside the server.
 
 ## Did the request actually reach SAP?
 
@@ -112,7 +112,7 @@ Every response carries a `stage` field, and the portal toast now names it:
 | stage | meaning |
 | --- | --- |
 | `origin-blocked` | The browser origin is not in `ALLOWED_ORIGINS`. **SAP was not contacted.** |
-| `token-rejected` | Missing/invalid portal token, or `SUPABASE_JWT_SECRET` not set. **SAP was not contacted.** |
+| `token-rejected` | Missing/invalid portal token, or `PORTAL_BACKEND_URL` not set. **SAP was not contacted.** |
 | `sap-unreachable` | DNS/connect/timeout to the SAP host. **SAP was not contacted.** |
 | `sap-http-error` | SAP answered, with a non-2xx status. **SAP was reached.** |
 | `ok` | SAP answered 2xx. |
@@ -130,7 +130,7 @@ Each SAP round trip gets a short trace id and is written to the console *and* to
 ```
 
 `xx` instead of `<-` means the request never got an answer from SAP.
-Passwords, tokens and the JWT secret are never logged.
+Passwords and tokens are never logged.
 
 The last 400 lines are also served by `GET /logs/recent?limit=80` (bearer token
 required) and are shown in the portal under **SAP API Settings → endpoint →
