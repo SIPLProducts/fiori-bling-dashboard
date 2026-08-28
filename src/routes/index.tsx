@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,8 +19,15 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    throw redirect({ to: data.session ? "/launchpad" : "/auth" });
-  },
+  component: RootRedirect,
 });
+
+function RootRedirect() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    void navigate({ to: "/auth", replace: true });
+  }, [navigate]);
+
+  return <div className="min-h-screen bg-background" aria-hidden />;
+}
