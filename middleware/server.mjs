@@ -106,34 +106,70 @@ app.use(
   }),
 );
 
+/* --------------------------------- logging -------------------------------- */
+
+const LOG_DIR = path.join(HERE, "logs");
+const LOG_MAX_BYTES = 5 * 1024 * 1024;
+/** In-memory ring buffer so the portal can read recent activity over HTTP. */
+const RECENT = [];
+const RECENT_MAX = 400;
+
+function logLine(text) {
+  const stamp = new Date().toISOString();
+  const line = `${stamp} ${text}`;
+  console.log(`[mis-sap-middleware] ${text}`);
+  RECENT.push(line);
+  if (RECENT.length > RECENT_MAX) RECENT.shift();
+  try {
+    if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+    const file = path.join(LOG_DIR, `sap-${stamp.slice(0, 10)}.log`);
+    if (fs.existsSync(file) && fs.statSync(file).size > LOG_MAX_BYTES) {
+      fs.renameSync(file, `${file}.1`);
+    }
+    fs.appendFileSync(file, `${line}\n`);
+  } catch {
+    /* logging must never break a request */
+  }
+}
+
+function newTraceId() {
+  return Math.random().toString(16).slice(2, 8);
+}
+
 /** Explain a blocked origin instead of letting the browser see a bare failure. */
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (!origin) return next();
   const normalized = origin.replace(/\/+$/, "");
   if (ALLOWED_ORIGINS.includes(normalized) || ALLOWED_ORIGINS.includes("*")) return next();
-  console.warn(`[mis-sap-middleware] blocked origin: ${origin}`);
+  logLine(`origin-blocked ${origin} (${req.method} ${req.path}) — SAP was NOT called`);
   // Allow the response itself through so the portal can read the message.
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.status(204).end();
   return res.status(403).json({
+    stage: "origin-blocked",
     error: "Origin not allowed",
-    message: `Add ${origin} to ALLOWED_ORIGINS in the middleware .env and restart the service.`,
+    message: `SAP was not contacted. Add ${origin} to ALLOWED_ORIGINS in the middleware .env and restart the service.`,
   });
 });
 
 app.use((req, _res, next) => {
-  console.log(`[mis-sap-middleware] ${req.method} ${req.path} origin=${req.headers.origin ?? "-"}`);
+  logLine(`${req.method} ${req.path} origin=${req.headers.origin ?? "-"}`);
   next();
 });
 
 function requirePortalToken(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
-  if (!token) return res.status(401).json({ error: "Missing bearer token" });
+  if (!token) {
+    logLine("token-rejected: missing bearer token — SAP was NOT called");
+    return res.status(401).json({ stage: "token-rejected", error: "Missing bearer token" });
+  }
   if (!JWT_SECRET) {
+    logLine("token-rejected: SUPABASE_JWT_SECRET not configured — SAP was NOT called");
     return res.status(500).json({
+      stage: "token-rejected",
       error: "SUPABASE_JWT_SECRET not configured",
       message: "Set the portal's JWT verification secret in the middleware .env and restart.",
     });
@@ -142,7 +178,9 @@ function requirePortalToken(req, res, next) {
     req.claims = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     return next();
   } catch (err) {
+    logLine(`token-rejected: ${err?.message ?? "verification failed"} — SAP was NOT called`);
     return res.status(401).json({
+      stage: "token-rejected",
       error: "Invalid or expired token",
       message: err?.message ?? "Token verification failed",
     });
@@ -164,8 +202,11 @@ function resolveSystem(body = {}) {
 }
 
 function buildUrl(system, path, query = {}) {
-  const raw = String(path || "");
+  const raw = String(path || "").trim();
   const isAbsolute = /^https?:\/\//i.test(raw);
+  // The stored path may already carry its own query string
+  // (e.g. /report?sap-client=234) — parse it instead of concatenating, so
+  // sap-client is never appended a second time.
   const base = isAbsolute ? raw : `${system.baseUrl}${raw.startsWith("/") ? raw : `/${raw}`}`;
   const url = new URL(base);
   if (system.client && !url.searchParams.has("sap-client")) {
@@ -177,7 +218,7 @@ function buildUrl(system, path, query = {}) {
   return url.toString();
 }
 
-async function callSap({ system, path, method = "GET", query, headers = {}, body }) {
+async function callSap({ traceId, system, path, method = "GET", query, headers = {}, body }) {
   if (!system.baseUrl && !/^https?:\/\//i.test(String(path || ""))) {
     throw new Error("No SAP base URL configured for this system");
   }
@@ -185,6 +226,12 @@ async function callSap({ system, path, method = "GET", query, headers = {}, body
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const started = Date.now();
+  logLine(`[${traceId}] -> SAP ${method} ${url}`);
+  logLine(
+    `[${traceId}]    system=${system.key} auth=${system.username ? "basic" : "none"} user=${
+      system.username || "-"
+    } password=${system.password ? "set" : "MISSING"} timeout=${REQUEST_TIMEOUT_MS}ms`,
+  );
   try {
     const auth = Buffer.from(`${system.username}:${system.password}`).toString("base64");
     const res = await fetch(url, {
@@ -201,7 +248,28 @@ async function callSap({ system, path, method = "GET", query, headers = {}, body
         : {}),
     });
     const text = await res.text();
-    return { status: res.status, ok: res.ok, url, durationMs: Date.now() - started, body: text };
+    const durationMs = Date.now() - started;
+    logLine(
+      `[${traceId}] <- ${res.status} in ${durationMs}ms, ${text.length} bytes, content-type ${
+        res.headers.get("content-type") ?? "-"
+      }`,
+    );
+    logLine(`[${traceId}]    body[0..300]: ${text.slice(0, 300).replace(/\s+/g, " ")}`);
+    return { status: res.status, ok: res.ok, url, durationMs, body: text };
+  } catch (err) {
+    const durationMs = Date.now() - started;
+    const cause = err?.cause?.code || err?.code || err?.name || "";
+    logLine(
+      `[${traceId}] xx SAP NOT reachable after ${durationMs}ms: ${err?.message ?? err} ${
+        cause ? `(${cause})` : ""
+      }`,
+    );
+    const wrapped = new Error(
+      `${err?.message ?? "Request failed"}${cause ? ` (${cause})` : ""} — target ${url}`,
+    );
+    wrapped.url = url;
+    wrapped.durationMs = durationMs;
+    throw wrapped;
   } finally {
     clearTimeout(timer);
   }
@@ -210,6 +278,7 @@ async function callSap({ system, path, method = "GET", query, headers = {}, body
 app.get("/health", requirePortalToken, (_req, res) => {
   res.json({
     ok: true,
+    stage: "ok",
     service: "mis-sap-middleware",
     version: VERSION,
     port: PORT,
@@ -222,31 +291,100 @@ app.get("/health", requirePortalToken, (_req, res) => {
   });
 });
 
+/** Recent activity, so the SAP round trips can be read from the portal. */
+app.get("/logs/recent", requirePortalToken, (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 100, RECENT_MAX);
+  res.json({ ok: true, stage: "ok", lines: RECENT.slice(-limit) });
+});
+
+/** Bare reachability probe of the SAP host — no report call, no payload. */
+app.get("/diag/sap", requirePortalToken, async (req, res) => {
+  const traceId = newTraceId();
+  const system = resolveSystem({ systemKey: req.query.system });
+  if (!system.baseUrl) {
+    return res.status(400).json({
+      ok: false,
+      stage: "sap-unreachable",
+      message: `No base URL configured for SAP system "${system.key}".`,
+    });
+  }
+  const url = new URL(system.baseUrl);
+  const started = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.min(REQUEST_TIMEOUT_MS, 10000));
+  logLine(`[${traceId}] -> ping ${url.origin}`);
+  try {
+    const probe = await fetch(url.origin, { method: "GET", signal: controller.signal });
+    const durationMs = Date.now() - started;
+    logLine(`[${traceId}] <- ping ${probe.status} in ${durationMs}ms`);
+    res.json({
+      ok: true,
+      stage: "ok",
+      traceId,
+      host: url.hostname,
+      port: url.port || (url.protocol === "https:" ? "443" : "80"),
+      status: probe.status,
+      durationMs,
+      message: `SAP host answered HTTP ${probe.status} in ${durationMs} ms — the host is reachable from the middleware.`,
+    });
+  } catch (err) {
+    const durationMs = Date.now() - started;
+    const cause = err?.cause?.code || err?.code || err?.name || "";
+    logLine(`[${traceId}] xx ping failed after ${durationMs}ms: ${err?.message ?? err} ${cause}`);
+    res.status(502).json({
+      ok: false,
+      stage: "sap-unreachable",
+      traceId,
+      host: url.hostname,
+      port: url.port || "",
+      durationMs,
+      message: `SAP host ${url.host} could not be reached from the middleware: ${
+        err?.message ?? err
+      }${cause ? ` (${cause})` : ""}`,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 app.post("/sap/test", requirePortalToken, async (req, res) => {
+  const traceId = newTraceId();
   const system = resolveSystem(req.body);
   try {
     const result = await callSap({
+      traceId,
       system,
       path: req.body.path || "/sap/public/ping",
       method: "GET",
     });
     res.status(result.ok ? 200 : 502).json({
       ok: result.ok,
+      stage: result.ok ? "ok" : "sap-http-error",
+      traceId,
       status: result.status,
       url: result.url,
       durationMs: result.durationMs,
-      message: result.ok ? "SAP reachable" : `SAP responded with HTTP ${result.status}`,
+      message: result.ok
+        ? `SAP reachable — HTTP 200 in ${result.durationMs} ms`
+        : `SAP was reached and answered HTTP ${result.status} in ${result.durationMs} ms`,
     });
   } catch (err) {
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({
+      ok: false,
+      stage: "sap-unreachable",
+      traceId,
+      message: `SAP was never contacted: ${err.message}`,
+    });
   }
 });
 
 app.post("/sap/call", requirePortalToken, async (req, res) => {
+  const traceId = newTraceId();
   const system = resolveSystem(req.body);
   const { path, method = "GET", query, headers, body, dryRun } = req.body || {};
   try {
     const result = await callSap({
+      traceId,
       system,
       path,
       method: dryRun ? "GET" : String(method).toUpperCase(),
@@ -256,17 +394,29 @@ app.post("/sap/call", requirePortalToken, async (req, res) => {
     });
     res.status(result.ok ? 200 : 502).json({
       ok: result.ok,
+      stage: result.ok ? "ok" : "sap-http-error",
+      traceId,
       status: result.status,
       url: result.url,
       durationMs: result.durationMs,
+      message: result.ok
+        ? `SAP responded HTTP ${result.status} in ${result.durationMs} ms`
+        : `SAP was reached and answered HTTP ${result.status} in ${result.durationMs} ms`,
       body: result.body.slice(0, 200000),
     });
   } catch (err) {
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({
+      ok: false,
+      stage: "sap-unreachable",
+      traceId,
+      durationMs: err.durationMs ?? 0,
+      message: `SAP was never contacted: ${err.message}`,
+    });
   }
 });
 
-app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+app.use((_req, res) => res.status(404).json({ stage: "not-found", error: "Not found" }));
+
 
 app.listen(PORT, () => {
   // Startup diagnostics — configured / not configured only, never any secret.

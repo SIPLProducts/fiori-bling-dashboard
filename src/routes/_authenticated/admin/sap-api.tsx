@@ -5,15 +5,19 @@ import { toast } from "sonner";
 import {
   Activity,
   ArrowLeft,
+  Copy,
   Database,
   Pencil,
   Plug,
   Plus,
+  Radio,
+  RefreshCw,
   Save,
   Server,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
+
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import {
@@ -25,11 +29,13 @@ import {
   createSapEndpoint,
   deleteSapEndpoint,
   deleteSapSystem,
+  fetchMiddlewareLogs,
   getMiddlewareConfig,
   listSapEndpoints,
   listSapSystems,
   listStoredCredentialKeys,
   MIDDLEWARE_CREDENTIAL_KEY,
+  pingSapHost,
   resolveEndpointUrl,
   saveMiddlewareConfig,
   saveSapSystem,
@@ -41,7 +47,9 @@ import {
   type KeyValue,
   type SapEndpoint,
   type SapSystem,
+  type TestResult,
 } from "@/lib/sap-api.functions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,7 +66,80 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/**
+ * One toast that says which leg of browser -> middleware -> SAP was reached,
+ * so a failure can never be confused with "SAP rejected us".
+ */
+function reportTest(result: TestResult) {
+  const trace = result.traceId ? ` · trace ${result.traceId}` : "";
+  if (result.ok) {
+    toast.success(`SAP responded in ${result.durationMs} ms${trace}`);
+    return;
+  }
+  if (result.sapContacted) {
+    toast.error(
+      `SAP was reached — it answered HTTP ${result.sapStatus ?? "?"} in ${result.durationMs} ms${trace}`,
+    );
+    return;
+  }
+  toast.error(`SAP was NOT contacted — ${result.message}${trace}`);
+}
+
+/** Recent middleware activity, read straight from the service. */
+function MiddlewareActivity() {
+  const logsQuery = useQuery({
+    queryKey: ["middleware-logs"],
+    queryFn: () => fetchMiddlewareLogs(80),
+    retry: false,
+  });
+  const lines = logsQuery.data ?? [];
+
+  return (
+    <div className="space-y-2 border-t border-border pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-muted-foreground">Recent middleware activity</p>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            disabled={logsQuery.isFetching}
+            onClick={() => logsQuery.refetch()}
+          >
+            <RefreshCw className="size-3.5" /> Refresh
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            disabled={!lines.length}
+            onClick={() => {
+              navigator.clipboard.writeText(lines.join("\n"));
+              toast.success("Log copied");
+            }}
+          >
+            <Copy className="size-3.5" /> Copy
+          </Button>
+        </div>
+      </div>
+      {logsQuery.isError ? (
+        <p className="text-xs text-destructive">{(logsQuery.error as Error).message}</p>
+      ) : (
+        <pre className="max-h-72 overflow-auto rounded-md bg-muted p-3 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          {lines.length ? lines.join("\n") : "No activity recorded yet — run Test connection."}
+        </pre>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Lines starting with <span className="font-mono">-&gt; SAP</span> mean the request left the
+        middleware; <span className="font-mono">&lt;-</span> is SAP&apos;s answer;{" "}
+        <span className="font-mono">xx</span> means SAP was never contacted.
+      </p>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin/sap-api")({
+
   head: () => ({
     meta: [
       { title: "SAP API Settings — Nexus Analytics" },
@@ -282,12 +363,12 @@ function ApiList({
     mutationFn: (endpoint: SapEndpoint) => testSapEndpoint(endpoint, systems),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
-      result.ok
-        ? toast.success(`Connection OK (${result.durationMs} ms)`)
-        : toast.error(`Test failed: ${result.message}`);
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
 
   const deleteMutation = useMutation({
     mutationFn: deleteSapEndpoint,
@@ -542,12 +623,24 @@ function EndpointDetail({
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
-      result.ok
-        ? toast.success(`Connection OK (${result.durationMs} ms)`)
-        : toast.error(`Test failed: ${result.message}`);
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const pingMutation = useMutation({
+    mutationFn: async () =>
+      pingSapHost(
+        form.system_key || systems.find((s) => s.is_active)?.key || null,
+      ),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   return (
     <div className="space-y-5">
@@ -564,6 +657,14 @@ function EndpointDetail({
           <Button
             variant="outline"
             className="gap-2"
+            disabled={pingMutation.isPending}
+            onClick={() => pingMutation.mutate()}
+          >
+            <Radio className="size-4" /> Ping SAP host
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
             disabled={testMutation.isPending}
             onClick={() => testMutation.mutate()}
           >
@@ -573,6 +674,7 @@ function EndpointDetail({
             <Save className="size-4" /> Save
           </Button>
         </div>
+
       </div>
 
       <Tabs defaultValue="details" className="space-y-4">
@@ -786,7 +888,9 @@ function EndpointDetail({
               <Meta label="Message" value={stored?.last_test_message ?? "—"} />
             </div>
 
+            <MiddlewareActivity />
           </div>
+
         </TabsContent>
       </Tabs>
     </div>
