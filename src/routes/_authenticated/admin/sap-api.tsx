@@ -204,7 +204,7 @@ function SapApiSettings() {
 }
 
 function toInput(endpoint: SapEndpoint): EndpointInput {
-  return {
+  const base: EndpointInput = {
     name: endpoint.name,
     module_key: endpoint.module_key,
     description: endpoint.description ?? "",
@@ -221,7 +221,36 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
     schedule_expression: endpoint.schedule_expression ?? "",
     is_active: endpoint.is_active,
   };
+  return withDefaultDates(base);
 }
+
+/**
+ * Backfill BUDAT_F / BUDAT_T when a saved endpoint has none (or an invalid
+ * value): To = today, From = today minus 7 days. Valid saved dates are kept.
+ */
+function withDefaultDates(input: EndpointInput): EndpointInput {
+  const payload = parsePayload(input.body_template) ?? {};
+  const headerValue = (key: string) => input.headers.find((row) => row.key === key)?.value ?? "";
+  const current = {
+    BUDAT_F: payload["BUDAT_F"] || headerValue("BUDAT_F"),
+    BUDAT_T: payload["BUDAT_T"] || headerValue("BUDAT_T"),
+  };
+  const fixes: Record<string, string> = {};
+  if (!/^\d{8}$/.test(current.BUDAT_F ?? "")) fixes["BUDAT_F"] = toSapDate(isoDaysAgo(7));
+  if (!/^\d{8}$/.test(current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
+  if (!Object.keys(fixes).length) return input;
+  const nextPayload: Record<string, string> = { ...payload, ...current, ...fixes };
+  for (const key of Object.keys(nextPayload)) {
+    if (!nextPayload[key]) delete nextPayload[key];
+  }
+
+  return {
+    ...input,
+    body_template: JSON.stringify(nextPayload, null, 2),
+    headers: mergeHeaders(input.headers, fixes),
+  };
+}
+
 
 function StatusPill({ ok, label }: { ok: boolean; label: string }) {
   return (
@@ -654,6 +683,17 @@ function EndpointDetail({
             <PayloadLoader onLoad={applyPayloadValues} />
 
             <Field
+              label="Headers"
+              hint={
+                form.headers.length
+                  ? `${form.headers.length} header row(s) — every payload key is created here automatically.`
+                  : "Payload keys are created here automatically once a payload is loaded."
+              }
+            >
+              <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
+            </Field>
+
+            <Field
               label="Request payload"
               hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
             >
@@ -671,9 +711,7 @@ function EndpointDetail({
                 onChange={(rows) => set("query_params", rows)}
               />
             </Field>
-            <Field label="Headers" hint="Values found in an uploaded payload are filled in here automatically.">
-              <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
-            </Field>
+
           </div>
         </TabsContent>
 
