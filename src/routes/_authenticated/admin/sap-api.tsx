@@ -418,7 +418,25 @@ function EndpointDetail({
     [endpointsQuery.data, id],
   );
 
-  function set<K extends keyof EndpointInput>(key: K, value: EndpointInput[K]) {
+  const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
+
+  function payloadValue(key: string): string {
+    return payload?.[key] ?? form.headers.find((row) => row.key === key)?.value ?? "";
+  }
+
+  /** Write values into both the payload body and the matching header rows. */
+  function applyPayloadValues(values: Record<string, string>) {
+    setForm((prev) => {
+      const base = parsePayload(prev.body_template) ?? {};
+      const next = { ...base, ...values };
+      return {
+        ...prev,
+        body_template: JSON.stringify(next, null, 2),
+        headers: mergeHeaders(prev.headers, values),
+      };
+    });
+  }
+
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
