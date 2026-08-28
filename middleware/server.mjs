@@ -6,18 +6,51 @@
  * file. Every request must carry the caller's portal access token, which is
  * verified against the Supabase JWT secret before any SAP call is made.
  */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Load `.env` sitting next to this file so `node server.mjs` behaves the same
+ * as `npm start` and `docker run --env-file`. Existing process env wins.
+ */
+function loadEnvFile(file = path.join(HERE, ".env")) {
+  if (!fs.existsSync(file)) return false;
+  for (const rawLine of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq < 1) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+  return true;
+}
+
+const ENV_LOADED = loadEnvFile();
+
 const PORT = Number(process.env.PORT || 3008);
 const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || "";
+/** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
+const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
-  .map((o) => o.trim())
+  .map((o) => o.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 30000);
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const STARTED_AT = Date.now();
 
 /**
@@ -48,24 +81,71 @@ const SYSTEMS = {
 const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
+
+/**
+ * CORS. An empty ALLOWED_ORIGINS used to silently block every browser call,
+ * which the portal could only report as "Failed to fetch". Now the origin is
+ * echoed back when it is allowed, and rejected requests get a readable JSON
+ * error instead of a network-level failure.
+ */
 app.use(
   cors({
-    origin: ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : false,
+    origin(origin, callback) {
+      // Non-browser callers (curl, server-to-server) send no Origin header.
+      if (!origin) return callback(null, true);
+      const normalized = origin.replace(/\/+$/, "");
+      if (ALLOWED_ORIGINS.includes(normalized) || ALLOWED_ORIGINS.includes("*")) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: false,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400,
   }),
 );
+
+/** Explain a blocked origin instead of letting the browser see a bare failure. */
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin) return next();
+  const normalized = origin.replace(/\/+$/, "");
+  if (ALLOWED_ORIGINS.includes(normalized) || ALLOWED_ORIGINS.includes("*")) return next();
+  console.warn(`[mis-sap-middleware] blocked origin: ${origin}`);
+  // Allow the response itself through so the portal can read the message.
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.status(204).end();
+  return res.status(403).json({
+    error: "Origin not allowed",
+    message: `Add ${origin} to ALLOWED_ORIGINS in the middleware .env and restart the service.`,
+  });
+});
+
+app.use((req, _res, next) => {
+  console.log(`[mis-sap-middleware] ${req.method} ${req.path} origin=${req.headers.origin ?? "-"}`);
+  next();
+});
 
 function requirePortalToken(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!token) return res.status(401).json({ error: "Missing bearer token" });
-  if (!JWT_SECRET) return res.status(500).json({ error: "SUPABASE_JWT_SECRET not configured" });
+  if (!JWT_SECRET) {
+    return res.status(500).json({
+      error: "SUPABASE_JWT_SECRET not configured",
+      message: "Set the portal's JWT verification secret in the middleware .env and restart.",
+    });
+  }
   try {
     req.claims = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     return next();
-  } catch {
-    return res.status(401).json({ error: "Invalid or expired token" });
+  } catch (err) {
+    return res.status(401).json({
+      error: "Invalid or expired token",
+      message: err?.message ?? "Token verification failed",
+    });
   }
 }
 
@@ -132,6 +212,9 @@ app.get("/health", requirePortalToken, (_req, res) => {
     ok: true,
     service: "mis-sap-middleware",
     version: VERSION,
+    port: PORT,
+    baseUrl: APP_BASE_URL || null,
+    allowedOrigins: ALLOWED_ORIGINS,
     uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
     systems: Object.entries(SYSTEMS)
       .filter(([, cfg]) => cfg.baseUrl)
@@ -186,5 +269,29 @@ app.post("/sap/call", requirePortalToken, async (req, res) => {
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 
 app.listen(PORT, () => {
-  console.log(`[mis-sap-middleware] listening on :${PORT}`);
+  // Startup diagnostics — configured / not configured only, never any secret.
+  console.log(`[mis-sap-middleware] v${VERSION} listening on :${PORT}`);
+  console.log(`[mis-sap-middleware] .env file            : ${ENV_LOADED ? "loaded" : "NOT FOUND"}`);
+  console.log(`[mis-sap-middleware] public base URL      : ${APP_BASE_URL || "NOT SET (set APP_BASE_URL)"}`);
+  console.log(
+    `[mis-sap-middleware] portal JWT secret    : ${JWT_SECRET ? "configured" : "NOT CONFIGURED"}`,
+  );
+  console.log(
+    `[mis-sap-middleware] allowed origins      : ${
+      ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS.join(", ") : "NONE (browser calls will be refused)"
+    }`,
+  );
+  for (const [key, cfg] of Object.entries(SYSTEMS)) {
+    if (!cfg.baseUrl) continue;
+    console.log(
+      `[mis-sap-middleware] SAP ${key.padEnd(8)}        : ${cfg.baseUrl} client=${cfg.client || "-"} user=${
+        cfg.username || "-"
+      } password=${cfg.password ? "configured" : "MISSING"}`,
+    );
+  }
+  if (!ALLOWED_ORIGINS.length) {
+    console.warn(
+      "[mis-sap-middleware] WARNING: ALLOWED_ORIGINS is empty — the portal will report 'Failed to fetch'.",
+    );
+  }
 });
