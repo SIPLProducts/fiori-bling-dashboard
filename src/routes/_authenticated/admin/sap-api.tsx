@@ -560,6 +560,36 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Posting From Date" hint="Sent as BUDAT_F (YYYYMMDD).">
+                <Input
+                  type="date"
+                  value={fromSapDate(payloadValue("BUDAT_F"))}
+                  onChange={(e) => applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) })}
+                />
+              </Field>
+              <Field label="Posting To Date" hint="Sent as BUDAT_T (YYYYMMDD).">
+                <Input
+                  type="date"
+                  value={fromSapDate(payloadValue("BUDAT_T"))}
+                  onChange={(e) => applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) })}
+                />
+              </Field>
+            </div>
+
+            <PayloadLoader onLoad={applyPayloadValues} />
+
+            <Field
+              label="Request payload"
+              hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+            >
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                value={form.body_template}
+                onChange={(e) => set("body_template", e.target.value)}
+              />
+            </Field>
             <Field label="Query parameters">
               <KeyValueRows
                 rows={form.query_params}
@@ -567,19 +597,12 @@ function EndpointDetail({
                 onChange={(rows) => set("query_params", rows)}
               />
             </Field>
-            <Field label="Headers">
+            <Field label="Headers" hint="Values found in an uploaded payload are filled in here automatically.">
               <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
-            </Field>
-            <Field label="Request body template" hint="Sent for POST/PUT/PATCH requests.">
-              <Textarea
-                rows={6}
-                className="font-mono text-xs"
-                value={form.body_template}
-                onChange={(e) => set("body_template", e.target.value)}
-              />
             </Field>
           </div>
         </TabsContent>
+
 
         <TabsContent value="response">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
