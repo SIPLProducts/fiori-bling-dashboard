@@ -15,7 +15,6 @@ const hblLogo = hblLogoAsset.url;
 const REMEMBER_KEY = "hbl-remembered-identifier";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — HBL MIS Portal" },
@@ -38,17 +37,19 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const provisionDemo = ensureDemoUser;
-  const [identifier, setIdentifier] = useState(
-    () => localStorage.getItem(REMEMBER_KEY) ?? "",
-  );
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(
-    () => Boolean(localStorage.getItem(REMEMBER_KEY)),
-  );
+  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
+    const rememberedIdentifier = localStorage.getItem(REMEMBER_KEY);
+
+    if (rememberedIdentifier) {
+      setIdentifier(rememberedIdentifier);
+      setRemember(true);
+    }
 
     void supabase.auth.getUser().then(({ data, error }) => {
       if (active && !error && data.user) {
