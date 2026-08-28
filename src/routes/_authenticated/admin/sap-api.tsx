@@ -786,7 +786,9 @@ function EndpointDetail({
               <Meta label="Message" value={stored?.last_test_message ?? "—"} />
             </div>
 
+            <MiddlewareActivity />
           </div>
+
         </TabsContent>
       </Tabs>
     </div>
