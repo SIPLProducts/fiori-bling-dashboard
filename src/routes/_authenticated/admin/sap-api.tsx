@@ -66,7 +66,80 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/**
+ * One toast that says which leg of browser -> middleware -> SAP was reached,
+ * so a failure can never be confused with "SAP rejected us".
+ */
+function reportTest(result: TestResult) {
+  const trace = result.traceId ? ` · trace ${result.traceId}` : "";
+  if (result.ok) {
+    toast.success(`SAP responded in ${result.durationMs} ms${trace}`);
+    return;
+  }
+  if (result.sapContacted) {
+    toast.error(
+      `SAP was reached — it answered HTTP ${result.sapStatus ?? "?"} in ${result.durationMs} ms${trace}`,
+    );
+    return;
+  }
+  toast.error(`SAP was NOT contacted — ${result.message}${trace}`);
+}
+
+/** Recent middleware activity, read straight from the service. */
+function MiddlewareActivity() {
+  const logsQuery = useQuery({
+    queryKey: ["middleware-logs"],
+    queryFn: () => fetchMiddlewareLogs(80),
+    retry: false,
+  });
+  const lines = logsQuery.data ?? [];
+
+  return (
+    <div className="space-y-2 border-t border-border pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-muted-foreground">Recent middleware activity</p>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            disabled={logsQuery.isFetching}
+            onClick={() => logsQuery.refetch()}
+          >
+            <RefreshCw className="size-3.5" /> Refresh
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            disabled={!lines.length}
+            onClick={() => {
+              navigator.clipboard.writeText(lines.join("\n"));
+              toast.success("Log copied");
+            }}
+          >
+            <Copy className="size-3.5" /> Copy
+          </Button>
+        </div>
+      </div>
+      {logsQuery.isError ? (
+        <p className="text-xs text-destructive">{(logsQuery.error as Error).message}</p>
+      ) : (
+        <pre className="max-h-72 overflow-auto rounded-md bg-muted p-3 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          {lines.length ? lines.join("\n") : "No activity recorded yet — run Test connection."}
+        </pre>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Lines starting with <span className="font-mono">-&gt; SAP</span> mean the request left the
+        middleware; <span className="font-mono">&lt;-</span> is SAP&apos;s answer;{" "}
+        <span className="font-mono">xx</span> means SAP was never contacted.
+      </p>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin/sap-api")({
+
   head: () => ({
     meta: [
       { title: "SAP API Settings — Nexus Analytics" },
