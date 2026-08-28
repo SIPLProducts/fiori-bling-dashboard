@@ -542,12 +542,24 @@ function EndpointDetail({
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
-      result.ok
-        ? toast.success(`Connection OK (${result.durationMs} ms)`)
-        : toast.error(`Test failed: ${result.message}`);
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const pingMutation = useMutation({
+    mutationFn: async () =>
+      pingSapHost(
+        form.system_key || systems.find((s) => s.is_active)?.key || null,
+      ),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   return (
     <div className="space-y-5">
