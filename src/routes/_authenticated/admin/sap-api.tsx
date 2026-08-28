@@ -564,6 +564,14 @@ function EndpointDetail({
           <Button
             variant="outline"
             className="gap-2"
+            disabled={pingMutation.isPending}
+            onClick={() => pingMutation.mutate()}
+          >
+            <Radio className="size-4" /> Ping SAP host
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
             disabled={testMutation.isPending}
             onClick={() => testMutation.mutate()}
           >
@@ -573,6 +581,7 @@ function EndpointDetail({
             <Save className="size-4" /> Save
           </Button>
         </div>
+
       </div>
 
       <Tabs defaultValue="details" className="space-y-4">
