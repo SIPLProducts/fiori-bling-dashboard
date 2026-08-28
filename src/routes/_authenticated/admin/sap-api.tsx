@@ -29,11 +29,13 @@ import {
   createSapEndpoint,
   deleteSapEndpoint,
   deleteSapSystem,
+  fetchMiddlewareLogs,
   getMiddlewareConfig,
   listSapEndpoints,
   listSapSystems,
   listStoredCredentialKeys,
   MIDDLEWARE_CREDENTIAL_KEY,
+  pingSapHost,
   resolveEndpointUrl,
   saveMiddlewareConfig,
   saveSapSystem,
@@ -45,7 +47,9 @@ import {
   type KeyValue,
   type SapEndpoint,
   type SapSystem,
+  type TestResult,
 } from "@/lib/sap-api.functions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
