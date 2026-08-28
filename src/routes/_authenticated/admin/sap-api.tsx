@@ -683,6 +683,17 @@ function EndpointDetail({
             <PayloadLoader onLoad={applyPayloadValues} />
 
             <Field
+              label="Headers"
+              hint={
+                form.headers.length
+                  ? `${form.headers.length} header row(s) — every payload key is created here automatically.`
+                  : "Payload keys are created here automatically once a payload is loaded."
+              }
+            >
+              <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
+            </Field>
+
+            <Field
               label="Request payload"
               hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
             >
@@ -700,9 +711,7 @@ function EndpointDetail({
                 onChange={(rows) => set("query_params", rows)}
               />
             </Field>
-            <Field label="Headers" hint="Values found in an uploaded payload are filled in here automatically.">
-              <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
-            </Field>
+
           </div>
         </TabsContent>
 
