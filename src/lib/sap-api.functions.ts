@@ -274,12 +274,27 @@ export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): 
 
 /* ----------------------------- connectivity ----------------------------- */
 
+export type TestStage =
+  | "origin-blocked"
+  | "token-rejected"
+  | "sap-unreachable"
+  | "sap-http-error"
+  | "ok"
+  | "unknown";
+
 export type TestResult = {
   ok: boolean;
   status: number | null;
   message: string;
   durationMs: number;
   body?: string;
+  /** Which leg of browser -> middleware -> SAP the call reached. */
+  stage: TestStage;
+  /** HTTP status SAP itself returned, when SAP was actually reached. */
+  sapStatus?: number | null;
+  traceId?: string | null;
+  /** True only when the middleware actually issued the SAP request. */
+  sapContacted: boolean;
 };
 
 async function bearer(): Promise<string> {
@@ -287,6 +302,14 @@ async function bearer(): Promise<string> {
   const token = data.session?.access_token;
   if (!token) throw new Error("NOT_AUTHENTICATED");
   return token;
+}
+
+function describe(stage: TestStage, payload: Record<string, unknown>, fallback: string): string {
+  const msg = typeof payload["message"] === "string" ? (payload["message"] as string) : "";
+  if (msg) return msg;
+  if (stage === "origin-blocked") return "Blocked by the middleware CORS allow-list — SAP was not contacted.";
+  if (stage === "token-rejected") return "The middleware rejected the portal token — SAP was not contacted.";
+  return fallback;
 }
 
 async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
@@ -298,6 +321,8 @@ async function callMiddleware(path: string, body?: unknown): Promise<TestResult>
       status: null,
       message: "Set the Node.js middleware URL under Middleware Configuration first.",
       durationMs: 0,
+      stage: "unknown",
+      sapContacted: false,
     };
   }
   const started = Date.now();
@@ -311,22 +336,59 @@ async function callMiddleware(path: string, body?: unknown): Promise<TestResult>
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const text = await res.text();
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      payload = {};
+    }
+    const stage = (typeof payload["stage"] === "string" ? payload["stage"] : res.ok ? "ok" : "unknown") as TestStage;
+    const sapStatus = typeof payload["status"] === "number" ? (payload["status"] as number) : null;
     return {
       ok: res.ok,
       status: res.status,
-      message: res.ok ? "Reachable" : `HTTP ${res.status}`,
-      durationMs: Date.now() - started,
-      body: text.slice(0, 4000),
+      message: describe(stage, payload, res.ok ? "Reachable" : `HTTP ${res.status}`),
+      durationMs:
+        typeof payload["durationMs"] === "number" ? (payload["durationMs"] as number) : Date.now() - started,
+      body: typeof payload["body"] === "string" ? (payload["body"] as string).slice(0, 200000) : text.slice(0, 4000),
+      stage,
+      sapStatus,
+      traceId: typeof payload["traceId"] === "string" ? (payload["traceId"] as string) : null,
+      sapContacted: stage === "ok" || stage === "sap-http-error",
     };
   } catch (err) {
     return {
       ok: false,
       status: null,
-      message: err instanceof Error ? err.message : "Request failed",
+      message: `${
+        err instanceof Error ? err.message : "Request failed"
+      } — the browser could not reach the middleware, so SAP was not contacted.`,
       durationMs: Date.now() - started,
+      stage: "unknown",
+      sapContacted: false,
     };
   }
 }
+
+/** Recent middleware activity lines (newest last). */
+export async function fetchMiddlewareLogs(limit = 80): Promise<string[]> {
+  await requireSuperAdmin();
+  const result = await callMiddleware(`/logs/recent?limit=${limit}`);
+  if (!result.ok) throw new Error(result.message);
+  try {
+    const parsed = JSON.parse(result.body ?? "{}") as { lines?: string[] };
+    return parsed.lines ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Bare reachability probe of the SAP host from the middleware machine. */
+export async function pingSapHost(systemKey: string | null): Promise<TestResult> {
+  await requireSuperAdmin();
+  return callMiddleware(`/diag/sap?system=${encodeURIComponent(systemKey ?? "dev")}`);
+}
+
 
 export async function testMiddleware(): Promise<TestResult> {
   await requireSuperAdmin();
