@@ -282,12 +282,12 @@ function ApiList({
     mutationFn: (endpoint: SapEndpoint) => testSapEndpoint(endpoint, systems),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
-      result.ok
-        ? toast.success(`Connection OK (${result.durationMs} ms)`)
-        : toast.error(`Test failed: ${result.message}`);
+      queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
 
   const deleteMutation = useMutation({
     mutationFn: deleteSapEndpoint,
