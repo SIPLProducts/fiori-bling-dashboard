@@ -437,8 +437,10 @@ function EndpointDetail({
     });
   }
 
+  function set<K extends keyof EndpointInput>(key: K, value: EndpointInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
 
   const saveMutation = useMutation({
     mutationFn: async () => (id ? updateSapEndpoint(id, form) : createSapEndpoint(form)),
