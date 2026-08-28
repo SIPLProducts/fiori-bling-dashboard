@@ -79,23 +79,78 @@ export const Route = createFileRoute("/_authenticated/admin/sap-api")({
   component: SapApiSettings,
 });
 
-const emptyEndpoint: EndpointInput = {
-  name: "",
-  module_key: "common",
-  description: "",
-  endpoint_path: "",
-  system_key: "",
-  http_method: "GET",
-  auth_type: "basic",
-  query_params: [],
-  headers: [],
-  body_template: "",
-  response_root: "",
-  response_notes: "",
-  scheduler_enabled: false,
-  schedule_expression: "",
-  is_active: true,
-};
+/* ------------------------- posting date helpers ------------------------- */
+
+/** `YYYY-MM-DD` (date input) -> `YYYYMMDD` (SAP payload). */
+function toSapDate(iso: string): string {
+  return iso.replace(/-/g, "");
+}
+
+/** `YYYYMMDD` (SAP payload) -> `YYYY-MM-DD` (date input). */
+function fromSapDate(sap: string): string {
+  const value = (sap ?? "").trim();
+  if (!/^\d{8}$/.test(value)) return "";
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+}
+
+function isoDaysAgo(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+/** Parse a payload string into a flat string map; null when it is not a JSON object. */
+function parsePayload(raw: string): Record<string, string> | null {
+  const text = (raw ?? "").trim();
+  if (!text) return null;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>).map(([key, value]) => [
+        key,
+        value === null || value === undefined ? "" : String(value),
+      ]),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Replace matching header rows and append the ones that do not exist yet. */
+function mergeHeaders(rows: KeyValue[], values: Record<string, string>): KeyValue[] {
+  const next = rows.map((row) =>
+    row.key in values ? { key: row.key, value: values[row.key] as string } : row,
+  );
+  for (const [key, value] of Object.entries(values)) {
+    if (!next.some((row) => row.key === key)) next.push({ key, value });
+  }
+  return next;
+}
+
+function defaultEndpoint(): EndpointInput {
+  const payload = { BUDAT_F: toSapDate(isoDaysAgo(7)), BUDAT_T: toSapDate(isoDaysAgo(0)) };
+  return {
+    name: "",
+    module_key: "common",
+    description: "",
+    endpoint_path: "",
+    system_key: "",
+    http_method: "GET",
+    auth_type: "basic",
+    query_params: [],
+    headers: mergeHeaders([], payload),
+    body_template: JSON.stringify(payload, null, 2),
+    response_root: "",
+    response_notes: "",
+    scheduler_enabled: false,
+    schedule_expression: "",
+    is_active: true,
+  };
+}
+
 
 function SapApiSettings() {
   const { data: launchpad } = useLaunchpad();
