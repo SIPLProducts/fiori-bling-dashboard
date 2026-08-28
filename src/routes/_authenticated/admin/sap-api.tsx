@@ -5,15 +5,19 @@ import { toast } from "sonner";
 import {
   Activity,
   ArrowLeft,
+  Copy,
   Database,
   Pencil,
   Plug,
   Plus,
+  Radio,
+  RefreshCw,
   Save,
   Server,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
+
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import {
