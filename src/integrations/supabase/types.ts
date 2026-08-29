@@ -388,6 +388,71 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_table_mappings: {
+        Row: {
+          api_name: string | null
+          created_at: string
+          description: string | null
+          display_name: string
+          endpoint_id: string | null
+          id: string
+          last_sync_records: number
+          last_sync_status: string | null
+          last_synced_at: string | null
+          owner_user_id: string | null
+          schedule_expression: string
+          sync_enabled: boolean
+          table_key: string
+          table_name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_name?: string | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          endpoint_id?: string | null
+          id?: string
+          last_sync_records?: number
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          owner_user_id?: string | null
+          schedule_expression?: string
+          sync_enabled?: boolean
+          table_key: string
+          table_name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_name?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          endpoint_id?: string | null
+          id?: string
+          last_sync_records?: number
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          owner_user_id?: string | null
+          schedule_expression?: string
+          sync_enabled?: boolean
+          table_key?: string
+          table_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_table_mappings_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "sap_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tile_groups: {
         Row: {
           created_at: string
