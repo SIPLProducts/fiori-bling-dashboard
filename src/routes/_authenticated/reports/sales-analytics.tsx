@@ -444,6 +444,79 @@ function SalesAnalyticsPage() {
     );
   }, [applied]);
 
+  const applyRange = (from: Date, to: Date) => {
+    const next = { ...draft, postingFrom: isoDay(from), postingTo: isoDay(to) };
+    setDraft(next);
+    setApplied(next);
+  };
+
+  const applyPreset = (preset: DatePreset) => {
+    const now = new Date();
+    if (preset === "last30") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 29);
+      applyRange(from, now);
+      return;
+    }
+    if (preset === "month") {
+      applyRange(new Date(now.getFullYear(), now.getMonth(), 1), now);
+      return;
+    }
+    if (preset === "quarter") {
+      applyRange(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1), now);
+      return;
+    }
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    applyRange(new Date(fyStartYear, 3, 1), now);
+  };
+
+  const activeChips: Array<{ key: string; label: string; clear: () => void }> = [];
+  const clearFilter = (patch: Partial<SalesFilters>) => {
+    setDraft((p) => ({ ...p, ...patch }));
+    setApplied((p) => ({ ...p, ...patch }));
+  };
+  if (applied.fiscalYear)
+    activeChips.push({
+      key: "fy",
+      label: `Fiscal year: ${applied.fiscalYear}`,
+      clear: () => clearFilter({ fiscalYear: "" }),
+    });
+  if (applied.postingFrom || applied.postingTo)
+    activeChips.push({
+      key: "dates",
+      label: `Posting: ${applied.postingFrom || "…"} → ${applied.postingTo || "…"}`,
+      clear: () => clearFilter({ postingFrom: "", postingTo: "" }),
+    });
+  for (const code of applied.companyCodes)
+    activeChips.push({
+      key: `cc-${code}`,
+      label: `Company: ${code}`,
+      clear: () => clearFilter({ companyCodes: applied.companyCodes.filter((c) => c !== code) }),
+    });
+  for (const pc of applied.profitCentres)
+    activeChips.push({
+      key: `pc-${pc}`,
+      label: `Profit centre: ${pc}`,
+      clear: () => clearFilter({ profitCentres: applied.profitCentres.filter((c) => c !== pc) }),
+    });
+  for (const t of applied.salesTypes)
+    activeChips.push({ key: `st-${t}`, label: `Sales type: ${t}`, clear: () => clearFilter({ salesTypes: [] }) });
+  for (const s of applied.segments)
+    activeChips.push({ key: `sg-${s}`, label: `Segment: ${s}`, clear: () => clearFilter({ segments: [] }) });
+  if (applied.search)
+    activeChips.push({
+      key: "search",
+      label: `Search: ${applied.search}`,
+      clear: () => clearFilter({ search: "" }),
+    });
+  if (applied.seriesBy !== "none")
+    activeChips.push({
+      key: "series",
+      label: `Series: ${applied.seriesBy === "companyCode" ? "Company code" : "Profit centre"}`,
+      clear: () => clearFilter({ seriesBy: "none" }),
+    });
+
+
   return (
     <ReportShell
       title="SD — Sales Analytics"
