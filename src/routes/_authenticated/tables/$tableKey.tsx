@@ -94,6 +94,27 @@ function TableMasterPage() {
     sync_enabled: true,
     description: null,
   });
+  const [errors, setErrors] = useState<{ api_name?: string; table_name?: string }>({});
+
+  // SAP API names look like ZFISALES_MIS, ZVF05/FIN_N — start with a letter,
+  // then letters, digits, underscore, hyphen, slash or dot.
+  function validateApiName(value: string | null): string | undefined {
+    const name = value?.trim() ?? "";
+    if (!name) return "SAP API is required — map this table to an SAP API before saving";
+    if (name.length < 3) return "SAP API must be at least 3 characters";
+    if (name.length > 100) return "SAP API must be less than 100 characters";
+    if (!/^[A-Za-z][A-Za-z0-9_\-/.]*$/.test(name))
+      return "SAP API must start with a letter and contain only letters, digits, _ - / .";
+    return undefined;
+  }
+
+  function validateTableName(value: string): string | undefined {
+    const name = value.trim();
+    if (!name) return "Table name is required";
+    if (!/^[a-z][a-z0-9_]*$/.test(name))
+      return "Table name must be lowercase letters, digits and underscores (e.g. zfisales_detail)";
+    return undefined;
+  }
 
   useEffect(() => {
     if (!mapping) return;
