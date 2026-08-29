@@ -91,6 +91,7 @@ type KpiCardModel = {
   icon: typeof IndianRupee;
   tone: KpiTone;
   share?: number | undefined;
+  splits?: { label: string; value: string; pct: number }[];
 };
 
 const TONE: Record<KpiTone, { surface: string; bar: string; chip: string; value: string }> = {
