@@ -1,10 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, HelpCircle, LogOut, Search, Settings, User } from "lucide-react";
-import { adminNavForScreens, navForScreens } from "@/lib/nav";
-import { modulesForScreens } from "@/lib/sap-modules";
-import { SD_MODULE_TITLE, sdReportsForScreens } from "@/lib/sd-reports";
+import { Bell, HelpCircle, LogOut, Search, User } from "lucide-react";
+import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
+
 
 import {
   DropdownMenu,
