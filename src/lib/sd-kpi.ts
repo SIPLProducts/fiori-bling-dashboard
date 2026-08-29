@@ -3,7 +3,7 @@
  * Pure functions over the sales register extract; filters are posting date
  * range, profit center and plant.
  */
-import { SALES_ROWS, type SalesRow } from "./zfisales-data";
+import type { SalesRow } from "./zfisales-data";
 
 export type SdKpiFilters = {
   postingFrom: string;
@@ -72,8 +72,8 @@ function rollup(rows: SalesRow[], pick: (r: SalesRow) => string): SdKpiNamed[] {
     .sort((a, b) => b.value - a.value);
 }
 
-export function buildSdKpi(filters: SdKpiFilters): SdKpiResult {
-  const all = SALES_ROWS;
+export function buildSdKpi(filters: SdKpiFilters, source?: SalesRow[]): SdKpiResult {
+  const all = source ?? [];
 
   const rows = all.filter((r) => {
     if (filters.postingFrom && r.postingDate < filters.postingFrom) return false;
