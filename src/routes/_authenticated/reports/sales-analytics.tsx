@@ -543,7 +543,7 @@ function SalesAnalyticsPage() {
     >
       {allowed && syncStatus ? (
         <p className="mb-3 text-xs text-muted-foreground">
-          Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "Sample data (awaiting first SAP sync)"}</span>
+          Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "ZFISALES_DETAIL — no data yet (awaiting first SAP sync)"}</span>
           {syncStatus.rowCount ? ` · ${syncStatus.rowCount.toLocaleString()} rows` : ""}
           {syncStatus.lastSyncedAt ? ` · last synced ${new Date(syncStatus.lastSyncedAt).toLocaleString()}` : ""}
           {syncStatus.lastStatus && syncStatus.lastStatus !== "success" ? ` · last run ${syncStatus.lastStatus}` : ""}
