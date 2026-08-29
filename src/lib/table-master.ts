@@ -66,11 +66,10 @@ export async function listTableMappings(): Promise<TableMapping[]> {
 }
 
 export type TableMappingInput = {
-  endpoint_id: string | null;
   api_name: string | null;
+  table_name: string;
   schedule_expression: string;
   sync_enabled: boolean;
-  owner_user_id: string | null;
   description: string | null;
 };
 

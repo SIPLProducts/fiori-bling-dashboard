@@ -4,12 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
-import { listSapEndpoints } from "@/lib/sap-api.functions";
 import {
   SCHEDULE_PRESETS,
   countTableRows,
   getTableMapping,
-  listPortalUsers,
   listSyncRuns,
   saveTableMapping,
   scheduleLabel,
@@ -58,8 +56,6 @@ export const Route = createFileRoute("/_authenticated/tables/$tableKey")({
   component: TableMasterPage,
 });
 
-const NONE = "__none__";
-
 function fmt(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
@@ -80,16 +76,6 @@ function TableMasterPage() {
   });
   const mapping = mappingQuery.data ?? null;
 
-  const endpointsQuery = useQuery({
-    queryKey: ["sap-endpoints"],
-    queryFn: () => listSapEndpoints(),
-    enabled: allowed,
-  });
-  const usersQuery = useQuery({
-    queryKey: ["portal-users"],
-    queryFn: () => listPortalUsers(),
-    enabled: allowed,
-  });
   const runsQuery = useQuery({
     queryKey: ["sync-runs"],
     queryFn: () => listSyncRuns(10),
@@ -102,22 +88,20 @@ function TableMasterPage() {
   });
 
   const [form, setForm] = useState<TableMappingInput>({
-    endpoint_id: null,
     api_name: null,
+    table_name: "",
     schedule_expression: "*/5 * * * *",
     sync_enabled: true,
-    owner_user_id: null,
     description: null,
   });
 
   useEffect(() => {
     if (!mapping) return;
     setForm({
-      endpoint_id: mapping.endpoint_id,
       api_name: mapping.api_name,
+      table_name: mapping.table_name,
       schedule_expression: mapping.schedule_expression,
       sync_enabled: mapping.sync_enabled,
-      owner_user_id: mapping.owner_user_id,
       description: mapping.description,
     });
   }, [mapping]);
@@ -125,10 +109,11 @@ function TableMasterPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!mapping) throw new Error("No mapping");
-      const endpoint = (endpointsQuery.data ?? []).find((e) => e.id === form.endpoint_id);
+      if (!form.table_name.trim()) throw new Error("Table name is required");
       await saveTableMapping(mapping.id, {
         ...form,
-        api_name: endpoint?.name ?? form.api_name,
+        table_name: form.table_name.trim(),
+        api_name: form.api_name?.trim() || null,
       });
     },
     onSuccess: () => {
@@ -176,8 +161,6 @@ function TableMasterPage() {
     );
   }
 
-  const owner = (usersQuery.data ?? []).find((u) => u.id === mapping.owner_user_id);
-
   return (
     <ReportShell
       title={mapping.display_name}
@@ -196,25 +179,28 @@ function TableMasterPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label>SAP API</Label>
-              <Select
-                value={form.endpoint_id ?? NONE}
-                onValueChange={(value) =>
-                  setForm((f) => ({ ...f, endpoint_id: value === NONE ? null : value }))
+              <Input
+                value={form.api_name ?? ""}
+                placeholder="Enter SAP API name"
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, api_name: event.target.value || null }))
                 }
                 disabled={!isSuperAdmin}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select SAP API" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Not linked</SelectItem>
-                  {(endpointsQuery.data ?? []).map((endpoint) => (
-                    <SelectItem key={endpoint.id} value={endpoint.id}>
-                      {endpoint.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Table name</Label>
+              <Input
+                value={form.table_name}
+                placeholder="Enter Table name"
+                onChange={(event) => setForm((f) => ({ ...f, table_name: event.target.value }))}
+                disabled={!isSuperAdmin}
+                className="font-mono"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Database table where this API's data is stored.
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -231,29 +217,6 @@ function TableMasterPage() {
                   {SCHEDULE_PRESETS.map((preset) => (
                     <SelectItem key={preset.value} value={preset.value}>
                       {preset.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Owner (linked user)</Label>
-              <Select
-                value={form.owner_user_id ?? NONE}
-                onValueChange={(value) =>
-                  setForm((f) => ({ ...f, owner_user_id: value === NONE ? null : value }))
-                }
-                disabled={!isSuperAdmin}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select owner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Unassigned</SelectItem>
-                  {(usersQuery.data ?? []).map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.display_name ?? user.email ?? user.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -313,7 +276,6 @@ function TableMasterPage() {
             <Row label="Records in last run">
               {mapping.last_sync_records.toLocaleString("en-IN")}
             </Row>
-            <Row label="Owner">{owner?.display_name ?? owner?.email ?? "Unassigned"}</Row>
             <Row label="Configuration updated">{fmt(mapping.updated_at)}</Row>
           </dl>
         </Panel>
