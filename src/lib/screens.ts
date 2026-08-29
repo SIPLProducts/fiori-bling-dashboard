@@ -50,6 +50,7 @@ export const SCREEN_GROUPS: ScreenGroup[] = [
   "Reports",
   "Sales Distribution Reports",
   "SAP modules",
+  "Tables Master",
   "Administration",
 ];
 
