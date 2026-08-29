@@ -212,11 +212,20 @@ function TableMasterPage() {
               <Input
                 value={form.api_name ?? ""}
                 placeholder="Enter SAP API name"
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, api_name: event.target.value || null }))
-                }
+                onChange={(event) => {
+                  setForm((f) => ({ ...f, api_name: event.target.value || null }));
+                  setErrors((e) => ({ ...e, api_name: undefined }));
+                }}
                 disabled={!isSuperAdmin}
+                className={errors.api_name ? "border-destructive" : undefined}
               />
+              {errors.api_name ? (
+                <p className="text-[11px] text-destructive">{errors.api_name}</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  SAP API that feeds this table (e.g. ZFISALES_MIS).
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -226,11 +235,19 @@ function TableMasterPage() {
                 placeholder="Enter Table name"
                 onChange={(event) => setForm((f) => ({ ...f, table_name: event.target.value }))}
                 disabled={!isSuperAdmin}
-                className="font-mono"
+                className={errors.table_name ? "border-destructive font-mono" : "font-mono"}
+                onChange={(event) => {
+                  setForm((f) => ({ ...f, table_name: event.target.value }));
+                  setErrors((e) => ({ ...e, table_name: undefined }));
+                }}
               />
-              <p className="text-[11px] text-muted-foreground">
-                Database table where this API's data is stored.
-              </p>
+              {errors.table_name ? (
+                <p className="text-[11px] text-destructive">{errors.table_name}</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Database table where this API's data is stored.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
