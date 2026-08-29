@@ -409,7 +409,15 @@ function SalesAnalyticsPage() {
     enabled: allowed,
   });
 
+  const { data: syncStatus } = useQuery({
+    queryKey: ["zfisales-sync-status"],
+    queryFn: getSalesSyncStatus,
+    enabled: allowed,
+    refetchInterval: 60_000,
+  });
+
   const options = data?.options;
+
 
   useEffect(() => {
     setHiddenSeries([]);
