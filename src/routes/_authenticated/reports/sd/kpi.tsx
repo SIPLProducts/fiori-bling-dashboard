@@ -550,10 +550,15 @@ function SalesKpiPage() {
                 <Panel title="Sales mix by type">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Tooltip formatter={(value: number) => `₹ ${inr(value)}`} contentStyle={TOOLTIP_STYLE} />
+                      <Tooltip
+                        formatter={(_value: number, _name: string, item: { payload?: { value?: number } }) =>
+                          `₹ ${inr(item?.payload?.value ?? 0)}`
+                        }
+                        contentStyle={TOOLTIP_STYLE}
+                      />
                       <Pie
                         data={salesTypeMix}
-                        dataKey="value"
+                        dataKey="magnitude"
                         nameKey="name"
                         innerRadius={62}
                         outerRadius={98}
@@ -577,8 +582,9 @@ function SalesKpiPage() {
                         />
                         <span className="truncate text-foreground">{entry.name}</span>
                         <span className="tabular ml-auto text-muted-foreground">
-                          {totalRevenue ? Math.round((entry.value / totalRevenue) * 100) : 0}% · ₹ {compact(entry.value)}
+                          {entry.share}% · ₹ {compact(entry.value)}
                         </span>
+
                       </li>
                     ))}
                   </ul>
