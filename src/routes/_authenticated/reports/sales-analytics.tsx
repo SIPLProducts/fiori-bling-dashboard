@@ -19,7 +19,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
+
 import { MultiSelect } from "@/components/multi-select";
 import { ChartExportActions } from "@/components/chart-export-buttons";
 import { DrilldownTable } from "@/components/drilldown-table";
@@ -59,7 +61,14 @@ export const Route = createFileRoute("/_authenticated/reports/sales-analytics")(
   notFoundComponent: () => <p className="p-8 text-sm text-muted-foreground">Report not found.</p>,
 });
 
+type DatePreset = "last30" | "month" | "quarter" | "fy";
+
+function isoDay(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 const EMPTY: SalesFilters = {
+
   fiscalYear: "",
   companyCodes: [],
   profitCentres: [],
@@ -384,6 +393,8 @@ function SalesAnalyticsPage() {
 
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+
 
   const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
 
@@ -444,6 +455,79 @@ function SalesAnalyticsPage() {
     );
   }, [applied]);
 
+  const applyRange = (from: Date, to: Date) => {
+    const next = { ...draft, postingFrom: isoDay(from), postingTo: isoDay(to) };
+    setDraft(next);
+    setApplied(next);
+  };
+
+  const applyPreset = (preset: DatePreset) => {
+    const now = new Date();
+    if (preset === "last30") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 29);
+      applyRange(from, now);
+      return;
+    }
+    if (preset === "month") {
+      applyRange(new Date(now.getFullYear(), now.getMonth(), 1), now);
+      return;
+    }
+    if (preset === "quarter") {
+      applyRange(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1), now);
+      return;
+    }
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    applyRange(new Date(fyStartYear, 3, 1), now);
+  };
+
+  const activeChips: Array<{ key: string; label: string; clear: () => void }> = [];
+  const clearFilter = (patch: Partial<SalesFilters>) => {
+    setDraft((p) => ({ ...p, ...patch }));
+    setApplied((p) => ({ ...p, ...patch }));
+  };
+  if (applied.fiscalYear)
+    activeChips.push({
+      key: "fy",
+      label: `Fiscal year: ${applied.fiscalYear}`,
+      clear: () => clearFilter({ fiscalYear: "" }),
+    });
+  if (applied.postingFrom || applied.postingTo)
+    activeChips.push({
+      key: "dates",
+      label: `Posting: ${applied.postingFrom || "…"} → ${applied.postingTo || "…"}`,
+      clear: () => clearFilter({ postingFrom: "", postingTo: "" }),
+    });
+  for (const code of applied.companyCodes)
+    activeChips.push({
+      key: `cc-${code}`,
+      label: `Company: ${code}`,
+      clear: () => clearFilter({ companyCodes: applied.companyCodes.filter((c) => c !== code) }),
+    });
+  for (const pc of applied.profitCentres)
+    activeChips.push({
+      key: `pc-${pc}`,
+      label: `Profit centre: ${pc}`,
+      clear: () => clearFilter({ profitCentres: applied.profitCentres.filter((c) => c !== pc) }),
+    });
+  for (const t of applied.salesTypes)
+    activeChips.push({ key: `st-${t}`, label: `Sales type: ${t}`, clear: () => clearFilter({ salesTypes: [] }) });
+  for (const s of applied.segments)
+    activeChips.push({ key: `sg-${s}`, label: `Segment: ${s}`, clear: () => clearFilter({ segments: [] }) });
+  if (applied.search)
+    activeChips.push({
+      key: "search",
+      label: `Search: ${applied.search}`,
+      clear: () => clearFilter({ search: "" }),
+    });
+  if (applied.seriesBy !== "none")
+    activeChips.push({
+      key: "series",
+      label: `Series: ${applied.seriesBy === "companyCode" ? "Company code" : "Profit centre"}`,
+      clear: () => clearFilter({ seriesBy: "none" }),
+    });
+
+
   return (
     <ReportShell
       title="SD — Sales Analytics"
@@ -454,15 +538,64 @@ function SalesAnalyticsPage() {
       ) : (
         <div className="space-y-4">
           {/* Selection screen */}
-          <section className="sticky top-14 z-30 rounded-md border border-border bg-card p-4 shadow-tile">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-medium text-card-foreground">Selection criteria</h2>
-              <span className="text-xs text-muted-foreground">
-                {activeCount ? `${activeCount} filter${activeCount > 1 ? "s" : ""} applied` : "No filters applied"}
-              </span>
+          <section className="rounded-md border border-border bg-card p-4 shadow-tile">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((v) => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-card-foreground"
+                aria-expanded={filtersOpen}
+              >
+                <SlidersHorizontal className="size-4 text-primary" />
+                Selection criteria
+                <ChevronDown className={`size-4 text-muted-foreground transition-transform ${filtersOpen ? "" : "-rotate-90"}`} />
+              </button>
+              {activeCount ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  {activeCount} active
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">No filters applied</span>
+              )}
+
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {([
+                  ["last30", "Last 30 days"],
+                  ["month", "This month"],
+                  ["quarter", "This quarter"],
+                  ["fy", "This FY"],
+                ] as Array<[DatePreset, string]>).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applyPreset(key)}
+                    className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
+            {activeChips.length ? (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {activeChips.map((chip) => (
+                  <span
+                    key={chip.key}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {chip.label}
+                    <button type="button" onClick={chip.clear} aria-label={`Remove ${chip.label}`}>
+                      <X className="size-3 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {filtersOpen ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-4">
+
               <Field label="Fiscal year">
                 <select
                   value={draft.fiscalYear}
@@ -570,29 +703,33 @@ function SalesAnalyticsPage() {
               </Field>
 
             </div>
+            ) : null}
 
-            {dateError ? (
+            {filtersOpen && dateError ? (
               <p className="mt-3 text-xs text-destructive" role="alert">
                 {dateError}
               </p>
             ) : null}
 
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
-                {isFetching ? "Executing…" : "Execute"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setDraft(EMPTY);
-                  setApplied(EMPTY);
-                }}
-              >
-                Reset
-              </Button>
-            </div>
+            {filtersOpen ? (
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
+                  {isFetching ? "Executing…" : "Execute"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(EMPTY);
+                    setApplied(EMPTY);
+                  }}
+                >
+                  Reset
+                </Button>
+              </div>
+            ) : null}
           </section>
+
 
           {isLoading || !data ? (
             <div className="grid gap-4 md:grid-cols-4">
