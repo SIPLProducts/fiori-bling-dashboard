@@ -1,0 +1,157 @@
+/**
+ * Server-only mapping helpers for the ZFISALES → zfisales_detail sync.
+ */
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+type Raw = Record<string, unknown>;
+
+const str = (v: unknown) => (v == null ? "" : String(v).trim());
+
+/** Accepts YYYYMMDD, YYYY-MM-DD, or /Date(…)/ and returns YYYY-MM-DD (or null). */
+export function toIsoDate(value: unknown): string | null {
+  const s = str(value);
+  if (!s) return null;
+  const odata = /\/Date\((-?\d+)\)\//.exec(s);
+  if (odata) return new Date(Number(odata[1])).toISOString().slice(0, 10);
+  if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
+function monthLabel(iso: string | null) {
+  if (!iso) return "";
+  const [y, m] = iso.split("-");
+  return `${MONTHS[Number(m) - 1] ?? ""}-${y}`;
+}
+
+function num(value: unknown): number {
+  const s = str(value).replace(/,/g, "");
+  if (!s) return 0;
+  const neg = /-$/.test(s);
+  const n = Number(neg ? `-${s.slice(0, -1)}` : s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const pickField = (row: Raw, keys: string[]) => {
+  for (const k of keys) {
+    if (row[k] != null && str(row[k]) !== "") return row[k];
+  }
+  return "";
+};
+
+/** Unwraps arrays, `{ d: { results } }`, `{ results }`, `{ data }`, `{ rows }`. */
+export function extractRows(payload: unknown): Raw[] {
+  if (Array.isArray(payload)) return payload as Raw[];
+  if (payload && typeof payload === "object") {
+    const o = payload as Raw;
+    const d = o["d"] as Raw | undefined;
+    if (d && Array.isArray(d["results"])) return d["results"] as Raw[];
+    for (const key of ["results", "data", "rows", "items", "ITEMS", "ET_DATA"]) {
+      if (Array.isArray(o[key])) return o[key] as Raw[];
+    }
+  }
+  return [];
+}
+
+export type ZfisalesDetailRow = {
+  record_key: string;
+  plant: string;
+  gl: string;
+  gl_name: string;
+  profit_ctr: string;
+  profit_ctr_name: string;
+  grp: string;
+  sales_type: string;
+  company_code: string;
+  company_name: string;
+  customer: string;
+  customer_name: string;
+  fiscal_year: string;
+  doc_no: string;
+  doc_date: string | null;
+  posting_date: string | null;
+  month: string;
+  reference: string;
+  doc_type: string;
+  pk: string;
+  amount: number;
+  segment: string;
+  sales_order: string;
+  sales_order_item: string;
+  material: string;
+  material_desc: string;
+  raw: Raw;
+  source_endpoint: string;
+  synced_at: string;
+};
+
+export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): ZfisalesDetailRow | null {
+  const plant = str(pickField(raw, ["WERKS", "werks", "plant"]));
+  const fiscalYear = str(pickField(raw, ["GJAHR", "gjahr", "fiscalYear"]));
+  const docNo = str(pickField(raw, ["BELNR", "belnr", "docNo"]));
+  const posnr = str(pickField(raw, ["POSNR", "BUZEI", "posnr", "item"]));
+  const gl = str(pickField(raw, ["HKONT", "SAKNR", "hkont", "gl"]));
+
+  const recordKey = [plant, fiscalYear, docNo, posnr, gl].join("|");
+  if (!docNo || !fiscalYear) return null;
+
+  const postingDate = toIsoDate(pickField(raw, ["BUDAT", "budat", "postingDate"]));
+
+  return {
+    record_key: recordKey,
+    plant,
+    gl,
+    gl_name: str(pickField(raw, ["TXT50", "HKONT_TXT", "glName", "SAKNR_TXT"])),
+    profit_ctr: str(pickField(raw, ["PRCTR", "prctr", "profitCtr"])),
+    profit_ctr_name: str(pickField(raw, ["PRCTR_TXT", "KTEXT", "profitCtrName"])),
+    grp: str(pickField(raw, ["GROUP", "GRUPPE", "group", "grp"])),
+    sales_type: str(pickField(raw, ["SALES_TYPE", "SALESTYPE", "salesType", "AUART"])),
+    company_code: str(pickField(raw, ["BUKRS", "bukrs", "companyCode"])),
+    company_name: str(pickField(raw, ["BUTXT", "companyName"])),
+    customer: str(pickField(raw, ["KUNNR", "kunnr", "customer"])),
+    customer_name: str(pickField(raw, ["NAME1", "KUNNR_TXT", "customerName"])),
+    fiscal_year: fiscalYear,
+    doc_no: docNo,
+    doc_date: toIsoDate(pickField(raw, ["BLDAT", "bldat", "docDate"])),
+    posting_date: postingDate,
+    month: monthLabel(postingDate),
+    reference: str(pickField(raw, ["XBLNR", "xblnr", "reference"])),
+    doc_type: str(pickField(raw, ["BLART", "blart", "docType"])),
+    pk: str(pickField(raw, ["BSCHL", "bschl", "pk"])),
+    amount: num(pickField(raw, ["DMBTR", "dmbtr", "amount", "WRBTR"])),
+    segment: str(pickField(raw, ["SEGMENT", "segment", "SEGMENT_TXT"])),
+    sales_order: str(pickField(raw, ["AUBEL", "aubel", "salesOrder"])),
+    sales_order_item: str(pickField(raw, ["AUPOS", "aupos"])),
+    material: str(pickField(raw, ["MATNR", "matnr", "material"])),
+    material_desc: str(pickField(raw, ["MAKTX", "maktx", "materialDesc"])),
+    raw,
+    source_endpoint: sourceEndpoint,
+    synced_at: syncedAt,
+  };
+}
+
+export function mapPayload(payload: unknown, sourceEndpoint: string) {
+  const syncedAt = new Date().toISOString();
+  const raws = extractRows(payload);
+  const rows: ZfisalesDetailRow[] = [];
+  const seen = new Set<string>();
+  let skipped = 0;
+  for (const r of raws) {
+    const mapped = mapRow(r, sourceEndpoint, syncedAt);
+    if (!mapped) {
+      skipped += 1;
+      continue;
+    }
+    if (seen.has(mapped.record_key)) {
+      // Last one wins within a single payload.
+      const idx = rows.findIndex((x) => x.record_key === mapped.record_key);
+      rows[idx] = mapped;
+      continue;
+    }
+    seen.add(mapped.record_key);
+    rows.push(mapped);
+  }
+  return { received: raws.length, rows, skipped };
+}
