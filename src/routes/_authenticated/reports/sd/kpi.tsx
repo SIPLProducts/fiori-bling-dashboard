@@ -460,23 +460,22 @@ function SalesKpiPage() {
           </section>
 
           {isLoading || !data ? (
-            <div className="grid gap-4 md:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-28" />
-              ))}
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-lg" />
+                ))}
+              </div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Skeleton className="h-80 rounded-lg lg:col-span-2" />
+                <Skeleton className="h-80 rounded-lg" />
+              </div>
             </div>
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {kpiCards.map((card) => (
-                  <div
-                    key={card.label}
-                    className="rounded-md border border-border bg-card p-4 shadow-tile transition-shadow hover:shadow-md"
-                  >
-                    <p className="text-xs tracking-wide text-muted-foreground uppercase">{card.label}</p>
-                    <p className="tabular mt-2 truncate text-2xl font-light text-primary">{card.value}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{card.hint}</p>
-                  </div>
+                  <KpiCard key={card.label} card={card} />
                 ))}
               </div>
 
@@ -490,36 +489,93 @@ function SalesKpiPage() {
                 >
                   <div ref={trendRef}>
                     <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={data.monthly}>
+                      <ComposedChart data={data.monthly}>
                         <defs>
                           <linearGradient id="sdKpiFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+                            <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0.02} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                         <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                        <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis
+                          yAxisId="value"
+                          tickFormatter={compact}
+                          tick={{ fontSize: 11 }}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <YAxis
+                          yAxisId="docs"
+                          orientation="right"
+                          tick={{ fontSize: 11 }}
+                          stroke="var(--color-muted-foreground)"
+                          allowDecimals={false}
+                        />
                         <Tooltip
-                          formatter={(value: number) => `₹ ${inr(value)}`}
-                          contentStyle={{
-                            background: "var(--color-card)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
+                          formatter={(value: number, name: string) =>
+                            name === "Documents" ? inr(value) : `₹ ${inr(value)}`
+                          }
+                          contentStyle={TOOLTIP_STYLE}
                         />
                         <Area
+                          yAxisId="value"
                           type="monotone"
                           name="Revenue"
                           dataKey="revenue"
-                          stroke="var(--color-primary)"
-                          strokeWidth={2}
+                          stroke="var(--color-chart-1)"
+                          strokeWidth={2.5}
                           fill="url(#sdKpiFill)"
                         />
-                      </AreaChart>
+                        <Line
+                          yAxisId="docs"
+                          type="monotone"
+                          name="Documents"
+                          dataKey="documents"
+                          stroke="var(--color-chart-4)"
+                          strokeWidth={2}
+                          strokeDasharray="4 3"
+                          dot={{ r: 3, fill: "var(--color-chart-4)" }}
+                        />
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
+                </Panel>
+
+                <Panel title="Sales mix by type">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Tooltip formatter={(value: number) => `₹ ${inr(value)}`} contentStyle={TOOLTIP_STYLE} />
+                      <Pie
+                        data={salesTypeMix}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={62}
+                        outerRadius={98}
+                        paddingAngle={2}
+                        stroke="var(--color-card)"
+                        strokeWidth={2}
+                      >
+                        {salesTypeMix.map((entry, i) => (
+                          <Cell key={entry.name} fill={SERIES[i % SERIES.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <ul className="mt-2 space-y-1.5">
+                    {salesTypeMix.slice(0, 5).map((entry, i) => (
+                      <li key={entry.name} className="flex items-center gap-2 text-xs">
+                        <span
+                          className="size-2.5 rounded-full"
+                          style={{ background: SERIES[i % SERIES.length] }}
+                          aria-hidden
+                        />
+                        <span className="truncate text-foreground">{entry.name}</span>
+                        <span className="tabular ml-auto text-muted-foreground">
+                          {totalRevenue ? Math.round((entry.value / totalRevenue) * 100) : 0}% · ₹ {compact(entry.value)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </Panel>
 
                 <Panel
@@ -530,20 +586,19 @@ function SalesKpiPage() {
                 >
                   <div ref={plantRef}>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={data.byPlant} layout="vertical" margin={{ left: 12, right: 28 }}>
+                      <BarChart data={data.byPlant.slice(0, 8)} layout="vertical" margin={{ left: 12, right: 34 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                         <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                         <Tooltip
+                          cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
                           formatter={(value: number) => `₹ ${inr(value)}`}
-                          contentStyle={{
-                            background: "var(--color-card)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
+                          contentStyle={TOOLTIP_STYLE}
                         />
-                        <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 3, 3, 0]}>
+                        <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16}>
+                          {data.byPlant.slice(0, 8).map((entry, i) => (
+                            <Cell key={entry.name} fill={SERIES[i % SERIES.length]} />
+                          ))}
                           <LabelList dataKey="value" position="right" formatter={compact} className="fill-muted-foreground text-[10px]" />
                         </Bar>
                       </BarChart>
@@ -551,27 +606,39 @@ function SalesKpiPage() {
                   </div>
                 </Panel>
 
-                <Panel title="Sales by profit center" className="lg:col-span-3">
-                  <ResponsiveContainer width="100%" height={280}>
+                <Panel title="Sales by profit center" className="lg:col-span-2">
+                  <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={data.byProfitCentre} margin={{ top: 16 }}>
+                      <defs>
+                        <linearGradient id="sdPcFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--color-chart-3)" stopOpacity={0.95} />
+                          <stop offset="100%" stopColor="var(--color-chart-3)" stopOpacity={0.45} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} height={50} textAnchor="end" stroke="var(--color-muted-foreground)" />
                       <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                       <Tooltip
+                        cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
                         formatter={(value: number) => `₹ ${inr(value)}`}
-                        contentStyle={{
-                          background: "var(--color-card)",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: 6,
-                          fontSize: 12,
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                       />
-                      <Bar dataKey="value" fill="var(--color-success)" radius={[3, 3, 0, 0]}>
+                      {data.byProfitCentre.length ? (
+                        <ReferenceLine
+                          y={
+                            data.byProfitCentre.reduce((sum, r) => sum + r.value, 0) / data.byProfitCentre.length
+                          }
+                          stroke="var(--color-chart-4)"
+                          strokeDasharray="4 4"
+                        />
+                      ) : null}
+                      <Bar dataKey="value" fill="url(#sdPcFill)" radius={[4, 4, 0, 0]}>
                         <LabelList dataKey="value" position="top" formatter={compact} className="fill-muted-foreground text-[10px]" />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </Panel>
+
 
                 <Panel
                   title={`Document list (${inr(data.totalRows)} lines)`}
