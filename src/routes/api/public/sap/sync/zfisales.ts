@@ -65,7 +65,7 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
           for (let i = 0; i < rows.length; i += 500) {
             const { error } = await supabaseAdmin
               .from("zfisales_detail")
-              .upsert(rows.slice(i, i + 500), { onConflict: "record_key" });
+              .upsert(rows.slice(i, i + 500) as never, { onConflict: "record_key" });
             if (error) throw error;
           }
 
