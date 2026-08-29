@@ -4,6 +4,7 @@ import { accessForUser } from "./access";
 import { buildSalesAnalytics } from "./zfisales";
 import type { SalesRow } from "./zfisales-data";
 import type { SalesFilters, SalesAnalytics } from "./zfisales-types";
+import { fetchSyncedSalesRows } from "./zfisales-synced";
 
 const emptyFilters: SalesFilters = {
   fiscalYear: "",
