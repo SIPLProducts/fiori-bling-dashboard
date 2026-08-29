@@ -393,6 +393,8 @@ function SalesAnalyticsPage() {
 
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+
 
   const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
 
