@@ -112,3 +112,90 @@ export async function listPortalUsers(): Promise<PortalUser[]> {
   if (error) throw error;
   return (data ?? []) as PortalUser[];
 }
+
+/* ---------------------------------------------------------------------------
+ * Field definitions: field name in the portal table, the UI label shown to
+ * users and the SAP field name in the API payload — so the SAP sync writes to
+ * exactly the right column.
+ * ------------------------------------------------------------------------ */
+
+export type TableField = {
+  id: string;
+  table_key: string;
+  field_name: string;
+  ui_label: string;
+  sap_field: string;
+  data_type: string;
+  is_key: boolean;
+  is_required: boolean;
+  sort_order: number;
+};
+
+export type TableFieldInput = {
+  field_name: string;
+  ui_label: string;
+  sap_field: string;
+  data_type: string;
+  is_key: boolean;
+  is_required: boolean;
+  sort_order: number;
+};
+
+export const FIELD_DATA_TYPES = [
+  "text",
+  "numeric",
+  "integer",
+  "date",
+  "timestamp",
+  "boolean",
+  "jsonb",
+] as const;
+
+export async function listTableFields(tableKey: string): Promise<TableField[]> {
+  const { data, error } = await supabase
+    .from("sap_table_fields")
+    .select("*")
+    .eq("table_key", tableKey)
+    .order("sort_order")
+    .order("field_name");
+  if (error) throw error;
+  return (data ?? []) as TableField[];
+}
+
+export async function upsertTableField(
+  tableKey: string,
+  input: TableFieldInput,
+  id?: string,
+): Promise<void> {
+  if (id) {
+    const { error } = await supabase.from("sap_table_fields").update(input).eq("id", id);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("sap_table_fields")
+    .insert({ ...input, table_key: tableKey });
+  if (error) throw error;
+}
+
+export async function deleteTableField(id: string): Promise<void> {
+  const { error } = await supabase.from("sap_table_fields").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Create a new Table Master entry (table definition + SAP API link). */
+export async function createTableMapping(input: {
+  table_key: string;
+  table_name: string;
+  display_name: string;
+  description: string | null;
+  api_name: string | null;
+  schedule_expression: string;
+  sync_enabled: boolean;
+}): Promise<void> {
+  const { data: session } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("sap_table_mappings")
+    .insert({ ...input, updated_by: session.user?.id ?? null });
+  if (error) throw error;
+}
