@@ -82,6 +82,104 @@ function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+type KpiTone = "primary" | "info" | "success" | "violet" | "warning" | "teal";
+
+type KpiCardModel = {
+  label: string;
+  value: string;
+  hint: string;
+  icon: typeof IndianRupee;
+  tone: KpiTone;
+  share?: number | undefined;
+};
+
+const TONE: Record<KpiTone, { surface: string; bar: string; chip: string; value: string }> = {
+  primary: {
+    surface: "from-primary/10 to-card",
+    bar: "bg-primary",
+    chip: "bg-primary/12 text-primary",
+    value: "text-primary",
+  },
+  info: {
+    surface: "from-chart-2/12 to-card",
+    bar: "bg-chart-2",
+    chip: "bg-chart-2/15 text-chart-2",
+    value: "text-chart-2",
+  },
+  success: {
+    surface: "from-success/12 to-card",
+    bar: "bg-success",
+    chip: "bg-success/15 text-success",
+    value: "text-success",
+  },
+  violet: {
+    surface: "from-chart-5/12 to-card",
+    bar: "bg-chart-5",
+    chip: "bg-chart-5/15 text-chart-5",
+    value: "text-chart-5",
+  },
+  warning: {
+    surface: "from-warning/15 to-card",
+    bar: "bg-warning",
+    chip: "bg-warning/20 text-warning",
+    value: "text-warning",
+  },
+  teal: {
+    surface: "from-chart-2/10 to-card",
+    bar: "bg-chart-3",
+    chip: "bg-chart-3/15 text-chart-3",
+    value: "text-chart-3",
+  },
+};
+
+const SERIES = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+];
+
+const TOOLTIP_STYLE = {
+  background: "var(--color-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: 8,
+  fontSize: 12,
+  boxShadow: "var(--shadow-tile-hover)",
+} as const;
+
+function KpiCard({ card }: { card: KpiCardModel }) {
+  const tone = TONE[card.tone];
+  const Icon = card.icon;
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-lg border border-border bg-gradient-to-br ${tone.surface} p-4 shadow-tile transition-all hover:-translate-y-0.5 hover:shadow-tile-hover`}
+    >
+      <span className={`absolute inset-y-0 left-0 w-1 ${tone.bar}`} aria-hidden />
+      <div className="flex items-start justify-between gap-3 pl-2">
+        <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{card.label}</p>
+        <span className={`grid size-8 shrink-0 place-items-center rounded-md ${tone.chip}`}>
+          <Icon className="size-4" />
+        </span>
+      </div>
+      <p className={`tabular mt-2 truncate pl-2 text-[26px] leading-tight font-semibold ${tone.value}`} title={card.value}>
+        {card.value}
+      </p>
+      <p className="mt-1 pl-2 text-xs text-muted-foreground">{card.hint}</p>
+      {typeof card.share === "number" ? (
+        <div className="mt-3 ml-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <span
+            className={`block h-full rounded-full ${tone.bar}`}
+            style={{ width: `${Math.min(Math.max(card.share, 0), 100)}%` }}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+
+
 function SalesKpiPage() {
   const { data: launchpad, isLoading: accessLoading } = useLaunchpad();
   const allowed = canAccessSdReport("kpi", launchpad?.screens);
