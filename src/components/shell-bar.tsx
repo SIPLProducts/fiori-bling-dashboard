@@ -26,9 +26,8 @@ export function ShellBar({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const modules = modulesForScreens(screens);
   const adminItems = adminNavForScreens(screens);
-  const sdReports = sdReportsForScreens(screens);
+
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
