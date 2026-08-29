@@ -1,4 +1,4 @@
-import { SALES_ROWS, type SalesRow } from "./zfisales-data";
+import type { SalesRow } from "./zfisales-data";
 import type {
   ComparisonPoint,
   ComparisonSet,
@@ -30,7 +30,7 @@ function rollup(rows: SalesRow[], pick: (r: SalesRow) => string): NamedValue[] {
 }
 
 export function buildSalesAnalytics(filters: SalesFilters, source?: SalesRow[]): SalesAnalytics {
-  const all = source && source.length ? source : SALES_ROWS;
+  const all = source ?? [];
   const term = filters.search.trim().toLowerCase();
 
   const rows = all.filter((r) => {
