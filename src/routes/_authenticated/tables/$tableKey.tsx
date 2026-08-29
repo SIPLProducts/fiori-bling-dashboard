@@ -199,7 +199,13 @@ function TableMasterPage() {
       description={mapping.description ?? "SAP API to table mapping"}
       tcode={mapping.table_name}
     >
+      <div className="mb-3">
+        <Link to="/tables" className="text-xs text-primary hover:underline">
+          ← All tables
+        </Link>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
+
         <StatCard label="Database table" value={mapping.table_name} mono />
         <StatCard label="Linked SAP API" value={mapping.api_name ?? "Not linked"} />
         <StatCard label="Sync frequency" value={scheduleLabel(mapping.schedule_expression)} />
