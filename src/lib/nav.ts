@@ -64,6 +64,7 @@ const ALL_GROUPS = [
   "production-planning",
   "quality-management",
   "project-systems",
+  "tables-master",
 ];
 
 const GROUP_PRIORITY: Record<string, string[]> = {
