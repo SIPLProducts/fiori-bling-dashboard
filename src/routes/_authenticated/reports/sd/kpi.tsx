@@ -305,6 +305,11 @@ function SalesKpiPage() {
           hint: `${inr(data.totalRows)} line items`,
           icon: IndianRupee,
           tone: "primary",
+          splits: salesTypeMix.map((s) => ({
+            label: s.name,
+            value: `₹ ${compact(s.magnitude)}`,
+            pct: s.share,
+          })),
         },
         {
           label: "Documents",
