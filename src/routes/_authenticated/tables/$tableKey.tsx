@@ -94,7 +94,10 @@ function TableMasterPage() {
     sync_enabled: true,
     description: null,
   });
-  const [errors, setErrors] = useState<{ api_name?: string; table_name?: string }>({});
+  const [errors, setErrors] = useState<{
+    api_name?: string | undefined;
+    table_name?: string | undefined;
+  }>({});
 
   // SAP API names look like ZFISALES_MIS, ZVF05/FIN_N — start with a letter,
   // then letters, digits, underscore, hyphen, slash or dot.
