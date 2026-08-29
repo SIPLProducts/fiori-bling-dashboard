@@ -390,7 +390,9 @@ function ComparisonPanel({ comparison }: { comparison: SalesComparison }) {
 function SalesAnalyticsPage() {
   const fetchAnalytics = getSalesAnalytics;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessModule("sd", launchpad?.screens);
+  const allowed =
+    canAccessModule("sd", launchpad?.screens) ||
+    hasScreen(launchpad?.screens, "tables.zfisales-detail");
 
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);
   const [applied, setApplied] = useState<SalesFilters>(EMPTY);
