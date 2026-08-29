@@ -19,7 +19,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
+
 import { MultiSelect } from "@/components/multi-select";
 import { ChartExportActions } from "@/components/chart-export-buttons";
 import { DrilldownTable } from "@/components/drilldown-table";
