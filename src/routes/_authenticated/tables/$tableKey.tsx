@@ -327,7 +327,12 @@ function TableMasterPage() {
         </Panel>
       </div>
 
+      <div className="mt-4">
+        <TableFieldsPanel tableKey={tableKey} canEdit={isSuperAdmin} />
+      </div>
+
       <Panel title="Recent sync runs" className="mt-4">
+
         {runsQuery.data && runsQuery.data.length > 0 ? (
           <Table>
             <TableHeader>
