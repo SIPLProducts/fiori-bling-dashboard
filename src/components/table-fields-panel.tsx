@@ -184,8 +184,7 @@ export function TableFieldsPanel({
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove.mutate(field.id)}
-                ижь                    >
+                      onClick={() => remove.mutate(field.id)}>
                       <Trash2 className="size-3.5 text-destructive" />
                     </Button>
                   </TableCell>
