@@ -295,6 +295,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_sync_runs: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          records_inserted: number
+          records_received: number
+          records_updated: number
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          records_inserted?: number
+          records_received?: number
+          records_updated?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          records_inserted?: number
+          records_received?: number
+          records_updated?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sap_systems: {
         Row: {
           base_url: string
@@ -467,6 +509,111 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      zfisales_detail: {
+        Row: {
+          amount: number
+          company_code: string | null
+          company_name: string | null
+          created_at: string
+          customer: string | null
+          customer_name: string | null
+          doc_date: string | null
+          doc_no: string | null
+          doc_type: string | null
+          fiscal_year: string | null
+          gl: string | null
+          gl_name: string | null
+          grp: string | null
+          id: string
+          material: string | null
+          material_desc: string | null
+          month: string | null
+          pk: string | null
+          plant: string | null
+          posting_date: string | null
+          profit_ctr: string | null
+          profit_ctr_name: string | null
+          raw: Json | null
+          record_key: string
+          reference: string | null
+          sales_order: string | null
+          sales_order_item: string | null
+          sales_type: string | null
+          segment: string | null
+          source_endpoint: string | null
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          company_code?: string | null
+          company_name?: string | null
+          created_at?: string
+          customer?: string | null
+          customer_name?: string | null
+          doc_date?: string | null
+          doc_no?: string | null
+          doc_type?: string | null
+          fiscal_year?: string | null
+          gl?: string | null
+          gl_name?: string | null
+          grp?: string | null
+          id?: string
+          material?: string | null
+          material_desc?: string | null
+          month?: string | null
+          pk?: string | null
+          plant?: string | null
+          posting_date?: string | null
+          profit_ctr?: string | null
+          profit_ctr_name?: string | null
+          raw?: Json | null
+          record_key: string
+          reference?: string | null
+          sales_order?: string | null
+          sales_order_item?: string | null
+          sales_type?: string | null
+          segment?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_code?: string | null
+          company_name?: string | null
+          created_at?: string
+          customer?: string | null
+          customer_name?: string | null
+          doc_date?: string | null
+          doc_no?: string | null
+          doc_type?: string | null
+          fiscal_year?: string | null
+          gl?: string | null
+          gl_name?: string | null
+          grp?: string | null
+          id?: string
+          material?: string | null
+          material_desc?: string | null
+          month?: string | null
+          pk?: string | null
+          plant?: string | null
+          posting_date?: string | null
+          profit_ctr?: string | null
+          profit_ctr_name?: string | null
+          raw?: Json | null
+          record_key?: string
+          reference?: string | null
+          sales_order?: string | null
+          sales_order_item?: string | null
+          sales_type?: string | null
+          segment?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

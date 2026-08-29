@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
-import { getSalesAnalytics } from "@/lib/zfisales.functions";
+import { getSalesAnalytics, getSalesSyncStatus } from "@/lib/zfisales.functions";
 import type {
   ComparisonBasis,
   SalesComparison,
@@ -409,7 +409,15 @@ function SalesAnalyticsPage() {
     enabled: allowed,
   });
 
+  const { data: syncStatus } = useQuery({
+    queryKey: ["zfisales-sync-status"],
+    queryFn: getSalesSyncStatus,
+    enabled: allowed,
+    refetchInterval: 60_000,
+  });
+
   const options = data?.options;
+
 
   useEffect(() => {
     setHiddenSeries([]);
@@ -533,6 +541,14 @@ function SalesAnalyticsPage() {
       title="SD — Sales Analytics"
       description="Sales register analysis by posting date, company code, profit centre, fiscal year, segment and customer."
     >
+      {allowed && syncStatus ? (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "Sample data (awaiting first SAP sync)"}</span>
+          {syncStatus.rowCount ? ` · ${syncStatus.rowCount.toLocaleString()} rows` : ""}
+          {syncStatus.lastSyncedAt ? ` · last synced ${new Date(syncStatus.lastSyncedAt).toLocaleString()}` : ""}
+          {syncStatus.lastStatus && syncStatus.lastStatus !== "success" ? ` · last run ${syncStatus.lastStatus}` : ""}
+        </p>
+      ) : null}
       {!rolesLoading && !allowed ? (
         <AccessDenied area="SD — Sales Analytics" />
       ) : (
