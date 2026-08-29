@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
+import { TableFieldsPanel } from "@/components/table-fields-panel";
+
 import { useLaunchpad } from "@/lib/use-launchpad";
 import {
   SCHEDULE_PRESETS,
@@ -197,7 +199,13 @@ function TableMasterPage() {
       description={mapping.description ?? "SAP API to table mapping"}
       tcode={mapping.table_name}
     >
+      <div className="mb-3">
+        <Link to="/tables" className="text-xs text-primary hover:underline">
+          ← All tables
+        </Link>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
+
         <StatCard label="Database table" value={mapping.table_name} mono />
         <StatCard label="Linked SAP API" value={mapping.api_name ?? "Not linked"} />
         <StatCard label="Sync frequency" value={scheduleLabel(mapping.schedule_expression)} />
@@ -327,7 +335,12 @@ function TableMasterPage() {
         </Panel>
       </div>
 
+      <div className="mt-4">
+        <TableFieldsPanel tableKey={tableKey} canEdit={isSuperAdmin} />
+      </div>
+
       <Panel title="Recent sync runs" className="mt-4">
+
         {runsQuery.data && runsQuery.data.length > 0 ? (
           <Table>
             <TableHeader>
