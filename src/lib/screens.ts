@@ -38,6 +38,7 @@ export const SCREENS: ScreenDef[] = [
     label: `${mod.code} — ${mod.title}`,
     group: "SAP modules" as const,
   })),
+  { key: "tables.zfisales-detail", label: "ZFISALES Detail", group: "Tables Master" },
   { key: "admin.users", label: "User Management", group: "Administration" },
   { key: "admin.roles", label: "Roles", group: "Administration" },
   { key: "admin.permissions", label: "Screen Permissions", group: "Administration" },
