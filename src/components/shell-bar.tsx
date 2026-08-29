@@ -45,70 +45,8 @@ export function ShellBar({
       </Link>
       <span className="hidden text-xs text-shell-muted sm:inline">Procurement Analytics</span>
 
-      <nav className="mx-auto hidden items-center gap-1 md:flex">
-        {navForScreens(screens).map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            activeProps={{ className: "bg-shell-foreground/15 text-shell-foreground" }}
-            className="rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground"
-          >
-            {item.label}
-          </Link>
-        ))}
-        {sdReports.length ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
-              Sales Distribution <ChevronDown className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-72">
-              <DropdownMenuLabel>{SD_MODULE_TITLE}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {sdReports.map((report) => (
-                <DropdownMenuItem key={report.screen} asChild>
-                  <Link to={report.to}>{report.title}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-        {modules.length ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
-              Modules <ChevronDown className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-64">
-              <DropdownMenuLabel>SAP business areas</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {modules.map((mod) => (
-                <DropdownMenuItem key={mod.key} asChild>
-                  <Link to="/reports/module/$module" params={{ module: mod.key }}>
-                    <span className="mr-2 w-6 text-xs font-semibold text-primary">{mod.code}</span>
-                    {mod.title}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-        {adminItems.length ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-3 py-1.5 text-[13px] text-shell-muted transition-colors hover:bg-shell-foreground/10 hover:text-shell-foreground">
-              <Settings className="size-3.5" /> Administration <ChevronDown className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-56">
-              <DropdownMenuLabel>Administration</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {adminItems.map((item) => (
-                <DropdownMenuItem key={item.to} asChild>
-                  <Link to={item.to}>{item.label}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </nav>
-      <span className="mx-auto text-sm font-medium md:hidden">{title}</span>
+      <span className="mx-auto text-sm font-medium">{title}</span>
+
 
       <div className="flex items-center gap-1">
         <button
