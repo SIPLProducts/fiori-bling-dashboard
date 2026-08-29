@@ -25,6 +25,7 @@ import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
+import { Route as ApiPublicSapSyncZfisalesRouteImport } from './routes/api/public/sap/sync/zfisales'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -115,6 +116,12 @@ const AuthenticatedReportsSdRegisterRoute =
     path: '/reports/sd/register',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicSapSyncZfisalesRoute =
+  ApiPublicSapSyncZfisalesRouteImport.update({
+    id: '/api/public/sap/sync/zfisales',
+    path: '/api/public/sap/sync/zfisales',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
+    | '/api/public/sap/sync/zfisales'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
+    | '/api/public/sap/sync/zfisales'
   id:
     | '__root__'
     | '/'
@@ -222,12 +234,14 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/finance-gst'
     | '/_authenticated/reports/sd/kpi'
     | '/_authenticated/reports/sd/register'
+    | '/api/public/sap/sync/zfisales'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicSapSyncZfisalesRoute: typeof ApiPublicSapSyncZfisalesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -344,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSdRegisterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/sap/sync/zfisales': {
+      id: '/api/public/sap/sync/zfisales'
+      path: '/api/public/sap/sync/zfisales'
+      fullPath: '/api/public/sap/sync/zfisales'
+      preLoaderRoute: typeof ApiPublicSapSyncZfisalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -388,6 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicSapSyncZfisalesRoute: ApiPublicSapSyncZfisalesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

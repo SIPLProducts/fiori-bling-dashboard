@@ -82,7 +82,7 @@ export type ZfisalesDetailRow = {
   sales_order_item: string;
   material: string;
   material_desc: string;
-  raw: Raw;
+  raw: unknown;
   source_endpoint: string;
   synced_at: string;
 };
