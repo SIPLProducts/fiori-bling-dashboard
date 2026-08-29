@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { accessForUser } from "./access";
 import { canAccessSdReport } from "./sd-reports";
 import { buildSdKpi, type SdKpiFilters, type SdKpiResult } from "./sd-kpi";
+import { fetchSyncedSalesRows } from "./zfisales-synced";
+import type { SalesRow } from "./zfisales-data";
 
 const EMPTY: SdKpiFilters = {
   postingFrom: "",
@@ -19,5 +21,12 @@ export async function getSdSalesKpi(input?: {
   const { screens } = await accessForUser(auth.user.id);
   if (!canAccessSdReport("kpi", screens)) throw new Error("FORBIDDEN_SCREEN");
 
-  return buildSdKpi({ ...EMPTY, ...(input?.data ?? {}) });
+  let synced: SalesRow[] = [];
+  try {
+    synced = await fetchSyncedSalesRows();
+  } catch {
+    synced = [];
+  }
+
+  return buildSdKpi({ ...EMPTY, ...(input?.data ?? {}) }, synced);
 }
