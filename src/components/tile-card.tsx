@@ -145,10 +145,25 @@ export function TileCard({
       </Link>
     );
   }
+  if (to.startsWith("/tables/")) {
+    const key = to.split("/").pop()!;
+    return (
+      <Link
+        to="/tables/$tableKey"
+        params={{ tableKey: key }}
+        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        {body}
+      </Link>
+    );
+  }
   if (
     to === "/reports/procurement" ||
     to === "/reports/suppliers" ||
     to === "/reports/sales-analytics" ||
+    to === "/reports/sd/kpi" ||
+    to === "/reports/sd/finance-gst" ||
+    to === "/reports/sd/register" ||
     to === "/admin/users"
   ) {
 
@@ -158,6 +173,7 @@ export function TileCard({
       </Link>
     );
   }
+
   return <div>{body}</div>;
 
 }
