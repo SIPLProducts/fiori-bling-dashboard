@@ -91,6 +91,7 @@ type KpiCardModel = {
   icon: typeof IndianRupee;
   tone: KpiTone;
   share?: number | undefined;
+  splits?: { label: string; value: string; pct: number }[];
 };
 
 const TONE: Record<KpiTone, { surface: string; bar: string; chip: string; value: string }> = {
@@ -166,6 +167,22 @@ function KpiCard({ card }: { card: KpiCardModel }) {
         {card.value}
       </p>
       <p className="mt-1 pl-2 text-xs text-muted-foreground">{card.hint}</p>
+      {card.splits?.length ? (
+        <div className="mt-3 ml-2 space-y-1.5 border-t border-border/70 pt-2.5">
+          {card.splits.map((split) => (
+            <div key={split.label} className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className={`size-1.5 rounded-full ${tone.bar}`} aria-hidden />
+                {split.label}
+              </span>
+              <span className="tabular font-medium text-card-foreground">
+                {split.value}
+                <span className="ml-1 text-[10px] font-normal text-muted-foreground">({split.pct}%)</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {typeof card.share === "number" ? (
         <div className="mt-3 ml-2 h-1.5 overflow-hidden rounded-full bg-muted">
           <span
@@ -288,6 +305,11 @@ function SalesKpiPage() {
           hint: `${inr(data.totalRows)} line items`,
           icon: IndianRupee,
           tone: "primary",
+          splits: salesTypeMix.map((s) => ({
+            label: s.name,
+            value: `₹ ${compact(s.magnitude)}`,
+            pct: s.share,
+          })),
         },
         {
           label: "Documents",
