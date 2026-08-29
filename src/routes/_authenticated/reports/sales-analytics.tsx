@@ -59,7 +59,14 @@ export const Route = createFileRoute("/_authenticated/reports/sales-analytics")(
   notFoundComponent: () => <p className="p-8 text-sm text-muted-foreground">Report not found.</p>,
 });
 
+type DatePreset = "last30" | "month" | "quarter" | "fy";
+
+function isoDay(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 const EMPTY: SalesFilters = {
+
   fiscalYear: "",
   companyCodes: [],
   profitCentres: [],
