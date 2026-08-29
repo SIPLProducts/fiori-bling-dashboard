@@ -94,6 +94,30 @@ function TableMasterPage() {
     sync_enabled: true,
     description: null,
   });
+  const [errors, setErrors] = useState<{
+    api_name?: string | undefined;
+    table_name?: string | undefined;
+  }>({});
+
+  // SAP API names look like ZFISALES_MIS, ZVF05/FIN_N — start with a letter,
+  // then letters, digits, underscore, hyphen, slash or dot.
+  function validateApiName(value: string | null): string | undefined {
+    const name = value?.trim() ?? "";
+    if (!name) return "SAP API is required — map this table to an SAP API before saving";
+    if (name.length < 3) return "SAP API must be at least 3 characters";
+    if (name.length > 100) return "SAP API must be less than 100 characters";
+    if (!/^[A-Za-z][A-Za-z0-9_\-/.]*$/.test(name))
+      return "SAP API must start with a letter and contain only letters, digits, _ - / .";
+    return undefined;
+  }
+
+  function validateTableName(value: string): string | undefined {
+    const name = value.trim();
+    if (!name) return "Table name is required";
+    if (!/^[a-z][a-z0-9_]*$/.test(name))
+      return "Table name must be lowercase letters, digits and underscores (e.g. zfisales_detail)";
+    return undefined;
+  }
 
   useEffect(() => {
     if (!mapping) return;
@@ -109,7 +133,13 @@ function TableMasterPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!mapping) throw new Error("No mapping");
-      if (!form.table_name.trim()) throw new Error("Table name is required");
+      const nextErrors = {
+        api_name: validateApiName(form.api_name),
+        table_name: validateTableName(form.table_name),
+      };
+      setErrors(nextErrors);
+      if (nextErrors.api_name || nextErrors.table_name)
+        throw new Error(nextErrors.api_name ?? nextErrors.table_name!);
       await saveTableMapping(mapping.id, {
         ...form,
         table_name: form.table_name.trim(),
@@ -182,11 +212,20 @@ function TableMasterPage() {
               <Input
                 value={form.api_name ?? ""}
                 placeholder="Enter SAP API name"
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, api_name: event.target.value || null }))
-                }
+                onChange={(event) => {
+                  setForm((f) => ({ ...f, api_name: event.target.value || null }));
+                  setErrors((e) => ({ ...e, api_name: undefined }));
+                }}
                 disabled={!isSuperAdmin}
+                className={errors.api_name ? "border-destructive" : undefined}
               />
+              {errors.api_name ? (
+                <p className="text-[11px] text-destructive">{errors.api_name}</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  SAP API that feeds this table (e.g. ZFISALES_MIS).
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -194,13 +233,20 @@ function TableMasterPage() {
               <Input
                 value={form.table_name}
                 placeholder="Enter Table name"
-                onChange={(event) => setForm((f) => ({ ...f, table_name: event.target.value }))}
                 disabled={!isSuperAdmin}
-                className="font-mono"
+                className={errors.table_name ? "border-destructive font-mono" : "font-mono"}
+                onChange={(event) => {
+                  setForm((f) => ({ ...f, table_name: event.target.value }));
+                  setErrors((e) => ({ ...e, table_name: undefined }));
+                }}
               />
-              <p className="text-[11px] text-muted-foreground">
-                Database table where this API's data is stored.
-              </p>
+              {errors.table_name ? (
+                <p className="text-[11px] text-destructive">{errors.table_name}</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Database table where this API's data is stored.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
