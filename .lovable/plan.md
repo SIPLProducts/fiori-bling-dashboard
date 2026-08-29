@@ -1,55 +1,33 @@
-# Fix SAP connectivity and implement Sales KPI synchronization
+# Improve Sales Report KPI — cards and charts
 
-## Confirmed current state
+Visual and analytical upgrade of the Sales report KPI screen (ZFISALES_MIS). Filters, access control and data source stay exactly as they are.
 
-- The portal is correctly configured to call `https://donation-pantyhose-starter.ngrok-free.dev`.
-- The middleware is reachable through ngrok, but it rejects the current portal origin `https://27aeaa58-eb6a-4965-897d-c1097d9ba383.lovableproject.com` before making an SAP request.
-- `Sales_Reports_KPI` is enabled with `*/10 * * * *`, but this value is only stored. No scheduler currently executes it.
-- No `sales_reports_kpi` or `sap_sync_runs` tables currently exist, so a successful Test cannot persist report rows.
+## KPI cards
 
-## Implementation
+Replace the four flat cards with a richer, Fiori-style KPI strip:
 
-1. **Restore portal → middleware → SAP connectivity**
-   - Update the middleware environment guidance and startup diagnostics to require the exact `lovableproject.com` preview origin, published portal origin, custom domain, and localhost as separate `ALLOWED_ORIGINS` values.
-   - Keep `APP_BASE_URL` as the ngrok URL and `PORTAL_BACKEND_URL` as the Lovable Cloud backend URL.
-   - Add a startup self-check that clearly reports whether the current origin allow-list and portal token verification are ready.
-   - Preserve trace-based logs so a `-> SAP POST ...` line definitively proves SAP was contacted.
+- Each card gets an icon badge, large value, secondary hint, and a period-over-period delta (current filtered period vs the immediately preceding equal-length period) shown as a green/red pill with an up/down arrow.
+- Add a small inline sparkline of the monthly trend inside the first card so the headline number carries context.
+- Cards become six, in a responsive grid:
+  1. Total sales value (with sparkline + delta)
+  2. Documents (with delta)
+  3. Customers
+  4. Average per document
+  5. Top profit center (with share % progress bar)
+  6. Top plant (with share % progress bar)
+- Full precise amount shown on hover (tooltip) since values are abbreviated to L/Cr.
+- Cards get a subtle left accent bar and hover lift consistent with the existing tile look.
 
-2. **Create secure synchronization storage**
-   - Create `sales_reports_kpi` for SAP FI/SD report rows, including the business key, principal searchable fields, complete raw SAP row, source endpoint, and `synced_at` timestamp.
-   - Use `WERKS + GJAHR + BELNR + POSNR + HKONT` as the deterministic `record_key`.
-   - Create `sap_sync_runs` to record start/end time, status, records received, inserted, updated, unchanged, and error details.
-   - Apply authenticated access rules for report users and full service access for the trusted sync process.
+## Charts
 
-3. **Build the real sync pipeline**
-   - Add a secured server sync handler that loads the active endpoint/system configuration, calls the ngrok middleware, validates and parses the configured response path, and upserts SAP rows by `record_key`.
-   - Existing records will be updated, new records inserted, and every successfully processed row will receive the latest `synced_at` value.
-   - Record each run in `sap_sync_runs` and update endpoint fields such as last run status/time and last successful sync time.
-   - Protect scheduled execution with a dedicated generated secret; browser user tokens remain required for manual admin tests.
+1. **Sales trend by month** — combined chart: revenue area plus a document-count line on a right-hand axis, so volume and value read together. Adds a dashed average-revenue reference line and a legend.
+2. **Sales by plant** — horizontal bars stay, but bars are ranked and colour-graded by contribution, with value plus share-of-total in the label and a top-N control.
+3. **Sales by profit center** — becomes a Pareto view: bars sorted descending with a cumulative-percentage line (80% marker), which is the standard reading for contribution analysis.
+4. **New: Sales mix by sales type** — donut chart with centre total and legend showing amount and share, giving a mix dimension the screen currently lacks.
+5. Shared chart polish: consistent tooltip card, unified currency formatting, empty-state message when a filter combination returns no rows, and skeletons matched to chart height.
 
-4. **Activate the ten-minute schedule**
-   - Connect the stored `*/10 * * * *` schedule to the secured sync handler.
-   - Ensure scheduled calls work without an interactive browser session while still rejecting unauthorized callers.
-   - Keep the middleware/ngrok URL configurable so a future permanent middleware domain can replace the temporary ngrok URL.
+## Technical notes
 
-5. **Make Test versus Sync explicit in the UI**
-   - Keep **Test connection** non-persistent and show SAP status, trace ID, response count, and the stage where a failure occurred.
-   - Add **Sync now** to call SAP and persist rows immediately.
-   - Display last sync time plus received/inserted/updated/failed counts from the latest run.
-   - Show recent middleware trace lines and sync-run history together for diagnosis.
-
-6. **Verify end to end**
-   - Confirm middleware health through ngrok from the actual portal origin.
-   - Confirm a test produces `-> SAP` and a SAP HTTP response log without inserting rows.
-   - Run **Sync now** twice: first run inserts rows; second run updates/matches the same business keys without duplicates.
-   - Confirm the ten-minute scheduled run updates timestamps and creates a run-history entry.
-
-## Required server configuration
-
-```text
-APP_BASE_URL=https://donation-pantyhose-starter.ngrok-free.dev
-PORTAL_BACKEND_URL=<Lovable Cloud backend URL>
-ALLOWED_ORIGINS=https://27aeaa58-eb6a-4965-897d-c1097d9ba383.lovableproject.com,https://fiori-bling-dashboard.lovable.app,https://mis.siplproducts.com,http://localhost:8080
-```
-
-Restart `node .\server.mjs` after changing `.env`. The ngrok tunnel and middleware process must remain running for scheduled synchronization; for production, replace the temporary ngrok URL with a stable HTTPS middleware URL.
+- `src/lib/sd-kpi.ts`: extend `SdKpiResult` with `previous` period totals (revenue, documents) derived from the same filters shifted back one period length, `bySalesType` rollup, `topPlant` + share, and cumulative share values on `byProfitCentre`. Pure functions only; no schema or server changes.
+- `src/routes/_authenticated/reports/sd/kpi.tsx`: new `KpiCard` local component, `ComposedChart`/`Line`/`Pie` imports from recharts, reference line, donut panel. Export buttons keep working on the same row arrays.
+- All colours come from existing design tokens (`--color-primary`, `--color-success`, chart tokens); no hardcoded hex.
