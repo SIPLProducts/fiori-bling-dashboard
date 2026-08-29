@@ -163,18 +163,68 @@ function SalesKpiPage() {
     });
   }
 
-  const kpiCards = data
+  const salesTypeMix = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of data?.rows ?? []) {
+      map.set(row.salesType || "Unspecified", (map.get(row.salesType || "Unspecified") ?? 0) + row.amount);
+    }
+    return [...map.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
+  const topPlant = data?.byPlant?.[0];
+  const totalRevenue = data?.kpis.totalRevenue ?? 0;
+
+  const kpiCards: KpiCardModel[] = data
     ? [
-        { label: "Total sales value", value: `₹ ${compact(data.kpis.totalRevenue)}`, hint: `${inr(data.totalRows)} line items` },
-        { label: "Documents", value: inr(data.kpis.documents), hint: `${inr(data.kpis.customers)} customers` },
-        { label: "Average per document", value: `₹ ${compact(data.kpis.avgTicket)}`, hint: "Value / document" },
+        {
+          label: "Total sales value",
+          value: `₹ ${compact(data.kpis.totalRevenue)}`,
+          hint: `${inr(data.totalRows)} line items`,
+          icon: IndianRupee,
+          tone: "primary",
+        },
+        {
+          label: "Documents",
+          value: inr(data.kpis.documents),
+          hint: `${inr(data.kpis.customers)} customers`,
+          icon: FileText,
+          tone: "info",
+        },
+        {
+          label: "Average per document",
+          value: `₹ ${compact(data.kpis.avgTicket)}`,
+          hint: "Value / document",
+          icon: Receipt,
+          tone: "success",
+        },
+        {
+          label: "Customers billed",
+          value: inr(data.kpis.customers),
+          hint: `${data.kpis.documents ? (data.kpis.documents / Math.max(data.kpis.customers, 1)).toFixed(1) : "0"} docs per customer`,
+          icon: Users,
+          tone: "violet",
+        },
         {
           label: "Top profit center",
           value: data.kpis.topProfitCentre,
           hint: `${data.kpis.topProfitCentreShare}% of selection`,
+          icon: Target,
+          tone: "warning",
+          share: data.kpis.topProfitCentreShare,
+        },
+        {
+          label: "Top plant",
+          value: topPlant?.name ?? "—",
+          hint: topPlant ? `₹ ${compact(topPlant.value)} billed` : "No data",
+          icon: Building2,
+          tone: "teal",
+          share: topPlant && totalRevenue ? Math.round((topPlant.value / totalRevenue) * 100) : undefined,
         },
       ]
     : [];
+
 
   return (
     <ReportShell title={DEF.title} tcode={DEF.tcode} description={DEF.description}>
