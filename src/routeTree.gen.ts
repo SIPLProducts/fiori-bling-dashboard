@@ -21,6 +21,7 @@ import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_a
 import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
+import { Route as AuthenticatedTablesIndexRouteImport } from './routes/_authenticated/tables/index'
 import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authenticated/tables/$tableKey'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
@@ -93,6 +94,12 @@ const AuthenticatedReportsSuppliersRoute =
     path: '/reports/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTablesIndexRoute =
+  AuthenticatedTablesIndexRouteImport.update({
+    id: '/tables/',
+    path: '/tables/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTablesTableKeyRoute =
   AuthenticatedTablesTableKeyRouteImport.update({
     id: '/tables/$tableKey',
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
+  '/tables/': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
+  '/tables': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
@@ -183,6 +192,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/_authenticated/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
+  '/_authenticated/tables/': typeof AuthenticatedTablesIndexRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/tables/$tableKey'
+    | '/tables/'
     | '/reports/module/$module'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/reports/suppliers'
     | '/tables/$tableKey'
+    | '/tables'
     | '/reports/module/$module'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sales-analytics'
     | '/_authenticated/reports/suppliers'
     | '/_authenticated/tables/$tableKey'
+    | '/_authenticated/tables/'
     | '/_authenticated/reports/module/$module'
     | '/_authenticated/reports/sd/finance-gst'
     | '/_authenticated/reports/sd/kpi'
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tables/': {
+      id: '/_authenticated/tables/'
+      path: '/tables'
+      fullPath: '/tables/'
+      preLoaderRoute: typeof AuthenticatedTablesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tables/$tableKey': {
       id: '/_authenticated/tables/$tableKey'
       path: '/tables/$tableKey'
@@ -399,6 +419,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
   AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
   AuthenticatedTablesTableKeyRoute: typeof AuthenticatedTablesTableKeyRoute
+  AuthenticatedTablesIndexRoute: typeof AuthenticatedTablesIndexRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
   AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
   AuthenticatedReportsSdKpiRoute: typeof AuthenticatedReportsSdKpiRoute
@@ -418,6 +439,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsSalesAnalyticsRoute,
   AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
   AuthenticatedTablesTableKeyRoute: AuthenticatedTablesTableKeyRoute,
+  AuthenticatedTablesIndexRoute: AuthenticatedTablesIndexRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
   AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
   AuthenticatedReportsSdKpiRoute: AuthenticatedReportsSdKpiRoute,
