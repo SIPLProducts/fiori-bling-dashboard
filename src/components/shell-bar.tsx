@@ -82,6 +82,20 @@ export function ShellBar({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="truncate">{displayName ?? "Signed in"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {adminItems.length ? (
+              <>
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  Administration
+                </DropdownMenuLabel>
+                {adminItems.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
+
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 size-4" /> Sign out
             </DropdownMenuItem>
