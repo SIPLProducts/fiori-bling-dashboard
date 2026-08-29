@@ -266,10 +266,16 @@ function SalesKpiPage() {
     for (const row of data?.rows ?? []) {
       map.set(row.salesType || "Unspecified", (map.get(row.salesType || "Unspecified") ?? 0) + row.amount);
     }
-    return [...map.entries()]
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    const entries = [...map.entries()]
+      .map(([name, value]) => ({ name, value, magnitude: Math.abs(value) }))
+      .sort((a, b) => b.magnitude - a.magnitude);
+    const total = entries.reduce((sum, e) => sum + e.magnitude, 0);
+    return entries.map((e) => ({
+      ...e,
+      share: total ? Math.round((e.magnitude / total) * 100) : 0,
+    }));
   }, [data]);
+
 
   const topPlant = data?.byPlant?.[0];
   const totalRevenue = data?.kpis.totalRevenue ?? 0;
