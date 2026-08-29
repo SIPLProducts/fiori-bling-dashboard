@@ -534,15 +534,64 @@ function SalesAnalyticsPage() {
       ) : (
         <div className="space-y-4">
           {/* Selection screen */}
-          <section className="sticky top-14 z-30 rounded-md border border-border bg-card p-4 shadow-tile">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-medium text-card-foreground">Selection criteria</h2>
-              <span className="text-xs text-muted-foreground">
-                {activeCount ? `${activeCount} filter${activeCount > 1 ? "s" : ""} applied` : "No filters applied"}
-              </span>
+          <section className="rounded-md border border-border bg-card p-4 shadow-tile">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((v) => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-card-foreground"
+                aria-expanded={filtersOpen}
+              >
+                <SlidersHorizontal className="size-4 text-primary" />
+                Selection criteria
+                <ChevronDown className={`size-4 text-muted-foreground transition-transform ${filtersOpen ? "" : "-rotate-90"}`} />
+              </button>
+              {activeCount ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  {activeCount} active
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">No filters applied</span>
+              )}
+
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {([
+                  ["last30", "Last 30 days"],
+                  ["month", "This month"],
+                  ["quarter", "This quarter"],
+                  ["fy", "This FY"],
+                ] as Array<[DatePreset, string]>).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applyPreset(key)}
+                    className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
+            {activeChips.length ? (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {activeChips.map((chip) => (
+                  <span
+                    key={chip.key}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {chip.label}
+                    <button type="button" onClick={chip.clear} aria-label={`Remove ${chip.label}`}>
+                      <X className="size-3 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {filtersOpen ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-4">
+
               <Field label="Fiscal year">
                 <select
                   value={draft.fiscalYear}
