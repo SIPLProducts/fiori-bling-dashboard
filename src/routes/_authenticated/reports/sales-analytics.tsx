@@ -699,29 +699,33 @@ function SalesAnalyticsPage() {
               </Field>
 
             </div>
+            ) : null}
 
-            {dateError ? (
+            {filtersOpen && dateError ? (
               <p className="mt-3 text-xs text-destructive" role="alert">
                 {dateError}
               </p>
             ) : null}
 
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
-                {isFetching ? "Executing…" : "Execute"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setDraft(EMPTY);
-                  setApplied(EMPTY);
-                }}
-              >
-                Reset
-              </Button>
-            </div>
+            {filtersOpen ? (
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" onClick={() => setApplied(draft)} disabled={isFetching || Boolean(dateError)}>
+                  {isFetching ? "Executing…" : "Execute"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(EMPTY);
+                    setApplied(EMPTY);
+                  }}
+                >
+                  Reset
+                </Button>
+              </div>
+            ) : null}
           </section>
+
 
           {isLoading || !data ? (
             <div className="grid gap-4 md:grid-cols-4">
