@@ -388,6 +388,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_table_fields: {
+        Row: {
+          created_at: string
+          data_type: string
+          field_name: string
+          id: string
+          is_key: boolean
+          is_required: boolean
+          sap_field: string
+          sort_order: number
+          table_key: string
+          ui_label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_type?: string
+          field_name: string
+          id?: string
+          is_key?: boolean
+          is_required?: boolean
+          sap_field: string
+          sort_order?: number
+          table_key: string
+          ui_label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_type?: string
+          field_name?: string
+          id?: string
+          is_key?: boolean
+          is_required?: boolean
+          sap_field?: string
+          sort_order?: number
+          table_key?: string
+          ui_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sap_table_mappings: {
         Row: {
           api_name: string | null
