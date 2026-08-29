@@ -1,14 +1,31 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarRange, Factory, RotateCcw, Search, Target, X } from "lucide-react";
+import {
+  Building2,
+  CalendarRange,
+  Factory,
+  FileText,
+  IndianRupee,
+  Receipt,
+  RotateCcw,
+  Search,
+  Target,
+  Users,
+  X,
+} from "lucide-react";
 import {
   Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  ComposedChart,
   LabelList,
+  Line,
+  Pie,
+  PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -24,6 +41,7 @@ import { getSdSalesKpi } from "@/lib/sd-kpi.functions";
 import type { SdKpiFilters } from "@/lib/sd-kpi";
 import { SD_REPORTS, canAccessSdReport } from "@/lib/sd-reports";
 import { useLaunchpad } from "@/lib/use-launchpad";
+
 
 const DEF = SD_REPORTS.find((r) => r.key === "kpi")!;
 
