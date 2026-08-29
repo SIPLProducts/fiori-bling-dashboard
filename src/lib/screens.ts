@@ -11,6 +11,7 @@ export type ScreenGroup =
   | "Reports"
   | "Sales Distribution Reports"
   | "SAP modules"
+  | "Tables Master"
   | "Administration";
 
 export type ScreenDef = {
