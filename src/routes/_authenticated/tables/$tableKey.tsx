@@ -130,7 +130,13 @@ function TableMasterPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!mapping) throw new Error("No mapping");
-      if (!form.table_name.trim()) throw new Error("Table name is required");
+      const nextErrors = {
+        api_name: validateApiName(form.api_name),
+        table_name: validateTableName(form.table_name),
+      };
+      setErrors(nextErrors);
+      if (nextErrors.api_name || nextErrors.table_name)
+        throw new Error(nextErrors.api_name ?? nextErrors.table_name!);
       await saveTableMapping(mapping.id, {
         ...form,
         table_name: form.table_name.trim(),
