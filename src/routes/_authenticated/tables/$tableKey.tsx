@@ -233,7 +233,6 @@ function TableMasterPage() {
               <Input
                 value={form.table_name}
                 placeholder="Enter Table name"
-                onChange={(event) => setForm((f) => ({ ...f, table_name: event.target.value }))}
                 disabled={!isSuperAdmin}
                 className={errors.table_name ? "border-destructive font-mono" : "font-mono"}
                 onChange={(event) => {
