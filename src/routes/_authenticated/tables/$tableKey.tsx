@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
+import { TableFieldsPanel } from "@/components/table-fields-panel";
+
 import { useLaunchpad } from "@/lib/use-launchpad";
 import {
   SCHEDULE_PRESETS,
