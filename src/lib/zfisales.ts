@@ -29,8 +29,8 @@ function rollup(rows: SalesRow[], pick: (r: SalesRow) => string): NamedValue[] {
     .sort((a, b) => b.value - a.value);
 }
 
-export function buildSalesAnalytics(filters: SalesFilters): SalesAnalytics {
-  const all = SALES_ROWS;
+export function buildSalesAnalytics(filters: SalesFilters, source?: SalesRow[]): SalesAnalytics {
+  const all = source && source.length ? source : SALES_ROWS;
   const term = filters.search.trim().toLowerCase();
 
   const rows = all.filter((r) => {
