@@ -1,47 +1,86 @@
-# Fix token verification failing with "fetch failed"
+# Simplify SAP API testing and fetch the response
 
-## What the two errors mean
+## Confirmed issue
 
-1. Earlier `503 / PORTAL_BACKEND_URL not configured` — the middleware reads the variable name `PORTAL_BACKEND_URL`. Your `.env` calls it `SUPABASE_URL`, so it was unset.
-2. Now `401 / "stage": "token-rejected", "message": "fetch failed"` — the middleware tried to download the portal's public signing keys (JWKS) over HTTPS and the network call itself failed. I verified from here that the keys endpoint is live and returns a valid ES256 key, so the endpoint is fine: the machine running the middleware cannot make that outbound HTTPS call (proxy, firewall or DNS on the SAP network).
+The current portal calls the middleware directly from the browser and sends the logged-in user's access token. The middleware then tries to validate that token through public signing keys. That verification is failing before SAP is called.
 
-In both cases SAP was never contacted, which is why Postman still works — Postman talks to SAP directly and never passes through this check.
+The other project's simpler pattern is suitable here, with one important security requirement: the shared secret must be sent by the portal server, not exposed in browser code.
+
+## Simple request flow
+
+```text
+Browser (signed-in admin)
+  -> Portal server function
+  -> Middleware with x-shared-secret
+  -> SAP with Basic authentication
+  -> Middleware response
+  -> Portal server function
+  -> Response shown in SAP API Settings
+```
+
+No edge function is needed. The app will use its existing TanStack server-function backend.
 
 ## Changes
 
-### 1. Accept the variable name you already used
-`SUPABASE_URL` (and `PORTAL_URL`) will be accepted as aliases for `PORTAL_BACKEND_URL`, so a naming mismatch can never silently disable verification again.
+### 1. Replace portal-token/JWKS verification
 
-### 2. Fetch the signing keys once at startup, then cache
-- Download and cache the keys when the service boots, with retry and a long cache lifetime, instead of depending on a live fetch during every test click.
-- Startup log prints `portal token verify : keys loaded (n)` or a loud `UNREACHABLE — <reason>` line.
-- Support optional `HTTPS_PROXY` / `HTTP_PROXY` env values for corporate proxies.
+- Remove `PORTAL_BACKEND_URL`, JWKS and bearer-token verification from the middleware.
+- Require `MIDDLEWARE_SHARED_SECRET` on `/sap/test`, `/sap/call`, `/diag/sap` and `/logs/recent`.
+- Compare `x-shared-secret` safely and return a clear 401 when it does not match.
 
-### 3. Distinguish "cannot reach key server" from "bad token"
-A network failure will no longer be reported as `Invalid or expired token`. New stage `token-verify-unreachable` with a message naming the URL it tried and the network error code, plus HTTP 503.
+### 2. Keep the shared secret off the browser
 
-### 4. New diagnostic: `GET /diag/portal`
-Reports, from the middleware machine: DNS resolution, TLS connect time, HTTP status and number of keys retrieved from the portal key endpoint. Exposed in the portal as a **Check token verification** button next to Ping SAP host, so this class of failure is one click to identify.
+- Add the same `MIDDLEWARE_SHARED_SECRET` as a protected Lovable Cloud secret.
+- Add authenticated, Sharvi-Admin-only server functions for middleware health, SAP test, SAP call, ping and logs.
+- Those server functions call the ngrok middleware URL and attach `x-shared-secret` server-side.
+- The browser will never receive or store the secret.
 
-### 5. Offline fallback for isolated servers
-If the middleware host genuinely cannot reach the internet, add an optional `PORTAL_JWKS_JSON` setting: paste the public key document into `.env` and verification runs fully offline. The portal's Middleware Configuration tab will show the exact value to paste, with a copy button. Public keys only — no secret is involved.
+### 3. Make Test connection return the actual SAP result
 
-### 6. Env checklist in the portal
-Middleware Configuration gains a card that prints the exact `.env` values this portal needs (`PORTAL_BACKEND_URL`, `ALLOWED_ORIGINS`, `APP_BASE_URL`) with copy buttons, plus a pre-flight banner driven by `/health` that says which of them the running middleware is missing.
+- **Test connection** sends the configured HTTP method, SAP path, query parameters, headers and JSON body to `/sap/call`.
+- Middleware adds SAP Basic authentication and `sap-client`, calls SAP, and returns status, duration and response body.
+- Show the response in the existing Response tab and show a clear result:
+  - `Middleware reached — SAP returned 200`
+  - `Middleware reached — SAP returned HTTP ...`
+  - `Middleware reached — SAP connection failed ...`
+- Testing remains non-persistent; it proves connectivity and displays data but does not write report rows.
 
-## How you will confirm SAP was really called
+### 4. Keep decisive logs
 
-1. Startup shows `portal token verify : keys loaded`.
-2. Click **Test connection**; the middleware log must contain a line starting `-> SAP POST http://10.10.4.18:8000/fisales_detail/report...` — only that line proves SAP was contacted.
-3. `<- 200 in NNNms` plus the sample body in the Response tab confirms the round trip.
-4. Stage meanings: `origin-blocked`, `token-rejected`, `token-verify-unreachable` = SAP not contacted; `sap-unreachable` = network to SAP; `sap-http-error` = SAP answered an error; `ok` = success.
+Middleware console/file logs will show:
 
-## Technical notes
+```text
+[trace] browser/app -> middleware accepted
+[trace] -> SAP POST http://10.10.4.18:8000/fisales_detail/report?sap-client=234
+[trace] <- SAP 200, duration, response size and safe preview
+```
 
-- `middleware/server.mjs`: env aliases, startup JWKS load with retry + cache, proxy support, `PORTAL_JWKS_JSON` fallback, new stage, `/diag/portal`, `/health` config summary.
-- `src/routes/_authenticated/admin/sap-api.tsx`: env checklist card, config banner, Check token verification button, stage-aware toasts.
-- `middleware/README.md` and `.env.example`: document the aliases, the offline fallback and the proxy variables.
+The `-> SAP` line proves SAP was called. The `<- SAP 200` line proves SAP returned data.
 
-## Security note
+### 5. Use a minimal middleware `.env`
 
-The SAP password and the service token in your message are now exposed in chat — rotate both and keep the replacements only in the middleware server's uncommitted `.env`.
+```text
+PORT=3008
+APP_BASE_URL=https://donation-pantyhose-starter.ngrok-free.dev
+MIDDLEWARE_SHARED_SECRET=<strong generated secret>
+SAP_TIMEOUT_MS=30000
+SAP_DEV_BASE_URL=http://10.10.4.18:8000
+SAP_DEV_CLIENT=234
+SAP_DEV_USER=<SAP user>
+SAP_DEV_PASSWORD=<SAP password>
+```
+
+`PORTAL_BACKEND_URL`, `SUPABASE_URL`, `SERVICE_TOKEN` and browser CORS origins are not needed for this server-to-server test flow.
+
+## Validation
+
+1. Start middleware and confirm secret/SAP settings report as configured without printing their values.
+2. Test middleware health from the portal.
+3. Click **Test connection** for Sales Reports MIS.
+4. Confirm middleware logs contain `-> SAP` followed by `<- SAP 200`.
+5. Confirm the SAP JSON appears in the Response tab.
+6. Confirm wrong/missing shared secret returns 401 and never calls SAP.
+
+## Security action
+
+Rotate the SAP password and service token pasted in chat. A new strong middleware shared secret will be stored only in Lovable Cloud and the middleware server's uncommitted `.env`—never use `123456`.
