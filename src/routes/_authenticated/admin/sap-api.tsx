@@ -67,13 +67,13 @@ import {
 } from "@/components/ui/select";
 
 /**
- * One toast that says which leg of browser -> middleware -> SAP was reached,
+ * One toast that says which leg of portal -> middleware -> SAP was reached,
  * so a failure can never be confused with "SAP rejected us".
  */
 function reportTest(result: TestResult) {
   const trace = result.traceId ? ` · trace ${result.traceId}` : "";
   if (result.ok) {
-    toast.success(`SAP responded in ${result.durationMs} ms${trace}`);
+    toast.success(`Middleware reached — SAP returned ${result.sapStatus ?? 200} in ${result.durationMs} ms${trace}`);
     return;
   }
   if (result.sapContacted) {
@@ -1223,7 +1223,7 @@ function MiddlewareTab() {
           </h3>
           <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
             These settings are shared by every SAP API integration whose auth type is Basic or Proxy /
-            Middleware. The service verifies the signed-in user's portal token before calling SAP.
+             Middleware. The portal server authenticates to this service with a protected shared secret before calling SAP.
           </p>
         </div>
         <Button

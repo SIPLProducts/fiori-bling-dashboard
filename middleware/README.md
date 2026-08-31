@@ -14,10 +14,8 @@ This folder lives at the project root (`middleware/`), next to `src/`.
 | POST   | `/sap/test`  | Resolves a system + path and performs a GET against SAP; returns status and timing. |
 | POST   | `/sap/call`  | Generic proxy — method, path, query, headers, body. Adds basic auth and `sap-client`. |
 
-Every request must send the signed-in portal user's access token as
-`Authorization: Bearer <token>`. The token is verified against the portal
-backend's public signing keys (JWKS); unverified requests get 401. CORS is
-restricted to `ALLOWED_ORIGINS`.
+Every request must send `x-shared-secret`. The portal attaches it from its
+server runtime, so the value is never exposed in browser code.
 
 ## Configuration
 
@@ -25,15 +23,11 @@ restricted to `ALLOWED_ORIGINS`.
 | -------- | ------- |
 | `PORT` | Local listening port (default 3008). |
 | `APP_BASE_URL` | Public URL the portal uses to reach this service (ngrok / LAN / nginx path). Must match the portal's **Node.js middleware URL**. |
-| `PORTAL_BACKEND_URL` | Portal backend URL used only to retrieve public token-signing keys (JWKS). No private JWT secret is required. |
-| `ALLOWED_ORIGINS` | Comma-separated portal origins allowed to call this service. **Empty = every browser call fails with "Failed to fetch".** |
+| `MIDDLEWARE_SHARED_SECRET` | Strong secret that exactly matches the protected Lovable Cloud secret. |
 | `SAP_*_BASE_URL` / `_CLIENT` / `_USER` / `_PASSWORD` | Per-environment SAP connection and technical user. |
 
-The three URL settings have different purposes:
-
-- `APP_BASE_URL`: the public ngrok/server URL of this middleware.
-- `ALLOWED_ORIGINS`: the browser origins where the portal is loaded.
-- `PORTAL_BACKEND_URL`: the portal backend URL used to verify signed-in users.
+`APP_BASE_URL` is the public ngrok/server URL of this middleware. Browser CORS
+and portal signing-key settings are not needed because calls are server-to-server.
 
 ## Run locally
 
@@ -52,8 +46,8 @@ node .\server.mjs
 ```
 
 Both commands load `.env` from this folder. On startup the service prints
-whether the `.env` was found, the public base URL, whether JWKS verification is
-configured, the allowed origins and which SAP systems have a password — values
+whether the `.env` was found, the public base URL, whether shared-secret auth is
+configured and which SAP systems have a password — values
 themselves are never printed.
 
 ## Run with Docker
@@ -89,10 +83,8 @@ location /sap-middleware/ {
 
 | Portal message | Cause |
 | -------------- | ----- |
-| `Failed to fetch` | The service is unreachable at the configured URL, or the portal origin is not in `ALLOWED_ORIGINS`. |
-| `HTTP 403 Origin not allowed` | Add the portal origin to `ALLOWED_ORIGINS` and restart. |
-| `HTTP 401 Invalid or expired token` | The bearer token is expired, malformed, or was issued by a different portal backend. |
-| `HTTP 503 Portal token verification not configured` | Set `PORTAL_BACKEND_URL` in `.env` and restart. SAP was not contacted. |
+| `HTTP 401 Invalid or missing x-shared-secret` | The Lovable Cloud and middleware secret values do not match. |
+| Portal server could not reach middleware | The ngrok URL is wrong, offline or inaccessible. |
 | `HTTP 502 No SAP base URL configured` | The selected SAP system has no base URL. |
 
 ## Security notes
@@ -100,8 +92,7 @@ location /sap-middleware/ {
 - Never commit `.env`; keep it `chmod 600` and owned by the service user.
 - Keep the service on the internal network where possible; expose it only
   through the portal's nginx with TLS.
-- `PORTAL_BACKEND_URL` must identify the backend for the portal environment
-  whose users call this middleware.
+- Use a long random shared secret and rotate it if it is ever disclosed.
 - Rotate any SAP password or token-verification value that has been shared
   outside the server.
 
