@@ -102,8 +102,7 @@ Every response carries a `stage` field, and the portal toast now names it:
 
 | stage | meaning |
 | --- | --- |
-| `origin-blocked` | The browser origin is not in `ALLOWED_ORIGINS`. **SAP was not contacted.** |
-| `token-rejected` | Missing/invalid portal token, or `PORTAL_BACKEND_URL` not set. **SAP was not contacted.** |
+| `secret-rejected` | The shared secret is missing or does not match. **SAP was not contacted.** |
 | `sap-unreachable` | DNS/connect/timeout to the SAP host. **SAP was not contacted.** |
 | `sap-http-error` | SAP answered, with a non-2xx status. **SAP was reached.** |
 | `ok` | SAP answered 2xx. |
@@ -123,7 +122,7 @@ Each SAP round trip gets a short trace id and is written to the console *and* to
 `xx` instead of `<-` means the request never got an answer from SAP.
 Passwords and tokens are never logged.
 
-The last 400 lines are also served by `GET /logs/recent?limit=80` (bearer token
+The last 400 lines are also served by `GET /logs/recent?limit=80` (shared secret
 required) and are shown in the portal under **SAP API Settings → endpoint →
 Connectivity → Recent middleware activity**.
 

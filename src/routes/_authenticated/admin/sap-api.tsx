@@ -34,7 +34,6 @@ import {
   listSapEndpoints,
   listSapSystems,
   listStoredCredentialKeys,
-  MIDDLEWARE_CREDENTIAL_KEY,
   pingSapHost,
   resolveEndpointUrl,
   saveMiddlewareConfig,
@@ -1163,11 +1162,6 @@ type MiddlewareForm = {
 function MiddlewareTab() {
   const queryClient = useQueryClient();
   const configQuery = useQuery({ queryKey: ["sap-middleware"], queryFn: getMiddlewareConfig });
-  const credentialsQuery = useQuery({
-    queryKey: ["sap-credential-keys"],
-    queryFn: listStoredCredentialKeys,
-  });
-  const hasStoredSecret = (credentialsQuery.data ?? []).includes(MIDDLEWARE_CREDENTIAL_KEY);
   const [form, setForm] = useState<MiddlewareForm | null>(null);
 
   const current =
@@ -1189,7 +1183,6 @@ function MiddlewareTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sap-middleware"] });
-      queryClient.invalidateQueries({ queryKey: ["sap-credential-keys"] });
       setForm((prev) => (prev ? { ...prev, proxy_secret: "" } : prev));
       toast.success("Middleware settings saved");
     },
@@ -1277,15 +1270,6 @@ function MiddlewareTab() {
             value={current.middleware_url}
             placeholder="http://10.200.1.5:3008"
             onChange={(e) => set("middleware_url", e.target.value)}
-          />
-        </Field>
-        <Field label="Proxy secret / SAP password" className="md:col-span-2">
-          <Input
-            type="password"
-            autoComplete="new-password"
-            value={current.proxy_secret}
-            placeholder={hasStoredSecret ? "Secret saved — leave blank to keep" : "Enter proxy secret"}
-            onChange={(e) => set("proxy_secret", e.target.value)}
           />
         </Field>
       </div>
