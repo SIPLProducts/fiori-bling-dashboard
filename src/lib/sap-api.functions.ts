@@ -277,8 +277,6 @@ export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): 
 /* ----------------------------- connectivity ----------------------------- */
 
 export type TestStage =
-  | "origin-blocked"
-  | "token-rejected"
   | "secret-rejected"
   | "sap-unreachable"
   | "sap-http-error"
@@ -303,8 +301,6 @@ export type TestResult = {
 function describe(stage: TestStage, payload: Record<string, unknown>, fallback: string): string {
   const msg = typeof payload["message"] === "string" ? (payload["message"] as string) : "";
   if (msg) return msg;
-  if (stage === "origin-blocked") return "Blocked by the middleware CORS allow-list — SAP was not contacted.";
-  if (stage === "token-rejected") return "The middleware rejected the portal token — SAP was not contacted.";
   if (stage === "secret-rejected") return "The middleware shared secret does not match — SAP was not contacted.";
   return fallback;
 }

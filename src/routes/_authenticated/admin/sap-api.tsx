@@ -1279,12 +1279,12 @@ function MiddlewareTab() {
             onChange={(e) => set("middleware_url", e.target.value)}
           />
         </Field>
-        <Field label="Proxy secret / SAP password" className="md:col-span-2">
+        <Field label="Middleware shared secret" className="md:col-span-2">
           <Input
             type="password"
             autoComplete="new-password"
             value={current.proxy_secret}
-            placeholder={hasStoredSecret ? "Secret saved — leave blank to keep" : "Enter proxy secret"}
+            placeholder={hasStoredSecret ? "Secret saved — leave blank to keep" : "Enter the same secret as middleware/.env"}
             onChange={(e) => set("proxy_secret", e.target.value)}
           />
         </Field>
