@@ -6,6 +6,8 @@
  * a security-definer database function and can never be read back by the UI.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { accessForUser } from "./access";
 
 export type KeyValue = { key: string; value: string };
@@ -277,6 +279,7 @@ export async function saveMiddlewareConfig(id: string, input: MiddlewareInput): 
 export type TestStage =
   | "origin-blocked"
   | "token-rejected"
+  | "secret-rejected"
   | "sap-unreachable"
   | "sap-http-error"
   | "ok"
@@ -297,57 +300,69 @@ export type TestResult = {
   sapContacted: boolean;
 };
 
-async function bearer(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("NOT_AUTHENTICATED");
-  return token;
-}
-
 function describe(stage: TestStage, payload: Record<string, unknown>, fallback: string): string {
   const msg = typeof payload["message"] === "string" ? (payload["message"] as string) : "";
   if (msg) return msg;
   if (stage === "origin-blocked") return "Blocked by the middleware CORS allow-list — SAP was not contacted.";
   if (stage === "token-rejected") return "The middleware rejected the portal token — SAP was not contacted.";
+  if (stage === "secret-rejected") return "The middleware shared secret does not match — SAP was not contacted.";
   return fallback;
 }
 
-async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
-  const config = await getMiddlewareConfig();
-  const base = config.middleware_url.trim().replace(/\/+$/, "");
-  if (!base) {
-    return {
-      ok: false,
-      status: null,
-      message: "Set the Node.js middleware URL under Middleware Configuration first.",
-      durationMs: 0,
-      stage: "unknown",
-      sapContacted: false,
-    };
-  }
-  const started = Date.now();
-  try {
-    const res = await fetch(`${base}${path}`, {
-      method: body ? "POST" : "GET",
+type MiddlewareRequest = { path: string; body?: unknown };
+
+const callMiddlewareServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: MiddlewareRequest) => data)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("is_super_admin", {
+      _user_id: context.userId,
+    });
+    if (roleError || !isAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+
+    const sharedSecret = process.env["MIDDLEWARE_SHARED_SECRET"];
+    if (!sharedSecret) throw new Error("MIDDLEWARE_SHARED_SECRET is not configured in Lovable Cloud");
+
+    const { data: config, error: configError } = await context.supabase
+      .from("sap_middleware_config")
+      .select("middleware_url")
+      .limit(1)
+      .maybeSingle();
+    if (configError) throw configError;
+    const base = config?.middleware_url?.trim().replace(/\/+$/, "");
+    if (!base) throw new Error("Set the Node.js middleware URL under Middleware Configuration first");
+    if (!data.path.startsWith("/")) throw new Error("Invalid middleware path");
+
+    const response = await fetch(`${base}${data.path}`, {
+      method: data.body === undefined ? "GET" : "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${await bearer()}`,
+        "x-shared-secret": sharedSecret,
       },
-      ...(body ? { body: JSON.stringify(body) } : {}),
+      ...(data.body === undefined ? {} : { body: JSON.stringify(data.body) }),
+      signal: AbortSignal.timeout(120000),
     });
-    const text = await res.text();
+    return { status: response.status, text: await response.text() };
+  });
+
+async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
+  const started = Date.now();
+  try {
+    const res = await callMiddlewareServer({ data: { path, body } });
+    const text = res.text;
     let payload: Record<string, unknown> = {};
     try {
       payload = JSON.parse(text) as Record<string, unknown>;
     } catch {
       payload = {};
     }
-    const stage = (typeof payload["stage"] === "string" ? payload["stage"] : res.ok ? "ok" : "unknown") as TestStage;
+    const responseOk = res.status >= 200 && res.status < 300;
+    const stage = (typeof payload["stage"] === "string" ? payload["stage"] : responseOk ? "ok" : "unknown") as TestStage;
     const sapStatus = typeof payload["status"] === "number" ? (payload["status"] as number) : null;
     return {
-      ok: res.ok,
+      ok: responseOk,
       status: res.status,
-      message: describe(stage, payload, res.ok ? "Reachable" : `HTTP ${res.status}`),
+      message: describe(stage, payload, responseOk ? "Reachable" : `HTTP ${res.status}`),
       durationMs:
         typeof payload["durationMs"] === "number" ? (payload["durationMs"] as number) : Date.now() - started,
       body: typeof payload["body"] === "string" ? (payload["body"] as string).slice(0, 200000) : text.slice(0, 4000),
@@ -362,7 +377,7 @@ async function callMiddleware(path: string, body?: unknown): Promise<TestResult>
       status: null,
       message: `${
         err instanceof Error ? err.message : "Request failed"
-      } — the browser could not reach the middleware, so SAP was not contacted.`,
+      } — the portal server could not reach the middleware, so SAP was not contacted.`,
       durationMs: Date.now() - started,
       stage: "unknown",
       sapContacted: false,

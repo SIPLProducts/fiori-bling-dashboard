@@ -3,16 +3,14 @@
  *
  * The portal is a static SPA, so it must never hold SAP credentials. This
  * service is the only component that knows them: they live in its own .env
- * file. Every request must carry the caller's portal access token, which is
- * verified against the portal backend's public signing keys before any SAP
- * call is made.
+ * file. The portal backend calls this service with a shared secret; browsers
+ * never receive that secret or call SAP directly.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { timingSafeEqual } from "node:crypto";
 import express from "express";
-import cors from "cors";
-import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,19 +41,11 @@ function loadEnvFile(file = path.join(HERE, ".env")) {
 const ENV_LOADED = loadEnvFile();
 
 const PORT = Number(process.env.PORT || 3008);
-const PORTAL_BACKEND_URL = (process.env.PORTAL_BACKEND_URL || "").trim().replace(/\/+$/, "");
-const PORTAL_JWT_ISSUER = PORTAL_BACKEND_URL ? `${PORTAL_BACKEND_URL}/auth/v1` : "";
-const PORTAL_JWKS = PORTAL_BACKEND_URL
-  ? createRemoteJWKSet(new URL(`${PORTAL_JWT_ISSUER}/.well-known/jwks.json`))
-  : null;
+const SHARED_SECRET = (process.env.MIDDLEWARE_SHARED_SECRET || "").trim();
 /** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
 const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((o) => o.trim().replace(/\/+$/, ""))
-  .filter(Boolean);
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 30000);
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const STARTED_AT = Date.now();
 
 /**
@@ -87,30 +77,6 @@ const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
 
-/**
- * CORS. An empty ALLOWED_ORIGINS used to silently block every browser call,
- * which the portal could only report as "Failed to fetch". Now the origin is
- * echoed back when it is allowed, and rejected requests get a readable JSON
- * error instead of a network-level failure.
- */
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Non-browser callers (curl, server-to-server) send no Origin header.
-      if (!origin) return callback(null, true);
-      const normalized = origin.replace(/\/+$/, "");
-      if (ALLOWED_ORIGINS.includes(normalized) || ALLOWED_ORIGINS.includes("*")) {
-        return callback(null, true);
-      }
-      return callback(null, false);
-    },
-    credentials: false,
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    maxAge: 86400,
-  }),
-);
-
 /* --------------------------------- logging -------------------------------- */
 
 const LOG_DIR = path.join(HERE, "logs");
@@ -141,59 +107,29 @@ function newTraceId() {
   return Math.random().toString(16).slice(2, 8);
 }
 
-/** Explain a blocked origin instead of letting the browser see a bare failure. */
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (!origin) return next();
-  const normalized = origin.replace(/\/+$/, "");
-  if (ALLOWED_ORIGINS.includes(normalized) || ALLOWED_ORIGINS.includes("*")) return next();
-  logLine(`origin-blocked ${origin} (${req.method} ${req.path}) — SAP was NOT called`);
-  // Allow the response itself through so the portal can read the message.
-  res.setHeader("Access-Control-Allow-Origin", origin);
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.status(204).end();
-  return res.status(403).json({
-    stage: "origin-blocked",
-    error: "Origin not allowed",
-    message: `SAP was not contacted. Add ${origin} to ALLOWED_ORIGINS in the middleware .env and restart the service.`,
-  });
-});
-
 app.use((req, _res, next) => {
-  logLine(`${req.method} ${req.path} origin=${req.headers.origin ?? "-"}`);
+  logLine(`${req.method} ${req.path}`);
   next();
 });
 
-async function requirePortalToken(req, res, next) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
-  if (!token) {
-    logLine("token-rejected: missing bearer token — SAP was NOT called");
-    return res.status(401).json({ stage: "token-rejected", error: "Missing bearer token" });
-  }
-  if (!PORTAL_JWKS) {
-    logLine("token-rejected: PORTAL_BACKEND_URL not configured — SAP was NOT called");
-    return res.status(503).json({
-      stage: "token-rejected",
-      error: "Portal token verification not configured",
-      message: "Set PORTAL_BACKEND_URL in the middleware .env and restart. SAP was not contacted.",
-    });
-  }
-  try {
-    const { payload } = await jwtVerify(token, PORTAL_JWKS, {
-      issuer: PORTAL_JWT_ISSUER,
-      audience: "authenticated",
-    });
-    req.claims = payload;
-    return next();
-  } catch (err) {
-    logLine(`token-rejected: ${err?.message ?? "verification failed"} — SAP was NOT called`);
+function sameSecret(received) {
+  if (!SHARED_SECRET || !received) return false;
+  const expected = Buffer.from(SHARED_SECRET);
+  const actual = Buffer.from(String(received));
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function requireSharedSecret(req, res, next) {
+  if (!sameSecret(req.header("x-shared-secret"))) {
+    logLine("secret-rejected: invalid or missing x-shared-secret — SAP was NOT called");
     return res.status(401).json({
-      stage: "token-rejected",
-      error: "Invalid or expired token",
-      message: err?.message ?? "Token verification failed",
+      stage: "secret-rejected",
+      error: "Invalid or missing x-shared-secret",
+      message: "Middleware authentication failed. SAP was not contacted.",
     });
   }
+  logLine("portal -> middleware accepted");
+  return next();
 }
 
 function resolveSystem(body = {}) {
@@ -284,7 +220,7 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
   }
 }
 
-app.get("/health", requirePortalToken, (_req, res) => {
+app.get("/health", requireSharedSecret, (_req, res) => {
   res.json({
     ok: true,
     stage: "ok",
@@ -292,7 +228,6 @@ app.get("/health", requirePortalToken, (_req, res) => {
     version: VERSION,
     port: PORT,
     baseUrl: APP_BASE_URL || null,
-    allowedOrigins: ALLOWED_ORIGINS,
     uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
     systems: Object.entries(SYSTEMS)
       .filter(([, cfg]) => cfg.baseUrl)
@@ -301,13 +236,13 @@ app.get("/health", requirePortalToken, (_req, res) => {
 });
 
 /** Recent activity, so the SAP round trips can be read from the portal. */
-app.get("/logs/recent", requirePortalToken, (req, res) => {
+app.get("/logs/recent", requireSharedSecret, (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 100, RECENT_MAX);
   res.json({ ok: true, stage: "ok", lines: RECENT.slice(-limit) });
 });
 
 /** Bare reachability probe of the SAP host — no report call, no payload. */
-app.get("/diag/sap", requirePortalToken, async (req, res) => {
+app.get("/diag/sap", requireSharedSecret, async (req, res) => {
   const traceId = newTraceId();
   const system = resolveSystem({ systemKey: req.query.system });
   if (!system.baseUrl) {
@@ -356,7 +291,7 @@ app.get("/diag/sap", requirePortalToken, async (req, res) => {
   }
 });
 
-app.post("/sap/test", requirePortalToken, async (req, res) => {
+app.post("/sap/test", requireSharedSecret, async (req, res) => {
   const traceId = newTraceId();
   const system = resolveSystem(req.body);
   try {
@@ -387,7 +322,7 @@ app.post("/sap/test", requirePortalToken, async (req, res) => {
   }
 });
 
-app.post("/sap/call", requirePortalToken, async (req, res) => {
+app.post("/sap/call", requireSharedSecret, async (req, res) => {
   const traceId = newTraceId();
   const system = resolveSystem(req.body);
   const { path, method = "GET", query, headers, body, dryRun } = req.body || {};
@@ -432,14 +367,7 @@ app.listen(PORT, () => {
   console.log(`[mis-sap-middleware] v${VERSION} listening on :${PORT}`);
   console.log(`[mis-sap-middleware] .env file            : ${ENV_LOADED ? "loaded" : "NOT FOUND"}`);
   console.log(`[mis-sap-middleware] public base URL      : ${APP_BASE_URL || "NOT SET (set APP_BASE_URL)"}`);
-  console.log(
-    `[mis-sap-middleware] portal token verify  : ${PORTAL_JWKS ? "JWKS configured" : "NOT CONFIGURED (set PORTAL_BACKEND_URL)"}`,
-  );
-  console.log(
-    `[mis-sap-middleware] allowed origins      : ${
-      ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS.join(", ") : "NONE (browser calls will be refused)"
-    }`,
-  );
+  console.log(`[mis-sap-middleware] shared secret        : ${SHARED_SECRET ? "configured" : "MISSING"}`);
   for (const [key, cfg] of Object.entries(SYSTEMS)) {
     if (!cfg.baseUrl) continue;
     console.log(
@@ -448,9 +376,7 @@ app.listen(PORT, () => {
       } password=${cfg.password ? "configured" : "MISSING"}`,
     );
   }
-  if (!ALLOWED_ORIGINS.length) {
-    console.warn(
-      "[mis-sap-middleware] WARNING: ALLOWED_ORIGINS is empty — the portal will report 'Failed to fetch'.",
-    );
+  if (!SHARED_SECRET) {
+    console.warn("[mis-sap-middleware] WARNING: MIDDLEWARE_SHARED_SECRET is missing — all protected calls will return 401.");
   }
 });

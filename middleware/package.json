@@ -8,8 +8,6 @@
     "start": "node server.mjs"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "jose": "^6.2.10"
+    "express": "^4.21.2"
   }
 }
