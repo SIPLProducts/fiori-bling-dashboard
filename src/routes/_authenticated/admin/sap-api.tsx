@@ -33,6 +33,7 @@ import {
   getMiddlewareConfig,
   listSapEndpoints,
   listSapSystems,
+  listStoredCredentialKeys,
   pingSapHost,
   resolveEndpointUrl,
   saveMiddlewareConfig,
