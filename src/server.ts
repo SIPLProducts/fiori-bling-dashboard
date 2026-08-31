@@ -11,9 +11,14 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m.default ?? m) as ServerEntry,
-    );
+    serverEntryPromise = import("@tanstack/react-start/server-entry")
+      .then((m) => (m.default ?? m) as ServerEntry)
+      .catch((error: unknown) => {
+        // Do not cache a rejected import forever. A transient startup failure
+        // must be recoverable by the next request without restarting the app.
+        serverEntryPromise = undefined;
+        throw error;
+      });
   }
   return serverEntryPromise;
 }

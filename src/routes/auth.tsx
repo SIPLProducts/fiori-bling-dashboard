@@ -15,6 +15,9 @@ const hblLogo = hblLogoAsset.url;
 const REMEMBER_KEY = "hbl-remembered-identifier";
 
 export const Route = createFileRoute("/auth")({
+  // The auth client uses browser-backed session storage. Keeping this route
+  // client-only prevents preview storage timing from breaking the login page.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — HBL MIS Portal" },
