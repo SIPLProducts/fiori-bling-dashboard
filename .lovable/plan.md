@@ -1,57 +1,47 @@
-# Fix "503 Service Unavailable" on Test and make API testing verifiable end-to-end
+# Fix token verification failing with "fetch failed"
 
-## Confirmed cause
+## What the two errors mean
 
-The middleware log states it plainly, on every attempt:
+1. Earlier `503 / PORTAL_BACKEND_URL not configured` — the middleware reads the variable name `PORTAL_BACKEND_URL`. Your `.env` calls it `SUPABASE_URL`, so it was unset.
+2. Now `401 / "stage": "token-rejected", "message": "fetch failed"` — the middleware tried to download the portal's public signing keys (JWKS) over HTTPS and the network call itself failed. I verified from here that the keys endpoint is live and returns a valid ES256 key, so the endpoint is fine: the machine running the middleware cannot make that outbound HTTPS call (proxy, firewall or DNS on the SAP network).
 
-```text
-token-rejected: PORTAL_BACKEND_URL not configured — SAP was NOT called
-```
-
-`middleware/server.mjs` refuses every `/sap/call` and `/sap/test` with HTTP 503 when `PORTAL_BACKEND_URL` is missing from its `.env`, because it cannot fetch the portal's public signing keys to verify the signed-in user's token. SAP is never contacted, so nothing reaches `10.10.4.18:8000`.
-
-Postman works because Postman calls SAP directly with SAP basic auth — it never passes through the middleware's portal-token check. So Postman succeeding proves SAP is fine; the failure is purely middleware configuration.
+In both cases SAP was never contacted, which is why Postman still works — Postman talks to SAP directly and never passes through this check.
 
 ## Changes
 
-### 1. Show the exact `.env` values inside the portal
+### 1. Accept the variable name you already used
+`SUPABASE_URL` (and `PORTAL_URL`) will be accepted as aliases for `PORTAL_BACKEND_URL`, so a naming mismatch can never silently disable verification again.
 
-Administration → SAP API Settings → Middleware Configuration gets a **Middleware .env checklist** card that renders the exact values this specific portal needs, with a copy button:
+### 2. Fetch the signing keys once at startup, then cache
+- Download and cache the keys when the service boots, with retry and a long cache lifetime, instead of depending on a live fetch during every test click.
+- Startup log prints `portal token verify : keys loaded (n)` or a loud `UNREACHABLE — <reason>` line.
+- Support optional `HTTPS_PROXY` / `HTTP_PROXY` env values for corporate proxies.
 
-- `PORTAL_BACKEND_URL` (the portal backend address used to verify sign-ins)
-- `ALLOWED_ORIGINS` (this preview origin, the published site, the custom domain, localhost)
-- `APP_BASE_URL` (the current ngrok URL)
+### 3. Distinguish "cannot reach key server" from "bad token"
+A network failure will no longer be reported as `Invalid or expired token`. New stage `token-verify-unreachable` with a message naming the URL it tried and the network error code, plus HTTP 503.
 
-No guessing and no values pasted in chat — the screen prints them.
+### 4. New diagnostic: `GET /diag/portal`
+Reports, from the middleware machine: DNS resolution, TLS connect time, HTTP status and number of keys retrieved from the portal key endpoint. Exposed in the portal as a **Check token verification** button next to Ping SAP host, so this class of failure is one click to identify.
 
-### 2. Make the middleware say what is missing before a test runs
+### 5. Offline fallback for isolated servers
+If the middleware host genuinely cannot reach the internet, add an optional `PORTAL_JWKS_JSON` setting: paste the public key document into `.env` and verification runs fully offline. The portal's Middleware Configuration tab will show the exact value to paste, with a copy button. Public keys only — no secret is involved.
 
-- `GET /health` returns a `config` block: whether the portal token verification, public base URL, allowed origins and each SAP system are configured (booleans only, never secrets).
-- The portal reads it on the Middleware Configuration and Connectivity tabs and shows a red pre-flight banner such as "Middleware is running but token verification is not configured — SAP will not be called" instead of a bare 503.
+### 6. Env checklist in the portal
+Middleware Configuration gains a card that prints the exact `.env` values this portal needs (`PORTAL_BACKEND_URL`, `ALLOWED_ORIGINS`, `APP_BASE_URL`) with copy buttons, plus a pre-flight banner driven by `/health` that says which of them the running middleware is missing.
 
-### 3. Add a "Check middleware config" button
+## How you will confirm SAP was really called
 
-Next to **Test middleware** and **Test connection**: one click reports, in order — middleware reachable, origin allowed, token accepted, SAP host reachable — so the failing stage is named without reading server logs.
-
-### 4. Make the 503 message actionable
-
-The stage-aware toast for `token-rejected` will name the missing setting and point to the checklist card, rather than a generic service-unavailable error.
-
-## How you will verify SAP was actually reached
-
-After you set `PORTAL_BACKEND_URL` in `middleware/.env` and restart:
-
-1. Middleware startup line reads `portal token verify : JWKS configured`.
-2. Click **Test connection**; middleware log shows a line beginning `-> SAP POST http://10.10.4.18:8000/...` — only this proves SAP was called.
-3. The response line `<- 200 in NNNms` and the sample response in the Response tab confirm data came back.
-4. Stages: `origin-blocked` / `token-rejected` = SAP not contacted; `sap-unreachable` = network; `sap-http-error` = SAP answered with an error; `ok` = success.
+1. Startup shows `portal token verify : keys loaded`.
+2. Click **Test connection**; the middleware log must contain a line starting `-> SAP POST http://10.10.4.18:8000/fisales_detail/report...` — only that line proves SAP was contacted.
+3. `<- 200 in NNNms` plus the sample body in the Response tab confirms the round trip.
+4. Stage meanings: `origin-blocked`, `token-rejected`, `token-verify-unreachable` = SAP not contacted; `sap-unreachable` = network to SAP; `sap-http-error` = SAP answered an error; `ok` = success.
 
 ## Technical notes
 
-- `middleware/server.mjs`: extend `/health` with a non-secret `config` summary; refine the 503 body for the unset-verification case.
-- `src/routes/_authenticated/admin/sap-api.tsx`: env checklist card, config pre-flight banner, "Check middleware config" action.
-- `middleware/README.md` / `.env.example`: clarify that `PORTAL_BACKEND_URL` is the portal backend, not the portal website and not the ngrok URL.
+- `middleware/server.mjs`: env aliases, startup JWKS load with retry + cache, proxy support, `PORTAL_JWKS_JSON` fallback, new stage, `/diag/portal`, `/health` config summary.
+- `src/routes/_authenticated/admin/sap-api.tsx`: env checklist card, config banner, Check token verification button, stage-aware toasts.
+- `middleware/README.md` and `.env.example`: document the aliases, the offline fallback and the proxy variables.
 
 ## Security note
 
-The SAP password and any tokens pasted into chat should be rotated and kept only in the middleware server's uncommitted `.env`.
+The SAP password and the service token in your message are now exposed in chat — rotate both and keep the replacements only in the middleware server's uncommitted `.env`.
