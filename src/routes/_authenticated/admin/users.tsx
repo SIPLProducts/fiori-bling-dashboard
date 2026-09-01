@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Search, UserPlus } from "lucide-react";
 import {
+  activatePortalUser,
   createPortalUser,
   listPortalUsers,
   updatePortalUser,
@@ -11,6 +12,7 @@ import {
   type UserFormInput,
   type UserStatus,
 } from "@/lib/admin.functions";
+
 import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
@@ -141,6 +143,13 @@ function AdminUsers() {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const activateMutation = useMutation({
+    mutationFn: (userId: string) => activatePortalUser(userId),
+    onSuccess: () => toast.success("Account activated — the user can sign in now"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   function openCreate() {
     setEditing(null);
@@ -283,10 +292,21 @@ function AdminUsers() {
                         <StatusText status={user.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
-                          Edit
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={activateMutation.isPending}
+                            onClick={() => activateMutation.mutate(user.id)}
+                          >
+                            Activate account
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                            Edit
+                          </Button>
+                        </div>
                       </TableCell>
+
                     </TableRow>
                   ))
                 )}

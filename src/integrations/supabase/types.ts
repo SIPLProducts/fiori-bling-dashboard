@@ -305,6 +305,7 @@ export type Database = {
           records_inserted: number
           records_received: number
           records_updated: number
+          request_snapshot: Json | null
           started_at: string
           status: string
           updated_at: string
@@ -318,6 +319,7 @@ export type Database = {
           records_inserted?: number
           records_received?: number
           records_updated?: number
+          request_snapshot?: Json | null
           started_at?: string
           status?: string
           updated_at?: string
@@ -331,6 +333,7 @@ export type Database = {
           records_inserted?: number
           records_received?: number
           records_updated?: number
+          request_snapshot?: Json | null
           started_at?: string
           status?: string
           updated_at?: string

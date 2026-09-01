@@ -120,6 +120,15 @@ async function assertAssignableRole(roleKey: string) {
   if (!roles.some((role) => role.key === roleKey)) throw new Error(`Unknown role: ${roleKey}`);
 }
 
+/** Confirms a user's email so they can sign in without the confirmation mail. */
+export async function activatePortalUser(userId: string) {
+  await requireSuperAdmin();
+  const { error } = await supabase.rpc("admin_confirm_user_email", { _user_id: userId });
+  if (error) throw error;
+  return { ok: true };
+}
+
+
 export async function createPortalUser(input: { data: UserFormInput }) {
   await requireSuperAdmin();
   const form = input.data;

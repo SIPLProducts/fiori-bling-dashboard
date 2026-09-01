@@ -17,16 +17,27 @@ async function admin(): Promise<Admin> {
 }
 
 /** Maps a SAP payload and upserts it into zfisales_detail, logging the run. */
-export async function storeZfisalesPayload(payload: unknown, endpointName: string): Promise<SyncCounts> {
+export async function storeZfisalesPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
   const { received, rows, skipped } = mapPayload(payload, endpointName);
 
   const { data: run } = await db
     .from("sap_sync_runs")
-    .insert({ endpoint: endpointName, status: "running", started_at: startedAt, records_received: received })
+    .insert({
+      endpoint: endpointName,
+      status: "running",
+      started_at: startedAt,
+      records_received: received,
+      ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+    })
     .select("id")
     .single();
+
 
   const finish = async (patch: Record<string, unknown>) => {
     if (run?.id) {
@@ -142,29 +153,33 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
         )
       : {};
 
+  const outbound = {
+    middlewareUrl: `${base}/sap/call`,
+    systemKey: system?.key ?? null,
+    baseUrl: system?.base_url ?? null,
+    sapClient: system?.sap_client ?? null,
+    path: endpoint.endpoint_path,
+    method: endpoint.http_method,
+    authType: endpoint.auth_type,
+    query: toObject(endpoint.query_params),
+    headers: toObject(endpoint.headers),
+    body: endpoint.body_template ?? undefined,
+  };
+
   let response: Response;
   try {
     response = await fetch(`${base}/sap/call`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-shared-secret": secret },
-      body: JSON.stringify({
-        systemKey: system?.key ?? null,
-        baseUrl: system?.base_url ?? null,
-        sapClient: system?.sap_client ?? null,
-        path: endpoint.endpoint_path,
-        method: endpoint.http_method,
-        authType: endpoint.auth_type,
-        query: toObject(endpoint.query_params),
-        headers: toObject(endpoint.headers),
-        body: endpoint.body_template ?? undefined,
-      }),
+      body: JSON.stringify(outbound),
       signal: AbortSignal.timeout(120000),
     });
   } catch (err) {
     const message = `Middleware unreachable: ${err instanceof Error ? err.message : "fetch failed"}`;
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
+
 
   const text = await response.text();
   let envelope: Record<string, unknown> = {};
@@ -177,7 +192,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   if (!response.ok) {
     const message =
       typeof envelope["message"] === "string" ? (envelope["message"] as string) : `Middleware HTTP ${response.status}`;
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
 
@@ -187,11 +202,11 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     payload = JSON.parse(bodyText);
   } catch {
     const message = "SAP response was not valid JSON";
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
 
-  const counts = await storeZfisalesPayload(payload, endpointName);
+  const counts = await storeZfisalesPayload(payload, endpointName, outbound);
   await db
     .from("sap_endpoints")
     .update({
@@ -203,7 +218,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   return { status: "synced", ...counts };
 }
 
-async function logFailure(endpointName: string, message: string) {
+async function logFailure(endpointName: string, message: string, requestSnapshot?: unknown) {
   const db = await admin();
   const now = new Date().toISOString();
   await db.from("sap_sync_runs").insert({
@@ -212,7 +227,9 @@ async function logFailure(endpointName: string, message: string) {
     started_at: now,
     finished_at: now,
     error_message: message,
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
   });
+
   await db
     .from("sap_endpoints")
     .update({ last_run_at: now, last_run_status: "error" })
