@@ -43,6 +43,11 @@ export const SUPER_ADMIN_ROLE_KEY = "super_admin";
 
 export const SCREENS: ScreenDef[] = [
   { key: "launchpad", label: "Launchpad (Home)", group: "Home" },
+  ...PROCUREMENT_TILE_GROUPS.map((group) => ({
+    key: groupScreenKey(group.groupKey),
+    label: group.label,
+    group: "Procurement launchpad" as const,
+  })),
   { key: "reports.procurement", label: "Procurement Overview", group: "Reports" },
   { key: "reports.purchase-orders", label: "Purchase Orders", group: "Reports" },
   { key: "reports.suppliers", label: "Suppliers", group: "Reports" },
@@ -57,6 +62,11 @@ export const SCREENS: ScreenDef[] = [
     label: `${mod.code} — ${mod.title}`,
     group: "SAP modules" as const,
   })),
+  {
+    key: groupScreenKey(TABLES_MASTER_GROUP_KEY),
+    label: "Tables Master (tiles)",
+    group: "Tables Master",
+  },
   { key: "tables.zfisales-detail", label: "ZFISALES Detail", group: "Tables Master" },
   { key: "admin.users", label: "User Management", group: "Administration" },
   { key: "admin.roles", label: "Roles", group: "Administration" },
@@ -66,12 +76,14 @@ export const SCREENS: ScreenDef[] = [
 
 export const SCREEN_GROUPS: ScreenGroup[] = [
   "Home",
+  "Procurement launchpad",
   "Reports",
   "Sales Distribution Reports",
   "SAP modules",
   "Tables Master",
   "Administration",
 ];
+
 
 export function screenLabel(key: string): string {
   return SCREENS.find((screen) => screen.key === key)?.label ?? key;
