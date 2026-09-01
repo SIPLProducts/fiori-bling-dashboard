@@ -45,13 +45,28 @@ export type UserFormInput = {
 };
 
 
-async function requireSuperAdmin(): Promise<string> {
+async function currentAccess() {
   const { data: auth, error } = await supabase.auth.getUser();
   if (error || !auth.user) throw new Error("NOT_AUTHENTICATED");
   const access = await accessForUser(auth.user.id);
-  if (!access.isSuperAdmin) throw new Error("Forbidden: Sharvi Admin role required");
-  return auth.user.id;
+  return { userId: auth.user.id, ...access };
 }
+
+/** Allows Sharvi Admin, or any role granted the given admin screen. */
+async function requireScreen(screenKey: string, label: string): Promise<string> {
+  const access = await currentAccess();
+  if (!access.isSuperAdmin && !access.screens.includes(screenKey)) {
+    throw new Error(`Forbidden: ${label} access required`);
+  }
+  return access.userId;
+}
+
+async function requireSuperAdmin(): Promise<string> {
+  const access = await currentAccess();
+  if (!access.isSuperAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+  return access.userId;
+}
+
 
 /** Isolated auth client so creating an account never replaces the admin's session. */
 function signUpClient() {
