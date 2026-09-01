@@ -113,6 +113,13 @@ export type ZfisalesDetailRow = {
   ah: number;
   sales_zone: string;
   customer_profile: string;
+  amount_domestic: number;
+  amount_export: number;
+  amount_service: number;
+  amount_gross: number;
+  amount_net: number;
+  excise_duty: number;
+
   raw: unknown;
   source_endpoint: string;
   synced_at: string;
