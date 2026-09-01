@@ -275,16 +275,8 @@ function parsePayload(raw: string): Record<string, string> | null {
   }
 }
 
-/** Replace matching header rows and append the ones that do not exist yet. */
-function mergeHeaders(rows: KeyValue[], values: Record<string, string>): KeyValue[] {
-  const next = rows.map((row) =>
-    row.key in values ? { key: row.key, value: values[row.key] as string } : row,
-  );
-  for (const [key, value] of Object.entries(values)) {
-    if (!next.some((row) => row.key === key)) next.push({ key, value });
-  }
-  return next;
-}
+
+
 
 function defaultEndpoint(): EndpointInput {
   const payload = { BUDAT_F: toSapDate(isoDaysAgo(7)), BUDAT_T: toSapDate(isoDaysAgo(0)) };
@@ -297,7 +289,7 @@ function defaultEndpoint(): EndpointInput {
     http_method: "GET",
     auth_type: "basic",
     query_params: [],
-    headers: mergeHeaders([], payload),
+    headers: [],
     body_template: JSON.stringify(payload, null, 2),
     response_root: "",
     response_notes: "",
@@ -403,7 +395,7 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   return {
     ...input,
     body_template: JSON.stringify(nextPayload, null, 2),
-    headers: mergeHeaders(input.headers, fixes),
+    headers: input.headers,
   };
 }
 
@@ -652,7 +644,7 @@ function EndpointDetail({
       return {
         ...prev,
         body_template: JSON.stringify(next, null, 2),
-        headers: mergeHeaders(prev.headers, values),
+        headers: prev.headers,
       };
     });
   }
