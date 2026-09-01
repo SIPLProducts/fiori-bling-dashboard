@@ -584,58 +584,39 @@ function KeyValueRows({
   );
 }
 
-/** Paste or upload an API payload and push its values into the form. */
-function PayloadLoader({ onLoad }: { onLoad: (values: Record<string, string>) => void }) {
-  const [text, setText] = useState("");
+/** Pick a .json file and load its contents into the request payload editor. */
+function PayloadFileInput({ onLoad }: { onLoad: (raw: string) => void }) {
   const [error, setError] = useState("");
 
-  function load(raw: string) {
-    const parsed = parsePayload(raw);
-    if (!parsed) {
-      setError("That is not a valid JSON object — nothing was changed.");
-      return;
-    }
-    setError("");
-    onLoad(parsed);
-    toast.success(`Loaded ${Object.keys(parsed).length} field(s) from the payload`);
-  }
-
   return (
-    <div className="space-y-2 rounded-md border border-dashed border-border bg-muted/40 p-4">
-      <Label className="text-sm">Load API payload</Label>
-      <p className="text-xs text-muted-foreground">
-        Paste the payload (or pick a .json file) — its values fill the header fields and the posting
-        dates automatically.
-      </p>
-      <Textarea
-        rows={5}
-        className="bg-background font-mono text-xs"
-        placeholder={'{\n  "BUKRS": "1000",\n  "BUDAT_F": "20250831",\n  "BUDAT_T": "20250831",\n  "PRCTR": "PGNLB12001",\n  "WERKS": "1200"\n}'}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+    <div className="mt-2 space-y-1">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => load(text)}>
-          Load payload
-        </Button>
         <Input
           type="file"
           accept="application/json,.json"
           className="h-9 max-w-xs cursor-pointer text-xs"
           onChange={async (e) => {
             const file = e.target.files?.[0];
+            e.target.value = "";
             if (!file) return;
             const raw = await file.text();
-            setText(raw);
-            load(raw);
-            e.target.value = "";
+            const parsed = parsePayload(raw);
+            if (!parsed) {
+              setError("That is not a valid JSON object — nothing was changed.");
+              return;
+            }
+            setError("");
+            onLoad(JSON.stringify(parsed, null, 2));
+            toast.success(`Loaded ${Object.keys(parsed).length} field(s) into the request payload`);
           }}
         />
+        <span className="text-xs text-muted-foreground">Upload a .json payload file</span>
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
+
 
 function EndpointDetail({
 
