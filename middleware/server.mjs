@@ -44,7 +44,8 @@ const PORT = Number(process.env.PORT || 3008);
 const SHARED_SECRET = (process.env.MIDDLEWARE_SHARED_SECRET || "").trim();
 /** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
 const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
-const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 30000);
+// Wide posting-date windows return multi-MB payloads that take minutes.
+const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 180000);
 const VERSION = "1.2.0";
 const STARTED_AT = Date.now();
 
