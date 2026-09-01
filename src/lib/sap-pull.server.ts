@@ -167,7 +167,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     authType: endpoint.auth_type,
     query: toObject(endpoint.query_params),
     headers: toObject(endpoint.headers),
-    body: endpoint.body_template ?? undefined,
+    body: withPostingDates(endpoint.body_template),
   };
 
   let response: Response;
