@@ -303,7 +303,12 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   return { status: "synced", ...counts };
 }
 
-async function logFailure(endpointName: string, message: string, requestSnapshot?: unknown) {
+async function logFailure(
+  endpointName: string,
+  message: string,
+  requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
+) {
   const db = await admin();
   const now = new Date().toISOString();
   await db.from("sap_sync_runs").insert({
@@ -312,6 +317,9 @@ async function logFailure(endpointName: string, message: string, requestSnapshot
     started_at: now,
     finished_at: now,
     error_message: message,
+    response_bytes: metrics.responseBytes ?? 0,
+    duration_ms: metrics.durationMs ?? 0,
+    ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
     ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
   });
 
