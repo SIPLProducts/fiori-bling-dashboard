@@ -17,16 +17,27 @@ async function admin(): Promise<Admin> {
 }
 
 /** Maps a SAP payload and upserts it into zfisales_detail, logging the run. */
-export async function storeZfisalesPayload(payload: unknown, endpointName: string): Promise<SyncCounts> {
+export async function storeZfisalesPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
   const { received, rows, skipped } = mapPayload(payload, endpointName);
 
   const { data: run } = await db
     .from("sap_sync_runs")
-    .insert({ endpoint: endpointName, status: "running", started_at: startedAt, records_received: received })
+    .insert({
+      endpoint: endpointName,
+      status: "running",
+      started_at: startedAt,
+      records_received: received,
+      ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+    })
     .select("id")
     .single();
+
 
   const finish = async (patch: Record<string, unknown>) => {
     if (run?.id) {
