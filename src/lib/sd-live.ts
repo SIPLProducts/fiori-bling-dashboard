@@ -108,7 +108,7 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
     if (!inList(f.countries, r.countryName)) return false;
     if (
       term &&
-      ![r.docNo, r.customer, r.customerName, r.material, r.materialDesc, r.salesOrder, r.reference()]
+      ![r.docNo, r.customer, r.customerName, r.material, r.materialDesc, r.salesOrder]
         .join(" ")
         .toLowerCase()
         .includes(term)
@@ -117,9 +117,6 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
     return true;
   });
 }
-
-/** Small helper so the search list above stays readable. */
-declare module "./sd-live" {}
 
 export type NamedTotal = { name: string; value: number; count: number };
 
