@@ -9,9 +9,12 @@ export const Route = createFileRoute("/api/public/sap/pull/zfisales")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["SAP_SYNC_TOKEN"];
-        if (!expected) return Response.json({ error: "Sync token is not configured" }, { status: 503 });
-        if ((request.headers.get("x-sync-token") ?? "") !== expected) {
+        const accepted = [process.env["SAP_CRON_TOKEN"], process.env["SAP_SYNC_TOKEN"]].filter(
+          (value): value is string => !!value,
+        );
+        if (!accepted.length) return Response.json({ error: "Sync token is not configured" }, { status: 503 });
+        const provided = request.headers.get("x-sync-token") ?? "";
+        if (!accepted.includes(provided)) {
           return Response.json({ error: "Invalid sync token" }, { status: 401 });
         }
 
