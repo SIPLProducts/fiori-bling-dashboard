@@ -690,14 +690,19 @@ function EndpointDetail({
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [lastTest, setLastTest] = useState<TestResult | null>(null);
+
   const testMutation = useMutation({
     mutationFn: async () => {
       if (!stored) throw new Error("Save the endpoint before testing it");
       return testSapEndpoint(stored, systems);
     },
     onSuccess: (result) => {
+      setLastTest(result);
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
       queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-runs"] });
+
       reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
