@@ -969,7 +969,19 @@ function EndpointDetail({
               <Meta label="Message" value={stored?.last_test_message ?? "—"} />
             </div>
 
+            {lastTest?.request ? (
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-muted-foreground">
+                  Outbound request of the last test (also printed in the browser console)
+                </p>
+                <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 font-mono text-[11px] text-muted-foreground">
+                  {JSON.stringify(lastTest.request, null, 2)}
+                </pre>
+              </div>
+            ) : null}
+
             <MiddlewareActivity />
+
           </div>
 
         </TabsContent>
