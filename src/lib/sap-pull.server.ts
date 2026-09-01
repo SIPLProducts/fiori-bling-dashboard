@@ -199,22 +199,59 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     body: withPostingDates(endpoint.body_template),
   };
 
-  let response: Response;
-  try {
-    response = await fetch(`${base}/sap/call`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-shared-secret": secret },
-      body: JSON.stringify(outbound),
-      signal: AbortSignal.timeout(120000),
-    });
-  } catch (err) {
-    const message = `Middleware unreachable: ${err instanceof Error ? err.message : "fetch failed"}`;
-    await logFailure(endpointName, message, outbound);
-    return { status: "error", message };
+  const startedMs = Date.now();
+  const size = (bytes: number) =>
+    bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
+
+  /** One call to the middleware, returning the raw text plus metrics. */
+  const callMiddleware = async (): Promise<
+    | { ok: true; response: Response; text: string; bytes: number }
+    | { ok: false; message: string; retryable: boolean }
+  > => {
+    let response: Response;
+    try {
+      response = await fetch(`${base}/sap/call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-shared-secret": secret },
+        body: JSON.stringify(outbound),
+        // Large report windows can take minutes to stream back from SAP.
+        signal: AbortSignal.timeout(300000),
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "fetch failed";
+      return {
+        ok: false,
+        retryable: true,
+        message: `Middleware/tunnel unreachable (${reason}) — SAP was not contacted`,
+      };
+    }
+
+    // Read as a stream so multi-MB SAP responses are not truncated.
+    const buffer = await response.arrayBuffer();
+    const text = new TextDecoder().decode(buffer);
+    return { ok: true, response, text, bytes: buffer.byteLength };
+  };
+
+  let attempt = await callMiddleware();
+  if (!attempt.ok && attempt.retryable) {
+    await new Promise((r) => setTimeout(r, 3000));
+    attempt = await callMiddleware();
+  }
+  if (!attempt.ok) {
+    await logFailure(endpointName, attempt.message, outbound, { durationMs: Date.now() - startedMs });
+    return { status: "error", message: attempt.message };
   }
 
+  let { response, text, bytes } = attempt;
 
-  const text = await response.text();
+  // A 404/502 here is the tunnel or middleware, never SAP — retry once for reconnects.
+  if (!response.ok && [404, 502, 503, 504].includes(response.status)) {
+    await new Promise((r) => setTimeout(r, 3000));
+    const retry = await callMiddleware();
+    if (retry.ok) ({ response, text, bytes } = retry);
+  }
+
+  const durationMs = Date.now() - startedMs;
   let envelope: Record<string, unknown> = {};
   try {
     envelope = JSON.parse(text) as Record<string, unknown>;
@@ -223,9 +260,16 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   }
 
   if (!response.ok) {
-    const message =
-      typeof envelope["message"] === "string" ? (envelope["message"] as string) : `Middleware HTTP ${response.status}`;
-    await logFailure(endpointName, message, outbound);
+    const detail = typeof envelope["message"] === "string" ? (envelope["message"] as string) : "";
+    const hop = [404, 502, 503, 504].includes(response.status)
+      ? `Middleware/tunnel returned ${response.status} — SAP was not contacted (tunnel likely restarted)`
+      : `Middleware returned HTTP ${response.status}`;
+    const message = detail ? `${hop}: ${detail}` : hop;
+    await logFailure(endpointName, message, outbound, {
+      durationMs,
+      responseBytes: bytes,
+      httpStatus: response.status,
+    });
     return { status: "error", message };
   }
 
@@ -234,12 +278,20 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   try {
     payload = JSON.parse(bodyText);
   } catch {
-    const message = "SAP response was not valid JSON";
-    await logFailure(endpointName, message, outbound);
+    const message = `SAP returned ${size(bytes)} that could not be parsed as JSON`;
+    await logFailure(endpointName, message, outbound, {
+      durationMs,
+      responseBytes: bytes,
+      httpStatus: response.status,
+    });
     return { status: "error", message };
   }
 
-  const counts = await storeZfisalesPayload(payload, endpointName, outbound);
+  const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
+    durationMs,
+    responseBytes: bytes,
+    httpStatus: response.status,
+  });
   await db
     .from("sap_endpoints")
     .update({
