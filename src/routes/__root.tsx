@@ -115,7 +115,17 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <div
+          id="app-boot"
+          className="flex min-h-screen items-center justify-center bg-surface px-6 text-center"
+          role="status"
+        >
+          <div>
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary motion-reduce:animate-none" />
+            <p className="mt-4 text-sm text-muted-foreground">Opening HBL MIS Portal…</p>
+          </div>
+        </div>
+        <div id="app-content">{children}</div>
         <Scripts />
       </body>
     </html>
@@ -127,6 +137,9 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    const boot = document.getElementById("app-boot");
+    if (boot) boot.hidden = true;
+
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
