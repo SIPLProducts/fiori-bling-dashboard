@@ -624,6 +624,7 @@ export type Database = {
       }
       zfisales_detail: {
         Row: {
+          ah: number
           amount: number
           branch: string | null
           company_code: string | null
@@ -634,8 +635,11 @@ export type Database = {
           customer: string | null
           customer_group: string | null
           customer_name: string | null
+          customer_profile: string | null
           division: string | null
+          division_name: string | null
           doc_date: string | null
+          doc_item: string | null
           doc_no: string | null
           doc_type: string | null
           fiscal_year: string | null
@@ -645,11 +649,16 @@ export type Database = {
           id: string
           incoterms: string | null
           industry: string | null
+          industry_name: string | null
           main_group: string | null
           material: string | null
           material_desc: string | null
+          material_profit_ctr: string | null
+          material_profit_ctr_name: string | null
           model: string | null
           month: string | null
+          new_repl: string | null
+          pc_short_name: string | null
           pk: string | null
           plant: string | null
           posting_date: string | null
@@ -669,8 +678,10 @@ export type Database = {
           sales_rep: string | null
           sales_rep_name: string | null
           sales_type: string | null
+          sales_zone: string | null
           segment: string | null
           source_endpoint: string | null
+          sub_group: string | null
           synced_at: string
           total_ah: number
           unit: string | null
@@ -678,6 +689,7 @@ export type Database = {
           usage_desc: string | null
         }
         Insert: {
+          ah?: number
           amount?: number
           branch?: string | null
           company_code?: string | null
@@ -688,8 +700,11 @@ export type Database = {
           customer?: string | null
           customer_group?: string | null
           customer_name?: string | null
+          customer_profile?: string | null
           division?: string | null
+          division_name?: string | null
           doc_date?: string | null
+          doc_item?: string | null
           doc_no?: string | null
           doc_type?: string | null
           fiscal_year?: string | null
@@ -699,11 +714,16 @@ export type Database = {
           id?: string
           incoterms?: string | null
           industry?: string | null
+          industry_name?: string | null
           main_group?: string | null
           material?: string | null
           material_desc?: string | null
+          material_profit_ctr?: string | null
+          material_profit_ctr_name?: string | null
           model?: string | null
           month?: string | null
+          new_repl?: string | null
+          pc_short_name?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null
@@ -723,8 +743,10 @@ export type Database = {
           sales_rep?: string | null
           sales_rep_name?: string | null
           sales_type?: string | null
+          sales_zone?: string | null
           segment?: string | null
           source_endpoint?: string | null
+          sub_group?: string | null
           synced_at?: string
           total_ah?: number
           unit?: string | null
@@ -732,6 +754,7 @@ export type Database = {
           usage_desc?: string | null
         }
         Update: {
+          ah?: number
           amount?: number
           branch?: string | null
           company_code?: string | null
@@ -742,8 +765,11 @@ export type Database = {
           customer?: string | null
           customer_group?: string | null
           customer_name?: string | null
+          customer_profile?: string | null
           division?: string | null
+          division_name?: string | null
           doc_date?: string | null
+          doc_item?: string | null
           doc_no?: string | null
           doc_type?: string | null
           fiscal_year?: string | null
@@ -753,11 +779,16 @@ export type Database = {
           id?: string
           incoterms?: string | null
           industry?: string | null
+          industry_name?: string | null
           main_group?: string | null
           material?: string | null
           material_desc?: string | null
+          material_profit_ctr?: string | null
+          material_profit_ctr_name?: string | null
           model?: string | null
           month?: string | null
+          new_repl?: string | null
+          pc_short_name?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null
@@ -777,8 +808,10 @@ export type Database = {
           sales_rep?: string | null
           sales_rep_name?: string | null
           sales_type?: string | null
+          sales_zone?: string | null
           segment?: string | null
           source_endpoint?: string | null
+          sub_group?: string | null
           synced_at?: string
           total_ah?: number
           unit?: string | null
