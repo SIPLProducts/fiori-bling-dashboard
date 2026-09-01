@@ -298,42 +298,54 @@ export type Database = {
       sap_sync_runs: {
         Row: {
           created_at: string
+          duration_ms: number
           endpoint: string
           error_message: string | null
           finished_at: string | null
+          http_status: number | null
           id: string
           records_inserted: number
           records_received: number
+          records_skipped: number
           records_updated: number
           request_snapshot: Json | null
+          response_bytes: number
           started_at: string
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          duration_ms?: number
           endpoint: string
           error_message?: string | null
           finished_at?: string | null
+          http_status?: number | null
           id?: string
           records_inserted?: number
           records_received?: number
+          records_skipped?: number
           records_updated?: number
           request_snapshot?: Json | null
+          response_bytes?: number
           started_at?: string
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          duration_ms?: number
           endpoint?: string
           error_message?: string | null
           finished_at?: string | null
+          http_status?: number | null
           id?: string
           records_inserted?: number
           records_received?: number
+          records_skipped?: number
           records_updated?: number
           request_snapshot?: Json | null
+          response_bytes?: number
           started_at?: string
           status?: string
           updated_at?: string
