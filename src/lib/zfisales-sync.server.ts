@@ -195,8 +195,15 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
     material_profit_ctr_name: str(pickField(raw, ["MAT_PRCTR_TXT", "MAT_PRCTR_DESP", "matProfitCtrName"])),
     ah: num(pickField(raw, ["AH", "ah"])),
     sales_zone: str(pickField(raw, ["ZONE", "SALES_ZONE", "BZIRK", "salesZone"])),
-    customer_profile: str(pickField(raw, ["CUST_PROFILE", "KDGRP_PROFILE", "customerProfile"])),
+    customer_profile: str(pickField(raw, ["CUSPF_DESP", "CUST_PROFILE", "KDGRP_PROFILE", "customerProfile"])),
+    amount_domestic: num(pickField(raw, ["DOMESTIC", "domestic"])),
+    amount_export: num(pickField(raw, ["EXPORTS", "exports"])),
+    amount_service: num(pickField(raw, ["SERVICE", "service"])),
+    amount_gross: num(pickField(raw, ["GROSS", "DMBTR_GROS", "gross"])),
+    amount_net: num(pickField(raw, ["NET", "net"])),
+    excise_duty: num(pickField(raw, ["EXCISEDUTY", "exciseduty"])),
     raw,
+
     source_endpoint: sourceEndpoint,
     synced_at: syncedAt,
   };
