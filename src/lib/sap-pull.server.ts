@@ -56,7 +56,9 @@ export async function storeZfisalesPayload(
         .update({ finished_at: new Date().toISOString(), ...patch })
         .eq("id", run.id);
     }
+    await pruneRuns(endpointName);
   };
+
 
   try {
     if (!rows.length) {
