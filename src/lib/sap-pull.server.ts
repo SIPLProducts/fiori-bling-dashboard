@@ -192,7 +192,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   if (!response.ok) {
     const message =
       typeof envelope["message"] === "string" ? (envelope["message"] as string) : `Middleware HTTP ${response.status}`;
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
 
@@ -202,11 +202,11 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     payload = JSON.parse(bodyText);
   } catch {
     const message = "SAP response was not valid JSON";
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
 
-  const counts = await storeZfisalesPayload(payload, endpointName);
+  const counts = await storeZfisalesPayload(payload, endpointName, outbound);
   await db
     .from("sap_endpoints")
     .update({
@@ -218,7 +218,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   return { status: "synced", ...counts };
 }
 
-async function logFailure(endpointName: string, message: string) {
+async function logFailure(endpointName: string, message: string, requestSnapshot?: unknown) {
   const db = await admin();
   const now = new Date().toISOString();
   await db.from("sap_sync_runs").insert({
@@ -227,7 +227,9 @@ async function logFailure(endpointName: string, message: string) {
     started_at: now,
     finished_at: now,
     error_message: message,
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
   });
+
   await db
     .from("sap_endpoints")
     .update({ last_run_at: now, last_run_status: "error" })
