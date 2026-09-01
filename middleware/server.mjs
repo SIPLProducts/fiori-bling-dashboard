@@ -177,6 +177,10 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
       system.username || "-"
     } password=${system.password ? "set" : "MISSING"} timeout=${REQUEST_TIMEOUT_MS}ms`,
   );
+  if (body) {
+    const payload = typeof body === "string" ? body : JSON.stringify(body);
+    logLine(`[${traceId}]    payload: ${payload.slice(0, 500).replace(/\s+/g, " ")}`);
+  }
   try {
     const auth = Buffer.from(`${system.username}:${system.password}`).toString("base64");
     const res = await fetch(url, {
