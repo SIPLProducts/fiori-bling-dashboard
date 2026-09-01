@@ -148,6 +148,28 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     ? await db.from("sap_systems").select("key, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
     : await db.from("sap_systems").select("key, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
 
+  /** Never send an empty posting-date window: default To = today, From = today − 7 days. */
+  const withPostingDates = (raw: string | null | undefined): string | undefined => {
+    if (!raw || !raw.trim()) return raw ?? undefined;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = parsed as Record<string, unknown>;
+    const sapDate = (daysAgo: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
+    if ("BUDAT_F" in obj && !valid(obj["BUDAT_F"])) obj["BUDAT_F"] = sapDate(7);
+    if ("BUDAT_T" in obj && !valid(obj["BUDAT_T"])) obj["BUDAT_T"] = sapDate(0);
+    return JSON.stringify(obj);
+  };
+
   const toObject = (raw: unknown) =>
     Array.isArray(raw)
       ? Object.fromEntries(
