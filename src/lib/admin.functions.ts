@@ -259,10 +259,15 @@ export async function setUserStatus(input: { data: { id: string; status: UserSta
 
 /** A user holds exactly one role; this replaces any previous assignment. */
 async function setRoleAssignment(userId: string, roleKey: string) {
-  const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-  if (userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
+  const access = await currentAccess();
+  const currentUserId = access.userId;
+  if (roleKey === SUPER_ADMIN_ROLE_KEY && !access.isSuperAdmin) {
+    throw new Error("Only a Sharvi Admin can grant the Sharvi Admin role");
+  }
+  if (access.isSuperAdmin && userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
     throw new Error("You cannot remove your own Sharvi Admin role");
   }
+
 
   const del = await supabase.from("user_role_assignments").delete().eq("user_id", userId);
   if (del.error) throw del.error;
