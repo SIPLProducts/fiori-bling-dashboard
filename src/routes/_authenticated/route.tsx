@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated")({
       if (error || !data.user) throw redirect({ to: "/auth" });
       return { user: data.user };
     } catch (error) {
-      if (error instanceof Response) throw error;
+      if (isRedirect(error)) throw error;
       throw redirect({ to: "/auth" });
     }
   },
