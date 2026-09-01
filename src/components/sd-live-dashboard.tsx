@@ -206,6 +206,83 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
   );
 }
 
+function RankedList({ items, total }: { items: { name: string; value: number; count: number }[]; total: number }) {
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <ol className="space-y-2.5">
+      {items.map((item, i) => {
+        const color = KPI_TONES[i % KPI_TONES.length];
+        const share = total ? (item.value / total) * 100 : 0;
+        return (
+          <li key={item.name} className="rounded-md border border-border/70 p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className="grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold"
+                  style={{ background: `color-mix(in oklab, ${color} 22%, transparent)`, color }}
+                >
+                  {i + 1}
+                </span>
+                <span className="truncate text-sm">{item.name || "—"}</span>
+              </span>
+              <Badge variant="secondary" className="tabular shrink-0">
+                {share.toFixed(1)}%
+              </Badge>
+            </div>
+            <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+              <div
+                className="h-1.5 rounded-full"
+                style={{ width: `${Math.max(2, Math.min(100, share))}%`, background: color }}
+              />
+            </div>
+            <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+              <span>{item.count} line(s)</span>
+              <span className="tabular">{INR(item.value)}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function StackedMix({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!total) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <div>
+      <div className="flex h-6 w-full overflow-hidden rounded-full">
+        {items.map((item, i) => (
+          <div
+            key={item.name}
+            title={`${item.name}: ${INR(item.value)}`}
+            style={{
+              width: `${(item.value / total) * 100}%`,
+              background: KPI_TONES[i % KPI_TONES.length],
+            }}
+          />
+        ))}
+      </div>
+      <div className="mt-3 space-y-2">
+        {items.map((item, i) => (
+          <div key={item.name} className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2">
+              <span
+                className="size-2.5 rounded-sm"
+                style={{ background: KPI_TONES[i % KPI_TONES.length] }}
+              />
+              {item.name || "—"}
+            </span>
+            <span className="tabular text-muted-foreground">
+              {INR(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 /* --------------------------------- table ---------------------------------- */
 
 type Column = { key: string; label: string; numeric?: boolean; render: (r: SdLine) => string };
