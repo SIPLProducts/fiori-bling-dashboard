@@ -527,8 +527,36 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
       sample_response: result.body ?? endpoint.sample_response,
     })
     .eq("id", endpoint.id);
-  return { ...result, message };
+  return { ...result, message, request: outbound };
 }
+
+export type SyncRun = {
+  id: string;
+  endpoint: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  records_received: number;
+  records_inserted: number;
+  records_updated: number;
+  error_message: string | null;
+  request_snapshot: unknown;
+};
+
+/** Recent sync runs for an endpoint — used for the Scheduler health panel. */
+export async function listSyncRuns(endpointName: string, limit = 10): Promise<SyncRun[]> {
+  const { data, error } = await supabase
+    .from("sap_sync_runs")
+    .select(
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, error_message, request_snapshot",
+    )
+    .eq("endpoint", endpointName)
+    .order("started_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as SyncRun[];
+}
+
 
 /** Stores a SAP response payload into zfisales_detail (Sharvi Admin only). */
 const storeEndpointResponseServer = createServerFn({ method: "POST" })
