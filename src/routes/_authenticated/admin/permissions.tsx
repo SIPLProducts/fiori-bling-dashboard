@@ -42,6 +42,7 @@ function AdminPermissions() {
   const queryClient = useQueryClient();
   const { data: launchpad } = useLaunchpad();
   const isSuperAdmin = launchpad?.isSuperAdmin ?? false;
+  const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.permissions");
 
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: () => listRoles() });
   const grantsQuery = useQuery({ queryKey: ["role-screens"], queryFn: () => listRoleScreens() });
@@ -67,7 +68,7 @@ function AdminPermissions() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  if (launchpad && !isSuperAdmin) {
+  if (launchpad && !canOpen) {
     return (
       <ReportShell title="Screen Permissions" description="Assign screens to roles.">
         <AccessDenied area="screen permissions" />
