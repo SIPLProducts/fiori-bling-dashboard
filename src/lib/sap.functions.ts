@@ -39,10 +39,14 @@ async function screensForUser(userId: string): Promise<string[]> {
   return (await accessForUser(userId)).screens;
 }
 
-/** Tile group -> module screen key, so module permissions also gate module tiles. */
+/** Tile group -> screen key. Every group is gated by Screen Permissions. */
 const GROUP_SCREEN: Record<string, string> = Object.fromEntries(
   MODULES.map((mod) => [mod.groupKey, `module.${mod.key}`]),
 );
+
+function screenForGroup(groupKey: string): string {
+  return GROUP_SCREEN[groupKey] ?? groupScreenKey(groupKey);
+}
 
 export async function getLaunchpad(): Promise<LaunchpadData> {
   const userId = await requireUserId();
@@ -58,10 +62,9 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
   const { roleKeys, isSuperAdmin, screens } = access;
   const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) => {
     if (isSuperAdmin) return true;
-    const moduleScreen = GROUP_SCREEN[tile.group_key];
-    if (moduleScreen) return screens.includes(moduleScreen);
-    return tile.allowed_roles.some((role) => roleKeys.includes(role));
+    return screens.includes(screenForGroup(tile.group_key));
   });
+
 
   return {
     roles: roleKeys,
