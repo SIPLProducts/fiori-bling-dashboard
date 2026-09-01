@@ -6,10 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// Inside the Lovable build the platform pins its own server target; every other
-// build (your local `npm run build:static`) produces a static SPA that Nginx can
-// serve straight from `frontend/dist`.
-const isLovableBuild = Boolean(process.env["LOVABLE_NITRO_PRESET"]);
+// Default = hosted build (Nitro server bundle). The on-prem static SPA build is
+// opt-in through `npm run build:static`, which sets STATIC_BUILD=1. Never infer the
+// static build from the absence of an env var: the hosted builder does not always
+// set LOVABLE_NITRO_PRESET, and a static output there ships a broken worker.
+const isStaticBuild = process.env["STATIC_BUILD"] === "1";
 
 export default defineConfig({
   vite: {
@@ -21,8 +22,8 @@ export default defineConfig({
   },
   tanstackStart: {
     // The static SPA shell (dist/index.html) is only for the on-prem Nginx build.
-    // Enabling it during the hosted build breaks the server bundle, so it stays off there.
-    ...(isLovableBuild ? {} : { spa: { enabled: true } }),
+    ...(isStaticBuild ? { spa: { enabled: true } } : {}),
   },
-  ...(isLovableBuild ? {} : { nitro: false as const }),
+  ...(isStaticBuild ? { nitro: false as const } : {}),
 });
+
