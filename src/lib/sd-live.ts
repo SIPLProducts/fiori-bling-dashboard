@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 /** One document line from zfisales_detail, client-safe. */
 export type SdLine = {
   docNo: string;
+  docItem: string;
   postingDate: string;
   month: string;
   fiscalYear: string;
@@ -10,24 +11,43 @@ export type SdLine = {
   companyCode: string;
   customer: string;
   customerName: string;
+  customerProfile: string;
   profitCtr: string;
   profitCtrName: string;
+  pcShortName: string;
+  mainGroup: string;
+  subGroup: string;
+  newRepl: string;
   salesType: string;
   segment: string;
   material: string;
   materialDesc: string;
   productGroup: string;
+  model: string;
+  productRange: string;
+  productType: string;
+  divisionName: string;
+  industryName: string;
   countryName: string;
   salesOrder: string;
+  salesZone: string;
+  salesRepName: string;
+  incoterms: string;
+  usageDesc: string;
   unit: string;
   quantity: number;
+  totalAh: number;
   amount: number;
 };
 
 const COLUMNS =
-  "doc_no, posting_date, month, fiscal_year, plant, company_code, customer, customer_name, profit_ctr, profit_ctr_name, sales_type, segment, material, material_desc, product_group, country_name, sales_order, unit, quantity, amount";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount";
 
 const PAGE = 1000;
+
+type Row = Record<string, unknown>;
+const s = (v: unknown) => (v == null ? "" : String(v));
+const n = (v: unknown) => Number(v ?? 0);
 
 export async function fetchSdLines(): Promise<SdLine[]> {
   const rows: SdLine[] = [];
@@ -38,31 +58,48 @@ export async function fetchSdLines(): Promise<SdLine[]> {
       .order("posting_date", { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw error;
-    for (const r of data ?? []) {
+    const page = (data ?? []) as unknown as Row[];
+    for (const r of page) {
       rows.push({
-        docNo: r.doc_no ?? "",
-        postingDate: r.posting_date ?? "",
-        month: r.month ?? "",
-        fiscalYear: r.fiscal_year ?? "",
-        plant: r.plant ?? "",
-        companyCode: r.company_code ?? "",
-        customer: r.customer ?? "",
-        customerName: r.customer_name ?? "",
-        profitCtr: r.profit_ctr ?? "",
-        profitCtrName: r.profit_ctr_name ?? "",
-        salesType: r.sales_type ?? "",
-        segment: r.segment ?? "",
-        material: r.material ?? "",
-        materialDesc: r.material_desc ?? "",
-        productGroup: r.product_group ?? "",
-        countryName: r.country_name ?? "",
-        salesOrder: r.sales_order ?? "",
-        unit: r.unit ?? "",
-        quantity: Number(r.quantity ?? 0),
-        amount: Number(r.amount ?? 0),
+        docNo: s(r["doc_no"]),
+        docItem: s(r["doc_item"]),
+        postingDate: s(r["posting_date"]),
+        month: s(r["month"]),
+        fiscalYear: s(r["fiscal_year"]),
+        plant: s(r["plant"]),
+        companyCode: s(r["company_code"]),
+        customer: s(r["customer"]),
+        customerName: s(r["customer_name"]),
+        customerProfile: s(r["customer_profile"]),
+        profitCtr: s(r["profit_ctr"]),
+        profitCtrName: s(r["profit_ctr_name"]),
+        pcShortName: s(r["pc_short_name"]),
+        mainGroup: s(r["main_group"]),
+        subGroup: s(r["sub_group"]),
+        newRepl: s(r["new_repl"]),
+        salesType: s(r["sales_type"]),
+        segment: s(r["segment"]),
+        material: s(r["material"]),
+        materialDesc: s(r["material_desc"]),
+        productGroup: s(r["product_group"]),
+        model: s(r["model"]),
+        productRange: s(r["product_range"]),
+        productType: s(r["product_type"]),
+        divisionName: s(r["division_name"]),
+        industryName: s(r["industry_name"]),
+        countryName: s(r["country_name"]),
+        salesOrder: s(r["sales_order"]),
+        salesZone: s(r["sales_zone"]),
+        salesRepName: s(r["sales_rep_name"]),
+        incoterms: s(r["incoterms"]),
+        usageDesc: s(r["usage_desc"]),
+        unit: s(r["unit"]),
+        quantity: n(r["quantity"]),
+        totalAh: n(r["total_ah"]),
+        amount: n(r["amount"]),
       });
     }
-    if (!data || data.length < PAGE) break;
+    if (page.length < PAGE) break;
   }
   return rows;
 }
@@ -70,26 +107,16 @@ export async function fetchSdLines(): Promise<SdLine[]> {
 export type SdFilters = {
   from: string;
   to: string;
-  fiscalYears: string[];
   plants: string[];
   profitCentres: string[];
-  salesTypes: string[];
-  segments: string[];
-  productGroups: string[];
-  countries: string[];
   search: string;
 };
 
 export const emptySdFilters: SdFilters = {
   from: "",
   to: "",
-  fiscalYears: [],
   plants: [],
   profitCentres: [],
-  salesTypes: [],
-  segments: [],
-  productGroups: [],
-  countries: [],
   search: "",
 };
 
@@ -99,16 +126,11 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
   return rows.filter((r) => {
     if (f.from && r.postingDate && r.postingDate < f.from) return false;
     if (f.to && r.postingDate && r.postingDate > f.to) return false;
-    if (!inList(f.fiscalYears, r.fiscalYear)) return false;
     if (!inList(f.plants, r.plant)) return false;
     if (!inList(f.profitCentres, r.profitCtr)) return false;
-    if (!inList(f.salesTypes, r.salesType)) return false;
-    if (!inList(f.segments, r.segment)) return false;
-    if (!inList(f.productGroups, r.productGroup)) return false;
-    if (!inList(f.countries, r.countryName)) return false;
     if (
       term &&
-      ![r.docNo, r.customer, r.customerName, r.material, r.materialDesc, r.salesOrder]
+      ![r.docNo, r.customer, r.customerName, r.material, r.materialDesc, r.salesOrder, r.model]
         .join(" ")
         .toLowerCase()
         .includes(term)
@@ -180,7 +202,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
-    add(byPc, r.profitCtrName || r.profitCtr, r.amount);
+    add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(bySeg, r.segment, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);

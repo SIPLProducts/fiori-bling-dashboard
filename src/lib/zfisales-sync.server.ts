@@ -102,10 +102,22 @@ export type ZfisalesDetailRow = {
   sales_rep: string;
   sales_rep_name: string;
   total_ah: number;
+  pc_short_name: string;
+  sub_group: string;
+  new_repl: string;
+  division_name: string;
+  industry_name: string;
+  doc_item: string;
+  material_profit_ctr: string;
+  material_profit_ctr_name: string;
+  ah: number;
+  sales_zone: string;
+  customer_profile: string;
   raw: unknown;
   source_endpoint: string;
   synced_at: string;
 };
+
 
 export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): ZfisalesDetailRow | null {
   const plant = str(pickField(raw, ["WERKS", "werks", "plant"]));
