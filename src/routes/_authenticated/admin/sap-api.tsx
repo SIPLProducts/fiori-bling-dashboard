@@ -139,6 +139,79 @@ function MiddlewareActivity() {
   );
 }
 
+/** Last runs of the 10-minute scheduled sync, straight from the run log. */
+function SchedulerHealth({ endpointName }: { endpointName: string }) {
+  const runsQuery = useQuery({
+    queryKey: ["sync-runs", endpointName],
+    queryFn: () => listSyncRuns(endpointName, 10),
+    enabled: Boolean(endpointName),
+    retry: false,
+  });
+  const runs = runsQuery.data ?? [];
+
+  return (
+    <div className="space-y-2 border-t border-border pt-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">Scheduler health — last 10 runs</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={runsQuery.isFetching}
+          onClick={() => runsQuery.refetch()}
+        >
+          <RefreshCw className="size-3.5" /> Refresh
+        </Button>
+      </div>
+      {runs.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No sync run recorded yet.</p>
+      ) : (
+        <div className="overflow-auto rounded-md border border-border">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/70 text-left">
+              <tr>
+                <th className="px-3 py-2 font-semibold">Started</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
+                <th className="px-3 py-2 font-semibold">Received</th>
+                <th className="px-3 py-2 font-semibold">New</th>
+                <th className="px-3 py-2 font-semibold">Updated</th>
+                <th className="px-3 py-2 font-semibold">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((run) => (
+                <tr key={run.id} className="border-t border-border">
+                  <td className="px-3 py-2">{new Date(run.started_at).toLocaleString()}</td>
+                  <td
+                    className={`px-3 py-2 font-medium ${
+                      run.status === "error" ? "text-destructive" : "text-card-foreground"
+                    }`}
+                  >
+                    {run.status}
+                  </td>
+                  <td className="px-3 py-2">{run.records_received}</td>
+                  <td className="px-3 py-2">{run.records_inserted}</td>
+                  <td className="px-3 py-2">{run.records_updated}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{run.error_message ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {runs[0]?.request_snapshot ? (
+        <>
+          <p className="pt-2 text-xs text-muted-foreground">Payload sent on the last scheduled run</p>
+          <pre className="max-h-56 overflow-auto rounded-md bg-muted p-3 font-mono text-[11px] text-muted-foreground">
+            {JSON.stringify(runs[0].request_snapshot, null, 2)}
+          </pre>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+
 export const Route = createFileRoute("/_authenticated/admin/sap-api")({
 
   head: () => ({
