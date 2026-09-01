@@ -938,7 +938,9 @@ function EndpointDetail({
               {stored?.last_run_at ? new Date(stored.last_run_at).toLocaleString() : "never"} — status{" "}
               {stored?.last_run_status ?? "—"}
             </p>
+            {stored?.name ? <SchedulerHealth endpointName={stored.name} /> : null}
           </div>
+
         </TabsContent>
 
         <TabsContent value="connectivity">
