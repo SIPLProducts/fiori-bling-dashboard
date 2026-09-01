@@ -530,7 +530,7 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <KpiCard
               label="Total revenue"
               value={INR(totalRevenue)}
@@ -545,7 +545,7 @@ export function SdLiveDashboard() {
               value={NUM(analytics.kpis.documents)}
               tone={1}
               icon={FileText}
-              caption="Unique FI documents"
+              caption={`${NUM(analytics.kpis.lines)} lines · ${analytics.kpis.linesPerDoc.toFixed(1)} per document`}
             />
             <KpiCard
               label="Customers"
@@ -555,22 +555,33 @@ export function SdLiveDashboard() {
               caption="Billed in selection"
             />
             <KpiCard
-              label="Avg / document"
+              label="Avg order value"
               value={INR(analytics.kpis.avgDoc)}
               tone={3}
               icon={Gauge}
               caption="Revenue per document"
             />
             <KpiCard
-              label="Quantity"
-              value={NUM(analytics.kpis.quantity)}
+              label="Avg realization / unit"
+              value={analytics.kpis.avgRealization ? INR(analytics.kpis.avgRealization) : "—"}
               tone={4}
               icon={Package}
-              caption="Billed quantity"
+              caption={`${NUM(analytics.kpis.quantity)} units billed`}
+            />
+            <KpiCard
+              label="Month-on-month"
+              value={
+                analytics.kpis.momPct == null
+                  ? "—"
+                  : `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
+              }
+              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 1}
+              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
+              caption={analytics.kpis.momLabel}
             />
             <KpiCard
               label="Top profit centre"
-              value={analytics.byProfitCentre[0] ? compact(analytics.byProfitCentre[0].value) : "—"}
+              value={compact(analytics.kpis.topProfitCentreValue)}
               tone={5}
               icon={Building2}
               caption={analytics.kpis.topProfitCentre}
@@ -631,26 +642,53 @@ export function SdLiveDashboard() {
               </div>
             </Panel>
 
-            <Panel title="Revenue by profit centre" className="lg:col-span-2">
-              <HBar data={analytics.byProfitCentre} valueLabel="Revenue" tone={0} />
+            <Panel title="Volume & average realization by month" className="lg:col-span-2">
+              {analytics.monthly.length ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart data={analytics.monthly}>
+                    <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis
+                      yAxisId="rate"
+                      orientation="right"
+                      tickFormatter={compact}
+                      tick={{ fontSize: 11 }}
+                      stroke="var(--color-muted-foreground)"
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(v: number, n: string) => [n === "quantity" ? NUM(v) : INR(v), n]}
+                    />
+                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26} />
+                    <Line
+                      yAxisId="rate"
+                      type="monotone"
+                      dataKey="realization"
+                      stroke="var(--kpi-4)"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="py-10 text-center text-sm text-muted-foreground">No data</p>
+              )}
             </Panel>
 
-            <Panel title="Revenue by segment">
-              <Donut data={analytics.bySegment} />
+            <Panel title="Top 5 materials">
+              <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Top customers">
+            <Panel title="Top customers" className="lg:col-span-2">
               <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
             </Panel>
 
-            <Panel title="Top materials">
-              <HBar data={analytics.topMaterials} valueLabel="Revenue" tone={4} />
-            </Panel>
-
-            <Panel title="Revenue by country">
-              <HBar data={analytics.byCountry} valueLabel="Revenue" tone={1} />
+            <Panel title="Revenue mix by type">
+              <StackedMix items={analytics.mixByType} total={totalRevenue} />
             </Panel>
           </div>
+
 
           <LinesTable rows={filtered} onExport={exportRows} />
         </>
