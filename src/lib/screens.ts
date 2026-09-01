@@ -8,6 +8,7 @@ import { SD_REPORTS } from "./sd-reports";
 
 export type ScreenGroup =
   | "Home"
+  | "Procurement launchpad"
   | "Reports"
   | "Sales Distribution Reports"
   | "SAP modules"
@@ -19,6 +20,24 @@ export type ScreenDef = {
   label: string;
   group: ScreenGroup;
 };
+
+/** Launchpad tile groups that are not SAP modules — each is grantable per role. */
+export const PROCUREMENT_TILE_GROUPS: { groupKey: string; label: string }[] = [
+  { groupKey: "purchase-requisition", label: "Purchase Requisition Processing" },
+  { groupKey: "supplier-evaluation", label: "Supplier Evaluation" },
+  { groupKey: "procurement-overview", label: "Procurement Overview (tiles)" },
+  { groupKey: "workflow", label: "Workflow" },
+  { groupKey: "purchase-order", label: "Purchase Order Processing" },
+  { groupKey: "purchase-contract", label: "Purchase Contract Processing" },
+];
+
+export const TABLES_MASTER_GROUP_KEY = "tables-master";
+
+/** Screen key that gates a launchpad tile group. */
+export function groupScreenKey(groupKey: string): string {
+  return `group.${groupKey}`;
+}
+
 
 export const SUPER_ADMIN_ROLE_KEY = "super_admin";
 
