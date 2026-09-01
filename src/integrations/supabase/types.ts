@@ -626,6 +626,11 @@ export type Database = {
         Row: {
           ah: number
           amount: number
+          amount_domestic: number
+          amount_export: number
+          amount_gross: number
+          amount_net: number
+          amount_service: number
           branch: string | null
           company_code: string | null
           company_name: string | null
@@ -642,6 +647,7 @@ export type Database = {
           doc_item: string | null
           doc_no: string | null
           doc_type: string | null
+          excise_duty: number
           fiscal_year: string | null
           gl: string | null
           gl_name: string | null
@@ -691,6 +697,11 @@ export type Database = {
         Insert: {
           ah?: number
           amount?: number
+          amount_domestic?: number
+          amount_export?: number
+          amount_gross?: number
+          amount_net?: number
+          amount_service?: number
           branch?: string | null
           company_code?: string | null
           company_name?: string | null
@@ -707,6 +718,7 @@ export type Database = {
           doc_item?: string | null
           doc_no?: string | null
           doc_type?: string | null
+          excise_duty?: number
           fiscal_year?: string | null
           gl?: string | null
           gl_name?: string | null
@@ -756,6 +768,11 @@ export type Database = {
         Update: {
           ah?: number
           amount?: number
+          amount_domestic?: number
+          amount_export?: number
+          amount_gross?: number
+          amount_net?: number
+          amount_service?: number
           branch?: string | null
           company_code?: string | null
           company_name?: string | null
@@ -772,6 +789,7 @@ export type Database = {
           doc_item?: string | null
           doc_no?: string | null
           doc_type?: string | null
+          excise_duty?: number
           fiscal_year?: string | null
           gl?: string | null
           gl_name?: string | null
