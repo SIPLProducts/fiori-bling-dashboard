@@ -59,9 +59,9 @@ export const Route = createFileRoute("/_authenticated/tables/$tableKey")({
 });
 
 function fmt(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTimeISTLabel(value);
 }
+
 
 function TableMasterPage() {
   const { tableKey } = Route.useParams();
