@@ -13,8 +13,6 @@ const isLovableBuild = Boolean(process.env["LOVABLE_NITRO_PRESET"]);
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    server: { entry: "server" },
     // The static SPA shell (dist/index.html) is only for the on-prem Nginx build.
     // Enabling it during the hosted build breaks the server bundle, so it stays off there.
     ...(isLovableBuild ? {} : { spa: { enabled: true } }),
