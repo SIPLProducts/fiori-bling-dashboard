@@ -220,7 +220,6 @@ export function SdLiveDashboard() {
 
   const exportRows = () =>
     downloadCsv(
-      "sd-sales-lines.csv",
       filtered.map((r) => ({
         Document: r.docNo,
         "Posting date": r.postingDate,
@@ -237,6 +236,7 @@ export function SdLiveDashboard() {
         Unit: r.unit,
         Amount: r.amount,
       })),
+      "sd-sales-lines.csv",
     );
 
   if (isLoading) {
