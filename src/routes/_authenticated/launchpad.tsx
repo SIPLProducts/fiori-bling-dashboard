@@ -80,6 +80,14 @@ function Launchpad() {
           </div>
         ) : null}
 
+        {data && data.roles.length > 0 && !isLoading && data.tiles.length === 0 ? (
+          <div className="mb-6 rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+            Your role has no screens assigned yet — ask an administrator to grant screens in
+            Administration → Screen Permissions.
+          </div>
+        ) : null}
+
+
         {role ? (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="rounded-sm bg-primary/10 px-2 py-1 text-xs font-medium tracking-wide text-primary uppercase">
