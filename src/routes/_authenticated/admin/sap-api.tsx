@@ -388,9 +388,6 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   if (!/^\d{8}$/.test(current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
   if (!Object.keys(fixes).length) return input;
   const nextPayload: Record<string, string> = { ...payload, ...current, ...fixes };
-  for (const key of Object.keys(nextPayload)) {
-    if (!nextPayload[key]) delete nextPayload[key];
-  }
 
   return {
     ...input,
