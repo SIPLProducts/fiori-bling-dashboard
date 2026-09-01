@@ -468,15 +468,47 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
     body: endpoint.body_template ?? undefined,
   });
 
+  let message = result.message;
+  if (result.ok && result.body) {
+    try {
+      const counts = await storeEndpointResponseServer({
+        data: { endpointName: endpoint.name, body: result.body },
+      });
+      message = `${message} · stored ${counts.received} rows (${counts.inserted} new, ${counts.updated} updated)`;
+    } catch (err) {
+      message = `${message} · saving to the database failed: ${
+        err instanceof Error ? err.message : "unknown error"
+      }`;
+    }
+  }
+
   await supabase
     .from("sap_endpoints")
     .update({
       last_test_status: result.ok ? "ok" : "error",
-      last_test_message: result.message,
+      last_test_message: message,
       last_test_duration_ms: result.durationMs,
       last_synced_at: result.ok ? new Date().toISOString() : endpoint.last_synced_at,
       sample_response: result.body ?? endpoint.sample_response,
     })
     .eq("id", endpoint.id);
-  return result;
+  return { ...result, message };
 }
+
+/** Stores a SAP response payload into zfisales_detail (Sharvi Admin only). */
+const storeEndpointResponseServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { endpointName: string; body: string }) => data)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
+    if (error || !isAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(data.body);
+    } catch {
+      throw new Error("SAP response was not valid JSON");
+    }
+    const { storeZfisalesPayload } = await import("@/lib/sap-pull.server");
+    return storeZfisalesPayload(payload, data.endpointName);
+  });
