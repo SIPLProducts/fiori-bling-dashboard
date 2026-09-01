@@ -28,7 +28,10 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
+
 import { Panel } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
