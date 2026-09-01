@@ -45,13 +45,28 @@ export type UserFormInput = {
 };
 
 
-async function requireSuperAdmin(): Promise<string> {
+async function currentAccess() {
   const { data: auth, error } = await supabase.auth.getUser();
   if (error || !auth.user) throw new Error("NOT_AUTHENTICATED");
   const access = await accessForUser(auth.user.id);
-  if (!access.isSuperAdmin) throw new Error("Forbidden: Sharvi Admin role required");
-  return auth.user.id;
+  return { userId: auth.user.id, ...access };
 }
+
+/** Allows Sharvi Admin, or any role granted the given admin screen. */
+async function requireScreen(screenKey: string, label: string): Promise<string> {
+  const access = await currentAccess();
+  if (!access.isSuperAdmin && !access.screens.includes(screenKey)) {
+    throw new Error(`Forbidden: ${label} access required`);
+  }
+  return access.userId;
+}
+
+async function requireSuperAdmin(): Promise<string> {
+  const access = await currentAccess();
+  if (!access.isSuperAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+  return access.userId;
+}
+
 
 /** Isolated auth client so creating an account never replaces the admin's session. */
 function signUpClient() {
@@ -63,7 +78,7 @@ function signUpClient() {
 }
 
 export async function listPortalUsers(): Promise<PortalUser[]> {
-  await requireSuperAdmin();
+  await requireScreen("admin.users", "User Management");
 
   const [profilesRes, rolesRes] = await Promise.all([
     supabase
@@ -122,7 +137,7 @@ async function assertAssignableRole(roleKey: string) {
 
 /** Confirms a user's email so they can sign in without the confirmation mail. */
 export async function activatePortalUser(userId: string) {
-  await requireSuperAdmin();
+  await requireScreen("admin.users", "User Management");
   const { error } = await supabase.rpc("admin_confirm_user_email", { _user_id: userId });
   if (error) throw error;
   return { ok: true };
@@ -130,7 +145,7 @@ export async function activatePortalUser(userId: string) {
 
 
 export async function createPortalUser(input: { data: UserFormInput }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.users", "User Management");
   const form = input.data;
   validate(form, true);
   await assertUsernameFree(form.username);
@@ -191,7 +206,7 @@ export async function createPortalUser(input: { data: UserFormInput }) {
 export async function updatePortalUser(input: {
   data: { id: string } & Omit<UserFormInput, "email">;
 }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.users", "User Management");
   const form = input.data;
   validate({ ...form, email: "placeholder@example.com" }, false);
   await assertUsernameFree(form.username, form.id);
@@ -219,6 +234,8 @@ export async function updatePortalUser(input: {
   await setRoleAssignment(form.id, form.roleKey);
 
   if (form.password) {
+    await requireSuperAdmin(); // resetting another user's password stays Sharvi Admin only
+
     const { error: pwError } = await supabase.rpc("admin_set_user_password", {
       _user_id: form.id,
       _new_password: form.password,
@@ -230,7 +247,7 @@ export async function updatePortalUser(input: {
 }
 
 export async function setUserStatus(input: { data: { id: string; status: UserStatus } }) {
-  const currentUserId = await requireSuperAdmin();
+  const currentUserId = await requireScreen("admin.users", "User Management");
   if (input.data.id === currentUserId && input.data.status === "inactive") {
     throw new Error("You cannot deactivate your own account");
   }
@@ -244,10 +261,15 @@ export async function setUserStatus(input: { data: { id: string; status: UserSta
 
 /** A user holds exactly one role; this replaces any previous assignment. */
 async function setRoleAssignment(userId: string, roleKey: string) {
-  const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-  if (userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
+  const access = await currentAccess();
+  const currentUserId = access.userId;
+  if (roleKey === SUPER_ADMIN_ROLE_KEY && !access.isSuperAdmin) {
+    throw new Error("Only a Sharvi Admin can grant the Sharvi Admin role");
+  }
+  if (access.isSuperAdmin && userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
     throw new Error("You cannot remove your own Sharvi Admin role");
   }
+
 
   const del = await supabase.from("user_role_assignments").delete().eq("user_id", userId);
   if (del.error) throw del.error;
@@ -265,7 +287,7 @@ async function setRoleAssignment(userId: string, roleKey: string) {
 export async function createRole(input: {
   data: { key: string; name: string; description: string };
 }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.roles", "Roles");
   const key = input.data.key.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
   if (!key) throw new Error("Role key is required");
   if (!input.data.name.trim()) throw new Error("Role name is required");
@@ -282,7 +304,7 @@ export async function createRole(input: {
 export async function updateRole(input: {
   data: { key: string; name: string; description: string };
 }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.roles", "Roles");
   if (input.data.key === SUPER_ADMIN_ROLE_KEY) throw new Error("The Sharvi Admin role cannot be edited");
   const { error } = await supabase
     .from("roles")
@@ -293,7 +315,7 @@ export async function updateRole(input: {
 }
 
 export async function deleteRole(input: { data: { key: string } }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.roles", "Roles");
   if (input.data.key === SUPER_ADMIN_ROLE_KEY) throw new Error("The Sharvi Admin role cannot be deleted");
   const { error } = await supabase.from("roles").delete().eq("key", input.data.key);
   if (error) throw error;
@@ -311,7 +333,7 @@ export async function listRoleScreens(): Promise<{ role_key: string; screen_key:
 export async function setRoleScreen(input: {
   data: { roleKey: string; screenKey: string; enabled: boolean };
 }) {
-  await requireSuperAdmin();
+  await requireScreen("admin.permissions", "Screen Permissions");
   const { roleKey, screenKey, enabled } = input.data;
   if (roleKey === SUPER_ADMIN_ROLE_KEY) {
     throw new Error("Sharvi Admin always has access to every screen");

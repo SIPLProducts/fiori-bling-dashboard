@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Bell, HelpCircle, LogOut, Search, User } from "lucide-react";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
+import hblLogoAsset from "@/assets/hbl-logo.png.asset.json";
 
 
 import {
@@ -39,8 +40,8 @@ export function ShellBar({
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-shell px-4 text-shell-foreground">
       <Link to="/launchpad" className="flex items-center gap-2">
-        <span className="rounded-sm bg-primary px-2 py-1 text-[13px] font-bold tracking-[0.18em] text-primary-foreground">
-          NEXUS
+        <span className="flex h-8 items-center rounded-sm bg-white px-2">
+          <img src={hblLogoAsset.url} alt="HBL" className="h-6 w-auto object-contain" />
         </span>
       </Link>
       <span className="hidden text-xs text-shell-muted sm:inline">Procurement Analytics</span>

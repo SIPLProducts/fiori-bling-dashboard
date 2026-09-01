@@ -47,6 +47,7 @@ function AdminRoles() {
   const queryClient = useQueryClient();
   const { data: launchpad } = useLaunchpad();
   const isSuperAdmin = launchpad?.isSuperAdmin ?? false;
+  const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.roles");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RoleRecord | null>(null);
@@ -79,7 +80,7 @@ function AdminRoles() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  if (launchpad && !isSuperAdmin) {
+  if (launchpad && !canOpen) {
     return (
       <ReportShell title="Roles" description="Maintain portal roles.">
         <AccessDenied area="role management" />

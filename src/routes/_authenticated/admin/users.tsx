@@ -84,6 +84,7 @@ function AdminUsers() {
   const queryClient = useQueryClient();
   const { data: launchpad } = useLaunchpad();
   const isSuperAdmin = launchpad?.isSuperAdmin ?? false;
+  const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.users");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PortalUser | null>(null);
@@ -180,7 +181,7 @@ function AdminUsers() {
     setOpen(true);
   }
 
-  if (launchpad && !isSuperAdmin) {
+  if (launchpad && !canOpen) {
     return (
       <ReportShell title="User Management" description="Administer portal users.">
         <AccessDenied area="user management" />
