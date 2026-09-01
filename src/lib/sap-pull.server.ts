@@ -153,29 +153,33 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
         )
       : {};
 
+  const outbound = {
+    middlewareUrl: `${base}/sap/call`,
+    systemKey: system?.key ?? null,
+    baseUrl: system?.base_url ?? null,
+    sapClient: system?.sap_client ?? null,
+    path: endpoint.endpoint_path,
+    method: endpoint.http_method,
+    authType: endpoint.auth_type,
+    query: toObject(endpoint.query_params),
+    headers: toObject(endpoint.headers),
+    body: endpoint.body_template ?? undefined,
+  };
+
   let response: Response;
   try {
     response = await fetch(`${base}/sap/call`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-shared-secret": secret },
-      body: JSON.stringify({
-        systemKey: system?.key ?? null,
-        baseUrl: system?.base_url ?? null,
-        sapClient: system?.sap_client ?? null,
-        path: endpoint.endpoint_path,
-        method: endpoint.http_method,
-        authType: endpoint.auth_type,
-        query: toObject(endpoint.query_params),
-        headers: toObject(endpoint.headers),
-        body: endpoint.body_template ?? undefined,
-      }),
+      body: JSON.stringify(outbound),
       signal: AbortSignal.timeout(120000),
     });
   } catch (err) {
     const message = `Middleware unreachable: ${err instanceof Error ? err.message : "fetch failed"}`;
-    await logFailure(endpointName, message);
+    await logFailure(endpointName, message, outbound);
     return { status: "error", message };
   }
+
 
   const text = await response.text();
   let envelope: Record<string, unknown> = {};
