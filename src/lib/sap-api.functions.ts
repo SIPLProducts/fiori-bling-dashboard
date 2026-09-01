@@ -467,6 +467,24 @@ export function resolveEndpointUrl(endpoint: {
 export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[]): Promise<TestResult> {
   await requireSuperAdmin();
   const system = systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active);
+  const query = Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value]));
+  const headers = Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value]));
+  let parsedBody: unknown = endpoint.body_template ?? undefined;
+  try {
+    if (endpoint.body_template) parsedBody = JSON.parse(endpoint.body_template);
+  } catch {
+    parsedBody = endpoint.body_template;
+  }
+  const outbound: OutboundRequest = {
+    url: resolveEndpointUrl(endpoint, systems),
+    method: endpoint.http_method,
+    query,
+    headers,
+    body: parsedBody,
+  };
+  // Visible in the browser console so the exact payload can be inspected.
+  console.info("[SAP request]", endpoint.name, outbound);
+
   const result = await callMiddleware("/sap/call", {
     systemKey: system?.key ?? null,
     baseUrl: system?.base_url ?? null,
@@ -474,10 +492,16 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
     path: endpoint.endpoint_path,
     method: endpoint.http_method,
     authType: endpoint.auth_type,
-    query: Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value])),
-    headers: Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value])),
+    query,
+    headers,
     body: endpoint.body_template ?? undefined,
   });
+  console.info("[SAP response]", endpoint.name, {
+    stage: result.stage,
+    sapStatus: result.sapStatus,
+    durationMs: result.durationMs,
+  });
+
 
   let message = result.message;
   if (result.ok && result.body) {
