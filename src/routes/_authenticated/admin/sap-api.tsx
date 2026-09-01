@@ -171,43 +171,85 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
           <table className="w-full text-xs">
             <thead className="bg-muted/70 text-left">
               <tr>
+                <th className="w-8 px-2 py-2" />
                 <th className="px-3 py-2 font-semibold">Started</th>
                 <th className="px-3 py-2 font-semibold">Status</th>
-                <th className="px-3 py-2 font-semibold">Received</th>
-                <th className="px-3 py-2 font-semibold">New</th>
-                <th className="px-3 py-2 font-semibold">Updated</th>
+                <th className="px-3 py-2 font-semibold text-right">Received</th>
+                <th className="px-3 py-2 font-semibold text-right">New</th>
+                <th className="px-3 py-2 font-semibold text-right">Updated</th>
+                <th className="px-3 py-2 font-semibold text-right">Skipped</th>
+                <th className="px-3 py-2 font-semibold text-right">Size</th>
+                <th className="px-3 py-2 font-semibold text-right">Time</th>
                 <th className="px-3 py-2 font-semibold">Message</th>
               </tr>
             </thead>
             <tbody>
-              {runs.map((run) => (
-                <tr key={run.id} className="border-t border-border">
-                  <td className="px-3 py-2">{formatDateTimeISTLabel(run.started_at)}</td>
-                  <td
-                    className={`px-3 py-2 font-medium ${
-                      run.status === "error" ? "text-destructive" : "text-card-foreground"
-                    }`}
-                  >
-                    {run.status}
-                  </td>
-                  <td className="px-3 py-2">{run.records_received}</td>
-                  <td className="px-3 py-2">{run.records_inserted}</td>
-                  <td className="px-3 py-2">{run.records_updated}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{run.error_message ?? "—"}</td>
-                </tr>
-              ))}
+              {runs.map((run) => {
+                const open = expanded === run.id;
+                return (
+                  <>
+                    <tr
+                      key={run.id}
+                      className="cursor-pointer border-t border-border hover:bg-muted/40"
+                      onClick={() => setExpanded(open ? null : run.id)}
+                    >
+                      <td className="px-2 py-2 text-muted-foreground">
+                        {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">{formatDateTimeISTLabel(run.started_at)}</td>
+                      <td
+                        className={`px-3 py-2 font-medium ${
+                          run.status === "error" ? "text-destructive" : "text-card-foreground"
+                        }`}
+                      >
+                        {run.status}
+                      </td>
+                      <td className="px-3 py-2 text-right">{run.records_received}</td>
+                      <td className="px-3 py-2 text-right">{run.records_inserted}</td>
+                      <td className="px-3 py-2 text-right">{run.records_updated}</td>
+                      <td className="px-3 py-2 text-right">{run.records_skipped ?? 0}</td>
+                      <td className="px-3 py-2 text-right">{formatBytes(run.response_bytes ?? 0)}</td>
+                      <td className="px-3 py-2 text-right">{formatDuration(run.duration_ms ?? 0)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{run.error_message ?? "—"}</td>
+                    </tr>
+                    {open ? (
+                      <tr key={`${run.id}-detail`} className="border-t border-border bg-muted/30">
+                        <td colSpan={10} className="px-3 py-3">
+                          <div className="grid gap-1 pb-2 text-[11px] text-muted-foreground sm:grid-cols-4">
+                            <span>
+                              HTTP status: <strong>{run.http_status ?? "—"}</strong>
+                            </span>
+                            <span>
+                              Response size: <strong>{formatBytes(run.response_bytes ?? 0)}</strong>
+                            </span>
+                            <span>
+                              Duration: <strong>{formatDuration(run.duration_ms ?? 0)}</strong>
+                            </span>
+                            <span>
+                              Finished:{" "}
+                              <strong>{run.finished_at ? formatDateTimeISTLabel(run.finished_at) : "—"}</strong>
+                            </span>
+                          </div>
+                          <p className="pb-1 text-[11px] font-medium text-card-foreground">Payload sent on this run</p>
+                          <pre className="max-h-56 overflow-auto rounded-md bg-background p-3 font-mono text-[11px] text-muted-foreground">
+                            {run.request_snapshot
+                              ? JSON.stringify(run.request_snapshot, null, 2)
+                              : "No payload recorded for this run."}
+                          </pre>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-      {runs[0]?.request_snapshot ? (
-        <>
-          <p className="pt-2 text-xs text-muted-foreground">Payload sent on the last scheduled run</p>
-          <pre className="max-h-56 overflow-auto rounded-md bg-muted p-3 font-mono text-[11px] text-muted-foreground">
-            {JSON.stringify(runs[0].request_snapshot, null, 2)}
-          </pre>
-        </>
-      ) : null}
+      <p className="text-[11px] text-muted-foreground">
+        Click a row to see the exact payload, response size and which hop failed. A 404/502 means the
+        middleware/tunnel answered — SAP was never contacted.
+      </p>
     </div>
   );
 }
