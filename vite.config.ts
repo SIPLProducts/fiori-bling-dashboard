@@ -7,17 +7,17 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // Inside the Lovable build the platform pins its own server target; every other
-// build (your local `npm run build`) produces a static SPA that Nginx can serve
-// straight from `frontend/dist`.
+// build (your local `npm run build:static`) produces a static SPA that Nginx can
+// serve straight from `frontend/dist`.
 const isLovableBuild = Boolean(process.env["LOVABLE_NITRO_PRESET"]);
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
-    // Static SPA shell: emits dist/index.html plus the client assets.
-    spa: { enabled: true },
+    // The static SPA shell (dist/index.html) is only for the on-prem Nginx build.
+    // Enabling it during the hosted build breaks the server bundle, so it stays off there.
+    ...(isLovableBuild ? {} : { spa: { enabled: true } }),
   },
   ...(isLovableBuild ? {} : { nitro: false as const }),
 });
