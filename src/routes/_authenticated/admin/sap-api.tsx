@@ -275,16 +275,8 @@ function parsePayload(raw: string): Record<string, string> | null {
   }
 }
 
-/** Replace matching header rows and append the ones that do not exist yet. */
-function mergeHeaders(rows: KeyValue[], values: Record<string, string>): KeyValue[] {
-  const next = rows.map((row) =>
-    row.key in values ? { key: row.key, value: values[row.key] as string } : row,
-  );
-  for (const [key, value] of Object.entries(values)) {
-    if (!next.some((row) => row.key === key)) next.push({ key, value });
-  }
-  return next;
-}
+
+
 
 function defaultEndpoint(): EndpointInput {
   const payload = { BUDAT_F: toSapDate(isoDaysAgo(7)), BUDAT_T: toSapDate(isoDaysAgo(0)) };
@@ -297,7 +289,7 @@ function defaultEndpoint(): EndpointInput {
     http_method: "GET",
     auth_type: "basic",
     query_params: [],
-    headers: mergeHeaders([], payload),
+    headers: [],
     body_template: JSON.stringify(payload, null, 2),
     response_root: "",
     response_notes: "",
@@ -403,7 +395,7 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   return {
     ...input,
     body_template: JSON.stringify(nextPayload, null, 2),
-    headers: mergeHeaders(input.headers, fixes),
+    headers: input.headers,
   };
 }
 
@@ -584,58 +576,39 @@ function KeyValueRows({
   );
 }
 
-/** Paste or upload an API payload and push its values into the form. */
-function PayloadLoader({ onLoad }: { onLoad: (values: Record<string, string>) => void }) {
-  const [text, setText] = useState("");
+/** Pick a .json file and load its contents into the request payload editor. */
+function PayloadFileInput({ onLoad }: { onLoad: (raw: string) => void }) {
   const [error, setError] = useState("");
 
-  function load(raw: string) {
-    const parsed = parsePayload(raw);
-    if (!parsed) {
-      setError("That is not a valid JSON object — nothing was changed.");
-      return;
-    }
-    setError("");
-    onLoad(parsed);
-    toast.success(`Loaded ${Object.keys(parsed).length} field(s) from the payload`);
-  }
-
   return (
-    <div className="space-y-2 rounded-md border border-dashed border-border bg-muted/40 p-4">
-      <Label className="text-sm">Load API payload</Label>
-      <p className="text-xs text-muted-foreground">
-        Paste the payload (or pick a .json file) — its values fill the header fields and the posting
-        dates automatically.
-      </p>
-      <Textarea
-        rows={5}
-        className="bg-background font-mono text-xs"
-        placeholder={'{\n  "BUKRS": "1000",\n  "BUDAT_F": "20250831",\n  "BUDAT_T": "20250831",\n  "PRCTR": "PGNLB12001",\n  "WERKS": "1200"\n}'}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+    <div className="mt-2 space-y-1">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => load(text)}>
-          Load payload
-        </Button>
         <Input
           type="file"
           accept="application/json,.json"
           className="h-9 max-w-xs cursor-pointer text-xs"
           onChange={async (e) => {
             const file = e.target.files?.[0];
+            e.target.value = "";
             if (!file) return;
             const raw = await file.text();
-            setText(raw);
-            load(raw);
-            e.target.value = "";
+            const parsed = parsePayload(raw);
+            if (!parsed) {
+              setError("That is not a valid JSON object — nothing was changed.");
+              return;
+            }
+            setError("");
+            onLoad(JSON.stringify(parsed, null, 2));
+            toast.success(`Loaded ${Object.keys(parsed).length} field(s) into the request payload`);
           }}
         />
+        <span className="text-xs text-muted-foreground">Upload a .json payload file</span>
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
+
 
 function EndpointDetail({
 
@@ -671,7 +644,7 @@ function EndpointDetail({
       return {
         ...prev,
         body_template: JSON.stringify(next, null, 2),
-        headers: mergeHeaders(prev.headers, values),
+        headers: prev.headers,
       };
     });
   }
@@ -862,16 +835,7 @@ function EndpointDetail({
               </Field>
             </div>
 
-            <PayloadLoader onLoad={applyPayloadValues} />
-
-            <Field
-              label="Headers"
-              hint={
-                form.headers.length
-                  ? `${form.headers.length} header row(s) — every payload key is created here automatically.`
-                  : "Payload keys are created here automatically once a payload is loaded."
-              }
-            >
+            <Field label="Headers" hint="Optional HTTP headers sent with the request.">
               <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
             </Field>
 
@@ -880,12 +844,14 @@ function EndpointDetail({
               hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
             >
               <Textarea
-                rows={8}
+                rows={10}
                 className="font-mono text-xs"
                 value={form.body_template}
                 onChange={(e) => set("body_template", e.target.value)}
               />
+              <PayloadFileInput onLoad={(raw) => set("body_template", raw)} />
             </Field>
+
             <Field label="Query parameters">
               <KeyValueRows
                 rows={form.query_params}
