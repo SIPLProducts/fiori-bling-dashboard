@@ -7,6 +7,9 @@ import { mapPayload } from "./zfisales-sync.server";
 
 const BATCH = 500;
 
+/** How many sync runs are kept per endpoint; older rows are deleted. */
+const RUN_HISTORY_LIMIT = 6;
+
 export type SyncCounts = { received: number; inserted: number; updated: number; skipped: number };
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -53,7 +56,9 @@ export async function storeZfisalesPayload(
         .update({ finished_at: new Date().toISOString(), ...patch })
         .eq("id", run.id);
     }
+    await pruneRuns(endpointName);
   };
+
 
   try {
     if (!rows.length) {
@@ -110,17 +115,21 @@ async function runInProgress(endpointName: string): Promise<boolean> {
   return (data ?? []).length > 0;
 }
 
-/** True when the last 5 runs all failed — park until a manual test succeeds. */
-async function circuitOpen(endpointName: string): Promise<boolean> {
-  const db = await admin();
-  const { data } = await db
-    .from("sap_sync_runs")
-    .select("status")
-    .eq("endpoint", endpointName)
-    .order("started_at", { ascending: false })
-    .limit(5);
-  const runs = data ?? [];
-  return runs.length === 5 && runs.every((r) => r.status === "error");
+/** Keeps only the newest `keep` runs for an endpoint; older rows are deleted. */
+async function pruneRuns(endpointName: string, keep = RUN_HISTORY_LIMIT): Promise<void> {
+  try {
+    const db = await admin();
+    const { data } = await db
+      .from("sap_sync_runs")
+      .select("id")
+      .eq("endpoint", endpointName)
+      .order("started_at", { ascending: false })
+      .range(keep, keep + 500);
+    const stale = (data ?? []).map((r) => r.id);
+    if (stale.length) await db.from("sap_sync_runs").delete().in("id", stale);
+  } catch {
+    // History pruning must never break a sync.
+  }
 }
 
 export type PullResult =
@@ -130,9 +139,10 @@ export type PullResult =
 
 /** Calls the middleware for the given endpoint and stores the response. */
 export async function pullSapEndpoint(endpointName: string): Promise<PullResult> {
-  if (await runInProgress(endpointName)) return { status: "skipped", reason: "A sync is already running" };
-  if (await circuitOpen(endpointName)) {
-    return { status: "skipped", reason: "Paused after repeated failures — run Test on the SAP API screen to resume" };
+  if (await runInProgress(endpointName)) {
+    const reason = "A sync is already running — this scheduled attempt was skipped";
+    await logSkipped(endpointName, reason);
+    return { status: "skipped", reason };
   }
 
   const db = await admin();
@@ -327,4 +337,20 @@ async function logFailure(
     .from("sap_endpoints")
     .update({ last_run_at: now, last_run_status: "error" })
     .eq("name", endpointName);
+
+  await pruneRuns(endpointName);
+}
+
+/** Records a scheduled attempt that could not start, so the history stays honest. */
+async function logSkipped(endpointName: string, message: string) {
+  const db = await admin();
+  const now = new Date().toISOString();
+  await db.from("sap_sync_runs").insert({
+    endpoint: endpointName,
+    status: "skipped",
+    started_at: now,
+    finished_at: now,
+    error_message: message,
+  });
+  await pruneRuns(endpointName);
 }
