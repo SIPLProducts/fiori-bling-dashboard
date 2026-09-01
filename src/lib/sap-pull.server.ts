@@ -16,11 +16,14 @@ async function admin(): Promise<Admin> {
   return supabaseAdmin;
 }
 
+export type RunMetrics = { responseBytes?: number; durationMs?: number; httpStatus?: number };
+
 /** Maps a SAP payload and upserts it into zfisales_detail, logging the run. */
 export async function storeZfisalesPayload(
   payload: unknown,
   endpointName: string,
   requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
 ): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
@@ -33,6 +36,10 @@ export async function storeZfisalesPayload(
       status: "running",
       started_at: startedAt,
       records_received: received,
+      records_skipped: skipped,
+      response_bytes: metrics.responseBytes ?? 0,
+      duration_ms: metrics.durationMs ?? 0,
+      ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
       ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
     })
     .select("id")
