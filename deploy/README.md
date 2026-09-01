@@ -232,7 +232,7 @@ Only the static files change — no container restart is needed.
 
 ```bash
 # locally
-npm run build
+npm run build:static
 
 # upload new dist/* contents to /opt/MIS_Projects/Production/frontend/dist/
 # (replace the folder contents, then hard-refresh the browser)
