@@ -7,6 +7,9 @@ import { mapPayload } from "./zfisales-sync.server";
 
 const BATCH = 500;
 
+/** How many sync runs are kept per endpoint; older rows are deleted. */
+const RUN_HISTORY_LIMIT = 6;
+
 export type SyncCounts = { received: number; inserted: number; updated: number; skipped: number };
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
