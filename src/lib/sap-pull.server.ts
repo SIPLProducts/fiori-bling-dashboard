@@ -50,12 +50,16 @@ export async function storeZfisalesPayload(
 
   try {
     if (!rows.length) {
+      // Nothing usable came back — existing rows are left untouched, never deleted.
       await finish({
-        status: received ? "error" : "success",
-        error_message: received ? "No mappable rows in the SAP response" : null,
+        status: "success",
+        error_message: received
+          ? "No mappable rows in the SAP response — existing data left unchanged"
+          : "No data returned — existing data left unchanged",
       });
       return { received, inserted: 0, updated: 0, skipped };
     }
+
 
     const keys = rows.map((r) => r.record_key);
     const existing = new Set<string>();
