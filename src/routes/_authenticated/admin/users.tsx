@@ -285,10 +285,21 @@ function AdminUsers() {
                         <StatusText status={user.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
-                          Edit
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={activateMutation.isPending}
+                            onClick={() => activateMutation.mutate(user.id)}
+                          >
+                            Activate account
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                            Edit
+                          </Button>
+                        </div>
                       </TableCell>
+
                     </TableRow>
                   ))
                 )}
