@@ -92,7 +92,15 @@ function AuthPage() {
         email: loginEmail,
         password,
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (/confirm/i.test(error.message)) {
+          throw new Error(
+            "This account is not activated yet — ask your administrator to activate it in User Management.",
+          );
+        }
+        throw new Error(error.message);
+      }
+
       if (remember) localStorage.setItem(REMEMBER_KEY, identifier.trim());
       else localStorage.removeItem(REMEMBER_KEY);
       navigate({ to: "/launchpad" });

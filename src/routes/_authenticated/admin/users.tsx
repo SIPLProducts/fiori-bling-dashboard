@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Search, UserPlus } from "lucide-react";
 import {
+  activatePortalUser,
   createPortalUser,
   listPortalUsers,
   updatePortalUser,
@@ -11,6 +12,7 @@ import {
   type UserFormInput,
   type UserStatus,
 } from "@/lib/admin.functions";
+
 import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
