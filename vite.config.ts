@@ -12,6 +12,13 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 const isLovableBuild = Boolean(process.env["LOVABLE_NITRO_PRESET"]);
 
 export default defineConfig({
+  vite: {
+    build: {
+      rollupOptions: {
+        treeshake: false,
+      },
+    },
+  },
   tanstackStart: {
     // The static SPA shell (dist/index.html) is only for the on-prem Nginx build.
     // Enabling it during the hosted build breaks the server bundle, so it stays off there.
