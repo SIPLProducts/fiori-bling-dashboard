@@ -140,8 +140,17 @@ function MiddlewareActivity() {
   );
 }
 
+const formatBytes = (bytes: number) => {
+  if (!bytes) return "—";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+};
+
+const formatDuration = (ms: number) => (ms ? `${(ms / 1000).toFixed(1)}s` : "—");
+
 /** Last runs of the 10-minute scheduled sync, straight from the run log. */
 function SchedulerHealth({ endpointName }: { endpointName: string }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
   const runsQuery = useQuery({
     queryKey: ["sync-runs", endpointName],
     queryFn: () => listSyncRuns(endpointName, 10),
