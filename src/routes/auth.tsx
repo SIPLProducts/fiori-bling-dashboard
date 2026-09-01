@@ -54,11 +54,22 @@ function AuthPage() {
       setRemember(true);
     }
 
-    void supabase.auth.getUser().then(({ data, error }) => {
-      if (active && !error && data.user) {
-        void navigate({ to: "/launchpad", replace: true });
-      }
-    });
+    // Session restoration is an enhancement, never a prerequisite for showing
+    // the form. A storage/network failure must leave the user on this page.
+    try {
+      void supabase.auth
+        .getUser()
+        .then(({ data, error }) => {
+          if (active && !error && data.user) {
+            void navigate({ to: "/launchpad", replace: true });
+          }
+        })
+        .catch((error: unknown) => {
+          console.warn("Unable to restore the existing login session", error);
+        });
+    } catch (error) {
+      console.warn("Unable to initialize login session restoration", error);
+    }
 
     return () => {
       active = false;
