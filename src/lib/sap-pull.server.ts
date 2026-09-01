@@ -137,9 +137,10 @@ export type PullResult =
 
 /** Calls the middleware for the given endpoint and stores the response. */
 export async function pullSapEndpoint(endpointName: string): Promise<PullResult> {
-  if (await runInProgress(endpointName)) return { status: "skipped", reason: "A sync is already running" };
-  if (await circuitOpen(endpointName)) {
-    return { status: "skipped", reason: "Paused after repeated failures — run Test on the SAP API screen to resume" };
+  if (await runInProgress(endpointName)) {
+    const reason = "A sync is already running — this scheduled attempt was skipped";
+    await logSkipped(endpointName, reason);
+    return { status: "skipped", reason };
   }
 
   const db = await admin();
