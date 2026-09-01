@@ -27,6 +27,7 @@ import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
+import { Route as ApiPublicSapPullZfisalesRouteImport } from './routes/api/public/sap/pull/zfisales'
 import { Route as ApiPublicSapSyncZfisalesRouteImport } from './routes/api/public/sap/sync/zfisales'
 
 const IndexRoute = IndexRouteImport.update({
@@ -130,6 +131,12 @@ const AuthenticatedReportsSdRegisterRoute =
     path: '/reports/sd/register',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicSapPullZfisalesRoute =
+  ApiPublicSapPullZfisalesRouteImport.update({
+    id: '/api/public/sap/pull/zfisales',
+    path: '/api/public/sap/pull/zfisales',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSapSyncZfisalesRoute =
   ApiPublicSapSyncZfisalesRouteImport.update({
     id: '/api/public/sap/sync/zfisales',
@@ -155,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRoutesByTo {
@@ -175,6 +183,7 @@ export interface FileRoutesByTo {
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRoutesById {
@@ -197,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
 }
 export interface FileRouteTypes {
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
+    | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
+    | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
   id:
     | '__root__'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/finance-gst'
     | '/_authenticated/reports/sd/kpi'
     | '/_authenticated/reports/sd/register'
+    | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
   fileRoutesById: FileRoutesById
 }
@@ -267,6 +280,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicSapPullZfisalesRoute: typeof ApiPublicSapPullZfisalesRoute
   ApiPublicSapSyncZfisalesRoute: typeof ApiPublicSapSyncZfisalesRoute
 }
 
@@ -398,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSdRegisterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/sap/pull/zfisales': {
+      id: '/api/public/sap/pull/zfisales'
+      path: '/api/public/sap/pull/zfisales'
+      fullPath: '/api/public/sap/pull/zfisales'
+      preLoaderRoute: typeof ApiPublicSapPullZfisalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sap/sync/zfisales': {
       id: '/api/public/sap/sync/zfisales'
       path: '/api/public/sap/sync/zfisales'
@@ -453,6 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicSapPullZfisalesRoute: ApiPublicSapPullZfisalesRoute,
   ApiPublicSapSyncZfisalesRoute: ApiPublicSapSyncZfisalesRoute,
 }
 export const routeTree = rootRouteImport
