@@ -110,17 +110,21 @@ async function runInProgress(endpointName: string): Promise<boolean> {
   return (data ?? []).length > 0;
 }
 
-/** True when the last 5 runs all failed — park until a manual test succeeds. */
-async function circuitOpen(endpointName: string): Promise<boolean> {
-  const db = await admin();
-  const { data } = await db
-    .from("sap_sync_runs")
-    .select("status")
-    .eq("endpoint", endpointName)
-    .order("started_at", { ascending: false })
-    .limit(5);
-  const runs = data ?? [];
-  return runs.length === 5 && runs.every((r) => r.status === "error");
+/** Keeps only the newest `keep` runs for an endpoint; older rows are deleted. */
+async function pruneRuns(endpointName: string, keep = RUN_HISTORY_LIMIT): Promise<void> {
+  try {
+    const db = await admin();
+    const { data } = await db
+      .from("sap_sync_runs")
+      .select("id")
+      .eq("endpoint", endpointName)
+      .order("started_at", { ascending: false })
+      .range(keep, keep + 500);
+    const stale = (data ?? []).map((r) => r.id);
+    if (stale.length) await db.from("sap_sync_runs").delete().in("id", stale);
+  } catch {
+    // History pruning must never break a sync.
+  }
 }
 
 export type PullResult =
