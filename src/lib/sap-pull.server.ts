@@ -337,4 +337,20 @@ async function logFailure(
     .from("sap_endpoints")
     .update({ last_run_at: now, last_run_status: "error" })
     .eq("name", endpointName);
+
+  await pruneRuns(endpointName);
+}
+
+/** Records a scheduled attempt that could not start, so the history stays honest. */
+async function logSkipped(endpointName: string, message: string) {
+  const db = await admin();
+  const now = new Date().toISOString();
+  await db.from("sap_sync_runs").insert({
+    endpoint: endpointName,
+    status: "skipped",
+    started_at: now,
+    finished_at: now,
+    error_message: message,
+  });
+  await pruneRuns(endpointName);
 }
