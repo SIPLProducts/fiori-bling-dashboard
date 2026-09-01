@@ -144,6 +144,13 @@ function AdminUsers() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const activateMutation = useMutation({
+    mutationFn: (userId: string) => activatePortalUser(userId),
+    onSuccess: () => toast.success("Account activated — the user can sign in now"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+
   function openCreate() {
     setEditing(null);
     setForm({ ...EMPTY_FORM, roleKey: assignableRoles[0]?.key ?? "" });
