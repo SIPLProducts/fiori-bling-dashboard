@@ -204,6 +204,21 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
       }`,
     );
     logLine(`[${traceId}]    body[0..300]: ${text.slice(0, 300).replace(/\s+/g, " ")}`);
+    try {
+      const parsed = JSON.parse(text);
+      const rows = Array.isArray(parsed)
+        ? parsed.length
+        : Array.isArray(parsed?.d?.results)
+          ? parsed.d.results.length
+          : Array.isArray(parsed?.results)
+            ? parsed.results.length
+            : Array.isArray(parsed?.data)
+              ? parsed.data.length
+              : null;
+      logLine(`[${traceId}]    rows parsed: ${rows === null ? "n/a (not an array payload)" : rows}`);
+    } catch {
+      logLine(`[${traceId}]    rows parsed: response is not valid JSON`);
+    }
     return { status: res.status, ok: res.ok, url, durationMs, body: text };
   } catch (err) {
     const durationMs = Date.now() - started;
