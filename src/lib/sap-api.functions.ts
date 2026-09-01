@@ -539,6 +539,10 @@ export type SyncRun = {
   records_received: number;
   records_inserted: number;
   records_updated: number;
+  records_skipped: number;
+  response_bytes: number;
+  duration_ms: number;
+  http_status: number | null;
   error_message: string | null;
   request_snapshot: unknown;
 };
@@ -548,7 +552,7 @@ export async function listSyncRuns(endpointName: string, limit = 10): Promise<Sy
   const { data, error } = await supabase
     .from("sap_sync_runs")
     .select(
-      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, error_message, request_snapshot",
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot",
     )
     .eq("endpoint", endpointName)
     .order("started_at", { ascending: false })

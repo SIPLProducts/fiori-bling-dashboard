@@ -44,7 +44,8 @@ const PORT = Number(process.env.PORT || 3008);
 const SHARED_SECRET = (process.env.MIDDLEWARE_SHARED_SECRET || "").trim();
 /** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
 const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
-const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 30000);
+// Wide posting-date windows return multi-MB payloads that take minutes.
+const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 180000);
 const VERSION = "1.2.0";
 const STARTED_AT = Date.now();
 
@@ -177,6 +178,10 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
       system.username || "-"
     } password=${system.password ? "set" : "MISSING"} timeout=${REQUEST_TIMEOUT_MS}ms`,
   );
+  if (body) {
+    const payload = typeof body === "string" ? body : JSON.stringify(body);
+    logLine(`[${traceId}]    payload: ${payload.slice(0, 500).replace(/\s+/g, " ")}`);
+  }
   try {
     const auth = Buffer.from(`${system.username}:${system.password}`).toString("base64");
     const res = await fetch(url, {
@@ -200,6 +205,21 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
       }`,
     );
     logLine(`[${traceId}]    body[0..300]: ${text.slice(0, 300).replace(/\s+/g, " ")}`);
+    try {
+      const parsed = JSON.parse(text);
+      const rows = Array.isArray(parsed)
+        ? parsed.length
+        : Array.isArray(parsed?.d?.results)
+          ? parsed.d.results.length
+          : Array.isArray(parsed?.results)
+            ? parsed.results.length
+            : Array.isArray(parsed?.data)
+              ? parsed.data.length
+              : null;
+      logLine(`[${traceId}]    rows parsed: ${rows === null ? "n/a (not an array payload)" : rows}`);
+    } catch {
+      logLine(`[${traceId}]    rows parsed: response is not valid JSON`);
+    }
     return { status: res.status, ok: res.ok, url, durationMs, body: text };
   } catch (err) {
     const durationMs = Date.now() - started;
