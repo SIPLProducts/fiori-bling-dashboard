@@ -625,11 +625,16 @@ export type Database = {
       zfisales_detail: {
         Row: {
           amount: number
+          branch: string | null
           company_code: string | null
           company_name: string | null
+          country_code: string | null
+          country_name: string | null
           created_at: string
           customer: string | null
+          customer_group: string | null
           customer_name: string | null
+          division: string | null
           doc_date: string | null
           doc_no: string | null
           doc_type: string | null
@@ -638,32 +643,52 @@ export type Database = {
           gl_name: string | null
           grp: string | null
           id: string
+          incoterms: string | null
+          industry: string | null
+          main_group: string | null
           material: string | null
           material_desc: string | null
+          model: string | null
           month: string | null
           pk: string | null
           plant: string | null
           posting_date: string | null
+          product_group: string | null
+          product_range: string | null
+          product_type: string | null
           profit_ctr: string | null
           profit_ctr_name: string | null
+          quantity: number
           raw: Json | null
           record_key: string
           reference: string | null
+          sales_office: string | null
           sales_order: string | null
           sales_order_item: string | null
+          sales_org: string | null
+          sales_rep: string | null
+          sales_rep_name: string | null
           sales_type: string | null
           segment: string | null
           source_endpoint: string | null
           synced_at: string
+          total_ah: number
+          unit: string | null
           updated_at: string
+          usage_desc: string | null
         }
         Insert: {
           amount?: number
+          branch?: string | null
           company_code?: string | null
           company_name?: string | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           customer?: string | null
+          customer_group?: string | null
           customer_name?: string | null
+          division?: string | null
           doc_date?: string | null
           doc_no?: string | null
           doc_type?: string | null
@@ -672,32 +697,52 @@ export type Database = {
           gl_name?: string | null
           grp?: string | null
           id?: string
+          incoterms?: string | null
+          industry?: string | null
+          main_group?: string | null
           material?: string | null
           material_desc?: string | null
+          model?: string | null
           month?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null
+          product_group?: string | null
+          product_range?: string | null
+          product_type?: string | null
           profit_ctr?: string | null
           profit_ctr_name?: string | null
+          quantity?: number
           raw?: Json | null
           record_key: string
           reference?: string | null
+          sales_office?: string | null
           sales_order?: string | null
           sales_order_item?: string | null
+          sales_org?: string | null
+          sales_rep?: string | null
+          sales_rep_name?: string | null
           sales_type?: string | null
           segment?: string | null
           source_endpoint?: string | null
           synced_at?: string
+          total_ah?: number
+          unit?: string | null
           updated_at?: string
+          usage_desc?: string | null
         }
         Update: {
           amount?: number
+          branch?: string | null
           company_code?: string | null
           company_name?: string | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           customer?: string | null
+          customer_group?: string | null
           customer_name?: string | null
+          division?: string | null
           doc_date?: string | null
           doc_no?: string | null
           doc_type?: string | null
@@ -706,24 +751,39 @@ export type Database = {
           gl_name?: string | null
           grp?: string | null
           id?: string
+          incoterms?: string | null
+          industry?: string | null
+          main_group?: string | null
           material?: string | null
           material_desc?: string | null
+          model?: string | null
           month?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null
+          product_group?: string | null
+          product_range?: string | null
+          product_type?: string | null
           profit_ctr?: string | null
           profit_ctr_name?: string | null
+          quantity?: number
           raw?: Json | null
           record_key?: string
           reference?: string | null
+          sales_office?: string | null
           sales_order?: string | null
           sales_order_item?: string | null
+          sales_org?: string | null
+          sales_rep?: string | null
+          sales_rep_name?: string | null
           sales_type?: string | null
           segment?: string | null
           source_endpoint?: string | null
           synced_at?: string
+          total_ah?: number
+          unit?: string | null
           updated_at?: string
+          usage_desc?: string | null
         }
         Relationships: []
       }
