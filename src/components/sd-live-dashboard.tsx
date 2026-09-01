@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -16,7 +15,20 @@ import {
   YAxis,
   ComposedChart,
 } from "recharts";
-import { Filter, RotateCcw, Search, Download } from "lucide-react";
+import {
+  Filter,
+  RotateCcw,
+  Search,
+  Download,
+  IndianRupee,
+  FileText,
+  Users,
+  Gauge,
+  Package,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Panel } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,13 +61,16 @@ function compact(value: number) {
   return NUM(value);
 }
 
-const CHART_COLORS = [
-  "var(--color-chart-1)",
-  "var(--color-chart-2)",
-  "var(--color-chart-3)",
-  "var(--color-chart-4)",
-  "var(--color-chart-5)",
+const KPI_TONES = [
+  "var(--kpi-1)",
+  "var(--kpi-2)",
+  "var(--kpi-3)",
+  "var(--kpi-4)",
+  "var(--kpi-5)",
+  "var(--kpi-6)",
 ];
+
+const CHART_COLORS = KPI_TONES;
 
 function isoDaysAgo(days: number) {
   const d = new Date();
@@ -70,23 +85,40 @@ function KpiCard({
   value,
   caption,
   tone = 0,
+  icon: Icon,
   children,
 }: {
   label: string;
   value: string;
   caption?: string;
   tone?: number;
+  icon: React.ComponentType<{ className?: string }>;
   children?: React.ReactNode;
 }) {
+  const color = KPI_TONES[tone % KPI_TONES.length];
   return (
-    <section className="relative overflow-hidden rounded-md border border-border bg-card p-4 shadow-tile">
-      <span
-        className="absolute inset-x-0 top-0 h-1"
-        style={{ background: CHART_COLORS[tone % CHART_COLORS.length] }}
-      />
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="tabular mt-2 text-2xl font-light text-foreground">{value}</p>
-      {caption ? <p className="mt-1 text-xs text-muted-foreground">{caption}</p> : null}
+    <section
+      className="relative overflow-hidden rounded-lg border p-4 shadow-tile transition-shadow hover:shadow-lg"
+      style={{
+        borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
+        background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+          <p className="tabular mt-2 text-2xl font-semibold" style={{ color }}>
+            {value}
+          </p>
+        </div>
+        <span
+          className="grid size-9 shrink-0 place-items-center rounded-md"
+          style={{ background: `color-mix(in oklab, ${color} 20%, transparent)`, color }}
+        >
+          <Icon className="size-4" />
+        </span>
+      </div>
+      {caption ? <p className="mt-1 truncate text-xs text-muted-foreground">{caption}</p> : null}
       {children}
     </section>
   );
@@ -106,8 +138,8 @@ function ShareBars({ items, total }: { items: { name: string; value: number }[];
             <div
               className="h-1.5 rounded-full"
               style={{
-                width: `${Math.max(2, (item.value / total) * 100)}%`,
-                background: CHART_COLORS[i % CHART_COLORS.length],
+                width: `${Math.max(2, Math.min(100, (item.value / total) * 100))}%`,
+                background: KPI_TONES[i % KPI_TONES.length],
               }}
             />
           </div>
@@ -126,11 +158,20 @@ const tooltipStyle = {
   },
 } as const;
 
-function HBar({ data, valueLabel }: { data: { name: string; value: number }[]; valueLabel: string }) {
+function HBar({
+  data,
+  valueLabel,
+  tone = 0,
+}: {
+  data: { name: string; value: number }[];
+  valueLabel: string;
+  tone?: number;
+}) {
+  if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, data.length * 34)}>
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
           type="category"
@@ -140,13 +181,14 @@ function HBar({ data, valueLabel }: { data: { name: string; value: number }[]; v
           stroke="var(--color-muted-foreground)"
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
-        <Bar dataKey="value" radius={[0, 3, 3, 0]} fill="var(--color-chart-1)" />
+        <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={KPI_TONES[tone % KPI_TONES.length]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
 function Donut({ data }: { data: { name: string; value: number }[] }) {
+  if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <ResponsiveContainer width="100%" height={260}>
       <PieChart>
@@ -158,6 +200,142 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
         <Tooltip {...tooltipStyle} formatter={(v: number, n: string) => [INR(v), n]} />
       </PieChart>
     </ResponsiveContainer>
+  );
+}
+
+/* --------------------------------- table ---------------------------------- */
+
+type Column = { key: string; label: string; numeric?: boolean; render: (r: SdLine) => string };
+
+const COLUMNS: Column[] = [
+  { key: "docNo", label: "Document No", render: (r) => r.docNo || "—" },
+  { key: "docItem", label: "Item", render: (r) => r.docItem || "—" },
+  { key: "postingDate", label: "Posting date", render: (r) => r.postingDate || "—" },
+  { key: "month", label: "Month", render: (r) => r.month || "—" },
+  {
+    key: "profitCtr",
+    label: "Profit centre",
+    render: (r) => [r.profitCtr, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ") || "—",
+  },
+  { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
+  { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
+  {
+    key: "group",
+    label: "Main / Sub group",
+    render: (r) => [r.mainGroup, r.subGroup].filter(Boolean).join(" / ") || "—",
+  },
+  { key: "material", label: "Material", render: (r) => r.material || "—" },
+  { key: "materialDesc", label: "Material description", render: (r) => r.materialDesc || "—" },
+  {
+    key: "modelRange",
+    label: "Model / Range / Type",
+    render: (r) => [r.model, r.productRange, r.productType].filter(Boolean).join(" / ") || "—",
+  },
+  { key: "unit", label: "UOM", render: (r) => r.unit || "—" },
+  { key: "quantity", label: "Qty", numeric: true, render: (r) => NUM(r.quantity) },
+  { key: "totalAh", label: "Total AH", numeric: true, render: (r) => NUM(r.totalAh) },
+  { key: "amount", label: "Amount", numeric: true, render: (r) => INR(r.amount) },
+  { key: "segment", label: "Segment", render: (r) => r.segment || "—" },
+  { key: "salesRepName", label: "Sales employee", render: (r) => r.salesRepName || "—" },
+  { key: "incoterms", label: "Incoterms", render: (r) => r.incoterms || "—" },
+  { key: "usageDesc", label: "Usage", render: (r) => r.usageDesc || "—" },
+];
+
+const PAGE_SIZE = 50;
+
+function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }) {
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+
+  const visible = COLUMNS.filter((c) => !hidden.includes(c.key));
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const current = Math.min(page, pages - 1);
+  const slice = rows.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+
+  return (
+    <Panel
+      title={`Document lines (${NUM(rows.length)})`}
+      actions={
+        <div className="flex items-center gap-2">
+          <MultiSelect
+            options={COLUMNS.map((c) => ({ value: c.key, label: c.label }))}
+            selected={visible.map((c) => c.key)}
+            onChange={(next) =>
+              setHidden(COLUMNS.filter((c) => !next.includes(c.key)).map((c) => c.key))
+            }
+            placeholder="Columns"
+          />
+          <Button variant="outline" size="sm" onClick={onExport}>
+            <Download className="mr-1 size-3.5" /> CSV
+          </Button>
+        </div>
+      }
+    >
+      <div className="max-h-[560px] overflow-auto rounded-md border border-border">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-muted">
+            <tr className="text-left text-[11px] tracking-wide text-muted-foreground uppercase">
+              {visible.map((c) => (
+                <th
+                  key={c.key}
+                  className={`px-2.5 py-2 font-semibold whitespace-nowrap ${c.numeric ? "text-right" : ""}`}
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {slice.map((r, i) => (
+              <tr
+                key={`${r.docNo}-${r.docItem}-${r.material}-${i}`}
+                className="border-t border-border/60 odd:bg-card even:bg-muted/40 hover:bg-accent/40"
+              >
+                {visible.map((c) => (
+                  <td
+                    key={c.key}
+                    className={`px-2.5 py-1.5 whitespace-nowrap ${
+                      c.numeric ? "tabular text-right" : ""
+                    } ${c.key === "amount" && r.amount < 0 ? "text-destructive" : ""}`}
+                  >
+                    {c.render(r)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {!slice.length ? (
+              <tr>
+                <td colSpan={visible.length} className="px-2.5 py-8 text-center text-muted-foreground">
+                  No lines match the current filters.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Showing {slice.length ? current * PAGE_SIZE + 1 : 0}–{current * PAGE_SIZE + slice.length} of{" "}
+          {NUM(rows.length)}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => setPage(current - 1)}>
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <span className="tabular">
+            {current + 1} / {pages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={current >= pages - 1}
+            onClick={() => setPage(current + 1)}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    </Panel>
   );
 }
 
@@ -180,13 +358,8 @@ export function SdLiveDashboard() {
 
   const opts = useMemo(
     () => ({
-      fiscalYears: uniqueValues(all, (r) => r.fiscalYear),
       plants: uniqueValues(all, (r) => r.plant),
       profitCentres: uniqueValues(all, (r) => r.profitCtr),
-      salesTypes: uniqueValues(all, (r) => r.salesType),
-      segments: uniqueValues(all, (r) => r.segment),
-      productGroups: uniqueValues(all, (r) => r.productGroup),
-      countries: uniqueValues(all, (r) => r.countryName),
     }),
     [all],
   );
@@ -201,13 +374,8 @@ export function SdLiveDashboard() {
       clear: () => set({ from: "", to: "" }),
     });
   const listChips: [keyof SdFilters, string][] = [
-    ["fiscalYears", "FY"],
     ["plants", "Plant"],
     ["profitCentres", "Profit centre"],
-    ["salesTypes", "Sales type"],
-    ["segments", "Segment"],
-    ["productGroups", "Product group"],
-    ["countries", "Country"],
   ];
   for (const [key, label] of listChips) {
     const value = filters[key] as string[];
@@ -220,22 +388,11 @@ export function SdLiveDashboard() {
 
   const exportRows = () =>
     downloadCsv(
-      filtered.map((r) => ({
-        Document: r.docNo,
-        "Posting date": r.postingDate,
-        Month: r.month,
-        Plant: r.plant,
-        "Profit centre": r.profitCtrName || r.profitCtr,
-        Customer: r.customerName || r.customer,
-        "Sales type": r.salesType,
-        Segment: r.segment,
-        Material: r.material,
-        Description: r.materialDesc,
-        Country: r.countryName,
-        Quantity: r.quantity,
-        Unit: r.unit,
-        Amount: r.amount,
-      })),
+      filtered.map((r) => {
+        const out: Record<string, string | number> = {};
+        for (const c of COLUMNS) out[c.label] = c.numeric ? Number(c.render(r).replace(/[^\d.-]/g, "")) : c.render(r);
+        return out;
+      }),
       "sd-sales-lines.csv",
     );
 
@@ -254,7 +411,7 @@ export function SdLiveDashboard() {
   return (
     <div className="space-y-4">
       {/* smart filter bar */}
-      <section className="rounded-md border border-border bg-card shadow-tile">
+      <section className="rounded-lg border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
           <button
             type="button"
@@ -284,7 +441,7 @@ export function SdLiveDashboard() {
         </div>
 
         {showFilters ? (
-          <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-2 lg:grid-cols-4">
             <label className="text-xs text-muted-foreground">
               Posting from
               <Input
@@ -303,7 +460,27 @@ export function SdLiveDashboard() {
                 className="mt-1 h-9"
               />
             </label>
-            <div className="col-span-full flex flex-wrap gap-2 md:col-span-1 lg:col-span-2">
+            <label className="text-xs text-muted-foreground">
+              Plant
+              <div className="mt-1">
+                <MultiSelect
+                  options={toOptions(opts.plants)}
+                  selected={filters.plants}
+                  onChange={(next) => set({ plants: next })}
+                />
+              </div>
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Profit centre
+              <div className="mt-1">
+                <MultiSelect
+                  options={toOptions(opts.profitCentres)}
+                  selected={filters.profitCentres}
+                  onChange={(next) => set({ profitCentres: next })}
+                />
+              </div>
+            </label>
+            <div className="col-span-full flex flex-wrap gap-2">
               {[
                 { label: "Last 7 days", from: isoDaysAgo(7) },
                 { label: "Last 30 days", from: isoDaysAgo(30) },
@@ -313,36 +490,12 @@ export function SdLiveDashboard() {
                   key={preset.label}
                   variant="secondary"
                   size="sm"
-                  className="self-end"
                   onClick={() => set({ from: preset.from, to: isoDaysAgo(0) })}
                 >
                   {preset.label}
                 </Button>
               ))}
             </div>
-
-            {(
-              [
-                ["fiscalYears", "Fiscal year", opts.fiscalYears],
-                ["plants", "Plant", opts.plants],
-                ["profitCentres", "Profit centre", opts.profitCentres],
-                ["salesTypes", "Sales type", opts.salesTypes],
-                ["segments", "Segment", opts.segments],
-                ["productGroups", "Product group", opts.productGroups],
-                ["countries", "Country", opts.countries],
-              ] as [keyof SdFilters, string, string[]][]
-            ).map(([key, label, values]) => (
-              <label key={String(key)} className="text-xs text-muted-foreground">
-                {label}
-                <div className="mt-1">
-                  <MultiSelect
-                    options={toOptions(values)}
-                    selected={filters[key] as string[]}
-                    onChange={(next) => set({ [key]: next } as Partial<SdFilters>)}
-                  />
-                </div>
-              </label>
-            ))}
           </div>
         ) : null}
 
@@ -378,17 +531,48 @@ export function SdLiveDashboard() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <KpiCard label="Total revenue" value={INR(totalRevenue)} tone={0} caption="Filtered postings">
+            <KpiCard
+              label="Total revenue"
+              value={INR(totalRevenue)}
+              tone={0}
+              icon={IndianRupee}
+              caption="Filtered postings"
+            >
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
-            <KpiCard label="Documents" value={NUM(analytics.kpis.documents)} tone={1} caption="Unique FI documents" />
-            <KpiCard label="Customers" value={NUM(analytics.kpis.customers)} tone={2} caption="Billed in selection" />
-            <KpiCard label="Avg / document" value={INR(analytics.kpis.avgDoc)} tone={3} caption="Revenue per document" />
-            <KpiCard label="Quantity" value={NUM(analytics.kpis.quantity)} tone={4} caption="Billed quantity" />
+            <KpiCard
+              label="Documents"
+              value={NUM(analytics.kpis.documents)}
+              tone={1}
+              icon={FileText}
+              caption="Unique FI documents"
+            />
+            <KpiCard
+              label="Customers"
+              value={NUM(analytics.kpis.customers)}
+              tone={2}
+              icon={Users}
+              caption="Billed in selection"
+            />
+            <KpiCard
+              label="Avg / document"
+              value={INR(analytics.kpis.avgDoc)}
+              tone={3}
+              icon={Gauge}
+              caption="Revenue per document"
+            />
+            <KpiCard
+              label="Quantity"
+              value={NUM(analytics.kpis.quantity)}
+              tone={4}
+              icon={Package}
+              caption="Billed quantity"
+            />
             <KpiCard
               label="Top profit centre"
               value={analytics.byProfitCentre[0] ? compact(analytics.byProfitCentre[0].value) : "—"}
-              tone={1}
+              tone={5}
+              icon={Building2}
               caption={analytics.kpis.topProfitCentre}
             />
           </div>
@@ -399,11 +583,11 @@ export function SdLiveDashboard() {
                 <ComposedChart data={analytics.monthly}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--kpi-1)" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                   <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                   <YAxis
@@ -412,19 +596,16 @@ export function SdLiveDashboard() {
                     tick={{ fontSize: 11 }}
                     stroke="var(--color-muted-foreground)"
                   />
-                  <Tooltip {...tooltipStyle} formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]} />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="var(--color-chart-1)"
-                    fill="url(#sdFill)"
-                    strokeWidth={2}
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]}
                   />
+                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2} />
                   <Line
                     yAxisId="docs"
                     type="monotone"
                     dataKey="documents"
-                    stroke="var(--color-chart-3)"
+                    stroke="var(--kpi-3)"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -451,7 +632,7 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel title="Revenue by profit centre" className="lg:col-span-2">
-              <HBar data={analytics.byProfitCentre} valueLabel="Revenue" />
+              <HBar data={analytics.byProfitCentre} valueLabel="Revenue" tone={0} />
             </Panel>
 
             <Panel title="Revenue by segment">
@@ -459,62 +640,19 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel title="Top customers">
-              <HBar data={analytics.topCustomers} valueLabel="Revenue" />
+              <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
             </Panel>
 
             <Panel title="Top materials">
-              <HBar data={analytics.topMaterials} valueLabel="Revenue" />
+              <HBar data={analytics.topMaterials} valueLabel="Revenue" tone={4} />
             </Panel>
 
             <Panel title="Revenue by country">
-              <HBar data={analytics.byCountry} valueLabel="Revenue" />
+              <HBar data={analytics.byCountry} valueLabel="Revenue" tone={1} />
             </Panel>
           </div>
 
-          <Panel
-            title={`Document lines (${NUM(filtered.length)})`}
-            actions={
-              <Button variant="outline" size="sm" onClick={exportRows}>
-                <Download className="mr-1 size-3.5" /> CSV
-              </Button>
-            }
-          >
-            <div className="max-h-[520px] overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-card">
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
-                    {["Document", "Posting", "Customer", "Material", "Profit centre", "Type", "Country", "Qty", "Amount"].map(
-                      (h) => (
-                        <th key={h} className="px-2 py-2 font-medium">
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.slice(0, 300).map((r: SdLine, i) => (
-                    <tr key={`${r.docNo}-${r.material}-${i}`} className="border-b border-border/60">
-                      <td className="px-2 py-1.5 tabular">{r.docNo}</td>
-                      <td className="px-2 py-1.5">{r.postingDate}</td>
-                      <td className="px-2 py-1.5">{r.customerName || r.customer}</td>
-                      <td className="px-2 py-1.5">{r.materialDesc || r.material || "—"}</td>
-                      <td className="px-2 py-1.5">{r.profitCtrName || r.profitCtr}</td>
-                      <td className="px-2 py-1.5">{r.salesType || "—"}</td>
-                      <td className="px-2 py-1.5">{r.countryName || "—"}</td>
-                      <td className="tabular px-2 py-1.5 text-right">{NUM(r.quantity)}</td>
-                      <td className="tabular px-2 py-1.5 text-right">{INR(r.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filtered.length > 300 ? (
-                <p className="p-2 text-xs text-muted-foreground">
-                  Showing the first 300 of {NUM(filtered.length)} lines — export to CSV for the full list.
-                </p>
-              ) : null}
-            </div>
-          </Panel>
+          <LinesTable rows={filtered} onExport={exportRows} />
         </>
       )}
     </div>
