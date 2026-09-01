@@ -178,11 +178,23 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
     sales_rep: str(pickField(raw, ["LIFNR", "lifnr", "salesRep"])),
     sales_rep_name: str(pickField(raw, ["NAME11", "name11", "salesRepName"])),
     total_ah: num(pickField(raw, ["TOT_AH", "tot_ah"])),
+    pc_short_name: str(pickField(raw, ["PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
+    sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup"])),
+    new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl"])),
+    division_name: str(pickField(raw, ["SPART_DESP", "DIVISION_NAME", "VTEXT_SPART", "divisionName"])),
+    industry_name: str(pickField(raw, ["BRSCH_DESP", "INDUSTRY_NAME", "BRTXT_IND", "industryName"])),
+    doc_item: posnr,
+    material_profit_ctr: str(pickField(raw, ["MAT_PRCTR", "PRCTR_MAT", "matProfitCtr"])),
+    material_profit_ctr_name: str(pickField(raw, ["MAT_PRCTR_TXT", "MAT_PRCTR_DESP", "matProfitCtrName"])),
+    ah: num(pickField(raw, ["AH", "ah"])),
+    sales_zone: str(pickField(raw, ["ZONE", "SALES_ZONE", "BZIRK", "salesZone"])),
+    customer_profile: str(pickField(raw, ["CUST_PROFILE", "KDGRP_PROFILE", "customerProfile"])),
     raw,
     source_endpoint: sourceEndpoint,
     synced_at: syncedAt,
   };
 }
+
 
 export function mapPayload(payload: unknown, sourceEndpoint: string) {
   const syncedAt = new Date().toISOString();
