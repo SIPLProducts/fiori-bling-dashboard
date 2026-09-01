@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getModuleReport } from "@/lib/sap.functions";
 import { findModule, canAccessModule } from "@/lib/sap-modules";
 import { useLaunchpad } from "@/lib/use-launchpad";
+import { SdLiveDashboard } from "@/components/sd-live-dashboard";
 
 export const Route = createFileRoute("/_authenticated/reports/module/$module")({
   head: ({ params }) => {
@@ -61,7 +62,7 @@ function ModuleReportPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["module-report", module],
     queryFn: () => fetchReport({ data: { module } }),
-    enabled: allowed,
+    enabled: allowed && module !== "sd",
   });
 
   const report = data?.report ?? null;
@@ -78,6 +79,20 @@ function ModuleReportPage() {
       )
       .slice(0, 60);
   }, [report, search]);
+
+  const live = module === "sd";
+
+  if (live) {
+    return (
+      <ReportShell title={`${def.code} — ${def.title}`} description={def.description}>
+        {!rolesLoading && !allowed ? (
+          <AccessDenied area={`${def.code} — ${def.title}`} />
+        ) : (
+          <SdLiveDashboard />
+        )}
+      </ReportShell>
+    );
+  }
 
   return (
     <ReportShell
