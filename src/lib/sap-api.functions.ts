@@ -296,7 +296,18 @@ export type TestResult = {
   traceId?: string | null;
   /** True only when the middleware actually issued the SAP request. */
   sapContacted: boolean;
+  /** Exact payload the portal sent to the middleware (for console/diagnostics). */
+  request?: OutboundRequest;
 };
+
+export type OutboundRequest = {
+  url: string;
+  method: string;
+  query: Record<string, string>;
+  headers: Record<string, string>;
+  body: unknown;
+};
+
 
 function describe(stage: TestStage, payload: Record<string, unknown>, fallback: string): string {
   const msg = typeof payload["message"] === "string" ? (payload["message"] as string) : "";
