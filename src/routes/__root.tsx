@@ -138,7 +138,7 @@ function RootComponent() {
 
   useEffect(() => {
     const boot = document.getElementById("app-boot");
-    if (boot) boot.hidden = true;
+    if (boot) boot.style.display = "none";
 
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
