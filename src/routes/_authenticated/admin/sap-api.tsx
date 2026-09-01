@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { formatDateTimeISTLabel } from "@/lib/format";
 import {
   Activity,
   ArrowLeft,
@@ -181,7 +182,7 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
             <tbody>
               {runs.map((run) => (
                 <tr key={run.id} className="border-t border-border">
-                  <td className="px-3 py-2">{new Date(run.started_at).toLocaleString()}</td>
+                  <td className="px-3 py-2">{formatDateTimeISTLabel(run.started_at)}</td>
                   <td
                     className={`px-3 py-2 font-medium ${
                       run.status === "error" ? "text-destructive" : "text-card-foreground"
@@ -488,7 +489,7 @@ function ApiList({
                 <StatusPill ok={endpoint.is_active} label={endpoint.is_active ? "Active" : "Inactive"} />
                 <span>
                   {endpoint.last_synced_at
-                    ? `Synced ${new Date(endpoint.last_synced_at).toLocaleString()}`
+                    ? `Synced ${formatDateTimeISTLabel(endpoint.last_synced_at)}`
                     : "Never synced"}
                 </span>
               </div>
@@ -935,7 +936,7 @@ function EndpointDetail({
             </Field>
             <p className="text-xs text-muted-foreground">
               Last run:{" "}
-              {stored?.last_run_at ? new Date(stored.last_run_at).toLocaleString() : "never"} — status{" "}
+              {stored?.last_run_at ? formatDateTimeISTLabel(stored.last_run_at) : "never"} — status{" "}
               {stored?.last_run_status ?? "—"}
             </p>
             {stored?.name ? <SchedulerHealth endpointName={stored.name} /> : null}
@@ -1140,7 +1141,7 @@ function SystemsTab() {
             <div className="mt-4 flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 Last test: {system.last_test_status ?? "—"}
-                {system.last_test_at ? ` · ${new Date(system.last_test_at).toLocaleString()}` : ""}
+                {system.last_test_at ? ` · ${formatDateTimeISTLabel(system.last_test_at)}` : ""}
               </p>
               <Button
                 className="gap-2"
@@ -1372,7 +1373,7 @@ function MiddlewareTab() {
         <p className="text-xs text-muted-foreground">
           Last test: {configQuery.data?.last_test_status ?? "—"}
           {configQuery.data?.last_test_at
-            ? ` · ${new Date(configQuery.data.last_test_at).toLocaleString()}`
+            ? ` · ${formatDateTimeISTLabel(configQuery.data.last_test_at)}`
             : ""}
           {configQuery.data?.last_test_message ? ` · ${configQuery.data.last_test_message}` : ""}
         </p>

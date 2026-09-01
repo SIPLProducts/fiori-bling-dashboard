@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { TableFieldsPanel } from "@/components/table-fields-panel";
 
+import { formatDateTimeISTLabel } from "@/lib/format";
+
 import { useLaunchpad } from "@/lib/use-launchpad";
 import {
   SCHEDULE_PRESETS,
@@ -59,9 +61,9 @@ export const Route = createFileRoute("/_authenticated/tables/$tableKey")({
 });
 
 function fmt(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTimeISTLabel(value);
 }
+
 
 function TableMasterPage() {
   const { tableKey } = Route.useParams();

@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
+import { formatDateTimeISTLabel } from "@/lib/format";
 
 import { MultiSelect } from "@/components/multi-select";
 import { ChartExportActions } from "@/components/chart-export-buttons";
@@ -548,7 +549,7 @@ function SalesAnalyticsPage() {
         <p className="mb-3 text-xs text-muted-foreground">
           Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "ZFISALES_DETAIL — no data yet (awaiting first SAP sync)"}</span>
           {syncStatus.rowCount ? ` · ${syncStatus.rowCount.toLocaleString()} rows` : ""}
-          {syncStatus.lastSyncedAt ? ` · last synced ${new Date(syncStatus.lastSyncedAt).toLocaleString()}` : ""}
+          {syncStatus.lastSyncedAt ? ` · last synced ${formatDateTimeISTLabel(syncStatus.lastSyncedAt)}` : ""}
           {syncStatus.lastStatus && syncStatus.lastStatus !== "success" ? ` · last run ${syncStatus.lastStatus}` : ""}
         </p>
       ) : null}
