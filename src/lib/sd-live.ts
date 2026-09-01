@@ -159,20 +159,30 @@ export type SdAnalytics = {
   kpis: {
     revenue: number;
     documents: number;
+    lines: number;
     customers: number;
     avgDoc: number;
+    linesPerDoc: number;
     quantity: number;
+    avgRealization: number;
+    momPct: number | null;
+    momLabel: string;
     topProfitCentre: string;
+    topProfitCentreValue: number;
   };
   mixByType: NamedTotal[];
-  monthly: { month: string; revenue: number; documents: number }[];
-  byProfitCentre: NamedTotal[];
-  bySegment: NamedTotal[];
+  monthly: {
+    month: string;
+    revenue: number;
+    documents: number;
+    quantity: number;
+    realization: number;
+  }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
-  byCountry: NamedTotal[];
   rows: SdLine[];
 };
+
 
 const MONTH_INDEX = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
