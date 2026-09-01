@@ -862,16 +862,7 @@ function EndpointDetail({
               </Field>
             </div>
 
-            <PayloadLoader onLoad={applyPayloadValues} />
-
-            <Field
-              label="Headers"
-              hint={
-                form.headers.length
-                  ? `${form.headers.length} header row(s) — every payload key is created here automatically.`
-                  : "Payload keys are created here automatically once a payload is loaded."
-              }
-            >
+            <Field label="Headers" hint="Optional HTTP headers sent with the request.">
               <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
             </Field>
 
@@ -880,12 +871,14 @@ function EndpointDetail({
               hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
             >
               <Textarea
-                rows={8}
+                rows={10}
                 className="font-mono text-xs"
                 value={form.body_template}
                 onChange={(e) => set("body_template", e.target.value)}
               />
+              <PayloadFileInput onLoad={(raw) => set("body_template", raw)} />
             </Field>
+
             <Field label="Query parameters">
               <KeyValueRows
                 rows={form.query_params}
