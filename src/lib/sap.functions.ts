@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule, MODULES } from "./sap-modules";
 import { accessForUser } from "./access";
+import { groupScreenKey } from "./screens";
+
 import * as provider from "./sap-provider";
 
 export type AppRole = "admin" | "buyer" | "approver" | "viewer";
