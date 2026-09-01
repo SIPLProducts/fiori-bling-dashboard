@@ -114,8 +114,14 @@ In VS Code / your local repo:
 
 ```bash
 npm install
-npm run build
+npm run build:static
 ```
+
+> Use `build:static` for this on-prem Nginx deployment — it flattens the output
+> and drops the server bundle. Plain `npm run build` keeps the server bundle and
+> is what the hosted (Lovable) deployment uses; server-side features such as the
+> SAP middleware test and the scheduled `/api/public/sap/pull/*` sync only work
+> on that hosted deployment, never on this static build.
 
 This creates `dist/` in the repo root containing `index.html`, `assets/`,
 `favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server
@@ -123,6 +129,7 @@ via WinSCP:
 
 - Copy `dist/*` → `/opt/MIS_Projects/Quality/frontend/dist/`
 - Copy `dist/*` → `/opt/MIS_Projects/Production/frontend/dist/`
+
 
 > `VITE_*` values are inlined into the browser bundle at build time, so build
 > once per environment if the Supabase URLs/keys differ. If Quality and
