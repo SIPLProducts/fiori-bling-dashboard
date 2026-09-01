@@ -28,7 +28,10 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
+
 import { Panel } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -202,6 +205,83 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
     </ResponsiveContainer>
   );
 }
+
+function RankedList({ items, total }: { items: { name: string; value: number; count: number }[]; total: number }) {
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <ol className="space-y-2.5">
+      {items.map((item, i) => {
+        const color = KPI_TONES[i % KPI_TONES.length];
+        const share = total ? (item.value / total) * 100 : 0;
+        return (
+          <li key={item.name} className="rounded-md border border-border/70 p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className="grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold"
+                  style={{ background: `color-mix(in oklab, ${color} 22%, transparent)`, color }}
+                >
+                  {i + 1}
+                </span>
+                <span className="truncate text-sm">{item.name || "—"}</span>
+              </span>
+              <Badge variant="secondary" className="tabular shrink-0">
+                {share.toFixed(1)}%
+              </Badge>
+            </div>
+            <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+              <div
+                className="h-1.5 rounded-full"
+                style={{ width: `${Math.max(2, Math.min(100, share))}%`, background: color }}
+              />
+            </div>
+            <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+              <span>{item.count} line(s)</span>
+              <span className="tabular">{INR(item.value)}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function StackedMix({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!total) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <div>
+      <div className="flex h-6 w-full overflow-hidden rounded-full">
+        {items.map((item, i) => (
+          <div
+            key={item.name}
+            title={`${item.name}: ${INR(item.value)}`}
+            style={{
+              width: `${(item.value / total) * 100}%`,
+              background: KPI_TONES[i % KPI_TONES.length],
+            }}
+          />
+        ))}
+      </div>
+      <div className="mt-3 space-y-2">
+        {items.map((item, i) => (
+          <div key={item.name} className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2">
+              <span
+                className="size-2.5 rounded-sm"
+                style={{ background: KPI_TONES[i % KPI_TONES.length] }}
+              />
+              {item.name || "—"}
+            </span>
+            <span className="tabular text-muted-foreground">
+              {INR(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 /* --------------------------------- table ---------------------------------- */
 
@@ -530,7 +610,7 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <KpiCard
               label="Total revenue"
               value={INR(totalRevenue)}
@@ -545,7 +625,7 @@ export function SdLiveDashboard() {
               value={NUM(analytics.kpis.documents)}
               tone={1}
               icon={FileText}
-              caption="Unique FI documents"
+              caption={`${NUM(analytics.kpis.lines)} lines · ${analytics.kpis.linesPerDoc.toFixed(1)} per document`}
             />
             <KpiCard
               label="Customers"
@@ -555,22 +635,33 @@ export function SdLiveDashboard() {
               caption="Billed in selection"
             />
             <KpiCard
-              label="Avg / document"
+              label="Avg order value"
               value={INR(analytics.kpis.avgDoc)}
               tone={3}
               icon={Gauge}
               caption="Revenue per document"
             />
             <KpiCard
-              label="Quantity"
-              value={NUM(analytics.kpis.quantity)}
+              label="Avg realization / unit"
+              value={analytics.kpis.avgRealization ? INR(analytics.kpis.avgRealization) : "—"}
               tone={4}
               icon={Package}
-              caption="Billed quantity"
+              caption={`${NUM(analytics.kpis.quantity)} units billed`}
+            />
+            <KpiCard
+              label="Month-on-month"
+              value={
+                analytics.kpis.momPct == null
+                  ? "—"
+                  : `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
+              }
+              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 1}
+              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
+              caption={analytics.kpis.momLabel}
             />
             <KpiCard
               label="Top profit centre"
-              value={analytics.byProfitCentre[0] ? compact(analytics.byProfitCentre[0].value) : "—"}
+              value={compact(analytics.kpis.topProfitCentreValue)}
               tone={5}
               icon={Building2}
               caption={analytics.kpis.topProfitCentre}
@@ -631,26 +722,53 @@ export function SdLiveDashboard() {
               </div>
             </Panel>
 
-            <Panel title="Revenue by profit centre" className="lg:col-span-2">
-              <HBar data={analytics.byProfitCentre} valueLabel="Revenue" tone={0} />
+            <Panel title="Volume & average realization by month" className="lg:col-span-2">
+              {analytics.monthly.length ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart data={analytics.monthly}>
+                    <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis
+                      yAxisId="rate"
+                      orientation="right"
+                      tickFormatter={compact}
+                      tick={{ fontSize: 11 }}
+                      stroke="var(--color-muted-foreground)"
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(v: number, n: string) => [n === "quantity" ? NUM(v) : INR(v), n]}
+                    />
+                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26} />
+                    <Line
+                      yAxisId="rate"
+                      type="monotone"
+                      dataKey="realization"
+                      stroke="var(--kpi-4)"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="py-10 text-center text-sm text-muted-foreground">No data</p>
+              )}
             </Panel>
 
-            <Panel title="Revenue by segment">
-              <Donut data={analytics.bySegment} />
+            <Panel title="Top 5 materials">
+              <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Top customers">
+            <Panel title="Top customers" className="lg:col-span-2">
               <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
             </Panel>
 
-            <Panel title="Top materials">
-              <HBar data={analytics.topMaterials} valueLabel="Revenue" tone={4} />
-            </Panel>
-
-            <Panel title="Revenue by country">
-              <HBar data={analytics.byCountry} valueLabel="Revenue" tone={1} />
+            <Panel title="Revenue mix by type">
+              <StackedMix items={analytics.mixByType} total={totalRevenue} />
             </Panel>
           </div>
+
 
           <LinesTable rows={filtered} onExport={exportRows} />
         </>

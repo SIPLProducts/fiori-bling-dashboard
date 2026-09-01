@@ -159,20 +159,30 @@ export type SdAnalytics = {
   kpis: {
     revenue: number;
     documents: number;
+    lines: number;
     customers: number;
     avgDoc: number;
+    linesPerDoc: number;
     quantity: number;
+    avgRealization: number;
+    momPct: number | null;
+    momLabel: string;
     topProfitCentre: string;
+    topProfitCentreValue: number;
   };
   mixByType: NamedTotal[];
-  monthly: { month: string; revenue: number; documents: number }[];
-  byProfitCentre: NamedTotal[];
-  bySegment: NamedTotal[];
+  monthly: {
+    month: string;
+    revenue: number;
+    documents: number;
+    quantity: number;
+    realization: number;
+  }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
-  byCountry: NamedTotal[];
   rows: SdLine[];
 };
+
 
 const MONTH_INDEX = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -185,11 +195,12 @@ function monthSortKey(label: string): string {
 export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byType = new Map<string, NamedTotal>();
   const byPc = new Map<string, NamedTotal>();
-  const bySeg = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
-  const byCountry = new Map<string, NamedTotal>();
-  const byMonth = new Map<string, { month: string; revenue: number; docs: Set<string> }>();
+  const byMonth = new Map<
+    string,
+    { month: string; revenue: number; quantity: number; docs: Set<string> }
+  >();
 
   const docs = new Set<string>();
   const customers = new Set<string>();
@@ -203,43 +214,56 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
-    add(bySeg, r.segment, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
-    add(byCountry, r.countryName, r.amount);
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
-    const bucket = byMonth.get(label) ?? { month: label, revenue: 0, docs: new Set<string>() };
+    const bucket =
+      byMonth.get(label) ?? { month: label, revenue: 0, quantity: 0, docs: new Set<string>() };
     bucket.revenue += r.amount;
+    bucket.quantity += r.quantity;
     if (r.docNo) bucket.docs.add(r.docNo);
     byMonth.set(label, bucket);
   }
 
   const monthly = [...byMonth.values()]
     .sort((a, b) => monthSortKey(a.month).localeCompare(monthSortKey(b.month)))
-    .map((m) => ({ month: m.month, revenue: m.revenue, documents: m.docs.size }));
+    .map((m) => ({
+      month: m.month,
+      revenue: m.revenue,
+      documents: m.docs.size,
+      quantity: m.quantity,
+      realization: m.quantity ? m.revenue / m.quantity : 0,
+    }));
 
   const pcList = rank(byPc);
+  const last = monthly[monthly.length - 1];
+  const prev = monthly[monthly.length - 2];
+  const momPct = last && prev && prev.revenue ? ((last.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100 : null;
 
   return {
     kpis: {
       revenue,
       documents: docs.size,
+      lines: rows.length,
       customers: customers.size,
       avgDoc: docs.size ? revenue / docs.size : 0,
+      linesPerDoc: docs.size ? rows.length / docs.size : 0,
       quantity,
+      avgRealization: quantity ? revenue / quantity : 0,
+      momPct,
+      momLabel: last ? `${last.month}${prev ? ` vs ${prev.month}` : ""}` : "—",
       topProfitCentre: pcList[0]?.name ?? "—",
+      topProfitCentreValue: pcList[0]?.value ?? 0,
     },
     mixByType: rank(byType),
     monthly,
-    byProfitCentre: pcList.slice(0, 10),
-    bySegment: rank(bySeg, 8),
     topCustomers: rank(byCust, 10),
-    topMaterials: rank(byMat, 10),
-    byCountry: rank(byCountry, 10),
+    topMaterials: rank(byMat, 5),
     rows,
   };
 }
+
 
 export function uniqueValues(rows: SdLine[], pick: (r: SdLine) => string): string[] {
   return [...new Set(rows.map(pick).filter(Boolean))].sort();
