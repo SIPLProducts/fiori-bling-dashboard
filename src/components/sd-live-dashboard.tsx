@@ -64,6 +64,15 @@ function compact(value: number) {
   return NUM(value);
 }
 
+/** Shorter form for axis ticks so labels never get clipped. */
+function axisCompact(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1e7) return `${Math.round(value / 1e7).toLocaleString("en-IN")}\u00A0Cr`;
+  if (abs >= 1e5) return `${Math.round(value / 1e5).toLocaleString("en-IN")}\u00A0L`;
+  if (abs >= 1e3) return `${Math.round(value / 1e3).toLocaleString("en-IN")}\u00A0K`;
+  return NUM(value);
+}
+
 const KPI_TONES = [
   "var(--kpi-1)",
   "var(--kpi-2)",
