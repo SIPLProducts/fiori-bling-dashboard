@@ -351,6 +351,8 @@ const COLUMNS: Column[] = [
     label: "Profit centre",
     render: (r) => [r.profitCtr, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ") || "—",
   },
+  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
+  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   {
@@ -377,7 +379,17 @@ const COLUMNS: Column[] = [
 
 const PAGE_SIZE = 50;
 
-function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }) {
+function LinesTable({
+  rows,
+  onExport,
+  pcColors,
+  pcLegend,
+}: {
+  rows: SdLine[];
+  onExport: () => void;
+  pcColors: Map<string, string>;
+  pcLegend: { key: string; label: string; value: number; color: string }[];
+}) {
   const [hidden, setHidden] = useState<string[]>([]);
   const [page, setPage] = useState(0);
 
@@ -405,6 +417,18 @@ function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }
         </div>
       }
     >
+      {pcLegend.length ? (
+        <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 rounded-md border border-border/70 bg-muted/40 p-2.5 text-[11px]">
+          <span className="font-medium text-muted-foreground">Profit centre colours:</span>
+          {pcLegend.map((p) => (
+            <span key={p.key} className="inline-flex items-center gap-1.5">
+              <span className="size-2.5 rounded-sm" style={{ background: p.color }} />
+              <span className="truncate">{p.label}</span>
+              <span className="tabular text-muted-foreground">{compact(p.value)}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="max-h-[560px] overflow-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-muted">
@@ -420,23 +444,41 @@ function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }
             </tr>
           </thead>
           <tbody>
-            {slice.map((r, i) => (
-              <tr
-                key={`${r.docNo}-${r.docItem}-${r.material}-${i}`}
-                className="border-t border-border/60 odd:bg-card even:bg-muted/40 hover:bg-accent/40"
-              >
-                {visible.map((c) => (
-                  <td
-                    key={c.key}
-                    className={`px-2.5 py-1.5 whitespace-nowrap ${
-                      c.numeric ? "tabular text-right" : ""
-                    } ${c.key === "amount" && r.amount < 0 ? "text-destructive" : ""}`}
-                  >
-                    {c.render(r)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {slice.map((r, i) => {
+              const pcColor = pcColors.get(r.profitCtr || "—") ?? "var(--color-border)";
+              return (
+                <tr
+                  key={`${r.docNo}-${r.docItem}-${r.material}-${i}`}
+                  className="border-t border-border/60 hover:brightness-95"
+                  style={{
+                    background: `color-mix(in oklab, ${pcColor} ${i % 2 ? 14 : 8}%, var(--color-card))`,
+                  }}
+                >
+                  {visible.map((c) => (
+                    <td
+                      key={c.key}
+                      className={`px-2.5 py-1.5 whitespace-nowrap ${
+                        c.numeric ? "tabular text-right" : ""
+                      } ${c.key === "amount" && r.amount < 0 ? "text-destructive" : ""}`}
+                      style={
+                        c.key === "profitCtr"
+                          ? { borderLeft: `3px solid ${pcColor}`, fontWeight: 500 }
+                          : undefined
+                      }
+                    >
+                      {c.key === "profitCtr" ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="size-2.5 shrink-0 rounded-sm" style={{ background: pcColor }} />
+                          {c.render(r)}
+                        </span>
+                      ) : (
+                        c.render(r)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
             {!slice.length ? (
               <tr>
                 <td colSpan={visible.length} className="px-2.5 py-8 text-center text-muted-foreground">
