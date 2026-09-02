@@ -8,8 +8,6 @@ import {
   Cell,
   LabelList,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,6 +23,7 @@ import {
   Users,
   Gauge,
   Building2,
+  Boxes,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -73,6 +72,28 @@ const KPI_TONES = [
 ];
 
 const CHART_COLORS = KPI_TONES;
+
+/** Stable colour per profit centre so the same centre reads the same everywhere. */
+const PC_PALETTE = [
+  "var(--kpi-1)",
+  "var(--kpi-5)",
+  "var(--kpi-3)",
+  "var(--kpi-4)",
+  "var(--kpi-2)",
+  "var(--kpi-6)",
+];
+
+function buildPcColors(rows: { profitCtr: string; amount: number }[]) {
+  const totals = new Map<string, number>();
+  for (const r of rows) {
+    const key = r.profitCtr || "—";
+    totals.set(key, (totals.get(key) ?? 0) + r.amount);
+  }
+  const ordered = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  const map = new Map<string, string>();
+  ordered.forEach(([key], i) => map.set(key, PC_PALETTE[i % PC_PALETTE.length]));
+  return { map, ordered };
+}
 
 function isoDaysAgo(days: number) {
   const d = new Date();
@@ -198,22 +219,6 @@ function HBar({
   );
 }
 
-function Donut({ data }: { data: { name: string; value: number }[] }) {
-  if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
-  return (
-    <ResponsiveContainer width="100%" height={260}>
-      <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={2}>
-          {data.map((entry, i) => (
-            <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip {...tooltipStyle} formatter={(v: number, n: string) => [INR(v), n]} />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-}
-
 function RankedList({ items, total }: { items: { name: string; value: number; count: number }[]; total: number }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
@@ -251,6 +256,47 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
         );
       })}
     </ol>
+  );
+}
+
+function MixBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(220, items.length * 46)}>
+      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 74, top: 4, bottom: 4 }}>
+        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
+        <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={110}
+          tick={{ fontSize: 11 }}
+          stroke="var(--color-muted-foreground)"
+        />
+        <Tooltip
+          {...tooltipStyle}
+          formatter={(v: number, _n: string, p: { payload?: { name?: string } }) => [
+            `${INR(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
+            p?.payload?.name ?? "Revenue",
+          ]}
+        />
+        <Bar dataKey="value" radius={[3, 3, 3, 3]}>
+          {items.map((item, i) => (
+            <Cell key={item.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+          ))}
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v: number) =>
+              `${compact(v)} (${total ? ((v / total) * 100).toFixed(1) : "0"}%)`
+            }
+            fontSize={11}
+            fontWeight={600}
+            fill="var(--color-foreground)"
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
