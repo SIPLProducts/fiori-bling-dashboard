@@ -215,8 +215,8 @@ function HBar({
           width={230}
           interval={0}
           tickMargin={4}
-          tickFormatter={(v: string) => (v && v.length > 36 ? `${v.slice(0, 34)}…` : v || "—")}
-          tick={{ fontSize: 11 }}
+          tickFormatter={(v: string) => (v && v.length > 44 ? `${v.slice(0, 42)}…` : v || "—")}
+          tick={{ fontSize: 10 }}
           stroke="var(--color-muted-foreground)"
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
