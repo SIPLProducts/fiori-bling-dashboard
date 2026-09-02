@@ -66,6 +66,8 @@ import {
   listSapEndpoints,
   listSapSystems,
   listSyncRuns,
+  listLatestRuns,
+
 
   listStoredCredentialKeys,
   pingSapHost,
