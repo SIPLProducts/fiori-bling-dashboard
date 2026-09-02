@@ -591,6 +591,19 @@ export function SdLiveDashboard() {
 
   const totalRevenue = analytics.kpis.revenue;
 
+  const topUnit = filtered.find((r) => r.unit)?.unit ?? "";
+  const pcColors = buildPcColors(filtered);
+  const pcLabel = (key: string) => {
+    const row = filtered.find((r) => (r.profitCtr || "—") === key);
+    return [key, row?.pcShortName || row?.profitCtrName].filter(Boolean).join(" · ");
+  };
+  const pcLegend = pcColors.ordered.slice(0, 12).map(([key, value]) => ({
+    key,
+    label: pcLabel(key),
+    value,
+    color: pcColors.map.get(key) ?? "var(--color-border)",
+  }));
+
   return (
     <div className="space-y-4">
       {/* smart filter bar */}
