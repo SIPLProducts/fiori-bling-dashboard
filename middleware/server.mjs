@@ -220,7 +220,14 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
     } catch {
       logLine(`[${traceId}]    rows parsed: response is not valid JSON`);
     }
-    return { status: res.status, ok: res.ok, url, durationMs, body: text };
+    return {
+      status: res.status,
+      ok: res.ok,
+      url,
+      durationMs,
+      body: text,
+      contentType: res.headers.get("content-type") ?? null,
+    };
   } catch (err) {
     const durationMs = Date.now() - started;
     const cause = err?.cause?.code || err?.code || err?.name || "";
