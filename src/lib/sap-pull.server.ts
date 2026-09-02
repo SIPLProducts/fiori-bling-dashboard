@@ -9,21 +9,70 @@ const BATCH = 500;
 
 /**
  * Recovers the complete objects of a JSON array that was cut mid-document
- * (an older middleware build truncates responses). Returns null when the text
- * is not a truncated array or nothing usable survives.
+ * (an older middleware build truncates responses). Scans with string/escape
+ * awareness so a cut inside a quoted value cannot corrupt the salvage.
  */
 function salvageTruncatedArray(text: string): unknown[] | null {
   const trimmed = text.trimStart();
   if (!trimmed.startsWith("[")) return null;
-  const cut = trimmed.lastIndexOf("},");
-  if (cut < 0) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let lastComplete = -1;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const ch = trimmed[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch === "\\") {
+      if (inString) escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{" || ch === "[") depth += 1;
+    else if (ch === "}" || ch === "]") {
+      depth -= 1;
+      if (depth === 1) lastComplete = i;
+    }
+  }
+  if (lastComplete < 0) return null;
   try {
-    const rows = JSON.parse(`${trimmed.slice(0, cut + 1)}]`) as unknown[];
+    const rows = JSON.parse(`${trimmed.slice(0, lastComplete + 1)}]`) as unknown[];
     return Array.isArray(rows) && rows.length ? rows : null;
   } catch {
     return null;
   }
 }
+
+/**
+ * When the middleware's own JSON envelope is cut mid-document, the SAP payload
+ * still sits inside its `"body":"..."` string. Extract and unescape it so the
+ * salvage above can run on the array itself.
+ */
+function extractEmbeddedBody(text: string): string | null {
+  const marker = '"body":"';
+  const start = text.indexOf(marker);
+  if (start < 0) return null;
+  const raw = text.slice(start + marker.length);
+  try {
+    // Close the string so JSON.parse can unescape it; drop a dangling escape.
+    const safe = raw.replace(/\\$/, "");
+    return JSON.parse(`"${safe.replace(/"$/, "")}"`) as string;
+  } catch {
+    // Unescape manually as a last resort.
+    return raw
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "\t")
+      .replace(/\\\\/g, "\\");
+  }
+}
+
 
 
 /** How many sync runs are kept per endpoint; older rows are deleted. */
@@ -307,7 +356,9 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     return { status: "error", message, durationMs, bytes, httpStatus: response.status };
   }
 
-  const bodyText = typeof envelope["body"] === "string" ? (envelope["body"] as string) : text;
+  const embedded = typeof envelope["body"] === "string" ? (envelope["body"] as string) : extractEmbeddedBody(text);
+  const bodyText = embedded ?? text;
+  const reportedBytes = typeof envelope["bytes"] === "number" ? (envelope["bytes"] as number) : null;
   let payload: unknown;
   try {
     payload = JSON.parse(bodyText);
@@ -320,7 +371,12 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     } else {
       const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
       const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
-      const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
+      // Name the hop that cut the payload: SAP's own byte count vs what arrived.
+      const cut =
+        reportedBytes && reportedBytes > bodyText.length
+          ? ` — the middleware delivered ${size(bodyText.length)} of a ${size(reportedBytes)} SAP response, so it is truncating (update middleware/server.mjs and restart it)`
+          : "";
+      const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON${cut} — starts with: ${preview}`;
       await logFailure(endpointName, message, outbound, {
         durationMs,
         responseBytes: bytes,
@@ -329,6 +385,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
       return { status: "error", message, durationMs, bytes, httpStatus: response.status, preview };
     }
   }
+
 
 
   const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
