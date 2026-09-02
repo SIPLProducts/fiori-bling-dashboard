@@ -567,7 +567,25 @@ export type SyncRun = {
   request_snapshot: unknown;
 };
 
+/** Newest run per endpoint, keyed by endpoint name — drives the card badges. */
+export async function listLatestRuns(): Promise<Record<string, SyncRun>> {
+  const { data, error } = await supabase
+    .from("sap_sync_runs")
+    .select(
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot",
+    )
+    .order("started_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  const latest: Record<string, SyncRun> = {};
+  for (const row of (data ?? []) as SyncRun[]) {
+    if (!latest[row.endpoint]) latest[row.endpoint] = row;
+  }
+  return latest;
+}
+
 /** Recent sync runs for an endpoint — used for the Scheduler health panel. */
+
 export async function listSyncRuns(endpointName: string, limit = 10): Promise<SyncRun[]> {
   const { data, error } = await supabase
     .from("sap_sync_runs")
