@@ -1,0 +1,1 @@
+DROP TABLE public.zfisales_import_stage;
