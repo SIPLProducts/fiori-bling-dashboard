@@ -582,20 +582,57 @@ export async function listSyncRuns(endpointName: string, limit = 10): Promise<Sy
 }
 
 
-/** Stores a SAP response payload into zfisales_detail (Sharvi Admin only). */
-const storeEndpointResponseServer = createServerFn({ method: "POST" })
+/**
+ * Runs one full sync for an endpoint on the server (Sharvi Admin only):
+ * middleware call, JSON parse and batched upsert. Only a small preview of the
+ * response is returned, so large payloads never cross the RPC boundary.
+ */
+const runEndpointSyncServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { endpointName: string; body: string }) => data)
+  .inputValidator((data: { endpointName: string }) => data)
   .handler(async ({ data, context }) => {
     const { data: isAdmin, error } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     if (error || !isAdmin) throw new Error("Forbidden: Sharvi Admin role required");
 
-    let payload: unknown;
-    try {
-      payload = JSON.parse(data.body);
-    } catch {
-      throw new Error("SAP response was not valid JSON");
+    const { pullSapEndpoint } = await import("@/lib/sap-pull.server");
+    const result = await pullSapEndpoint(data.endpointName);
+
+    if (result.status === "synced") {
+      return {
+        status: "synced" as const,
+        message: "",
+        received: result.received,
+        inserted: result.inserted,
+        updated: result.updated,
+        skipped: result.skipped,
+        durationMs: result.durationMs ?? 0,
+        httpStatus: result.httpStatus ?? null,
+        preview: result.preview ?? null,
+      };
     }
-    const { storeZfisalesPayload } = await import("@/lib/sap-pull.server");
-    return storeZfisalesPayload(payload, data.endpointName);
+    if (result.status === "skipped") {
+      return {
+        status: "skipped" as const,
+        message: result.reason,
+        received: 0,
+        inserted: 0,
+        updated: 0,
+        skipped: 0,
+        durationMs: 0,
+        httpStatus: null,
+        preview: null,
+      };
+    }
+    return {
+      status: "error" as const,
+      message: result.message,
+      received: 0,
+      inserted: 0,
+      updated: 0,
+      skipped: 0,
+      durationMs: result.durationMs ?? 0,
+      httpStatus: result.httpStatus ?? null,
+      preview: result.preview ?? null,
+    };
   });
+
