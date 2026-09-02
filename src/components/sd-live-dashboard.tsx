@@ -999,18 +999,20 @@ export function SdLiveDashboard() {
 
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
-                <HBar
-                  data={analytics.topCustomers}
-                  valueLabel="Revenue"
-                  tone={3}
-                  {...(full ? { height: 620 } : {})}
-                />
+                <div className={full ? "h-full" : ""}>
+                  <HBar
+                    data={analytics.topCustomers}
+                    valueLabel="Revenue"
+                    tone={3}
+                    {...(full ? { height: "100%" as const } : {})}
+                  />
+                </div>
               )}
             </Panel>
 
 
-            <Panel title="Revenue mix by type" accent={2}>
-              <StackedMix items={analytics.mixByType} total={totalRevenue} />
+            <Panel title="Sales by Segment (Amount)" accent={2}>
+              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
           </div>
 
