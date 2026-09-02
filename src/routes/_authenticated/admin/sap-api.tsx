@@ -495,6 +495,47 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 
 /* ---------------------------------- APIs ---------------------------------- */
 
+/** Truthful outcome of the newest run for an endpoint (scheduled or manual). */
+function LastRunLine({
+  run,
+}: {
+  run?: {
+    status: string;
+    started_at: string;
+    records_received: number;
+    records_inserted: number;
+    records_updated: number;
+    error_message: string | null;
+  };
+}) {
+  if (!run) {
+    return <p className="mt-2 text-xs text-muted-foreground">No sync run recorded yet</p>;
+  }
+  const ok = run.status === "success";
+  const when = formatDateTimeISTLabel(run.started_at);
+  return (
+    <div
+      className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
+        ok
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : run.status === "skipped"
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-destructive/30 bg-destructive/5 text-destructive"
+      }`}
+    >
+      <span className="font-semibold">
+        {ok ? "Success" : run.status === "skipped" ? "Skipped" : "Failed"} — {when}
+      </span>
+      <span className="ml-1">
+        {ok
+          ? `${run.records_received} records (${run.records_inserted} new, ${run.records_updated} updated)`
+          : (run.error_message ?? "")}
+      </span>
+    </div>
+  );
+}
+
+
 function ApiList({
   onNew,
   onEdit,
