@@ -103,7 +103,7 @@ export function Panel({
             <DialogHeader>
               <DialogTitle className="text-base font-medium">{title}</DialogTitle>
             </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-auto">{open ? render(true) : null}</div>
+            <div className="min-h-0 flex-1 overflow-hidden">{open ? render(true) : null}</div>
           </DialogContent>
         </Dialog>
       ) : null}
