@@ -783,6 +783,10 @@ export function SdLiveDashboard() {
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Revenue trend" accent={1} className="lg:col-span-2">
+              <div
+                className="rounded-md p-2"
+                style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
+              >
               <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                   <defs>
