@@ -125,6 +125,25 @@ export type EndpointInput = {
   is_active: boolean;
 };
 
+/**
+ * Applies the endpoint's own interval to the real background scheduler.
+ * Nothing about the schedule is hard-coded — whatever is saved here runs.
+ */
+async function applySchedule(input: EndpointInput): Promise<void> {
+  const expression = normalizeCron(input.schedule_expression);
+  if (input.scheduler_enabled && !isValidCron(expression)) {
+    throw new Error(
+      `"${input.schedule_expression}" is not a valid cron expression — use 5 fields, e.g. */5 * * * *`,
+    );
+  }
+  const { error } = await supabase.rpc("apply_sap_sync_schedule", {
+    _endpoint: input.name.trim(),
+    _enabled: input.scheduler_enabled,
+    _cron: expression,
+  });
+  if (error) throw new Error(`Schedule could not be applied: ${error.message}`);
+}
+
 function endpointPayload(input: EndpointInput) {
   return {
     name: input.name.trim(),
