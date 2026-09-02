@@ -366,7 +366,10 @@ app.post("/sap/call", requireSharedSecret, async (req, res) => {
       message: result.ok
         ? `SAP responded HTTP ${result.status} in ${result.durationMs} ms`
         : `SAP was reached and answered HTTP ${result.status} in ${result.durationMs} ms`,
-      body: result.body.slice(0, 200000),
+      // Never truncate: the portal parses this body to sync rows.
+      contentType: result.contentType ?? null,
+      bytes: Buffer.byteLength(result.body ?? "", "utf8"),
+      body: result.body,
     });
   } catch (err) {
     res.status(502).json({
