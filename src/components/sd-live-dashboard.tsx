@@ -192,15 +192,18 @@ function HBar({
   data,
   valueLabel,
   tone = 0,
+  height,
 }: {
   data: { name: string; value: number }[];
   valueLabel: string;
   tone?: number;
+  height?: number;
 }) {
   if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
-    <ResponsiveContainer width="100%" height={Math.max(220, data.length * 34)}>
+    <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
+
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 56 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
@@ -266,10 +269,19 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
   );
 }
 
-function MixBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+function MixBars({
+  items,
+  total,
+  height,
+}: {
+  items: { name: string; value: number }[];
+  total: number;
+  height?: number;
+}) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
-    <ResponsiveContainer width="100%" height={Math.max(220, items.length * 46)}>
+    <ResponsiveContainer width="100%" height={height ?? Math.max(220, items.length * 46)}>
+
       <BarChart data={items} layout="vertical" margin={{ left: 8, right: 140, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
@@ -783,12 +795,14 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Revenue trend" accent={1} className="lg:col-span-2">
+            <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
               <div
                 className="rounded-md p-2"
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={full ? 620 : 300}>
+
                 <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
@@ -852,28 +866,36 @@ export function SdLiveDashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
               </div>
+              )}
             </Panel>
 
-            <Panel title="Sales mix by type" accent={2}>
-              <MixBars items={analytics.mixByType} total={totalRevenue} />
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                {analytics.mixByType.map((m, i) => (
-                  <div key={m.name} className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full"
-                        style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-                      />
-                      {m.name || "—"}
-                    </span>
-                    <span className="tabular">{INR(m.value)}</span>
+            <Panel title="Sales mix by type" accent={2} expandable>
+              {(full: boolean) => (
+                <>
+                  <MixBars items={analytics.mixByType} total={totalRevenue} {...(full ? { height: 560 } : {})} />
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {analytics.mixByType.map((m, i) => (
+                      <div key={m.name} className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                          />
+                          {m.name || "—"}
+                        </span>
+                        <span className="tabular">{INR(m.value)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </Panel>
 
-            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2">
+
+            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2" expandable>
+              {(full: boolean) => (<>
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
+
                 Green bars = quantity billed each month (left axis). Magenta line = average realization,
                 i.e. revenue ÷ quantity, in INR per unit (right axis).
               </p>
@@ -891,8 +913,9 @@ export function SdLiveDashboard() {
                 </span>
               </div>
               {analytics.monthly.length ? (
-                <ResponsiveContainer width="100%" height={310}>
+                <ResponsiveContainer width="100%" height={full ? 620 : 310}>
                   <ComposedChart data={analytics.monthly} margin={{ top: 24, left: 8, right: 8 }}>
+
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                     <YAxis
@@ -967,15 +990,24 @@ export function SdLiveDashboard() {
               ) : (
                 <p className="py-10 text-center text-sm text-muted-foreground">No data</p>
               )}
+              </>)}
             </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
               <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Top customers" accent={4} className="lg:col-span-2">
-              <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
+            <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
+                <HBar
+                  data={analytics.topCustomers}
+                  valueLabel="Revenue"
+                  tone={3}
+                  {...(full ? { height: 620 } : {})}
+                />
+              )}
             </Panel>
+
 
             <Panel title="Revenue mix by type" accent={2}>
               <StackedMix items={analytics.mixByType} total={totalRevenue} />
