@@ -288,7 +288,9 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   try {
     payload = JSON.parse(bodyText);
   } catch {
-    const message = `SAP returned ${size(bytes)} that could not be parsed as JSON`;
+    const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
+    const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
+    const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
     await logFailure(endpointName, message, outbound, {
       durationMs,
       responseBytes: bytes,
