@@ -66,6 +66,8 @@ import {
   listSapEndpoints,
   listSapSystems,
   listSyncRuns,
+  listLatestRuns,
+
 
   listStoredCredentialKeys,
   pingSapHost,
@@ -493,6 +495,49 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 
 /* ---------------------------------- APIs ---------------------------------- */
 
+/** Truthful outcome of the newest run for an endpoint (scheduled or manual). */
+function LastRunLine({
+  run,
+}: {
+  run:
+    | undefined
+    | {
+    status: string;
+    started_at: string;
+    records_received: number;
+    records_inserted: number;
+    records_updated: number;
+    error_message: string | null;
+  };
+}) {
+  if (!run) {
+    return <p className="mt-2 text-xs text-muted-foreground">No sync run recorded yet</p>;
+  }
+  const ok = run.status === "success";
+  const when = formatDateTimeISTLabel(run.started_at);
+  return (
+    <div
+      className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
+        ok
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : run.status === "skipped"
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-destructive/30 bg-destructive/5 text-destructive"
+      }`}
+    >
+      <span className="font-semibold">
+        {ok ? "Success" : run.status === "skipped" ? "Skipped" : "Failed"} — {when}
+      </span>
+      <span className="ml-1">
+        {ok
+          ? `${run.records_received} records (${run.records_inserted} new, ${run.records_updated} updated)`
+          : (run.error_message ?? "")}
+      </span>
+    </div>
+  );
+}
+
+
 function ApiList({
   onNew,
   onEdit,
@@ -503,17 +548,26 @@ function ApiList({
   const queryClient = useQueryClient();
   const endpointsQuery = useQuery({ queryKey: ["sap-endpoints"], queryFn: listSapEndpoints });
   const systemsQuery = useQuery({ queryKey: ["sap-systems"], queryFn: listSapSystems });
+  const runsQuery = useQuery({
+    queryKey: ["sync-runs-latest"],
+    queryFn: listLatestRuns,
+    refetchInterval: 60000,
+  });
   const systems = systemsQuery.data ?? [];
+  const latestRuns = runsQuery.data ?? {};
 
   const testMutation = useMutation({
     mutationFn: (endpoint: SapEndpoint) => testSapEndpoint(endpoint, systems),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
       queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-runs-latest"] });
       reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
 
 
   const deleteMutation = useMutation({
@@ -556,14 +610,16 @@ function ApiList({
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                 {endpoint.description || "—"}
               </p>
-              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <StatusPill ok={endpoint.is_active} label={endpoint.is_active ? "Active" : "Inactive"} />
                 <span>
                   {endpoint.last_synced_at
-                    ? `Synced ${formatDateTimeISTLabel(endpoint.last_synced_at)}`
-                    : "Never synced"}
+                    ? `Last data ${formatDateTimeISTLabel(endpoint.last_synced_at)}`
+                    : "No data synced yet"}
                 </span>
               </div>
+              <LastRunLine run={latestRuns[endpoint.name]} />
+
               <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
                 <div className="flex gap-2">
                   <Button

@@ -496,7 +496,6 @@ export function resolveEndpointUrl(endpoint: {
 
 export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[]): Promise<TestResult> {
   await requireSuperAdmin();
-  const system = systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active);
   const query = Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value]));
   const headers = Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value]));
   let parsedBody: unknown = endpoint.body_template ?? undefined;
@@ -515,50 +514,41 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   // Visible in the browser console so the exact payload can be inspected.
   console.info("[SAP request]", endpoint.name, outbound);
 
-  const result = await callMiddleware("/sap/call", {
-    systemKey: system?.key ?? null,
-    baseUrl: system?.base_url ?? null,
-    sapClient: system?.sap_client ?? null,
-    path: endpoint.endpoint_path,
-    method: endpoint.http_method,
-    authType: endpoint.auth_type,
-    query,
-    headers,
-    body: endpoint.body_template ?? undefined,
-  });
-  console.info("[SAP response]", endpoint.name, {
-    stage: result.stage,
-    sapStatus: result.sapStatus,
-    durationMs: result.durationMs,
-  });
+  // The whole round trip runs on the portal server: middleware -> parse ->
+  // upsert. Multi-MB SAP responses never travel through the browser.
+  const started = Date.now();
+  const run = await runEndpointSyncServer({ data: { endpointName: endpoint.name } });
+  console.info("[SAP response]", endpoint.name, { status: run.status, durationMs: run.durationMs });
 
-
-  let message = result.message;
-  if (result.ok && result.body) {
-    try {
-      const counts = await storeEndpointResponseServer({
-        data: { endpointName: endpoint.name, body: result.body },
-      });
-      message = `${message} · stored ${counts.received} rows (${counts.inserted} new, ${counts.updated} updated)`;
-    } catch (err) {
-      message = `${message} · saving to the database failed: ${
-        err instanceof Error ? err.message : "unknown error"
-      }`;
-    }
-  }
+  const durationMs = run.durationMs ?? Date.now() - started;
+  const ok = run.status === "synced";
+  const message = ok
+    ? `SAP responded HTTP ${run.httpStatus ?? 200} in ${durationMs} ms · stored ${run.received} rows (${run.inserted} new, ${run.updated} updated)`
+    : run.message;
 
   await supabase
     .from("sap_endpoints")
     .update({
-      last_test_status: result.ok ? "ok" : "error",
+      last_test_status: ok ? "ok" : "error",
       last_test_message: message,
-      last_test_duration_ms: result.durationMs,
-      last_synced_at: result.ok ? new Date().toISOString() : endpoint.last_synced_at,
-      sample_response: result.body ?? endpoint.sample_response,
+      last_test_duration_ms: durationMs,
+      ...(run.preview ? { sample_response: run.preview } : {}),
     })
     .eq("id", endpoint.id);
-  return { ...result, message, request: outbound };
+
+  return {
+    ok,
+    status: run.httpStatus ?? null,
+    message,
+    durationMs,
+    stage: ok ? "ok" : "unknown",
+    sapStatus: run.httpStatus ?? null,
+    sapContacted: run.httpStatus != null && run.httpStatus !== 404,
+    request: outbound,
+    ...(run.preview ? { body: run.preview } : {}),
+  };
 }
+
 
 export type SyncRun = {
   id: string;
@@ -577,7 +567,25 @@ export type SyncRun = {
   request_snapshot: unknown;
 };
 
+/** Newest run per endpoint, keyed by endpoint name — drives the card badges. */
+export async function listLatestRuns(): Promise<Record<string, SyncRun>> {
+  const { data, error } = await supabase
+    .from("sap_sync_runs")
+    .select(
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot",
+    )
+    .order("started_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  const latest: Record<string, SyncRun> = {};
+  for (const row of (data ?? []) as SyncRun[]) {
+    if (!latest[row.endpoint]) latest[row.endpoint] = row;
+  }
+  return latest;
+}
+
 /** Recent sync runs for an endpoint — used for the Scheduler health panel. */
+
 export async function listSyncRuns(endpointName: string, limit = 10): Promise<SyncRun[]> {
   const { data, error } = await supabase
     .from("sap_sync_runs")
@@ -592,20 +600,57 @@ export async function listSyncRuns(endpointName: string, limit = 10): Promise<Sy
 }
 
 
-/** Stores a SAP response payload into zfisales_detail (Sharvi Admin only). */
-const storeEndpointResponseServer = createServerFn({ method: "POST" })
+/**
+ * Runs one full sync for an endpoint on the server (Sharvi Admin only):
+ * middleware call, JSON parse and batched upsert. Only a small preview of the
+ * response is returned, so large payloads never cross the RPC boundary.
+ */
+const runEndpointSyncServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { endpointName: string; body: string }) => data)
+  .inputValidator((data: { endpointName: string }) => data)
   .handler(async ({ data, context }) => {
     const { data: isAdmin, error } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     if (error || !isAdmin) throw new Error("Forbidden: Sharvi Admin role required");
 
-    let payload: unknown;
-    try {
-      payload = JSON.parse(data.body);
-    } catch {
-      throw new Error("SAP response was not valid JSON");
+    const { pullSapEndpoint } = await import("@/lib/sap-pull.server");
+    const result = await pullSapEndpoint(data.endpointName);
+
+    if (result.status === "synced") {
+      return {
+        status: "synced" as const,
+        message: "",
+        received: result.received,
+        inserted: result.inserted,
+        updated: result.updated,
+        skipped: result.skipped,
+        durationMs: result.durationMs ?? 0,
+        httpStatus: result.httpStatus ?? null,
+        preview: result.preview ?? null,
+      };
     }
-    const { storeZfisalesPayload } = await import("@/lib/sap-pull.server");
-    return storeZfisalesPayload(payload, data.endpointName);
+    if (result.status === "skipped") {
+      return {
+        status: "skipped" as const,
+        message: result.reason,
+        received: 0,
+        inserted: 0,
+        updated: 0,
+        skipped: 0,
+        durationMs: 0,
+        httpStatus: null,
+        preview: null,
+      };
+    }
+    return {
+      status: "error" as const,
+      message: result.message,
+      received: 0,
+      inserted: 0,
+      updated: 0,
+      skipped: 0,
+      durationMs: result.durationMs ?? 0,
+      httpStatus: result.httpStatus ?? null,
+      preview: result.preview ?? null,
+    };
   });
+

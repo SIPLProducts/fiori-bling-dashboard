@@ -7,6 +7,25 @@ import { mapPayload } from "./zfisales-sync.server";
 
 const BATCH = 500;
 
+/**
+ * Recovers the complete objects of a JSON array that was cut mid-document
+ * (an older middleware build truncates responses). Returns null when the text
+ * is not a truncated array or nothing usable survives.
+ */
+function salvageTruncatedArray(text: string): unknown[] | null {
+  const trimmed = text.trimStart();
+  if (!trimmed.startsWith("[")) return null;
+  const cut = trimmed.lastIndexOf("},");
+  if (cut < 0) return null;
+  try {
+    const rows = JSON.parse(`${trimmed.slice(0, cut + 1)}]`) as unknown[];
+    return Array.isArray(rows) && rows.length ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
 
@@ -132,10 +151,13 @@ async function pruneRuns(endpointName: string, keep = RUN_HISTORY_LIMIT): Promis
   }
 }
 
+export type RunOutcome = { httpStatus?: number; durationMs?: number; bytes?: number; preview?: string };
+
 export type PullResult =
-  | ({ status: "synced" } & SyncCounts)
+  | ({ status: "synced" } & SyncCounts & RunOutcome)
   | { status: "skipped"; reason: string }
-  | { status: "error"; message: string };
+  | ({ status: "error"; message: string } & RunOutcome);
+
 
 /** Calls the middleware for the given endpoint and stores the response. */
 export async function pullSapEndpoint(endpointName: string): Promise<PullResult> {
@@ -248,9 +270,11 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     attempt = await callMiddleware();
   }
   if (!attempt.ok) {
-    await logFailure(endpointName, attempt.message, outbound, { durationMs: Date.now() - startedMs });
-    return { status: "error", message: attempt.message };
+    const durationMs = Date.now() - startedMs;
+    await logFailure(endpointName, attempt.message, outbound, { durationMs });
+    return { status: "error", message: attempt.message, durationMs, bytes: 0 };
   }
+
 
   let { response, text, bytes } = attempt;
 
@@ -280,7 +304,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
       responseBytes: bytes,
       httpStatus: response.status,
     });
-    return { status: "error", message };
+    return { status: "error", message, durationMs, bytes, httpStatus: response.status };
   }
 
   const bodyText = typeof envelope["body"] === "string" ? (envelope["body"] as string) : text;
@@ -288,32 +312,51 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   try {
     payload = JSON.parse(bodyText);
   } catch {
-    const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
-    const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
-    const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
-    await logFailure(endpointName, message, outbound, {
-      durationMs,
-      responseBytes: bytes,
-      httpStatus: response.status,
-    });
-    return { status: "error", message };
+    // An older middleware build cuts the body mid-document. Salvage every
+    // complete object of a truncated JSON array instead of losing the run.
+    const salvaged = salvageTruncatedArray(bodyText);
+    if (salvaged) {
+      payload = salvaged;
+    } else {
+      const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
+      const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
+      const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
+      await logFailure(endpointName, message, outbound, {
+        durationMs,
+        responseBytes: bytes,
+        httpStatus: response.status,
+      });
+      return { status: "error", message, durationMs, bytes, httpStatus: response.status, preview };
+    }
   }
+
 
   const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
     durationMs,
     responseBytes: bytes,
     httpStatus: response.status,
   });
+  const now = new Date().toISOString();
   await db
     .from("sap_endpoints")
     .update({
-      last_synced_at: new Date().toISOString(),
-      last_run_at: new Date().toISOString(),
+      // Only move the synced stamp when rows were actually written.
+      ...(counts.inserted + counts.updated > 0 ? { last_synced_at: now } : {}),
+      last_run_at: now,
       last_run_status: "success",
     })
     .eq("name", endpointName);
-  return { status: "synced", ...counts };
+  return {
+    status: "synced",
+    ...counts,
+    durationMs,
+    bytes,
+    httpStatus: response.status,
+    // Small excerpt only — the full body is never returned to the browser.
+    preview: bodyText.slice(0, 4000),
+  };
 }
+
 
 async function logFailure(
   endpointName: string,
