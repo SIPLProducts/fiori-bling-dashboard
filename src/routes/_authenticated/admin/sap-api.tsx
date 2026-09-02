@@ -19,7 +19,36 @@ import {
   Server,
   ShieldCheck,
   Trash2,
+  CalendarClock,
 } from "lucide-react";
+import { CRON_PRESETS, describeCron, isValidCron, nextCronRuns } from "@/lib/cron";
+
+/** Plain-English schedule read-out plus the next three run times in IST. */
+function SchedulePreview({ expression, enabled }: { expression: string; enabled: boolean }) {
+  const valid = isValidCron(expression);
+  const runs = valid && enabled ? nextCronRuns(expression, 3) : [];
+  return (
+    <div className="rounded-sm border border-border bg-muted/40 p-3 text-xs">
+      <p className={valid ? "font-medium text-card-foreground" : "font-medium text-destructive"}>
+        {expression.trim() ? describeCron(expression) : "No interval set"}
+      </p>
+      {!enabled ? (
+        <p className="mt-1 text-muted-foreground">Scheduled sync is switched off.</p>
+      ) : runs.length ? (
+        <ol className="mt-2 space-y-0.5 text-muted-foreground">
+          {runs.map((d, i) => (
+            <li key={d.toISOString()}>
+              {i + 1}. {formatDateTimeISTLabel(d.toISOString())}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <p className="mt-2 text-muted-foreground">
+        Saved here and applied to the background scheduler immediately — nothing is fixed in code.
+      </p>
+    </div>
+  );
+}
 
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -944,12 +973,37 @@ function EndpointDetail({
               />
               <Label>Enable scheduled sync</Label>
             </div>
-            <Field label="Interval / cron expression" hint="Stored for the middleware scheduler, e.g. */15 * * * *">
-              <Input
-                value={form.schedule_expression}
-                onChange={(e) => set("schedule_expression", e.target.value)}
-              />
+            <Field
+              label="Interval / cron expression"
+              hint="Pick a preset from the icon on the right, or type your own 5-field expression."
+            >
+              <div className="relative">
+                <Input
+                  value={form.schedule_expression}
+                  onChange={(e) => set("schedule_expression", e.target.value)}
+                  className="pr-10"
+                />
+                <Select value="" onValueChange={(v) => set("schedule_expression", v)}>
+                  <SelectTrigger
+                    aria-label="Choose an interval"
+                    className="absolute right-0 top-0 h-full w-10 justify-center border-0 bg-transparent px-0 shadow-none [&>svg:last-child]:hidden"
+                  >
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {CRON_PRESETS.map((p) => (
+                      <SelectItem key={p.expression} value={p.expression}>
+                        {p.label} — {p.expression}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </Field>
+            <SchedulePreview
+              expression={form.schedule_expression}
+              enabled={form.scheduler_enabled}
+            />
             <p className="text-xs text-muted-foreground">
               Last run:{" "}
               {stored?.last_run_at ? formatDateTimeISTLabel(stored.last_run_at) : "never"} — status{" "}

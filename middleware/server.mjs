@@ -45,7 +45,8 @@ const SHARED_SECRET = (process.env.MIDDLEWARE_SHARED_SECRET || "").trim();
 /** Public address this service is reachable on (ngrok URL, LAN URL, nginx path). */
 const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "");
 // Wide posting-date windows return multi-MB payloads that take minutes.
-const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 180000);
+// Large report windows (80k+ rows) can take several minutes to stream back.
+const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
 const VERSION = "1.2.0";
 const STARTED_AT = Date.now();
 
@@ -220,7 +221,14 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
     } catch {
       logLine(`[${traceId}]    rows parsed: response is not valid JSON`);
     }
-    return { status: res.status, ok: res.ok, url, durationMs, body: text };
+    return {
+      status: res.status,
+      ok: res.ok,
+      url,
+      durationMs,
+      body: text,
+      contentType: res.headers.get("content-type") ?? null,
+    };
   } catch (err) {
     const durationMs = Date.now() - started;
     const cause = err?.cause?.code || err?.code || err?.name || "";
@@ -366,7 +374,10 @@ app.post("/sap/call", requireSharedSecret, async (req, res) => {
       message: result.ok
         ? `SAP responded HTTP ${result.status} in ${result.durationMs} ms`
         : `SAP was reached and answered HTTP ${result.status} in ${result.durationMs} ms`,
-      body: result.body.slice(0, 200000),
+      // Never truncate: the portal parses this body to sync rows.
+      contentType: result.contentType ?? null,
+      bytes: Buffer.byteLength(result.body ?? "", "utf8"),
+      body: result.body,
     });
   } catch (err) {
     res.status(502).json({

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { accessForUser } from "./access";
+import { isValidCron, normalizeCron } from "./cron";
 
 export type KeyValue = { key: string; value: string };
 
@@ -125,6 +126,25 @@ export type EndpointInput = {
   is_active: boolean;
 };
 
+/**
+ * Applies the endpoint's own interval to the real background scheduler.
+ * Nothing about the schedule is hard-coded — whatever is saved here runs.
+ */
+async function applySchedule(input: EndpointInput): Promise<void> {
+  const expression = normalizeCron(input.schedule_expression);
+  if (input.scheduler_enabled && !isValidCron(expression)) {
+    throw new Error(
+      `"${input.schedule_expression}" is not a valid cron expression — use 5 fields, e.g. */5 * * * *`,
+    );
+  }
+  const { error } = await supabase.rpc("apply_sap_sync_schedule", {
+    _endpoint: input.name.trim(),
+    _enabled: input.scheduler_enabled,
+    _cron: expression,
+  });
+  if (error) throw new Error(`Schedule could not be applied: ${error.message}`);
+}
+
 function endpointPayload(input: EndpointInput) {
   return {
     name: input.name.trim(),
@@ -155,6 +175,7 @@ export async function createSapEndpoint(input: EndpointInput): Promise<string> {
     .select("id")
     .single();
   if (error) throw error;
+  await applySchedule(input);
   return data.id;
 }
 
@@ -162,12 +183,21 @@ export async function updateSapEndpoint(id: string, input: EndpointInput): Promi
   await requireSuperAdmin();
   const { error } = await supabase.from("sap_endpoints").update(endpointPayload(input)).eq("id", id);
   if (error) throw error;
+  await applySchedule(input);
 }
 
 export async function deleteSapEndpoint(id: string): Promise<void> {
   await requireSuperAdmin();
+  const { data: existing } = await supabase.from("sap_endpoints").select("name").eq("id", id).maybeSingle();
   const { error } = await supabase.from("sap_endpoints").delete().eq("id", id);
   if (error) throw error;
+  if (existing?.name) {
+    await supabase.rpc("apply_sap_sync_schedule", {
+      _endpoint: existing.name,
+      _enabled: false,
+      _cron: "",
+    });
+  }
 }
 
 /* -------------------------------- systems -------------------------------- */

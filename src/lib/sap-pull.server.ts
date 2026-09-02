@@ -272,8 +272,8 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   if (!response.ok) {
     const detail = typeof envelope["message"] === "string" ? (envelope["message"] as string) : "";
     const hop = [404, 502, 503, 504].includes(response.status)
-      ? `Middleware/tunnel returned ${response.status} — SAP was not contacted (tunnel likely restarted)`
-      : `Middleware returned HTTP ${response.status}`;
+      ? `Middleware/tunnel returned ${response.status} at ${base}/sap/call — SAP was not contacted (tunnel URL may be stale or the middleware is not running)`
+      : `Middleware returned HTTP ${response.status} at ${base}/sap/call`;
     const message = detail ? `${hop}: ${detail}` : hop;
     await logFailure(endpointName, message, outbound, {
       durationMs,
@@ -288,7 +288,9 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   try {
     payload = JSON.parse(bodyText);
   } catch {
-    const message = `SAP returned ${size(bytes)} that could not be parsed as JSON`;
+    const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
+    const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
+    const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
     await logFailure(endpointName, message, outbound, {
       durationMs,
       responseBytes: bytes,
