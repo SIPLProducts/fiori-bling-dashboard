@@ -91,7 +91,7 @@ function buildPcColors(rows: { profitCtr: string; amount: number }[]) {
   }
   const ordered = [...totals.entries()].sort((a, b) => b[1] - a[1]);
   const map = new Map<string, string>();
-  ordered.forEach(([key], i) => map.set(key, PC_PALETTE[i % PC_PALETTE.length]));
+  ordered.forEach(([key], i) => map.set(key, PC_PALETTE[i % PC_PALETTE.length] ?? PC_PALETTE[0]!));
   return { map, ordered };
 }
 
