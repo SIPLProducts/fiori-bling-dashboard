@@ -7,6 +7,25 @@ import { mapPayload } from "./zfisales-sync.server";
 
 const BATCH = 500;
 
+/**
+ * Recovers the complete objects of a JSON array that was cut mid-document
+ * (an older middleware build truncates responses). Returns null when the text
+ * is not a truncated array or nothing usable survives.
+ */
+function salvageTruncatedArray(text: string): unknown[] | null {
+  const trimmed = text.trimStart();
+  if (!trimmed.startsWith("[")) return null;
+  const cut = trimmed.lastIndexOf("},");
+  if (cut < 0) return null;
+  try {
+    const rows = JSON.parse(`${trimmed.slice(0, cut + 1)}]`) as unknown[];
+    return Array.isArray(rows) && rows.length ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
 
