@@ -913,8 +913,9 @@ export function SdLiveDashboard() {
                 </span>
               </div>
               {analytics.monthly.length ? (
-                <ResponsiveContainer width="100%" height={310}>
+                <ResponsiveContainer width="100%" height={full ? 620 : 310}>
                   <ComposedChart data={analytics.monthly} margin={{ top: 24, left: 8, right: 8 }}>
+
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                     <YAxis
