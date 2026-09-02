@@ -7,6 +7,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -174,7 +175,7 @@ function ProcurementOverview() {
 
           <Panel title="Top suppliers by spend">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data?.suppliers ?? []} layout="vertical" margin={{ left: 24 }}>
+              <BarChart data={data?.suppliers ?? []} layout="vertical" margin={{ left: 24, right: 48 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                 <XAxis type="number" tickFormatter={money} tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
                 <YAxis
@@ -193,7 +194,9 @@ function ProcurementOverview() {
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="spend" fill="var(--color-primary)" radius={[0, 3, 3, 0]} barSize={16} />
+                <Bar dataKey="spend" fill="var(--color-primary)" radius={[0, 3, 3, 0]} barSize={16}>
+                  <LabelList dataKey="spend" position="right" formatter={(v: number) => money(v)} fontSize={10} fill="var(--color-foreground)" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Panel>

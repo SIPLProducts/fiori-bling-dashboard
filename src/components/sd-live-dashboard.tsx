@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Line,
   Pie,
   PieChart,
@@ -171,9 +172,10 @@ function HBar({
   tone?: number;
 }) {
   if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  const color = KPI_TONES[tone % KPI_TONES.length];
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, data.length * 34)}>
-      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 56 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
@@ -184,7 +186,15 @@ function HBar({
           stroke="var(--color-muted-foreground)"
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
-        <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={KPI_TONES[tone % KPI_TONES.length]} />
+        <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={color}>
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v: number) => compact(v)}
+            fontSize={10}
+            fill="var(--color-foreground)"
+          />
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
