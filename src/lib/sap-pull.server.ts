@@ -251,9 +251,11 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     attempt = await callMiddleware();
   }
   if (!attempt.ok) {
-    await logFailure(endpointName, attempt.message, outbound, { durationMs: Date.now() - startedMs });
-    return { status: "error", message: attempt.message };
+    const durationMs = Date.now() - startedMs;
+    await logFailure(endpointName, attempt.message, outbound, { durationMs });
+    return { status: "error", message: attempt.message, durationMs, bytes: 0 };
   }
+
 
   let { response, text, bytes } = attempt;
 
