@@ -192,15 +192,18 @@ function HBar({
   data,
   valueLabel,
   tone = 0,
+  height,
 }: {
   data: { name: string; value: number }[];
   valueLabel: string;
   tone?: number;
+  height?: number;
 }) {
   if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
-    <ResponsiveContainer width="100%" height={Math.max(220, data.length * 34)}>
+    <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
+
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 56 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
