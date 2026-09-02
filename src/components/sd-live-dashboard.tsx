@@ -270,7 +270,7 @@ function MixBars({ items, total }: { items: { name: string; value: number }[]; t
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, items.length * 46)}>
-      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 74, top: 4, bottom: 4 }}>
+      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 140, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
