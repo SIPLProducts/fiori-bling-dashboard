@@ -56,9 +56,9 @@ const NUM = (value: number) => value.toLocaleString("en-IN", { maximumFractionDi
 
 function compact(value: number) {
   const abs = Math.abs(value);
-  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)} Cr`;
-  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)} L`;
-  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)} K`;
+  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}\u00A0Cr`;
+  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}\u00A0L`;
+  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)}\u00A0K`;
   return NUM(value);
 }
 
