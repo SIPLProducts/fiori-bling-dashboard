@@ -176,6 +176,7 @@ export type SdAnalytics = {
   };
   mixByType: NamedTotal[];
   bySegment: NamedTotal[];
+  topProfitCentres: NamedTotal[];
   monthly: {
     month: string;
     revenue: number;
