@@ -631,13 +631,6 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
-              label="Documents"
-              value={NUM(analytics.kpis.documents)}
-              tone={1}
-              icon={FileText}
-              caption={`${NUM(analytics.kpis.lines)} lines · ${analytics.kpis.linesPerDoc.toFixed(1)} per document`}
-            />
-            <KpiCard
               label="Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
