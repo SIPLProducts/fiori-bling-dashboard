@@ -975,7 +975,7 @@ export function SdLiveDashboard() {
 
 
 
-            <Panel title="Top 5 Profit Centres by Amount" accent={1}>
+            <Panel title="Top 5 Profit Centres" accent={1}>
               <BarList items={analytics.topProfitCentres} tone={0} />
             </Panel>
 
