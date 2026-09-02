@@ -25,6 +25,7 @@ Two things to note:
 ## Technical notes
 
 - Parse the workbook in the sandbox with pandas, normalise dates to `YYYY-MM-DD`, numbers to numeric, blanks to null.
-- `record_key` = `gl|fiscal_year|doc_no|doc_item|occurrence`, occurrence counted per duplicate group, so all 32,543 rows survive the unique key.
-- Insert via batched `INSERT ... ON CONFLICT (record_key) DO UPDATE` (~500 rows per statement, ~65 batches) using the data-change tool.
+- `record_key` = `gl|fiscal_year|doc_no|doc_item`; de-duplicate in the sandbox before loading, keeping the last occurrence of each key.
+- Insert via batched `INSERT ... ON CONFLICT (record_key) DO UPDATE` (~500 rows per statement, ~62 batches) using the data-change tool.
 - Verify afterwards with a count and a posting-date range check, and spot-check the SD dashboard totals.
+
