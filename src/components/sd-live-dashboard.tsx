@@ -408,6 +408,7 @@ function LinesTable({
   return (
     <Panel
       title={`Document lines (${NUM(rows.length)})`}
+      accent={1}
       actions={
         <div className="flex items-center gap-2">
           <MultiSelect
@@ -778,13 +779,13 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Revenue trend" className="lg:col-span-2">
+            <Panel title="Revenue trend" accent={1} className="lg:col-span-2">
               <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--kpi-1)" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--kpi-1)" stopOpacity={0.06} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
@@ -813,7 +814,7 @@ export function SdLiveDashboard() {
               </ResponsiveContainer>
             </Panel>
 
-            <Panel title="Sales mix by type">
+            <Panel title="Sales mix by type" accent={2}>
               <MixBars items={analytics.mixByType} total={totalRevenue} />
               <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {analytics.mixByType.map((m, i) => (
@@ -831,7 +832,7 @@ export function SdLiveDashboard() {
               </div>
             </Panel>
 
-            <Panel title="Volume & average realization by month" className="lg:col-span-2">
+            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2">
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
                 Green bars = quantity billed each month (left axis). Amber line = average realization,
                 i.e. revenue ÷ quantity, in INR per unit (right axis).
@@ -928,15 +929,15 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel title="Top 5 materials">
+            <Panel title="Top 5 materials" accent={3}>
               <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Top customers" className="lg:col-span-2">
+            <Panel title="Top customers" accent={4} className="lg:col-span-2">
               <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
             </Panel>
 
-            <Panel title="Revenue mix by type">
+            <Panel title="Revenue mix by type" accent={2}>
               <StackedMix items={analytics.mixByType} total={totalRevenue} />
             </Panel>
           </div>
