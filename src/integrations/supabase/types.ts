@@ -644,6 +644,7 @@ export type Database = {
           amount_net: number
           amount_service: number
           branch: string | null
+          business_segment: string | null
           company_code: string | null
           company_name: string | null
           country_code: string | null
@@ -715,6 +716,7 @@ export type Database = {
           amount_net?: number
           amount_service?: number
           branch?: string | null
+          business_segment?: string | null
           company_code?: string | null
           company_name?: string | null
           country_code?: string | null
@@ -786,6 +788,7 @@ export type Database = {
           amount_net?: number
           amount_service?: number
           branch?: string | null
+          business_segment?: string | null
           company_code?: string | null
           company_name?: string | null
           country_code?: string | null

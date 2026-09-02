@@ -22,6 +22,7 @@ export type SdLine = {
   newRepl: string;
   salesType: string;
   segment: string;
+  businessSegment: string;
   material: string;
   materialDesc: string;
   productGroup: string;
@@ -43,7 +44,7 @@ export type SdLine = {
 };
 
 const COLUMNS =
-  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount, business_segment";
 
 const PAGE = 1000;
 
@@ -83,6 +84,7 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         newRepl: s(r["new_repl"]),
         salesType: s(r["sales_type"]),
         segment: s(r["segment"]),
+        businessSegment: s(r["business_segment"]),
         material: s(r["material"]),
         materialDesc: s(r["material_desc"]),
         productGroup: s(r["product_group"]),
@@ -223,7 +225,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
-    add(bySeg, r.segment || "Unassigned", r.amount);
+    add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
