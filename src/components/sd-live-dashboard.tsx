@@ -251,10 +251,12 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
                 >
                   {i + 1}
                 </span>
-                <span className="truncate text-sm">{item.name || "—"}</span>
+                <span className="truncate text-sm" title={item.name}>
+                  {item.name || "—"}
+                </span>
               </span>
               <Badge variant="secondary" className="tabular shrink-0">
-                {share.toFixed(1)}%
+                {INR(item.value)}
               </Badge>
             </div>
             <div className="mt-1.5 h-1.5 rounded-full bg-muted">
