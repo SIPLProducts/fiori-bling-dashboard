@@ -349,6 +349,8 @@ function StackedMix({ items, total }: { items: { name: string; value: number }[]
 type Column = { key: string; label: string; numeric?: boolean; render: (r: SdLine) => string };
 
 const COLUMNS: Column[] = [
+  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
+  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
   { key: "docNo", label: "Document No", render: (r) => r.docNo || "—" },
   { key: "docItem", label: "Item", render: (r) => r.docItem || "—" },
   { key: "postingDate", label: "Posting date", render: (r) => r.postingDate || "—" },
@@ -358,8 +360,7 @@ const COLUMNS: Column[] = [
     label: "Profit centre",
     render: (r) => [r.profitCtr, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ") || "—",
   },
-  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
-  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
+
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   {
@@ -788,7 +789,7 @@ export function SdLiveDashboard() {
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
               <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
@@ -808,7 +809,22 @@ export function SdLiveDashboard() {
                     {...tooltipStyle}
                     formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
+                    <LabelList
+                      dataKey="revenue"
+                      position="top"
+                      offset={8}
+                      formatter={(v: number, _n?: unknown, idx?: number) =>
+                        labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                      }
+                      fontSize={10}
+                      fontWeight={600}
+                      fill="var(--kpi-1)"
+                      stroke="var(--color-card)"
+                      strokeWidth={3}
+                      paintOrder="stroke"
+                    />
+                  </Area>
                   <Line
                     yAxisId="docs"
                     type="monotone"
@@ -816,7 +832,23 @@ export function SdLiveDashboard() {
                     stroke="var(--kpi-3)"
                     strokeWidth={2}
                     dot={false}
-                  />
+                  >
+                    <LabelList
+                      dataKey="documents"
+                      position="bottom"
+                      offset={8}
+                      formatter={(v: number, _n?: unknown, idx?: number) =>
+                        labelEvery(analytics.monthly.length, idx) ? NUM(v) : ""
+                      }
+                      fontSize={10}
+                      fontWeight={600}
+                      fill="var(--kpi-3)"
+                      stroke="var(--color-card)"
+                      strokeWidth={3}
+                      paintOrder="stroke"
+                    />
+                  </Line>
+
                 </ComposedChart>
               </ResponsiveContainer>
               </div>
@@ -842,7 +874,7 @@ export function SdLiveDashboard() {
 
             <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2">
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
-                Green bars = quantity billed each month (left axis). Amber line = average realization,
+                Green bars = quantity billed each month (left axis). Magenta line = average realization,
                 i.e. revenue ÷ quantity, in INR per unit (right axis).
               </p>
               <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
@@ -851,8 +883,8 @@ export function SdLiveDashboard() {
                   <span className="font-medium text-foreground">Quantity (units)</span> — left axis
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-3)" }} />
-                  <span className="font-medium" style={{ color: "var(--kpi-3)" }}>
+                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-6)" }} />
+                  <span className="font-medium" style={{ color: "var(--kpi-6)" }}>
                     Avg realization (INR/unit)
                   </span>{" "}
                   — right axis
@@ -884,7 +916,7 @@ export function SdLiveDashboard() {
                         value: "Avg realization (INR/unit)",
                         angle: 90,
                         position: "insideRight",
-                        style: { fontSize: 11, fill: "var(--kpi-3)" },
+                        style: { fontSize: 11, fill: "var(--kpi-6)" },
                       }}
                     />
                     <Tooltip
@@ -911,9 +943,9 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="realization"
                       name="Avg realization"
-                      stroke="var(--kpi-3)"
+                      stroke="var(--kpi-6)"
                       strokeWidth={2.5}
-                      dot={{ r: 3, fill: "var(--kpi-3)" }}
+                      dot={{ r: 3, fill: "var(--kpi-6)" }}
                     >
                       <LabelList
                         dataKey="realization"
@@ -924,7 +956,7 @@ export function SdLiveDashboard() {
                         }
                         fontSize={11}
                         fontWeight={600}
-                        fill="var(--kpi-3)"
+                        fill="var(--kpi-6)"
                         stroke="var(--color-card)"
                         strokeWidth={3}
                         paintOrder="stroke"
