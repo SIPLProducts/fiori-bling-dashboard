@@ -95,6 +95,13 @@ function buildPcColors(rows: { profitCtr: string; amount: number }[]) {
   return { map, ordered };
 }
 
+/** Thin out dense value labels so they stay readable. */
+function labelEvery(count: number, index?: number) {
+  if (index == null) return true;
+  const step = count > 24 ? 3 : count > 14 ? 2 : 1;
+  return index % step === 0;
+}
+
 function isoDaysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -717,6 +724,13 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
+              label="Total quantity"
+              value={NUM(analytics.kpis.quantity)}
+              tone={4}
+              icon={Boxes}
+              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+            />
+            <KpiCard
               label="Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
@@ -787,7 +801,7 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel title="Sales mix by type">
-              <Donut data={analytics.mixByType} />
+              <MixBars items={analytics.mixByType} total={totalRevenue} />
               <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {analytics.mixByType.map((m, i) => (
                   <div key={m.name} className="flex items-center justify-between">
@@ -806,16 +820,20 @@ export function SdLiveDashboard() {
 
             <Panel title="Volume & average realization by month" className="lg:col-span-2">
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
-                Bars = quantity billed; line = average price realised per unit.
+                Green bars = quantity billed each month (left axis). Amber line = average realization,
+                i.e. revenue ÷ quantity, in INR per unit (right axis).
               </p>
               <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--kpi-5)" }} />
-                  Quantity (units)
+                  <span className="font-medium text-foreground">Quantity (units)</span> — left axis
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-4)" }} />
-                  Avg realization (INR/unit)
+                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-3)" }} />
+                  <span className="font-medium" style={{ color: "var(--kpi-3)" }}>
+                    Avg realization (INR/unit)
+                  </span>{" "}
+                  — right axis
                 </span>
               </div>
               {analytics.monthly.length ? (
@@ -828,10 +846,10 @@ export function SdLiveDashboard() {
                       tick={{ fontSize: 11 }}
                       stroke="var(--color-muted-foreground)"
                       label={{
-                        value: "Quantity",
+                        value: "Quantity (units)",
                         angle: -90,
                         position: "insideLeft",
-                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                        style: { fontSize: 11, fill: "var(--kpi-5)" },
                       }}
                     />
                     <YAxis
@@ -844,7 +862,7 @@ export function SdLiveDashboard() {
                         value: "Avg realization (INR/unit)",
                         angle: 90,
                         position: "insideRight",
-                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                        style: { fontSize: 11, fill: "var(--kpi-3)" },
                       }}
                     />
                     <Tooltip
@@ -855,9 +873,15 @@ export function SdLiveDashboard() {
                       <LabelList
                         dataKey="quantity"
                         position="top"
-                        formatter={(v: number) => compact(v)}
-                        fontSize={10}
-                        fill="var(--color-foreground)"
+                        formatter={(v: number, _n?: unknown, idx?: number) =>
+                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                        }
+                        fontSize={11}
+                        fontWeight={600}
+                        fill="var(--kpi-5)"
+                        stroke="var(--color-card)"
+                        strokeWidth={3}
+                        paintOrder="stroke"
                       />
                     </Bar>
                     <Line
@@ -865,17 +889,23 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="realization"
                       name="Avg realization"
-                      stroke="var(--kpi-4)"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
+                      stroke="var(--kpi-3)"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "var(--kpi-3)" }}
                     >
                       <LabelList
                         dataKey="realization"
                         position="top"
-                        offset={8}
-                        formatter={(v: number) => compact(v)}
-                        fontSize={10}
-                        fill="var(--kpi-4)"
+                        offset={10}
+                        formatter={(v: number, _n?: unknown, idx?: number) =>
+                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                        }
+                        fontSize={11}
+                        fontWeight={600}
+                        fill="var(--kpi-3)"
+                        stroke="var(--color-card)"
+                        strokeWidth={3}
+                        paintOrder="stroke"
                       />
                     </Line>
                   </ComposedChart>
@@ -899,7 +929,12 @@ export function SdLiveDashboard() {
           </div>
 
 
-          <LinesTable rows={filtered} onExport={exportRows} />
+          <LinesTable
+            rows={filtered}
+            onExport={exportRows}
+            pcColors={pcColors.map}
+            pcLegend={pcLegend}
+          />
         </>
       )}
     </div>
