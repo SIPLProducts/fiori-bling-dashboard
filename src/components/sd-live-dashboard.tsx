@@ -667,7 +667,7 @@ export function SdLiveDashboard() {
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Revenue trend" className="lg:col-span-2">
               <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={analytics.monthly}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.35} />
@@ -721,7 +721,7 @@ export function SdLiveDashboard() {
             <Panel title="Volume & average realization by month" className="lg:col-span-2">
               {analytics.monthly.length ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={analytics.monthly}>
+                  <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                     <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
@@ -736,7 +736,15 @@ export function SdLiveDashboard() {
                       {...tooltipStyle}
                       formatter={(v: number, n: string) => [n === "quantity" ? NUM(v) : INR(v), n]}
                     />
-                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26} />
+                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26}>
+                      <LabelList
+                        dataKey="quantity"
+                        position="top"
+                        formatter={(v: number) => compact(v)}
+                        fontSize={10}
+                        fill="var(--color-foreground)"
+                      />
+                    </Bar>
                     <Line
                       yAxisId="rate"
                       type="monotone"
