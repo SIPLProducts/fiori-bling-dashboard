@@ -420,7 +420,7 @@ function LinesTable({
 
   return (
     <Panel
-      title={`Document lines (${NUM(rows.length)})`}
+      title={`ZFISALES_MIS List (${NUM(rows.length)})`}
       accent={1}
       actions={
         <div className="flex items-center gap-2">
