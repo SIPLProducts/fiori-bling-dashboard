@@ -505,17 +505,26 @@ function ApiList({
   const queryClient = useQueryClient();
   const endpointsQuery = useQuery({ queryKey: ["sap-endpoints"], queryFn: listSapEndpoints });
   const systemsQuery = useQuery({ queryKey: ["sap-systems"], queryFn: listSapSystems });
+  const runsQuery = useQuery({
+    queryKey: ["sync-runs-latest"],
+    queryFn: listLatestRuns,
+    refetchInterval: 60000,
+  });
   const systems = systemsQuery.data ?? [];
+  const latestRuns = runsQuery.data ?? {};
 
   const testMutation = useMutation({
     mutationFn: (endpoint: SapEndpoint) => testSapEndpoint(endpoint, systems),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
       queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-runs-latest"] });
       reportTest(result);
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
 
 
   const deleteMutation = useMutation({
