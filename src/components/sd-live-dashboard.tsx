@@ -215,8 +215,8 @@ function HBar({
           width={230}
           interval={0}
           tickMargin={4}
-          tickFormatter={(v: string) => (v && v.length > 36 ? `${v.slice(0, 34)}…` : v || "—")}
-          tick={{ fontSize: 11 }}
+          tickFormatter={(v: string) => (v && v.length > 44 ? `${v.slice(0, 42)}…` : v || "—")}
+          tick={{ fontSize: 10 }}
           stroke="var(--color-muted-foreground)"
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
@@ -251,10 +251,12 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
                 >
                   {i + 1}
                 </span>
-                <span className="truncate text-sm">{item.name || "—"}</span>
+                <span className="truncate text-sm" title={item.name}>
+                  {item.name || "—"}
+                </span>
               </span>
               <Badge variant="secondary" className="tabular shrink-0">
-                {share.toFixed(1)}%
+                {INR(item.value)}
               </Badge>
             </div>
             <div className="mt-1.5 h-1.5 rounded-full bg-muted">
@@ -264,13 +266,47 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
               />
             </div>
             <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
-              <span>{item.count} line(s)</span>
-              <span className="tabular">{INR(item.value)}</span>
+              <span>{item.count} records</span>
+              <span className="tabular">{share.toFixed(1)}%</span>
             </div>
           </li>
         );
       })}
     </ol>
+  );
+}
+
+function ProfitCentreBars({ items }: { items: { name: string; value: number }[] }) {
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  const max = Math.max(...items.map((i) => i.value), 1);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">
+        Amount (₹ Cr)
+      </div>
+      {items.map((item) => (
+        <div key={item.name} className="flex items-center gap-3">
+          <span
+            className="w-[38%] shrink-0 truncate whitespace-nowrap text-[11px] text-muted-foreground"
+            title={item.name}
+          >
+            {item.name || "—"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div
+              className="h-3 rounded-sm"
+              style={{
+                width: `${Math.max(2, (item.value / max) * 100)}%`,
+                background: KPI_TONES[0],
+              }}
+            />
+          </div>
+          <span className="tabular w-14 shrink-0 text-right text-[11px] font-medium">
+            {(item.value / 1e7).toFixed(2)}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -921,6 +957,10 @@ export function SdLiveDashboard() {
             </Panel>
 
 
+
+            <Panel title="Top 5 Profit Centres by Amount" accent={1}>
+              <ProfitCentreBars items={analytics.topProfitCentres} />
+            </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
               <RankedList items={analytics.topMaterials} total={totalRevenue} />

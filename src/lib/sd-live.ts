@@ -176,6 +176,7 @@ export type SdAnalytics = {
   };
   mixByType: NamedTotal[];
   bySegment: NamedTotal[];
+  topProfitCentres: NamedTotal[];
   monthly: {
     month: string;
     revenue: number;
@@ -265,6 +266,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     },
     mixByType: rank(byType),
     bySegment: rank(bySeg),
+    topProfitCentres: pcList.slice(0, 5),
     monthly,
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 5),
