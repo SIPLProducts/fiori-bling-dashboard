@@ -567,14 +567,16 @@ function ApiList({
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                 {endpoint.description || "—"}
               </p>
-              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <StatusPill ok={endpoint.is_active} label={endpoint.is_active ? "Active" : "Inactive"} />
                 <span>
                   {endpoint.last_synced_at
-                    ? `Synced ${formatDateTimeISTLabel(endpoint.last_synced_at)}`
-                    : "Never synced"}
+                    ? `Last data ${formatDateTimeISTLabel(endpoint.last_synced_at)}`
+                    : "No data synced yet"}
                 </span>
               </div>
+              <LastRunLine run={latestRuns[endpoint.name]} />
+
               <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
                 <div className="flex gap-2">
                   <Button
