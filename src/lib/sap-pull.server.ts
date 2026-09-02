@@ -132,10 +132,13 @@ async function pruneRuns(endpointName: string, keep = RUN_HISTORY_LIMIT): Promis
   }
 }
 
+export type RunOutcome = { httpStatus?: number; durationMs?: number; bytes?: number; preview?: string };
+
 export type PullResult =
-  | ({ status: "synced" } & SyncCounts)
+  | ({ status: "synced" } & SyncCounts & RunOutcome)
   | { status: "skipped"; reason: string }
-  | { status: "error"; message: string };
+  | ({ status: "error"; message: string } & RunOutcome);
+
 
 /** Calls the middleware for the given endpoint and stores the response. */
 export async function pullSapEndpoint(endpointName: string): Promise<PullResult> {
