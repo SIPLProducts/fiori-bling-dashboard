@@ -717,24 +717,53 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel title="Volume & average realization by month" className="lg:col-span-2">
+              <p className="-mt-2 mb-3 text-xs text-muted-foreground">
+                Bars = quantity billed; line = average price realised per unit.
+              </p>
+              <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--kpi-5)" }} />
+                  Quantity (units)
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-4)" }} />
+                  Avg realization (INR/unit)
+                </span>
+              </div>
               {analytics.monthly.length ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
+                <ResponsiveContainer width="100%" height={310}>
+                  <ComposedChart data={analytics.monthly} margin={{ top: 24, left: 8, right: 8 }}>
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                    <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis
+                      tickFormatter={compact}
+                      tick={{ fontSize: 11 }}
+                      stroke="var(--color-muted-foreground)"
+                      label={{
+                        value: "Quantity",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                      }}
+                    />
                     <YAxis
                       yAxisId="rate"
                       orientation="right"
                       tickFormatter={compact}
                       tick={{ fontSize: 11 }}
                       stroke="var(--color-muted-foreground)"
+                      label={{
+                        value: "Avg realization (INR/unit)",
+                        angle: 90,
+                        position: "insideRight",
+                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                      }}
                     />
                     <Tooltip
                       {...tooltipStyle}
-                      formatter={(v: number, n: string) => [n === "quantity" ? NUM(v) : INR(v), n]}
+                      formatter={(v: number, n: string) => [n === "Quantity" ? NUM(v) : INR(v), n]}
                     />
-                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26}>
+                    <Bar dataKey="quantity" name="Quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26}>
                       <LabelList
                         dataKey="quantity"
                         position="top"
@@ -747,10 +776,20 @@ export function SdLiveDashboard() {
                       yAxisId="rate"
                       type="monotone"
                       dataKey="realization"
+                      name="Avg realization"
                       stroke="var(--kpi-4)"
                       strokeWidth={2}
                       dot={{ r: 3 }}
-                    />
+                    >
+                      <LabelList
+                        dataKey="realization"
+                        position="top"
+                        offset={8}
+                        formatter={(v: number) => compact(v)}
+                        fontSize={10}
+                        fill="var(--kpi-4)"
+                      />
+                    </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
