@@ -788,7 +788,7 @@ export function SdLiveDashboard() {
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
               <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
@@ -808,7 +808,22 @@ export function SdLiveDashboard() {
                     {...tooltipStyle}
                     formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
+                    <LabelList
+                      dataKey="revenue"
+                      position="top"
+                      offset={8}
+                      formatter={(v: number, _n?: unknown, idx?: number) =>
+                        labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                      }
+                      fontSize={10}
+                      fontWeight={600}
+                      fill="var(--kpi-1)"
+                      stroke="var(--color-card)"
+                      strokeWidth={3}
+                      paintOrder="stroke"
+                    />
+                  </Area>
                   <Line
                     yAxisId="docs"
                     type="monotone"
@@ -816,7 +831,23 @@ export function SdLiveDashboard() {
                     stroke="var(--kpi-3)"
                     strokeWidth={2}
                     dot={false}
-                  />
+                  >
+                    <LabelList
+                      dataKey="documents"
+                      position="bottom"
+                      offset={8}
+                      formatter={(v: number, _n?: unknown, idx?: number) =>
+                        labelEvery(analytics.monthly.length, idx) ? NUM(v) : ""
+                      }
+                      fontSize={10}
+                      fontWeight={600}
+                      fill="var(--kpi-3)"
+                      stroke="var(--color-card)"
+                      strokeWidth={3}
+                      paintOrder="stroke"
+                    />
+                  </Line>
+
                 </ComposedChart>
               </ResponsiveContainer>
               </div>
