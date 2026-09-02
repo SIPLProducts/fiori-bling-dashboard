@@ -84,9 +84,9 @@ function ModuleReportPage() {
 
   if (live) {
     return (
-      <ReportShell title={`${def.code} — ${def.title}`} description={def.description}>
+      <ReportShell title={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)} description={def.description}>
         {!rolesLoading && !allowed ? (
-          <AccessDenied area={`${def.code} — ${def.title}`} />
+          <AccessDenied area={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)} />
         ) : (
           <SdLiveDashboard />
         )}
@@ -96,12 +96,12 @@ function ModuleReportPage() {
 
   return (
     <ReportShell
-      title={`${def.code} — ${def.title}`}
+      title={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)}
       description={def.description}
       providerMode={data?.providerMode}
     >
       {!rolesLoading && !allowed ? (
-        <AccessDenied area={`${def.code} — ${def.title}`} />
+        <AccessDenied area={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)} />
       ) : isLoading || !report ? (
         <div className="grid gap-4 md:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (

@@ -22,10 +22,8 @@ import {
   Search,
   Download,
   IndianRupee,
-  FileText,
   Users,
   Gauge,
-  Package,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -631,13 +629,6 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
-              label="Documents"
-              value={NUM(analytics.kpis.documents)}
-              tone={1}
-              icon={FileText}
-              caption={`${NUM(analytics.kpis.lines)} lines · ${analytics.kpis.linesPerDoc.toFixed(1)} per document`}
-            />
-            <KpiCard
               label="Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
@@ -650,13 +641,6 @@ export function SdLiveDashboard() {
               tone={3}
               icon={Gauge}
               caption="Revenue per document"
-            />
-            <KpiCard
-              label="Avg realization / unit"
-              value={analytics.kpis.avgRealization ? INR(analytics.kpis.avgRealization) : "—"}
-              tone={4}
-              icon={Package}
-              caption={`${NUM(analytics.kpis.quantity)} units billed`}
             />
             <KpiCard
               label="Month-on-month"
@@ -681,7 +665,7 @@ export function SdLiveDashboard() {
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Revenue trend" className="lg:col-span-2">
               <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={analytics.monthly}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.35} />
@@ -735,7 +719,7 @@ export function SdLiveDashboard() {
             <Panel title="Volume & average realization by month" className="lg:col-span-2">
               {analytics.monthly.length ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={analytics.monthly}>
+                  <ComposedChart data={analytics.monthly} margin={{ top: 18 }}>
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                     <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
@@ -750,7 +734,15 @@ export function SdLiveDashboard() {
                       {...tooltipStyle}
                       formatter={(v: number, n: string) => [n === "quantity" ? NUM(v) : INR(v), n]}
                     />
-                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26} />
+                    <Bar dataKey="quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26}>
+                      <LabelList
+                        dataKey="quantity"
+                        position="top"
+                        formatter={(v: number) => compact(v)}
+                        fontSize={10}
+                        fill="var(--color-foreground)"
+                      />
+                    </Bar>
                     <Line
                       yAxisId="rate"
                       type="monotone"
