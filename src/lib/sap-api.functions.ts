@@ -543,7 +543,7 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
     durationMs,
     stage: ok ? "ok" : "unknown",
     sapStatus: run.httpStatus ?? null,
-    sapContacted: run.httpStatus !== undefined && run.httpStatus !== 404,
+    sapContacted: run.httpStatus != null && run.httpStatus !== 404,
     request: outbound,
     ...(run.preview ? { body: run.preview } : {}),
   };
