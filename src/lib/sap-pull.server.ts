@@ -293,16 +293,24 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   try {
     payload = JSON.parse(bodyText);
   } catch {
-    const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
-    const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
-    const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
-    await logFailure(endpointName, message, outbound, {
-      durationMs,
-      responseBytes: bytes,
-      httpStatus: response.status,
-    });
-    return { status: "error", message, durationMs, bytes, httpStatus: response.status, preview };
+    // An older middleware build cuts the body mid-document. Salvage every
+    // complete object of a truncated JSON array instead of losing the run.
+    const salvaged = salvageTruncatedArray(bodyText);
+    if (salvaged) {
+      payload = salvaged;
+    } else {
+      const ctype = typeof envelope["contentType"] === "string" ? ` (content-type ${envelope["contentType"]})` : "";
+      const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
+      const message = `SAP returned ${size(bytes)}${ctype} that could not be parsed as JSON — starts with: ${preview}`;
+      await logFailure(endpointName, message, outbound, {
+        durationMs,
+        responseBytes: bytes,
+        httpStatus: response.status,
+      });
+      return { status: "error", message, durationMs, bytes, httpStatus: response.status, preview };
+    }
   }
+
 
   const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
     durationMs,
