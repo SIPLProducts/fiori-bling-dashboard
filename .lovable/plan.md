@@ -14,6 +14,10 @@ Fix: render the Top customers card the same way as the new Top 5 Profit Centres 
 
 The card keeps its title, accent border, full-screen button, and value labels.
 
+## 3. Amounts adapt to their size (Cr / L / K)
+
+The Top 5 Profit Centres card currently prints raw crore numbers under an "Amount (₹ Cr)" header. Instead the column header becomes just "Amount" and each value uses the same adaptive formatting as the rest of the dashboard: "₹412.30 Cr", "₹45.20 L", "₹8.4 K" depending on magnitude. The same formatting applies to Top customers.
+
 ## Technical notes
 
 - `src/components/sd-live-dashboard.tsx`
