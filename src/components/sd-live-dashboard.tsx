@@ -819,6 +819,7 @@ export function SdLiveDashboard() {
                   />
                 </ComposedChart>
               </ResponsiveContainer>
+              </div>
             </Panel>
 
             <Panel title="Sales mix by type" accent={2}>
