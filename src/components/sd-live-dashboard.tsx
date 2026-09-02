@@ -645,13 +645,6 @@ export function SdLiveDashboard() {
               caption="Revenue per document"
             />
             <KpiCard
-              label="Avg realization / unit"
-              value={analytics.kpis.avgRealization ? INR(analytics.kpis.avgRealization) : "—"}
-              tone={4}
-              icon={Package}
-              caption={`${NUM(analytics.kpis.quantity)} units billed`}
-            />
-            <KpiCard
               label="Month-on-month"
               value={
                 analytics.kpis.momPct == null
