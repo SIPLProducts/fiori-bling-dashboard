@@ -8,8 +8,6 @@ import {
   Cell,
   LabelList,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,6 +23,7 @@ import {
   Users,
   Gauge,
   Building2,
+  Boxes,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -73,6 +72,35 @@ const KPI_TONES = [
 ];
 
 const CHART_COLORS = KPI_TONES;
+
+/** Stable colour per profit centre so the same centre reads the same everywhere. */
+const PC_PALETTE = [
+  "var(--kpi-1)",
+  "var(--kpi-5)",
+  "var(--kpi-3)",
+  "var(--kpi-4)",
+  "var(--kpi-2)",
+  "var(--kpi-6)",
+];
+
+function buildPcColors(rows: { profitCtr: string; amount: number }[]) {
+  const totals = new Map<string, number>();
+  for (const r of rows) {
+    const key = r.profitCtr || "—";
+    totals.set(key, (totals.get(key) ?? 0) + r.amount);
+  }
+  const ordered = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  const map = new Map<string, string>();
+  ordered.forEach(([key], i) => map.set(key, PC_PALETTE[i % PC_PALETTE.length] ?? PC_PALETTE[0]!));
+  return { map, ordered };
+}
+
+/** Thin out dense value labels so they stay readable. */
+function labelEvery(count: number, index?: number) {
+  if (index == null) return true;
+  const step = count > 24 ? 3 : count > 14 ? 2 : 1;
+  return index % step === 0;
+}
 
 function isoDaysAgo(days: number) {
   const d = new Date();
@@ -198,22 +226,6 @@ function HBar({
   );
 }
 
-function Donut({ data }: { data: { name: string; value: number }[] }) {
-  if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
-  return (
-    <ResponsiveContainer width="100%" height={260}>
-      <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={2}>
-          {data.map((entry, i) => (
-            <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip {...tooltipStyle} formatter={(v: number, n: string) => [INR(v), n]} />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-}
-
 function RankedList({ items, total }: { items: { name: string; value: number; count: number }[]; total: number }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
@@ -251,6 +263,47 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
         );
       })}
     </ol>
+  );
+}
+
+function MixBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(220, items.length * 46)}>
+      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 140, top: 4, bottom: 4 }}>
+        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
+        <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={110}
+          tick={{ fontSize: 11 }}
+          stroke="var(--color-muted-foreground)"
+        />
+        <Tooltip
+          {...tooltipStyle}
+          formatter={(v: number, _n: string, p: { payload?: { name?: string } }) => [
+            `${INR(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
+            p?.payload?.name ?? "Revenue",
+          ]}
+        />
+        <Bar dataKey="value" radius={[3, 3, 3, 3]}>
+          {items.map((item, i) => (
+            <Cell key={item.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+          ))}
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v: number) =>
+              `${compact(v)} (${total ? ((v / total) * 100).toFixed(1) : "0"}%)`
+            }
+            fontSize={11}
+            fontWeight={600}
+            fill="var(--color-foreground)"
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -305,6 +358,8 @@ const COLUMNS: Column[] = [
     label: "Profit centre",
     render: (r) => [r.profitCtr, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ") || "—",
   },
+  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
+  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   {
@@ -331,7 +386,17 @@ const COLUMNS: Column[] = [
 
 const PAGE_SIZE = 50;
 
-function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }) {
+function LinesTable({
+  rows,
+  onExport,
+  pcColors,
+  pcLegend,
+}: {
+  rows: SdLine[];
+  onExport: () => void;
+  pcColors: Map<string, string>;
+  pcLegend: { key: string; label: string; value: number; color: string }[];
+}) {
   const [hidden, setHidden] = useState<string[]>([]);
   const [page, setPage] = useState(0);
 
@@ -359,6 +424,18 @@ function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }
         </div>
       }
     >
+      {pcLegend.length ? (
+        <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 rounded-md border border-border/70 bg-muted/40 p-2.5 text-[11px]">
+          <span className="font-medium text-muted-foreground">Profit centre colours:</span>
+          {pcLegend.map((p) => (
+            <span key={p.key} className="inline-flex items-center gap-1.5">
+              <span className="size-2.5 rounded-sm" style={{ background: p.color }} />
+              <span className="truncate">{p.label}</span>
+              <span className="tabular text-muted-foreground">{compact(p.value)}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="max-h-[560px] overflow-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-muted">
@@ -374,23 +451,41 @@ function LinesTable({ rows, onExport }: { rows: SdLine[]; onExport: () => void }
             </tr>
           </thead>
           <tbody>
-            {slice.map((r, i) => (
-              <tr
-                key={`${r.docNo}-${r.docItem}-${r.material}-${i}`}
-                className="border-t border-border/60 odd:bg-card even:bg-muted/40 hover:bg-accent/40"
-              >
-                {visible.map((c) => (
-                  <td
-                    key={c.key}
-                    className={`px-2.5 py-1.5 whitespace-nowrap ${
-                      c.numeric ? "tabular text-right" : ""
-                    } ${c.key === "amount" && r.amount < 0 ? "text-destructive" : ""}`}
-                  >
-                    {c.render(r)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {slice.map((r, i) => {
+              const pcColor = pcColors.get(r.profitCtr || "—") ?? "var(--color-border)";
+              return (
+                <tr
+                  key={`${r.docNo}-${r.docItem}-${r.material}-${i}`}
+                  className="border-t border-border/60 hover:brightness-95"
+                  style={{
+                    background: `color-mix(in oklab, ${pcColor} ${i % 2 ? 14 : 8}%, var(--color-card))`,
+                  }}
+                >
+                  {visible.map((c) => (
+                    <td
+                      key={c.key}
+                      className={`px-2.5 py-1.5 whitespace-nowrap ${
+                        c.numeric ? "tabular text-right" : ""
+                      } ${c.key === "amount" && r.amount < 0 ? "text-destructive" : ""}`}
+                      style={
+                        c.key === "profitCtr"
+                          ? { borderLeft: `3px solid ${pcColor}`, fontWeight: 500 }
+                          : undefined
+                      }
+                    >
+                      {c.key === "profitCtr" ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="size-2.5 shrink-0 rounded-sm" style={{ background: pcColor }} />
+                          {c.render(r)}
+                        </span>
+                      ) : (
+                        c.render(r)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
             {!slice.length ? (
               <tr>
                 <td colSpan={visible.length} className="px-2.5 py-8 text-center text-muted-foreground">
@@ -495,6 +590,19 @@ export function SdLiveDashboard() {
   }
 
   const totalRevenue = analytics.kpis.revenue;
+
+  const topUnit = filtered.find((r) => r.unit)?.unit ?? "";
+  const pcColors = buildPcColors(filtered);
+  const pcLabel = (key: string) => {
+    const row = filtered.find((r) => (r.profitCtr || "—") === key);
+    return [key, row?.pcShortName || row?.profitCtrName].filter(Boolean).join(" · ");
+  };
+  const pcLegend = pcColors.ordered.slice(0, 12).map(([key, value]) => ({
+    key,
+    label: pcLabel(key),
+    value,
+    color: pcColors.map.get(key) ?? "var(--color-border)",
+  }));
 
   return (
     <div className="space-y-4">
@@ -629,6 +737,13 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
+              label="Total quantity"
+              value={NUM(analytics.kpis.quantity)}
+              tone={4}
+              icon={Boxes}
+              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+            />
+            <KpiCard
               label="Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
@@ -699,7 +814,7 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel title="Sales mix by type">
-              <Donut data={analytics.mixByType} />
+              <MixBars items={analytics.mixByType} total={totalRevenue} />
               <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {analytics.mixByType.map((m, i) => (
                   <div key={m.name} className="flex items-center justify-between">
@@ -718,16 +833,20 @@ export function SdLiveDashboard() {
 
             <Panel title="Volume & average realization by month" className="lg:col-span-2">
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
-                Bars = quantity billed; line = average price realised per unit.
+                Green bars = quantity billed each month (left axis). Amber line = average realization,
+                i.e. revenue ÷ quantity, in INR per unit (right axis).
               </p>
               <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--kpi-5)" }} />
-                  Quantity (units)
+                  <span className="font-medium text-foreground">Quantity (units)</span> — left axis
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-4)" }} />
-                  Avg realization (INR/unit)
+                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-3)" }} />
+                  <span className="font-medium" style={{ color: "var(--kpi-3)" }}>
+                    Avg realization (INR/unit)
+                  </span>{" "}
+                  — right axis
                 </span>
               </div>
               {analytics.monthly.length ? (
@@ -740,10 +859,10 @@ export function SdLiveDashboard() {
                       tick={{ fontSize: 11 }}
                       stroke="var(--color-muted-foreground)"
                       label={{
-                        value: "Quantity",
+                        value: "Quantity (units)",
                         angle: -90,
                         position: "insideLeft",
-                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                        style: { fontSize: 11, fill: "var(--kpi-5)" },
                       }}
                     />
                     <YAxis
@@ -756,7 +875,7 @@ export function SdLiveDashboard() {
                         value: "Avg realization (INR/unit)",
                         angle: 90,
                         position: "insideRight",
-                        style: { fontSize: 11, fill: "var(--color-muted-foreground)" },
+                        style: { fontSize: 11, fill: "var(--kpi-3)" },
                       }}
                     />
                     <Tooltip
@@ -767,9 +886,15 @@ export function SdLiveDashboard() {
                       <LabelList
                         dataKey="quantity"
                         position="top"
-                        formatter={(v: number) => compact(v)}
-                        fontSize={10}
-                        fill="var(--color-foreground)"
+                        formatter={(v: number, _n?: unknown, idx?: number) =>
+                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                        }
+                        fontSize={11}
+                        fontWeight={600}
+                        fill="var(--kpi-5)"
+                        stroke="var(--color-card)"
+                        strokeWidth={3}
+                        paintOrder="stroke"
                       />
                     </Bar>
                     <Line
@@ -777,17 +902,23 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="realization"
                       name="Avg realization"
-                      stroke="var(--kpi-4)"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
+                      stroke="var(--kpi-3)"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "var(--kpi-3)" }}
                     >
                       <LabelList
                         dataKey="realization"
                         position="top"
-                        offset={8}
-                        formatter={(v: number) => compact(v)}
-                        fontSize={10}
-                        fill="var(--kpi-4)"
+                        offset={10}
+                        formatter={(v: number, _n?: unknown, idx?: number) =>
+                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
+                        }
+                        fontSize={11}
+                        fontWeight={600}
+                        fill="var(--kpi-3)"
+                        stroke="var(--color-card)"
+                        strokeWidth={3}
+                        paintOrder="stroke"
                       />
                     </Line>
                   </ComposedChart>
@@ -811,7 +942,12 @@ export function SdLiveDashboard() {
           </div>
 
 
-          <LinesTable rows={filtered} onExport={exportRows} />
+          <LinesTable
+            rows={filtered}
+            onExport={exportRows}
+            pcColors={pcColors.map}
+            pcLegend={pcLegend}
+          />
         </>
       )}
     </div>
