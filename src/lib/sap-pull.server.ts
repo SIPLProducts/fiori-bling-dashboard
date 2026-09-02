@@ -285,7 +285,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
       responseBytes: bytes,
       httpStatus: response.status,
     });
-    return { status: "error", message };
+    return { status: "error", message, durationMs, bytes, httpStatus: response.status };
   }
 
   const bodyText = typeof envelope["body"] === "string" ? (envelope["body"] as string) : text;
@@ -301,7 +301,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
       responseBytes: bytes,
       httpStatus: response.status,
     });
-    return { status: "error", message };
+    return { status: "error", message, durationMs, bytes, httpStatus: response.status, preview };
   }
 
   const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
@@ -309,16 +309,27 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     responseBytes: bytes,
     httpStatus: response.status,
   });
+  const now = new Date().toISOString();
   await db
     .from("sap_endpoints")
     .update({
-      last_synced_at: new Date().toISOString(),
-      last_run_at: new Date().toISOString(),
+      // Only move the synced stamp when rows were actually written.
+      ...(counts.inserted + counts.updated > 0 ? { last_synced_at: now } : {}),
+      last_run_at: now,
       last_run_status: "success",
     })
     .eq("name", endpointName);
-  return { status: "synced", ...counts };
+  return {
+    status: "synced",
+    ...counts,
+    durationMs,
+    bytes,
+    httpStatus: response.status,
+    // Small excerpt only — the full body is never returned to the browser.
+    preview: bodyText.slice(0, 4000),
+  };
 }
+
 
 async function logFailure(
   endpointName: string,
