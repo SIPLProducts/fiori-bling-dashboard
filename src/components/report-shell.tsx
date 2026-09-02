@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Maximize2 } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLaunchpad } from "@/lib/use-launchpad";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+
 
 export function ReportShell({
   title,
