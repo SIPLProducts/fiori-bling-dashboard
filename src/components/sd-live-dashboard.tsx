@@ -874,9 +874,9 @@ export function SdLiveDashboard() {
                   <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                   <YAxis
-                    tickFormatter={compact}
+                    tickFormatter={axisCompact}
                     tick={{ fontSize: 11 }}
-                    width={58}
+                    width={84}
                     tickMargin={2}
                     stroke="var(--color-muted-foreground)"
                   />
