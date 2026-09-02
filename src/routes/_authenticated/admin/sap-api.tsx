@@ -19,7 +19,36 @@ import {
   Server,
   ShieldCheck,
   Trash2,
+  CalendarClock,
 } from "lucide-react";
+import { CRON_PRESETS, describeCron, isValidCron, nextCronRuns } from "@/lib/cron";
+
+/** Plain-English schedule read-out plus the next three run times in IST. */
+function SchedulePreview({ expression, enabled }: { expression: string; enabled: boolean }) {
+  const valid = isValidCron(expression);
+  const runs = valid && enabled ? nextCronRuns(expression, 3) : [];
+  return (
+    <div className="rounded-sm border border-border bg-muted/40 p-3 text-xs">
+      <p className={valid ? "font-medium text-card-foreground" : "font-medium text-destructive"}>
+        {expression.trim() ? describeCron(expression) : "No interval set"}
+      </p>
+      {!enabled ? (
+        <p className="mt-1 text-muted-foreground">Scheduled sync is switched off.</p>
+      ) : runs.length ? (
+        <ol className="mt-2 space-y-0.5 text-muted-foreground">
+          {runs.map((d, i) => (
+            <li key={d.toISOString()}>
+              {i + 1}. {formatDateTimeISTLabel(d.toISOString())}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <p className="mt-2 text-muted-foreground">
+        Saved here and applied to the background scheduler immediately — nothing is fixed in code.
+      </p>
+    </div>
+  );
+}
 
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { useLaunchpad } from "@/lib/use-launchpad";
