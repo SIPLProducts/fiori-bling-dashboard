@@ -204,7 +204,7 @@ function HBar({
   return (
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
 
-      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 56 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 76 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
