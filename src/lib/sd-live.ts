@@ -8,6 +8,8 @@ export type SdLine = {
   month: string;
   fiscalYear: string;
   plant: string;
+  gl: string;
+  glName: string;
   companyCode: string;
   customer: string;
   customerName: string;
