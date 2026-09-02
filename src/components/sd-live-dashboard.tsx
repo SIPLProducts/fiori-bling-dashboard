@@ -743,9 +743,9 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard
-              label="Total revenue"
+              label="Total Sales"
               value={INR(totalRevenue)}
               tone={0}
               icon={IndianRupee}
@@ -761,7 +761,7 @@ export function SdLiveDashboard() {
               caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
             />
             <KpiCard
-              label="Customers"
+              label="Active Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
               icon={Users}
@@ -773,17 +773,6 @@ export function SdLiveDashboard() {
               tone={3}
               icon={Gauge}
               caption="Revenue per document"
-            />
-            <KpiCard
-              label="Month-on-month"
-              value={
-                analytics.kpis.momPct == null
-                  ? "—"
-                  : `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
-              }
-              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 1}
-              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
-              caption={analytics.kpis.momLabel}
             />
             <KpiCard
               label="Top profit centre"
@@ -798,12 +787,12 @@ export function SdLiveDashboard() {
             <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
               <div
-                className="rounded-md p-2"
+                className={`rounded-md p-2 ${full ? "h-full" : ""}`}
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
-              <ResponsiveContainer width="100%" height={full ? 620 : 300}>
+              <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
 
-                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 0, right: 0 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
@@ -812,7 +801,13 @@ export function SdLiveDashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                  <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                  <YAxis
+                    tickFormatter={compact}
+                    tick={{ fontSize: 11 }}
+                    width={58}
+                    tickMargin={2}
+                    stroke="var(--color-muted-foreground)"
+                  />
                   <YAxis
                     yAxisId="docs"
                     orientation="right"
