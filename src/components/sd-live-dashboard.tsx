@@ -967,7 +967,7 @@ export function SdLiveDashboard() {
 
 
             <Panel title="Top 5 Profit Centres by Amount" accent={1}>
-              <ProfitCentreBars items={analytics.topProfitCentres} />
+              <BarList items={analytics.topProfitCentres} tone={0} />
             </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
@@ -977,12 +977,7 @@ export function SdLiveDashboard() {
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
-                  <HBar
-                    data={analytics.topCustomers}
-                    valueLabel="Revenue"
-                    tone={3}
-                    {...(full ? { height: "100%" as const } : {})}
-                  />
+                  <BarList items={analytics.topCustomers} tone={3} full={full} />
                 </div>
               )}
             </Panel>
