@@ -53,16 +53,28 @@ export async function getSalesSyncStatus(): Promise<SalesSyncStatus> {
   const { data: run } = await supabase
     .from("sap_sync_runs")
     .select("status, finished_at, started_at")
-    .eq("endpoint", "ZFISALES")
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // newest row actually stored in the detail table (covers bulk loads with no run row)
+  const { data: newest } = await supabase
+    .from("zfisales_detail")
+    .select("synced_at")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const runAt = run?.finished_at ?? run?.started_at ?? null;
+  const dataAt = newest?.synced_at ?? null;
+  const lastSyncedAt =
+    runAt && dataAt ? (new Date(runAt) > new Date(dataAt) ? runAt : dataAt) : (runAt ?? dataAt);
 
   const rowCount = count ?? 0;
   return {
     source: rowCount > 0 ? "ZFISALES_DETAIL" : "SAMPLE",
     rowCount,
-    lastSyncedAt: run?.finished_at ?? run?.started_at ?? null,
+    lastSyncedAt,
     lastStatus: run?.status ?? null,
   };
 }
