@@ -990,15 +990,24 @@ export function SdLiveDashboard() {
               ) : (
                 <p className="py-10 text-center text-sm text-muted-foreground">No data</p>
               )}
+              </>)}
             </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
               <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Top customers" accent={4} className="lg:col-span-2">
-              <HBar data={analytics.topCustomers} valueLabel="Revenue" tone={3} />
+            <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
+                <HBar
+                  data={analytics.topCustomers}
+                  valueLabel="Revenue"
+                  tone={3}
+                  {...(full ? { height: 620 } : {})}
+                />
+              )}
             </Panel>
+
 
             <Panel title="Revenue mix by type" accent={2}>
               <StackedMix items={analytics.mixByType} total={totalRevenue} />
