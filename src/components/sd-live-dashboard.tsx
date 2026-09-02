@@ -715,6 +715,9 @@ export function SdLiveDashboard() {
       <p className="text-xs text-muted-foreground">
         Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
         {formatDateTimeISTLabel(sync?.lastSyncedAt)}
+        {sync?.lastStatus && sync.lastStatus !== "success" ? (
+          <span className="text-destructive"> · last run {sync.lastStatus}</span>
+        ) : null}
       </p>
 
       {!all.length ? (
