@@ -43,7 +43,7 @@ export type SdLine = {
 };
 
 const COLUMNS =
-  "doc_no, doc_item, posting_date, month, fiscal_year, plant, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount";
 
 const PAGE = 1000;
 
@@ -69,6 +69,8 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         month: s(r["month"]),
         fiscalYear: s(r["fiscal_year"]),
         plant: s(r["plant"]),
+        gl: s(r["gl"]),
+        glName: s(r["gl_name"]),
         companyCode: s(r["company_code"]),
         customer: s(r["customer"]),
         customerName: s(r["customer_name"]),
