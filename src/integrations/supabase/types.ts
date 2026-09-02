@@ -863,6 +863,10 @@ export type Database = {
         Args: { _new_password: string; _user_id: string }
         Returns: undefined
       }
+      apply_sap_sync_schedule: {
+        Args: { _cron: string; _enabled: boolean; _endpoint: string }
+        Returns: string
+      }
       get_sap_credential: { Args: { _cred_key: string }; Returns: string }
       has_role: {
         Args: {
