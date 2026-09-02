@@ -281,13 +281,13 @@ function MixBars({
 }: {
   items: { name: string; value: number }[];
   total: number;
-  height?: number;
+  height?: number | string;
 }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, items.length * 46)}>
 
-      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 140, top: 4, bottom: 4 }}>
+      <BarChart data={items} layout="vertical" margin={{ left: 0, right: 140, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
@@ -894,8 +894,14 @@ export function SdLiveDashboard() {
 
             <Panel title="Sales mix by type" accent={2} expandable>
               {(full: boolean) => (
-                <>
-                  <MixBars items={analytics.mixByType} total={totalRevenue} {...(full ? { height: 560 } : {})} />
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <MixBars
+                      items={analytics.mixByType}
+                      total={totalRevenue}
+                      {...(full ? { height: "100%" as const } : {})}
+                    />
+                  </div>
                   <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                     {analytics.mixByType.map((m, i) => (
                       <div key={m.name} className="flex items-center justify-between">
@@ -910,7 +916,7 @@ export function SdLiveDashboard() {
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </Panel>
 
