@@ -322,34 +322,57 @@ function MixBars({
   );
 }
 
-function StackedMix({ items, total }: { items: { name: string; value: number }[]; total: number }) {
-  if (!total) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!items.length || !total)
+    return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
-    <div>
-      <div className="flex h-6 w-full overflow-hidden rounded-full">
-        {items.map((item, i) => (
-          <div
-            key={item.name}
-            title={`${item.name}: ${INR(item.value)}`}
-            style={{
-              width: `${(item.value / total) * 100}%`,
-              background: KPI_TONES[i % KPI_TONES.length],
-            }}
-          />
-        ))}
+    <div className="flex flex-col items-center gap-4 sm:flex-row">
+      <div className="relative h-[230px] w-full max-w-[240px] shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={items}
+              dataKey="value"
+              nameKey="name"
+              innerRadius="62%"
+              outerRadius="92%"
+              paddingAngle={1}
+              stroke="none"
+            >
+              {items.map((item, i) => (
+                <Cell key={item.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              {...tooltipStyle}
+              formatter={(v: number, n: string) => [
+                `${INR(v)} · ${((v / total) * 100).toFixed(1)}%`,
+                n || "—",
+              ]}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+          <div>
+            <p className="text-base font-semibold">₹{compact(total)}</p>
+            <p className="text-[11px] text-muted-foreground">Total amount</p>
+          </div>
+        </div>
       </div>
-      <div className="mt-3 space-y-2">
+      <div className="w-full flex-1 space-y-2">
         {items.map((item, i) => (
-          <div key={item.name} className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-2">
+          <div key={item.name} className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex min-w-0 items-center gap-2">
               <span
-                className="size-2.5 rounded-sm"
-                style={{ background: KPI_TONES[i % KPI_TONES.length] }}
+                className="size-2.5 shrink-0 rounded-sm"
+                style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
               />
-              {item.name || "—"}
+              <span className="truncate" title={item.name || "—"}>
+                {item.name || "—"}
+              </span>
             </span>
-            <span className="tabular text-muted-foreground">
-              {INR(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+            <span className="tabular shrink-0 whitespace-nowrap text-muted-foreground">
+              ₹{compact(item.value)} · {((item.value / total) * 100).toFixed(1)}%
             </span>
           </div>
         ))}
