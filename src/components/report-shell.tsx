@@ -56,14 +56,21 @@ export function Panel({
   className = "",
   actions,
   accent,
+  expandable = false,
 }: {
   title: string;
-  children: ReactNode;
+  children: ReactNode | ((fullscreen: boolean) => ReactNode);
   className?: string;
   actions?: ReactNode;
   /** 1-6 maps to the --kpi-* palette; adds a coloured left edge. */
   accent?: 1 | 2 | 3 | 4 | 5 | 6;
+  /** Shows a full-screen toggle in the header. */
+  expandable?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const render = (fullscreen: boolean) =>
+    typeof children === "function" ? (children as (f: boolean) => ReactNode)(fullscreen) : children;
+
   return (
     <section
       className={`rounded-md border border-border bg-card p-4 shadow-tile ${accent ? "border-l-[3px]" : ""} ${className}`}
@@ -71,12 +78,37 @@ export function Panel({
     >
       <div className="mb-4 flex items-start justify-between gap-2">
         <h2 className="text-sm font-medium text-card-foreground">{title}</h2>
-        {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
+        <div className="flex shrink-0 items-center gap-1">
+          {actions}
+          {expandable ? (
+            <button
+              type="button"
+              aria-label={`View ${title} full screen`}
+              title="Full screen"
+              onClick={() => setOpen(true)}
+              className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+            >
+              <Maximize2 className="size-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
-      {children}
+      {!open ? render(false) : <div className="py-10 text-center text-xs text-muted-foreground">Shown full screen</div>}
+
+      {expandable ? (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="flex h-[90vh] max-w-[95vw] flex-col sm:max-w-[95vw]">
+            <DialogHeader>
+              <DialogTitle className="text-base font-medium">{title}</DialogTitle>
+            </DialogHeader>
+            <div className="min-h-0 flex-1 overflow-auto">{open ? render(true) : null}</div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </section>
   );
 }
+
 
 
 export function AccessDenied({ area }: { area: string }) {
