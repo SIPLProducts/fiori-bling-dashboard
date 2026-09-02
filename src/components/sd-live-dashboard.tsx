@@ -892,8 +892,10 @@ export function SdLiveDashboard() {
             </Panel>
 
 
-            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2">
+            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2" expandable>
+              {(full: boolean) => (<>
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
+
                 Green bars = quantity billed each month (left axis). Magenta line = average realization,
                 i.e. revenue ÷ quantity, in INR per unit (right axis).
               </p>
