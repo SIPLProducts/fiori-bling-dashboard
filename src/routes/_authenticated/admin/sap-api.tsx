@@ -944,12 +944,37 @@ function EndpointDetail({
               />
               <Label>Enable scheduled sync</Label>
             </div>
-            <Field label="Interval / cron expression" hint="Stored for the middleware scheduler, e.g. */15 * * * *">
-              <Input
-                value={form.schedule_expression}
-                onChange={(e) => set("schedule_expression", e.target.value)}
-              />
+            <Field
+              label="Interval / cron expression"
+              hint="Pick a preset from the icon on the right, or type your own 5-field expression."
+            >
+              <div className="relative">
+                <Input
+                  value={form.schedule_expression}
+                  onChange={(e) => set("schedule_expression", e.target.value)}
+                  className="pr-10"
+                />
+                <Select value="" onValueChange={(v) => set("schedule_expression", v)}>
+                  <SelectTrigger
+                    aria-label="Choose an interval"
+                    className="absolute right-0 top-0 h-full w-10 justify-center border-0 bg-transparent px-0 shadow-none [&>svg:last-child]:hidden"
+                  >
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {CRON_PRESETS.map((p) => (
+                      <SelectItem key={p.expression} value={p.expression}>
+                        {p.label} — {p.expression}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </Field>
+            <SchedulePreview
+              expression={form.schedule_expression}
+              enabled={form.scheduler_enabled}
+            />
             <p className="text-xs text-muted-foreground">
               Last run:{" "}
               {stored?.last_run_at ? formatDateTimeISTLabel(stored.last_run_at) : "never"} — status{" "}
