@@ -795,12 +795,14 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Revenue trend" accent={1} className="lg:col-span-2">
+            <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
               <div
                 className="rounded-md p-2"
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={full ? 620 : 300}>
+
                 <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
