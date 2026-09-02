@@ -349,6 +349,8 @@ function StackedMix({ items, total }: { items: { name: string; value: number }[]
 type Column = { key: string; label: string; numeric?: boolean; render: (r: SdLine) => string };
 
 const COLUMNS: Column[] = [
+  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
+  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
   { key: "docNo", label: "Document No", render: (r) => r.docNo || "—" },
   { key: "docItem", label: "Item", render: (r) => r.docItem || "—" },
   { key: "postingDate", label: "Posting date", render: (r) => r.postingDate || "—" },
@@ -358,8 +360,7 @@ const COLUMNS: Column[] = [
     label: "Profit centre",
     render: (r) => [r.profitCtr, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ") || "—",
   },
-  { key: "gl", label: "GL account", render: (r) => r.gl || "—" },
-  { key: "glName", label: "GL name", render: (r) => r.glName || "—" },
+
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   {
