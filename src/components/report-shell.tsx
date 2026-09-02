@@ -55,14 +55,20 @@ export function Panel({
   children,
   className = "",
   actions,
+  accent,
 }: {
   title: string;
   children: ReactNode;
   className?: string;
   actions?: ReactNode;
+  /** 1-6 maps to the --kpi-* palette; adds a coloured left edge. */
+  accent?: 1 | 2 | 3 | 4 | 5 | 6;
 }) {
   return (
-    <section className={`rounded-md border border-border bg-card p-4 shadow-tile ${className}`}>
+    <section
+      className={`rounded-md border border-border bg-card p-4 shadow-tile ${accent ? "border-l-[3px]" : ""} ${className}`}
+      style={accent ? { borderLeftColor: `var(--kpi-${accent})` } : undefined}
+    >
       <div className="mb-4 flex items-start justify-between gap-2">
         <h2 className="text-sm font-medium text-card-foreground">{title}</h2>
         {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
