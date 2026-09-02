@@ -6,8 +6,9 @@
 
 ## What will happen
 
-- All 32,543 rows are loaded into `zfisales_detail`. The 649 existing rows stay; anything matching is updated rather than duplicated.
-- Every row is kept, including the 1,330 rows that repeat the same G/L + Fiscal Year + Document No + Document Item — each gets its own occurrence number in the record key so nothing is dropped.
+- The Excel rows are loaded into `zfisales_detail`. The 649 existing rows stay; a row that already exists is updated, a row that is new is added.
+- Duplicates are removed: the 1,330 rows repeating the same G/L + Fiscal Year + Document No + Document Item collapse to one row each (last value in the sheet wins), so roughly 31,200 unique rows land in the table.
+
 - Rows are marked with source `excel-import` so Excel-loaded data can be told apart from live SAP rows later.
 - After loading, the Sales & Distribution dashboard will immediately show the full Jan-2025 to Aug-2026 history — no code or UI change is needed, it reads the same table.
 
