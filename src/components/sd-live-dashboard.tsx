@@ -56,9 +56,9 @@ const NUM = (value: number) => value.toLocaleString("en-IN", { maximumFractionDi
 
 function compact(value: number) {
   const abs = Math.abs(value);
-  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)} Cr`;
-  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)} L`;
-  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)} K`;
+  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}\u00A0Cr`;
+  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}\u00A0L`;
+  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)}\u00A0K`;
   return NUM(value);
 }
 
@@ -204,7 +204,7 @@ function HBar({
   return (
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
 
-      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 56 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 76 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
@@ -420,7 +420,7 @@ function LinesTable({
 
   return (
     <Panel
-      title={`Document lines (${NUM(rows.length)})`}
+      title={`ZFISALES_MIS List (${NUM(rows.length)})`}
       accent={1}
       actions={
         <div className="flex items-center gap-2">
