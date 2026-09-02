@@ -866,25 +866,31 @@ export function SdLiveDashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
               </div>
+              )}
             </Panel>
 
-            <Panel title="Sales mix by type" accent={2}>
-              <MixBars items={analytics.mixByType} total={totalRevenue} />
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                {analytics.mixByType.map((m, i) => (
-                  <div key={m.name} className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full"
-                        style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-                      />
-                      {m.name || "—"}
-                    </span>
-                    <span className="tabular">{INR(m.value)}</span>
+            <Panel title="Sales mix by type" accent={2} expandable>
+              {(full: boolean) => (
+                <>
+                  <MixBars items={analytics.mixByType} total={totalRevenue} {...(full ? { height: 560 } : {})} />
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {analytics.mixByType.map((m, i) => (
+                      <div key={m.name} className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                          />
+                          {m.name || "—"}
+                        </span>
+                        <span className="tabular">{INR(m.value)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </Panel>
+
 
             <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2">
               <p className="-mt-2 mb-3 text-xs text-muted-foreground">
