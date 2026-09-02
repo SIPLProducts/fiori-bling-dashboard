@@ -499,7 +499,9 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 function LastRunLine({
   run,
 }: {
-  run?: {
+  run:
+    | undefined
+    | {
     status: string;
     started_at: string;
     records_received: number;
