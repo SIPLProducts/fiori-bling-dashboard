@@ -850,6 +850,174 @@ export type Database = {
         }
         Relationships: []
       }
+      zfisales_import_stage: {
+        Row: {
+          ah: number | null
+          amount: number | null
+          country_code: string | null
+          country_name: string | null
+          customer: string | null
+          customer_group: string | null
+          customer_name: string | null
+          customer_profile: string | null
+          division: string | null
+          division_name: string | null
+          doc_date: string | null
+          doc_item: string | null
+          doc_no: string | null
+          doc_type: string | null
+          fiscal_year: string | null
+          gl: string | null
+          gl_name: string | null
+          grp: string | null
+          incoterms: string | null
+          industry: string | null
+          industry_name: string | null
+          main_group: string | null
+          material: string | null
+          material_desc: string | null
+          material_profit_ctr: string | null
+          material_profit_ctr_name: string | null
+          model: string | null
+          month: string | null
+          new_repl: string | null
+          pc_short_name: string | null
+          pk: string | null
+          posting_date: string | null
+          product_range: string | null
+          product_type: string | null
+          profit_ctr: string | null
+          profit_ctr_name: string | null
+          quantity: number | null
+          raw: Json | null
+          record_key: string
+          reference: string | null
+          sales_office: string | null
+          sales_order: string | null
+          sales_order_item: string | null
+          sales_rep: string | null
+          sales_rep_name: string | null
+          sales_type: string | null
+          sales_zone: string | null
+          segment: string | null
+          source_endpoint: string | null
+          sub_group: string | null
+          total_ah: number | null
+          unit: string | null
+          usage_desc: string | null
+        }
+        Insert: {
+          ah?: number | null
+          amount?: number | null
+          country_code?: string | null
+          country_name?: string | null
+          customer?: string | null
+          customer_group?: string | null
+          customer_name?: string | null
+          customer_profile?: string | null
+          division?: string | null
+          division_name?: string | null
+          doc_date?: string | null
+          doc_item?: string | null
+          doc_no?: string | null
+          doc_type?: string | null
+          fiscal_year?: string | null
+          gl?: string | null
+          gl_name?: string | null
+          grp?: string | null
+          incoterms?: string | null
+          industry?: string | null
+          industry_name?: string | null
+          main_group?: string | null
+          material?: string | null
+          material_desc?: string | null
+          material_profit_ctr?: string | null
+          material_profit_ctr_name?: string | null
+          model?: string | null
+          month?: string | null
+          new_repl?: string | null
+          pc_short_name?: string | null
+          pk?: string | null
+          posting_date?: string | null
+          product_range?: string | null
+          product_type?: string | null
+          profit_ctr?: string | null
+          profit_ctr_name?: string | null
+          quantity?: number | null
+          raw?: Json | null
+          record_key: string
+          reference?: string | null
+          sales_office?: string | null
+          sales_order?: string | null
+          sales_order_item?: string | null
+          sales_rep?: string | null
+          sales_rep_name?: string | null
+          sales_type?: string | null
+          sales_zone?: string | null
+          segment?: string | null
+          source_endpoint?: string | null
+          sub_group?: string | null
+          total_ah?: number | null
+          unit?: string | null
+          usage_desc?: string | null
+        }
+        Update: {
+          ah?: number | null
+          amount?: number | null
+          country_code?: string | null
+          country_name?: string | null
+          customer?: string | null
+          customer_group?: string | null
+          customer_name?: string | null
+          customer_profile?: string | null
+          division?: string | null
+          division_name?: string | null
+          doc_date?: string | null
+          doc_item?: string | null
+          doc_no?: string | null
+          doc_type?: string | null
+          fiscal_year?: string | null
+          gl?: string | null
+          gl_name?: string | null
+          grp?: string | null
+          incoterms?: string | null
+          industry?: string | null
+          industry_name?: string | null
+          main_group?: string | null
+          material?: string | null
+          material_desc?: string | null
+          material_profit_ctr?: string | null
+          material_profit_ctr_name?: string | null
+          model?: string | null
+          month?: string | null
+          new_repl?: string | null
+          pc_short_name?: string | null
+          pk?: string | null
+          posting_date?: string | null
+          product_range?: string | null
+          product_type?: string | null
+          profit_ctr?: string | null
+          profit_ctr_name?: string | null
+          quantity?: number | null
+          raw?: Json | null
+          record_key?: string
+          reference?: string | null
+          sales_office?: string | null
+          sales_order?: string | null
+          sales_order_item?: string | null
+          sales_rep?: string | null
+          sales_rep_name?: string | null
+          sales_type?: string | null
+          sales_zone?: string | null
+          segment?: string | null
+          source_endpoint?: string | null
+          sub_group?: string | null
+          total_ah?: number | null
+          unit?: string | null
+          usage_desc?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
