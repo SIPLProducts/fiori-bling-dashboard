@@ -1,20 +1,16 @@
-# Sales report KPI: layout, labels and a Segment donut
+# Top 5 profit centres card + label and list tweaks
 
 ## Changes
 
-1. **Full-screen cards fit the screen, no scrolling** — in full screen the chart sizes itself to the available dialog height instead of a fixed pixel height, and the y-axis number labels (1000 Cr, 2000 Cr…) get tighter width/padding so the plot uses the space. The dialog body stops scrolling.
-2. **Top customers** — customer names render on a single line (wider name column, no wrapping; long names truncate with the full name on hover).
-3. **Replace "Revenue mix by type" with "Sales by Segment (Amount)"** — a donut chart matching the reference: coloured ring, total amount in the centre (e.g. ₹417.42 Cr with "Total" below), and a right-hand legend listing each segment with its percentage. Values come from the existing Segment field on the sales lines.
-4. **Hide "Volume & average realization by month"** card.
-5. **KPI tiles** — "Total revenue" renamed to "Total Sales", "Customers" renamed to "Active Customers", "Month-on-month" removed; the remaining five tiles sit in a single row.
+1. **New "Top 5 Profit Centres by Amount" card** — matching the reference: profit centre name on the left in one line (small font, no wrapping, truncated with hover), a blue bar, and the amount right-aligned with a "Amount (₹ Cr)" column header. Values come from the profit-centre totals already computed for the dashboard.
+2. **Top customers** — customer names render smaller so each fits on a single line, still truncated with full name on hover.
+3. **Top 5 materials** — the footer row changes from "N line(s)" to "N records", and the two figures swap places: the badge on the right now shows the amount, and the footer shows the percentage.
 
 ## Technical notes
 
-- `src/lib/sd-live.ts`: add a `bySegment` aggregate (sum of `amount` grouped by `segment`, ranked) to `buildSdAnalytics`/`SdAnalytics`. No schema or query change — `segment` is already selected.
+- `src/lib/sd-live.ts`: expose the existing profit-centre aggregate as `topProfitCentres` (top 5) on `SdAnalytics`; it is already built internally as `byPc`.
 - `src/components/sd-live-dashboard.tsx`:
-  - KPI grid becomes `lg:grid-cols-5` with the renamed/removed tiles.
-  - New `SegmentDonut` component (recharts `PieChart` + `Pie` with `innerRadius`, centre label, legend column) replacing the `StackedMix` panel; keeps `accent`.
-  - Remove the "Volume & average realization by month" panel block (the `ComposedChart` helper stays unused-free by deletion).
-  - `HBar`: widen the category axis and keep labels single-line.
-- `src/components/report-shell.tsx`: full-screen dialog body switches from `overflow-auto` to a fixed, non-scrolling flex area so children can size to 100% height.
-- Charts in full screen use `height="100%"` inside a `h-full` wrapper rather than fixed 620px, and reduced chart margins.
+  - Add a `ProfitCentreBars` list component (name / proportional bar / amount in Cr) rendered in a new panel placed before "Top 5 materials".
+  - `HBar`: reduce the category tick font size (10px) and keep single-line truncation for customer names.
+  - `RankedList`: swap badge/footer content (badge = amount, footer right = percentage) and relabel the count as "records".
+- No data, query, or schema changes.
