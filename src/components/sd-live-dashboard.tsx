@@ -64,6 +64,15 @@ function compact(value: number) {
   return NUM(value);
 }
 
+/** Shorter form for axis ticks so labels never get clipped. */
+function axisCompact(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1e7) return `${Math.round(value / 1e7).toLocaleString("en-IN")}\u00A0Cr`;
+  if (abs >= 1e5) return `${Math.round(value / 1e5).toLocaleString("en-IN")}\u00A0L`;
+  if (abs >= 1e3) return `${Math.round(value / 1e3).toLocaleString("en-IN")}\u00A0K`;
+  return NUM(value);
+}
+
 const KPI_TONES = [
   "var(--kpi-1)",
   "var(--kpi-2)",
@@ -276,33 +285,41 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
   );
 }
 
-function ProfitCentreBars({ items }: { items: { name: string; value: number }[] }) {
+function BarList({
+  items,
+  tone = 0,
+  full = false,
+}: {
+  items: { name: string; value: number }[];
+  tone?: number;
+  full?: boolean;
+}) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">
-        Amount (₹ Cr)
-      </div>
+    <div className={full ? "flex h-full flex-col gap-2" : "space-y-2"}>
+      <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
       {items.map((item) => (
-        <div key={item.name} className="flex items-center gap-3">
+        <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`}>
           <span
-            className="w-[38%] shrink-0 truncate whitespace-nowrap text-[11px] text-muted-foreground"
+            className="w-[34%] shrink-0 truncate whitespace-nowrap text-[11px] text-muted-foreground"
             title={item.name}
           >
             {item.name || "—"}
           </span>
           <div className="min-w-0 flex-1">
             <div
-              className="h-3 rounded-sm"
+              className="rounded-sm"
               style={{
                 width: `${Math.max(2, (item.value / max) * 100)}%`,
-                background: KPI_TONES[0],
+                height: full ? "55%" : 12,
+                minHeight: 10,
+                background: KPI_TONES[tone % KPI_TONES.length],
               }}
             />
           </div>
-          <span className="tabular w-14 shrink-0 text-right text-[11px] font-medium">
-            {(item.value / 1e7).toFixed(2)}
+          <span className="tabular w-20 shrink-0 whitespace-nowrap text-right text-[11px] font-medium">
+            ₹{compact(item.value)}
           </span>
         </div>
       ))}
@@ -866,9 +883,9 @@ export function SdLiveDashboard() {
                   <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
                   <YAxis
-                    tickFormatter={compact}
+                    tickFormatter={axisCompact}
                     tick={{ fontSize: 11 }}
-                    width={58}
+                    width={84}
                     tickMargin={2}
                     stroke="var(--color-muted-foreground)"
                   />
@@ -959,7 +976,7 @@ export function SdLiveDashboard() {
 
 
             <Panel title="Top 5 Profit Centres by Amount" accent={1}>
-              <ProfitCentreBars items={analytics.topProfitCentres} />
+              <BarList items={analytics.topProfitCentres} tone={0} />
             </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
@@ -969,12 +986,7 @@ export function SdLiveDashboard() {
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
-                  <HBar
-                    data={analytics.topCustomers}
-                    valueLabel="Revenue"
-                    tone={3}
-                    {...(full ? { height: "100%" as const } : {})}
-                  />
+                  <BarList items={analytics.topCustomers} tone={3} full={full} />
                 </div>
               )}
             </Panel>
