@@ -8,6 +8,8 @@ import {
   Cell,
   LabelList,
   Line,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -197,20 +199,23 @@ function HBar({
   data: { name: string; value: number }[];
   valueLabel: string;
   tone?: number;
-  height?: number;
+  height?: number | string;
 }) {
   if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
 
-      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 76 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 76 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
           type="category"
           dataKey="name"
-          width={150}
+          width={230}
+          interval={0}
+          tickMargin={4}
+          tickFormatter={(v: string) => (v && v.length > 36 ? `${v.slice(0, 34)}…` : v || "—")}
           tick={{ fontSize: 11 }}
           stroke="var(--color-muted-foreground)"
         />
@@ -276,13 +281,13 @@ function MixBars({
 }: {
   items: { name: string; value: number }[];
   total: number;
-  height?: number;
+  height?: number | string;
 }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, items.length * 46)}>
 
-      <BarChart data={items} layout="vertical" margin={{ left: 8, right: 140, top: 4, bottom: 4 }}>
+      <BarChart data={items} layout="vertical" margin={{ left: 0, right: 140, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
         <YAxis
@@ -319,34 +324,57 @@ function MixBars({
   );
 }
 
-function StackedMix({ items, total }: { items: { name: string; value: number }[]; total: number }) {
-  if (!total) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  if (!items.length || !total)
+    return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
-    <div>
-      <div className="flex h-6 w-full overflow-hidden rounded-full">
-        {items.map((item, i) => (
-          <div
-            key={item.name}
-            title={`${item.name}: ${INR(item.value)}`}
-            style={{
-              width: `${(item.value / total) * 100}%`,
-              background: KPI_TONES[i % KPI_TONES.length],
-            }}
-          />
-        ))}
+    <div className="flex flex-col items-center gap-4 sm:flex-row">
+      <div className="relative h-[230px] w-full max-w-[240px] shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={items}
+              dataKey="value"
+              nameKey="name"
+              innerRadius="62%"
+              outerRadius="92%"
+              paddingAngle={1}
+              stroke="none"
+            >
+              {items.map((item, i) => (
+                <Cell key={item.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              {...tooltipStyle}
+              formatter={(v: number, n: string) => [
+                `${INR(v)} · ${((v / total) * 100).toFixed(1)}%`,
+                n || "—",
+              ]}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+          <div>
+            <p className="text-base font-semibold">₹{compact(total)}</p>
+            <p className="text-[11px] text-muted-foreground">Total amount</p>
+          </div>
+        </div>
       </div>
-      <div className="mt-3 space-y-2">
+      <div className="w-full flex-1 space-y-2">
         {items.map((item, i) => (
-          <div key={item.name} className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-2">
+          <div key={item.name} className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex min-w-0 items-center gap-2">
               <span
-                className="size-2.5 rounded-sm"
-                style={{ background: KPI_TONES[i % KPI_TONES.length] }}
+                className="size-2.5 shrink-0 rounded-sm"
+                style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
               />
-              {item.name || "—"}
+              <span className="truncate" title={item.name || "—"}>
+                {item.name || "—"}
+              </span>
             </span>
-            <span className="tabular text-muted-foreground">
-              {INR(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+            <span className="tabular shrink-0 whitespace-nowrap text-muted-foreground">
+              ₹{compact(item.value)} · {((item.value / total) * 100).toFixed(1)}%
             </span>
           </div>
         ))}
@@ -743,9 +771,9 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard
-              label="Total revenue"
+              label="Total Sales"
               value={INR(totalRevenue)}
               tone={0}
               icon={IndianRupee}
@@ -761,7 +789,7 @@ export function SdLiveDashboard() {
               caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
             />
             <KpiCard
-              label="Customers"
+              label="Active Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
               icon={Users}
@@ -773,17 +801,6 @@ export function SdLiveDashboard() {
               tone={3}
               icon={Gauge}
               caption="Revenue per document"
-            />
-            <KpiCard
-              label="Month-on-month"
-              value={
-                analytics.kpis.momPct == null
-                  ? "—"
-                  : `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
-              }
-              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 1}
-              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
-              caption={analytics.kpis.momLabel}
             />
             <KpiCard
               label="Top profit centre"
@@ -798,12 +815,12 @@ export function SdLiveDashboard() {
             <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
               <div
-                className="rounded-md p-2"
+                className={`rounded-md p-2 ${full ? "h-full" : ""}`}
                 style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
               >
-              <ResponsiveContainer width="100%" height={full ? 620 : 300}>
+              <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
 
-                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 8, right: 8 }}>
+                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 0, right: 0 }}>
                   <defs>
                     <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
@@ -812,7 +829,13 @@ export function SdLiveDashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                  <YAxis tickFormatter={compact} tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                  <YAxis
+                    tickFormatter={compact}
+                    tick={{ fontSize: 11 }}
+                    width={58}
+                    tickMargin={2}
+                    stroke="var(--color-muted-foreground)"
+                  />
                   <YAxis
                     yAxisId="docs"
                     orientation="right"
@@ -871,8 +894,14 @@ export function SdLiveDashboard() {
 
             <Panel title="Sales mix by type" accent={2} expandable>
               {(full: boolean) => (
-                <>
-                  <MixBars items={analytics.mixByType} total={totalRevenue} {...(full ? { height: 560 } : {})} />
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <MixBars
+                      items={analytics.mixByType}
+                      total={totalRevenue}
+                      {...(full ? { height: "100%" as const } : {})}
+                    />
+                  </div>
                   <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                     {analytics.mixByType.map((m, i) => (
                       <div key={m.name} className="flex items-center justify-between">
@@ -887,111 +916,11 @@ export function SdLiveDashboard() {
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </Panel>
 
 
-            <Panel title="Volume & average realization by month" accent={5} className="lg:col-span-2" expandable>
-              {(full: boolean) => (<>
-              <p className="-mt-2 mb-3 text-xs text-muted-foreground">
-
-                Green bars = quantity billed each month (left axis). Magenta line = average realization,
-                i.e. revenue ÷ quantity, in INR per unit (right axis).
-              </p>
-              <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--kpi-5)" }} />
-                  <span className="font-medium text-foreground">Quantity (units)</span> — left axis
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-0.5 w-4 rounded-full" style={{ background: "var(--kpi-6)" }} />
-                  <span className="font-medium" style={{ color: "var(--kpi-6)" }}>
-                    Avg realization (INR/unit)
-                  </span>{" "}
-                  — right axis
-                </span>
-              </div>
-              {analytics.monthly.length ? (
-                <ResponsiveContainer width="100%" height={full ? 620 : 310}>
-                  <ComposedChart data={analytics.monthly} margin={{ top: 24, left: 8, right: 8 }}>
-
-                    <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                    <YAxis
-                      tickFormatter={compact}
-                      tick={{ fontSize: 11 }}
-                      stroke="var(--color-muted-foreground)"
-                      label={{
-                        value: "Quantity (units)",
-                        angle: -90,
-                        position: "insideLeft",
-                        style: { fontSize: 11, fill: "var(--kpi-5)" },
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="rate"
-                      orientation="right"
-                      tickFormatter={compact}
-                      tick={{ fontSize: 11 }}
-                      stroke="var(--color-muted-foreground)"
-                      label={{
-                        value: "Avg realization (INR/unit)",
-                        angle: 90,
-                        position: "insideRight",
-                        style: { fontSize: 11, fill: "var(--kpi-6)" },
-                      }}
-                    />
-                    <Tooltip
-                      {...tooltipStyle}
-                      formatter={(v: number, n: string) => [n === "Quantity" ? NUM(v) : INR(v), n]}
-                    />
-                    <Bar dataKey="quantity" name="Quantity" fill="var(--kpi-5)" radius={[4, 4, 0, 0]} barSize={26}>
-                      <LabelList
-                        dataKey="quantity"
-                        position="top"
-                        formatter={(v: number, _n?: unknown, idx?: number) =>
-                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
-                        }
-                        fontSize={11}
-                        fontWeight={600}
-                        fill="var(--kpi-5)"
-                        stroke="var(--color-card)"
-                        strokeWidth={3}
-                        paintOrder="stroke"
-                      />
-                    </Bar>
-                    <Line
-                      yAxisId="rate"
-                      type="monotone"
-                      dataKey="realization"
-                      name="Avg realization"
-                      stroke="var(--kpi-6)"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, fill: "var(--kpi-6)" }}
-                    >
-                      <LabelList
-                        dataKey="realization"
-                        position="top"
-                        offset={10}
-                        formatter={(v: number, _n?: unknown, idx?: number) =>
-                          labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
-                        }
-                        fontSize={11}
-                        fontWeight={600}
-                        fill="var(--kpi-6)"
-                        stroke="var(--color-card)"
-                        strokeWidth={3}
-                        paintOrder="stroke"
-                      />
-                    </Line>
-                  </ComposedChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="py-10 text-center text-sm text-muted-foreground">No data</p>
-              )}
-              </>)}
-            </Panel>
 
             <Panel title="Top 5 materials" accent={3}>
               <RankedList items={analytics.topMaterials} total={totalRevenue} />
@@ -999,18 +928,20 @@ export function SdLiveDashboard() {
 
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
-                <HBar
-                  data={analytics.topCustomers}
-                  valueLabel="Revenue"
-                  tone={3}
-                  {...(full ? { height: 620 } : {})}
-                />
+                <div className={full ? "h-full" : ""}>
+                  <HBar
+                    data={analytics.topCustomers}
+                    valueLabel="Revenue"
+                    tone={3}
+                    {...(full ? { height: "100%" as const } : {})}
+                  />
+                </div>
               )}
             </Panel>
 
 
-            <Panel title="Revenue mix by type" accent={2}>
-              <StackedMix items={analytics.mixByType} total={totalRevenue} />
+            <Panel title="Sales by Segment (Amount)" accent={2}>
+              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
           </div>
 

@@ -175,6 +175,7 @@ export type SdAnalytics = {
     topProfitCentreValue: number;
   };
   mixByType: NamedTotal[];
+  bySegment: NamedTotal[];
   monthly: {
     month: string;
     revenue: number;
@@ -201,6 +202,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byPc = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
+  const bySeg = new Map<string, NamedTotal>();
   const byMonth = new Map<
     string,
     { month: string; revenue: number; quantity: number; docs: Set<string> }
@@ -220,6 +222,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
+    add(bySeg, r.segment || "Unassigned", r.amount);
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
@@ -261,6 +264,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       topProfitCentreValue: pcList[0]?.value ?? 0,
     },
     mixByType: rank(byType),
+    bySegment: rank(bySeg),
     monthly,
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 5),
