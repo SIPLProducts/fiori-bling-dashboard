@@ -8,6 +8,8 @@ import {
   Cell,
   LabelList,
   Line,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
