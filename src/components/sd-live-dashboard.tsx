@@ -1136,9 +1136,10 @@ export function SdLiveDashboard() {
                 />
               )}
             </Panel>
+          </div>
 
-
-            <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Top customers" accent={4} expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
                   <BarList items={analytics.topCustomers.slice(0, 6)} tone={3} full={full} />
@@ -1146,11 +1147,11 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-
             <Panel title="Sales by Segment (Amount)" accent={2}>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
           </div>
+
 
 
           <LinesTable
