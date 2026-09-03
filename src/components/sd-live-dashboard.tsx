@@ -576,8 +576,6 @@ function MainGroupTreemap({
       </div>
     </div>
   );
-    </div>
-  );
 }
 
 
