@@ -297,7 +297,7 @@ function BarList({
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
-    <div className={full ? "flex h-full flex-col gap-2" : "space-y-2"}>
+    <div className={full ? "flex h-full flex-col gap-1.5" : "space-y-1.5"}>
       <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
       {items.map((item) => (
         <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`}>
@@ -380,6 +380,8 @@ function MixBars({
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
   if (!items.length || !total)
     return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  // Top 6 segments individually; the rest fold into "Others".
+  items = tileSlice(items, 6);
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
       <div className="relative h-[230px] w-full max-w-[240px] shrink-0">
@@ -1139,7 +1141,7 @@ export function SdLiveDashboard() {
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
-                  <BarList items={analytics.topCustomers} tone={3} full={full} />
+                  <BarList items={analytics.topCustomers.slice(0, 6)} tone={3} full={full} />
                 </div>
               )}
             </Panel>
