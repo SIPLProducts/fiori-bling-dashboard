@@ -614,25 +614,26 @@ function MainGroupTreemap({
                 background: color,
                 border: "2px solid var(--color-card)",
                 color: "var(--color-primary-foreground)",
-                padding: tiny ? 2 : small ? 4 : 8,
-              }}
-            >
-              <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
-                {r.name}
+              padding: tilePad,
+            }}
+          >
+            <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
+              {r.name}
+            </span>
+            {showAmount ? (
+              <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
+                ₹{compact(r.value)}
               </span>
-              {showAmount ? (
-                <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
-                  ₹{compact(r.value)}
-                </span>
-              ) : null}
-              {showPct ? (
-                <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
-                  {share.toFixed(1)}%
-                </span>
-              ) : null}
-            </button>
+            ) : null}
+            {showPct ? (
+              <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
+                {share.toFixed(1)}%
+              </span>
+            ) : null}
+          </button>
           );
-        })}
+          });
+        })()}
       </div>
     </div>
   );
