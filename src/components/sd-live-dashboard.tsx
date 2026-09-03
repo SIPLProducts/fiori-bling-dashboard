@@ -297,7 +297,7 @@ function BarList({
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
-    <div className={full ? "flex h-full flex-col gap-2" : "space-y-2"}>
+    <div className={full ? "flex h-full flex-col gap-1.5" : "space-y-1.5"}>
       <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
       {items.map((item) => (
         <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`}>
@@ -375,6 +375,14 @@ function MixBars({
       </BarChart>
     </ResponsiveContainer>
   );
+}
+
+/** Keep the top N entries and fold the rest into an "Others" slice. */
+function topWithOthers<T extends { name: string; value: number }>(items: T[], n: number): T[] {
+  if (items.length <= n + 1) return items;
+  const head = items.slice(0, n);
+  const rest = items.slice(n).reduce((s, i) => s + i.value, 0);
+  return rest > 0 ? [...head, { name: "Others", value: rest } as T] : head;
 }
 
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
@@ -580,18 +588,21 @@ function MainGroupTreemap({
         className={`relative w-full overflow-hidden rounded-md ${full ? "min-h-0 flex-1" : ""}`}
         style={full ? undefined : { height: 300 }}
       >
-        {rects.map((r, i) => {
+        {(() => {
+          // Uniform label sizes for every tile, chosen so the smallest tile still fits.
+          const minW = Math.min(...rects.map((r) => r.w * pxW), Infinity);
+          const minH = Math.min(...rects.map((r) => r.h * pxH), Infinity);
+          const tier = minW < 72 || minH < 44 ? 0 : minW < 130 || minH < 70 ? 1 : 2;
+          const nameSize = [9.5, 11, 12.5][tier]!;
+          const lineSize = [9, 10, 11][tier]!;
+          const tilePad = [3, 5, 8][tier]!;
+          return rects.map((r, i) => {
           const color = CHART_COLORS[i % CHART_COLORS.length]!;
           const share = total ? (r.value / total) * 100 : 0;
-          // Estimated pixel dimensions of this tile.
-          const w = r.w * pxW;
+          // Estimated pixel height of this tile, to decide which lines fit.
           const h = r.h * pxH;
-          const tiny = w < 56 || h < 40;
-          const small = !tiny && (w < 110 || h < 64);
-          const nameSize = tiny ? 9 : small ? 10 : 12;
-          const lineSize = tiny ? 9 : small ? 10 : 11;
-          const showAmount = h >= (tiny ? 22 : 30);
-          const showPct = h >= (tiny ? 34 : 48);
+          const showAmount = h >= 26;
+          const showPct = h >= 44;
           const canDrill = r.name === OTHERS || !atSubLevel;
           return (
             <button
@@ -611,25 +622,26 @@ function MainGroupTreemap({
                 background: color,
                 border: "2px solid var(--color-card)",
                 color: "var(--color-primary-foreground)",
-                padding: tiny ? 2 : small ? 4 : 8,
-              }}
-            >
-              <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
-                {r.name}
+              padding: tilePad,
+            }}
+          >
+            <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
+              {r.name}
+            </span>
+            {showAmount ? (
+              <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
+                ₹{compact(r.value)}
               </span>
-              {showAmount ? (
-                <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
-                  ₹{compact(r.value)}
-                </span>
-              ) : null}
-              {showPct ? (
-                <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
-                  {share.toFixed(1)}%
-                </span>
-              ) : null}
-            </button>
+            ) : null}
+            {showPct ? (
+              <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
+                {share.toFixed(1)}%
+              </span>
+            ) : null}
+          </button>
           );
-        })}
+          });
+        })()}
       </div>
     </div>
   );
@@ -1203,7 +1215,7 @@ export function SdLiveDashboard() {
 
 
             <Panel title="Sales by Segment (Amount)" accent={2}>
-              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
+              <SegmentDonut items={topWithOthers(analytics.bySegment, 6)} total={totalRevenue} />
             </Panel>
           </div>
 
