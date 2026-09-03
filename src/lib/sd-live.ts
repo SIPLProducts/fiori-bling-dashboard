@@ -209,10 +209,13 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
   const bySeg = new Map<string, NamedTotal>();
+  const byMain = new Map<string, NamedTotal>();
+  const bySub = new Map<string, Map<string, NamedTotal>>();
   const byMonth = new Map<
     string,
     { month: string; revenue: number; quantity: number; docs: Set<string> }
   >();
+
 
   const docs = new Set<string>();
   const customers = new Set<string>();
