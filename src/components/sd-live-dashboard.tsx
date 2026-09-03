@@ -1121,6 +1121,17 @@ export function SdLiveDashboard() {
               <RankedList items={analytics.topMaterials} total={totalRevenue} />
             </Panel>
 
+            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
+              {(full: boolean) => (
+                <MainGroupTreemap
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                />
+              )}
+            </Panel>
+
+
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
