@@ -1,19 +1,30 @@
-# Treemap labels: uniform font size across all tiles
+# Treemap equal-size tiles + Top customers / Segment "6 and 6"
 
-## What changes
+## 1. Sales by Main Group (Amount) — balanced equal-size tiles
 
-In the **Sales by Main Group (Amount)** treemap, all tile titles render at one consistent font size — like the reference screenshot — instead of each tile picking its own size.
+Replace the value-sized squarified layout (two huge tiles + tiny clipped ones) with an **even grid of equal-size tiles**:
 
-- One shared font size for every tile's name (and matching sizes for the amount and percentage lines), computed once per view from the **smallest** tile: it picks the largest uniform size that still fits the tightest tile, so every tile matches and nothing clips.
-- Long names on narrow tiles truncate with an ellipsis (e.g. "DEF.BATTE…") and the hover tooltip still shows the full name · amount · %.
-- Amount and percentage lines keep appearing wherever the tile height allows, using the same uniform sizes.
-- Click behaviour confirmed, no change needed: clicking a main group shows its sub groups; clicking a sub-group tile does nothing (no further levels exist). "Others" still drills into the remaining main groups, and the breadcrumb returns to "All main groups".
-- Same behaviour in the normal card (300px) and full-screen view.
+- All tiles at a level are the same size, evenly distributed in a grid (e.g. 6 tiles → 3×2; adapts to the tile count and full-screen mode).
+- Uniform font size for every tile name; amount and percentage lines also uniform.
+- Name, amount (₹ Cr/L) and percentage shown **centered** in each tile; names wrap to two lines instead of truncating, with the hover tooltip as fallback for very long names.
+- Consistent padding/gap between tiles for a clean, balanced look.
+- Click behaviour unchanged: clicking a main group shows its sub groups (same equal-tile grid); sub-group tiles don't drill further; "Others" still drills into remaining main groups; breadcrumb "← All main groups" unchanged.
+- Works the same in the normal card and full-screen view.
+
+## 2. Top customers — show 6, tighter bars
+
+- List shows the top **6** customers instead of 5.
+- Reduce the row height/gap between bars so the six rows fit the card comfortably without excess empty space.
+
+## 3. Sales by Segment (Amount) — show 6
+
+- Donut and legend show the top **6** segments (remaining ones fold into "Others" as today, if present).
 
 ## Technical notes
 
-- `src/components/sd-live-dashboard.tsx` → `MainGroupTreemap`:
-  - Replace the per-tile `tiny/small` tier font selection with a single uniform size set computed from `Math.min` over all current `rects` (estimated px via existing `pxW`/`pxH`): e.g. name size chosen once, amount/% sizes derived from it.
-  - Keep per-tile logic only for *hiding* the amount/% lines on extremely short tiles (height-based), while font sizes stay uniform.
-  - Keep `truncate`, hover `title` tooltip, and existing drill logic (`canDrill` already blocks sub-level clicks).
+- `src/components/sd-live-dashboard.tsx`:
+  - `MainGroupTreemap`: drop the `squarify` percentage-rect layout; render tiles in a CSS grid with equal cells (`gridTemplateColumns` derived from tile count, e.g. ≤2 → n cols, ≤4 → 2, else 3; rows = ceil(n/cols)). Centered flex column content per tile; `text-center`, name with `line-clamp-2`, single uniform font sizes; keep `title` tooltip, drill state and breadcrumb logic as-is.
+  - Top customers: change the underlying aggregate slice from 10 → keep data, display 6 via the `BarList` items prop; reduce `BarList` row padding/gap (e.g. `space-y-2` → `space-y-1.5`, smaller bar height).
+  - `SegmentDonut`: raise the segment limit from 5 to 6.
+- `src/lib/sd-live.ts`: `topCustomers` slice stays ≥6 (currently 10 — sufficient).
 - No data, query, or schema changes.
