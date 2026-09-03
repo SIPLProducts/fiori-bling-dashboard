@@ -188,8 +188,11 @@ export type SdAnalytics = {
   }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
+  byMainGroup: NamedTotal[];
+  subGroupsByMainGroup: Record<string, NamedTotal[]>;
   rows: SdLine[];
 };
+
 
 
 const MONTH_INDEX = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -206,10 +209,13 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
   const bySeg = new Map<string, NamedTotal>();
+  const byMain = new Map<string, NamedTotal>();
+  const bySub = new Map<string, Map<string, NamedTotal>>();
   const byMonth = new Map<
     string,
     { month: string; revenue: number; quantity: number; docs: Set<string> }
   >();
+
 
   const docs = new Set<string>();
   const customers = new Set<string>();
@@ -226,6 +232,16 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
     add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
+
+    const main = r.mainGroup || "Unassigned";
+    add(byMain, main, r.amount);
+    let subs = bySub.get(main);
+    if (!subs) {
+      subs = new Map<string, NamedTotal>();
+      bySub.set(main, subs);
+    }
+    add(subs, r.subGroup || "Unassigned", r.amount);
+
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
@@ -272,6 +288,11 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     monthly,
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 5),
+    byMainGroup: rank(byMain),
+    subGroupsByMainGroup: Object.fromEntries(
+      [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),
+    ),
+
     rows,
   };
 }
