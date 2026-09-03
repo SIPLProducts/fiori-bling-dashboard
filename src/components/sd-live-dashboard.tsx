@@ -592,15 +592,15 @@ function MainGroupTreemap({
           const lineSize = tiny ? 9 : small ? 10 : 11;
           const showAmount = h >= (tiny ? 22 : 30);
           const showPct = h >= (tiny ? 34 : 48);
-          const canDrill = r.name === OTHERS || (!path.length ? true : path[path.length - 1] === OTHERS && !path.some((p) => p !== OTHERS));
+          const canDrill = r.name === OTHERS || !atSubLevel;
           return (
             <button
               key={`${path.join("/")}:${r.name}`}
               type="button"
               title={`${r.name} · ₹${compact(r.value)} · ${share.toFixed(1)}%`}
               onClick={() => {
-                if (r.name === OTHERS) setPath([...path, OTHERS]);
-                else if (!path.length) setPath([r.name]);
+                if (!canDrill) return;
+                setPath([...path, r.name]);
               }}
               className={`absolute overflow-hidden text-left transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
               style={{
