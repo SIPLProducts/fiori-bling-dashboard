@@ -436,62 +436,6 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
   );
 }
 
-type Rect = { name: string; value: number; x: number; y: number; w: number; h: number };
-
-/** Squarified treemap layout over a 100x100 relative box. */
-function squarify(items: { name: string; value: number }[], W = 100, H = 100): Rect[] {
-  const total = items.reduce((s, i) => s + Math.max(0, i.value), 0);
-  if (!total) return [];
-  const out: Rect[] = [];
-  let x = 0;
-  let y = 0;
-  let w = W;
-  let h = H;
-  let remaining = items.map((i) => ({ ...i, area: (Math.max(0, i.value) / total) * W * H }));
-
-  const worst = (row: { area: number }[], side: number) => {
-    const sum = row.reduce((s, r) => s + r.area, 0);
-    const max = Math.max(...row.map((r) => r.area));
-    const min = Math.min(...row.map((r) => r.area));
-    const s2 = sum * sum;
-    const side2 = side * side;
-    return Math.max((side2 * max) / s2, s2 / (side2 * min));
-  };
-
-  while (remaining.length) {
-    const side = Math.min(w, h);
-    const row: typeof remaining = [];
-    while (remaining.length) {
-      const next = remaining[0]!;
-      if (row.length && worst([...row, next], side) > worst(row, side)) break;
-      row.push(next);
-      remaining = remaining.slice(1);
-    }
-    const rowArea = row.reduce((s, r) => s + r.area, 0);
-    if (w >= h) {
-      const rowW = rowArea / h;
-      let cy = y;
-      for (const r of row) {
-        const rh = (r.area / rowArea) * h;
-        out.push({ name: r.name, value: r.value, x, y: cy, w: rowW, h: rh });
-        cy += rh;
-      }
-      x += rowW;
-      w -= rowW;
-    } else {
-      const rowH = rowArea / w;
-      let cx = x;
-      for (const r of row) {
-        const rw = (r.area / rowArea) * w;
-        out.push({ name: r.name, value: r.value, x: cx, y, w: rw, h: rowH });
-        cx += rw;
-      }
-      y += rowH;
-      h -= rowH;
-    }
-  }
-  return out;
-}
 
 const TREEMAP_SHOW_MAIN = 5;
 const TREEMAP_SHOW_SUB = 8;
