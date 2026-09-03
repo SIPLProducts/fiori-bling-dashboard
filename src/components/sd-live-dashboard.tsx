@@ -297,7 +297,7 @@ function BarList({
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
-    <div className={full ? "flex h-full flex-col gap-2" : "space-y-2"}>
+    <div className={full ? "flex h-full flex-col gap-1.5" : "space-y-1.5"}>
       <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
       {items.map((item) => (
         <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`}>
@@ -380,6 +380,8 @@ function MixBars({
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
   if (!items.length || !total)
     return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  // Top 6 segments individually; the rest fold into "Others".
+  items = tileSlice(items, 6);
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
       <div className="relative h-[230px] w-full max-w-[240px] shrink-0">
@@ -436,62 +438,6 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
   );
 }
 
-type Rect = { name: string; value: number; x: number; y: number; w: number; h: number };
-
-/** Squarified treemap layout over a 100x100 relative box. */
-function squarify(items: { name: string; value: number }[], W = 100, H = 100): Rect[] {
-  const total = items.reduce((s, i) => s + Math.max(0, i.value), 0);
-  if (!total) return [];
-  const out: Rect[] = [];
-  let x = 0;
-  let y = 0;
-  let w = W;
-  let h = H;
-  let remaining = items.map((i) => ({ ...i, area: (Math.max(0, i.value) / total) * W * H }));
-
-  const worst = (row: { area: number }[], side: number) => {
-    const sum = row.reduce((s, r) => s + r.area, 0);
-    const max = Math.max(...row.map((r) => r.area));
-    const min = Math.min(...row.map((r) => r.area));
-    const s2 = sum * sum;
-    const side2 = side * side;
-    return Math.max((side2 * max) / s2, s2 / (side2 * min));
-  };
-
-  while (remaining.length) {
-    const side = Math.min(w, h);
-    const row: typeof remaining = [];
-    while (remaining.length) {
-      const next = remaining[0]!;
-      if (row.length && worst([...row, next], side) > worst(row, side)) break;
-      row.push(next);
-      remaining = remaining.slice(1);
-    }
-    const rowArea = row.reduce((s, r) => s + r.area, 0);
-    if (w >= h) {
-      const rowW = rowArea / h;
-      let cy = y;
-      for (const r of row) {
-        const rh = (r.area / rowArea) * h;
-        out.push({ name: r.name, value: r.value, x, y: cy, w: rowW, h: rh });
-        cy += rh;
-      }
-      x += rowW;
-      w -= rowW;
-    } else {
-      const rowH = rowArea / w;
-      let cx = x;
-      for (const r of row) {
-        const rw = (r.area / rowArea) * w;
-        out.push({ name: r.name, value: r.value, x: cx, y, w: rw, h: rowH });
-        cx += rw;
-      }
-      y += rowH;
-      h -= rowH;
-    }
-  }
-  return out;
-}
 
 const TREEMAP_SHOW_MAIN = 5;
 const TREEMAP_SHOW_SUB = 8;
@@ -538,15 +484,27 @@ function MainGroupTreemap({
   }, [sortedMain, path, subGroups]);
 
   const total = active.reduce((s, i) => s + i.value, 0);
-  const rects = useMemo(() => squarify(active), [active]);
   // Once a named main group is in the path we are at sub-group level (no further drill).
   const atSubLevel = path.some((p) => p !== OTHERS);
 
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
 
-  // Approximate pixel size per percent unit, to pick readable label tiers.
-  const pxW = full ? 13 : 4.5;
-  const pxH = full ? 8 : 3;
+  // Even grid: every tile is the same size regardless of its value.
+  const n = active.length;
+  const cols = full
+    ? n <= 2
+      ? n
+      : n <= 6
+        ? 3
+        : 4
+    : n <= 2
+      ? n
+      : n <= 4
+        ? 2
+        : 3;
+  // Uniform label sizes: slightly smaller when tiles are narrow.
+  const nameSize = full ? 13 : 12;
+  const lineSize = full ? 12 : 11;
 
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
@@ -577,21 +535,15 @@ function MainGroupTreemap({
         <span className="tabular shrink-0">₹{compact(total)}</span>
       </div>
       <div
-        className={`relative w-full overflow-hidden rounded-md ${full ? "min-h-0 flex-1" : ""}`}
-        style={full ? undefined : { height: 300 }}
+        className="grid w-full gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          ...(full ? { flex: 1, minHeight: 0, gridAutoRows: "1fr" } : { height: 300, gridAutoRows: "1fr" }),
+        }}
       >
-        {rects.map((r, i) => {
+        {active.map((r, i) => {
           const color = CHART_COLORS[i % CHART_COLORS.length]!;
           const share = total ? (r.value / total) * 100 : 0;
-          // Estimated pixel dimensions of this tile.
-          const w = r.w * pxW;
-          const h = r.h * pxH;
-          const tiny = w < 56 || h < 40;
-          const small = !tiny && (w < 110 || h < 64);
-          const nameSize = tiny ? 9 : small ? 10 : 12;
-          const lineSize = tiny ? 9 : small ? 10 : 11;
-          const showAmount = h >= (tiny ? 22 : 30);
-          const showPct = h >= (tiny ? 34 : 48);
           const canDrill = r.name === OTHERS || !atSubLevel;
           return (
             <button
@@ -602,31 +554,24 @@ function MainGroupTreemap({
                 if (!canDrill) return;
                 setPath([...path, r.name]);
               }}
-              className={`absolute overflow-hidden text-left transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
+              className={`flex min-h-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md p-2 text-center transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
               style={{
-                left: `${r.x}%`,
-                top: `${r.y}%`,
-                width: `${r.w}%`,
-                height: `${r.h}%`,
                 background: color,
-                border: "2px solid var(--color-card)",
                 color: "var(--color-primary-foreground)",
-                padding: tiny ? 2 : small ? 4 : 8,
               }}
             >
-              <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
+              <span
+                className="line-clamp-2 w-full break-words leading-tight font-medium"
+                style={{ fontSize: nameSize }}
+              >
                 {r.name}
               </span>
-              {showAmount ? (
-                <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
-                  ₹{compact(r.value)}
-                </span>
-              ) : null}
-              {showPct ? (
-                <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
-                  {share.toFixed(1)}%
-                </span>
-              ) : null}
+              <span className="tabular block leading-tight" style={{ fontSize: lineSize }}>
+                ₹{compact(r.value)}
+              </span>
+              <span className="tabular block leading-tight opacity-90" style={{ fontSize: lineSize }}>
+                {share.toFixed(1)}%
+              </span>
             </button>
           );
         })}
@@ -1196,7 +1141,7 @@ export function SdLiveDashboard() {
             <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
-                  <BarList items={analytics.topCustomers} tone={3} full={full} />
+                  <BarList items={analytics.topCustomers.slice(0, 6)} tone={3} full={full} />
                 </div>
               )}
             </Panel>
