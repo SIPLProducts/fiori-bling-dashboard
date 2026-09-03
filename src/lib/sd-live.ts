@@ -288,6 +288,11 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     monthly,
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 5),
+    byMainGroup: rank(byMain),
+    subGroupsByMainGroup: Object.fromEntries(
+      [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),
+    ),
+
     rows,
   };
 }
