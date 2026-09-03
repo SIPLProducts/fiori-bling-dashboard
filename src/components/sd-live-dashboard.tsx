@@ -377,11 +377,18 @@ function MixBars({
   );
 }
 
+const SEGMENT_PAGE = 6;
+
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(items.length / SEGMENT_PAGE));
+  const current = Math.min(page, pages - 1);
+  const start = current * SEGMENT_PAGE;
+  const visible = items.slice(start, start + SEGMENT_PAGE);
+
   if (!items.length || !total)
     return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
-  // Top 6 segments individually; the rest fold into "Others".
-  items = tileSlice(items, 6);
+
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
       <div className="relative h-[230px] w-full max-w-[240px] shrink-0">
@@ -416,27 +423,58 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
           </div>
         </div>
       </div>
-      <div className="w-full flex-1 space-y-2">
-        {items.map((item, i) => (
-          <div key={item.name} className="flex items-center justify-between gap-2 text-xs">
-            <span className="flex min-w-0 items-center gap-2">
-              <span
-                className="size-2.5 shrink-0 rounded-sm"
-                style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-              />
-              <span className="truncate" title={item.name || "—"}>
-                {item.name || "—"}
+      <div className="w-full min-w-0 flex-1 space-y-2">
+        {visible.map((item, i) => {
+          const idx = start + i;
+          return (
+            <div key={item.name} className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className="size-2.5 shrink-0 rounded-sm"
+                  style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }}
+                />
+                <span className="truncate" title={item.name || "—"}>
+                  {item.name || "—"}
+                </span>
               </span>
+              <span className="tabular shrink-0 whitespace-nowrap text-muted-foreground">
+                ₹{compact(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+              </span>
+            </div>
+          );
+        })}
+        {items.length > SEGMENT_PAGE && (
+          <div className="flex items-center justify-end gap-2 pt-1 text-[11px] text-muted-foreground">
+            <span>
+              {start + 1}–{Math.min(start + SEGMENT_PAGE, items.length)} of {items.length}
             </span>
-            <span className="tabular shrink-0 whitespace-nowrap text-muted-foreground">
-              ₹{compact(item.value)} · {((item.value / total) * 100).toFixed(1)}%
-            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6"
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+              aria-label="Previous segments"
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6"
+              disabled={current >= pages - 1}
+              onClick={() => setPage(current + 1)}
+              aria-label="Next segments"
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
 }
+
 
 
 const TREEMAP_SHOW_MAIN = 5;
@@ -1136,9 +1174,10 @@ export function SdLiveDashboard() {
                 />
               )}
             </Panel>
+          </div>
 
-
-            <Panel title="Top customers" accent={4} className="lg:col-span-2" expandable>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Top customers" accent={4} expandable>
               {(full: boolean) => (
                 <div className={full ? "h-full" : ""}>
                   <BarList items={analytics.topCustomers.slice(0, 6)} tone={3} full={full} />
@@ -1146,11 +1185,11 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-
             <Panel title="Sales by Segment (Amount)" accent={2}>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
           </div>
+
 
 
           <LinesTable
