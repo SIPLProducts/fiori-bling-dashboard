@@ -482,15 +482,27 @@ function MainGroupTreemap({
   }, [sortedMain, path, subGroups]);
 
   const total = active.reduce((s, i) => s + i.value, 0);
-  const rects = useMemo(() => squarify(active), [active]);
   // Once a named main group is in the path we are at sub-group level (no further drill).
   const atSubLevel = path.some((p) => p !== OTHERS);
 
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
 
-  // Approximate pixel size per percent unit, to pick readable label tiers.
-  const pxW = full ? 13 : 4.5;
-  const pxH = full ? 8 : 3;
+  // Even grid: every tile is the same size regardless of its value.
+  const n = active.length;
+  const cols = full
+    ? n <= 2
+      ? n
+      : n <= 6
+        ? 3
+        : 4
+    : n <= 2
+      ? n
+      : n <= 4
+        ? 2
+        : 3;
+  // Uniform label sizes: slightly smaller when tiles are narrow.
+  const nameSize = full ? 13 : 12;
+  const lineSize = full ? 12 : 11;
 
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
@@ -521,21 +533,15 @@ function MainGroupTreemap({
         <span className="tabular shrink-0">₹{compact(total)}</span>
       </div>
       <div
-        className={`relative w-full overflow-hidden rounded-md ${full ? "min-h-0 flex-1" : ""}`}
-        style={full ? undefined : { height: 300 }}
+        className="grid w-full gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          ...(full ? { flex: 1, minHeight: 0, gridAutoRows: "1fr" } : { height: 300, gridAutoRows: "1fr" }),
+        }}
       >
-        {rects.map((r, i) => {
+        {active.map((r, i) => {
           const color = CHART_COLORS[i % CHART_COLORS.length]!;
           const share = total ? (r.value / total) * 100 : 0;
-          // Estimated pixel dimensions of this tile.
-          const w = r.w * pxW;
-          const h = r.h * pxH;
-          const tiny = w < 56 || h < 40;
-          const small = !tiny && (w < 110 || h < 64);
-          const nameSize = tiny ? 9 : small ? 10 : 12;
-          const lineSize = tiny ? 9 : small ? 10 : 11;
-          const showAmount = h >= (tiny ? 22 : 30);
-          const showPct = h >= (tiny ? 34 : 48);
           const canDrill = r.name === OTHERS || !atSubLevel;
           return (
             <button
@@ -546,35 +552,30 @@ function MainGroupTreemap({
                 if (!canDrill) return;
                 setPath([...path, r.name]);
               }}
-              className={`absolute overflow-hidden text-left transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
+              className={`flex min-h-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md p-2 text-center transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
               style={{
-                left: `${r.x}%`,
-                top: `${r.y}%`,
-                width: `${r.w}%`,
-                height: `${r.h}%`,
                 background: color,
-                border: "2px solid var(--color-card)",
                 color: "var(--color-primary-foreground)",
-                padding: tiny ? 2 : small ? 4 : 8,
               }}
             >
-              <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
+              <span
+                className="line-clamp-2 w-full break-words leading-tight font-medium"
+                style={{ fontSize: nameSize }}
+              >
                 {r.name}
               </span>
-              {showAmount ? (
-                <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
-                  ₹{compact(r.value)}
-                </span>
-              ) : null}
-              {showPct ? (
-                <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
-                  {share.toFixed(1)}%
-                </span>
-              ) : null}
+              <span className="tabular block leading-tight" style={{ fontSize: lineSize }}>
+                ₹{compact(r.value)}
+              </span>
+              <span className="tabular block leading-tight opacity-90" style={{ fontSize: lineSize }}>
+                {share.toFixed(1)}%
+              </span>
             </button>
           );
         })}
       </div>
+    </div>
+  );
     </div>
   );
 }
