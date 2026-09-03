@@ -493,60 +493,114 @@ function squarify(items: { name: string; value: number }[], W = 100, H = 100): R
   return out;
 }
 
+const TREEMAP_SHOW_MAIN = 5;
+const TREEMAP_SHOW_SUB = 8;
+const OTHERS = "Others";
+
+type TreemapItem = { name: string; value: number };
+
+/** Split a sorted list into individually-shown tiles plus an aggregate "Others" tile. */
+function tileSlice(sorted: TreemapItem[], show: number): TreemapItem[] {
+  const head = sorted.slice(0, show);
+  const rest = sorted.slice(show);
+  const others = rest.reduce((s, i) => s + i.value, 0);
+  return others > 0 ? [...head, { name: OTHERS, value: others }] : head;
+}
+
 function MainGroupTreemap({
   items,
   subGroups,
   full = false,
 }: {
-  items: { name: string; value: number }[];
-  subGroups: Record<string, { name: string; value: number }[]>;
+  items: TreemapItem[];
+  subGroups: Record<string, TreemapItem[]>;
   full?: boolean;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  // Drill path: each entry is the tile clicked to reach the next level.
+  // "Others" drills into the remaining main groups (and nests further);
+  // a named main group drills into its sub groups.
+  const [path, setPath] = useState<string[]>([]);
 
-  const top = useMemo(() => {
-    const sorted = [...items].sort((a, b) => b.value - a.value);
-    const head = sorted.slice(0, 5);
-    const rest = sorted.slice(5);
-    const others = rest.reduce((s, i) => s + i.value, 0);
-    return others > 0 ? [...head, { name: "Others", value: others }] : head;
-  }, [items]);
+  const sortedMain = useMemo(() => [...items].sort((a, b) => b.value - a.value), [items]);
 
-  const active = selected ? (subGroups[selected] ?? []).slice(0, 8) : top;
+  const active = useMemo(() => {
+    let list = sortedMain;
+    let show = TREEMAP_SHOW_MAIN;
+    for (const step of path) {
+      if (step === OTHERS) {
+        list = list.slice(show);
+      } else {
+        list = [...(subGroups[step] ?? [])].sort((a, b) => b.value - a.value);
+        show = TREEMAP_SHOW_SUB;
+      }
+    }
+    return tileSlice(list, show);
+  }, [sortedMain, path, subGroups]);
+
   const total = active.reduce((s, i) => s + i.value, 0);
   const rects = useMemo(() => squarify(active), [active]);
 
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
 
+  // Approximate pixel size per percent unit, to pick readable label tiers.
+  const pxW = full ? 13 : 4.5;
+  const pxH = full ? 8 : 3;
+
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
-      <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>
-          {selected ? (
-            <button type="button" className="hover:text-foreground" onClick={() => setSelected(null)}>
-              ← All main groups · <span className="text-foreground">{selected}</span>
-            </button>
+      <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {path.length ? (
+            <>
+              <button type="button" className="hover:text-foreground" onClick={() => setPath([])}>
+                ← All main groups
+              </button>
+              {path.map((step, i) => (
+                <span key={i}>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="text-foreground hover:underline"
+                    onClick={() => setPath(path.slice(0, i + 1))}
+                  >
+                    {step}
+                  </button>
+                </span>
+              ))}
+            </>
           ) : (
             "Click a group to see its sub groups"
           )}
         </span>
-        <span className="tabular">₹{compact(total)}</span>
+        <span className="tabular shrink-0">₹{compact(total)}</span>
       </div>
       <div
         className={`relative w-full overflow-hidden rounded-md ${full ? "min-h-0 flex-1" : ""}`}
-        style={full ? undefined : { height: 260 }}
+        style={full ? undefined : { height: 300 }}
       >
         {rects.map((r, i) => {
           const color = CHART_COLORS[i % CHART_COLORS.length]!;
           const share = total ? (r.value / total) * 100 : 0;
-          const small = r.w < 16 || r.h < 16;
+          // Estimated pixel dimensions of this tile.
+          const w = r.w * pxW;
+          const h = r.h * pxH;
+          const tiny = w < 56 || h < 40;
+          const small = !tiny && (w < 110 || h < 64);
+          const nameSize = tiny ? 9 : small ? 10 : 12;
+          const lineSize = tiny ? 9 : small ? 10 : 11;
+          const showAmount = h >= (tiny ? 22 : 30);
+          const showPct = h >= (tiny ? 34 : 48);
+          const canDrill = r.name === OTHERS || (!path.length ? true : path[path.length - 1] === OTHERS && !path.some((p) => p !== OTHERS));
           return (
             <button
-              key={r.name}
+              key={`${path.join("/")}:${r.name}`}
               type="button"
               title={`${r.name} · ₹${compact(r.value)} · ${share.toFixed(1)}%`}
-              onClick={() => (selected ? setSelected(null) : setSelected(r.name === "Others" ? null : r.name))}
-              className="absolute overflow-hidden p-2 text-left transition-opacity hover:opacity-90"
+              onClick={() => {
+                if (r.name === OTHERS) setPath([...path, OTHERS]);
+                else if (!path.length) setPath([r.name]);
+              }}
+              className={`absolute overflow-hidden text-left transition-opacity ${canDrill ? "hover:opacity-90" : "cursor-default"}`}
               style={{
                 left: `${r.x}%`,
                 top: `${r.y}%`,
@@ -555,16 +609,21 @@ function MainGroupTreemap({
                 background: color,
                 border: "2px solid var(--color-card)",
                 color: "var(--color-primary-foreground)",
+                padding: tiny ? 2 : small ? 4 : 8,
               }}
             >
-              <span className={`block truncate font-medium ${small ? "text-[10px]" : "text-xs"}`}>
+              <span className="block truncate leading-tight font-medium" style={{ fontSize: nameSize }}>
                 {r.name}
               </span>
-              {!small ? (
-                <>
-                  <span className="tabular block text-[11px]">₹{compact(r.value)}</span>
-                  <span className="tabular block text-[11px] opacity-90">{share.toFixed(1)}%</span>
-                </>
+              {showAmount ? (
+                <span className="tabular block truncate leading-tight" style={{ fontSize: lineSize }}>
+                  ₹{compact(r.value)}
+                </span>
+              ) : null}
+              {showPct ? (
+                <span className="tabular block truncate leading-tight opacity-90" style={{ fontSize: lineSize }}>
+                  {share.toFixed(1)}%
+                </span>
               ) : null}
             </button>
           );
