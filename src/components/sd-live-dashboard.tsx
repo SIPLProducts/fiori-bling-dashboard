@@ -377,6 +377,14 @@ function MixBars({
   );
 }
 
+/** Keep the top N entries and fold the rest into an "Others" slice. */
+function topWithOthers<T extends { name: string; value: number }>(items: T[], n: number): T[] {
+  if (items.length <= n + 1) return items;
+  const head = items.slice(0, n);
+  const rest = items.slice(n).reduce((s, i) => s + i.value, 0);
+  return rest > 0 ? [...head, { name: "Others", value: rest } as T] : head;
+}
+
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
   if (!items.length || !total)
     return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
@@ -1207,7 +1215,7 @@ export function SdLiveDashboard() {
 
 
             <Panel title="Sales by Segment (Amount)" accent={2}>
-              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
+              <SegmentDonut items={topWithOthers(analytics.bySegment, 6)} total={totalRevenue} />
             </Panel>
           </div>
 
