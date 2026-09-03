@@ -539,6 +539,8 @@ function MainGroupTreemap({
 
   const total = active.reduce((s, i) => s + i.value, 0);
   const rects = useMemo(() => squarify(active), [active]);
+  // Once a named main group is in the path we are at sub-group level (no further drill).
+  const atSubLevel = path.some((p) => p !== OTHERS);
 
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
 
