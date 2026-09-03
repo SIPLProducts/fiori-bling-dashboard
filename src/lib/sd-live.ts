@@ -233,6 +233,16 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byMat, r.materialDesc || r.material, r.amount);
     add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
 
+    const main = r.mainGroup || "Unassigned";
+    add(byMain, main, r.amount);
+    let subs = bySub.get(main);
+    if (!subs) {
+      subs = new Map<string, NamedTotal>();
+      bySub.set(main, subs);
+    }
+    add(subs, r.subGroup || "Unassigned", r.amount);
+
+
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
       byMonth.get(label) ?? { month: label, revenue: 0, quantity: 0, docs: new Set<string>() };
