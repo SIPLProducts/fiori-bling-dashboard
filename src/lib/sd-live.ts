@@ -188,8 +188,11 @@ export type SdAnalytics = {
   }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
+  byMainGroup: NamedTotal[];
+  subGroupsByMainGroup: Record<string, NamedTotal[]>;
   rows: SdLine[];
 };
+
 
 
 const MONTH_INDEX = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
