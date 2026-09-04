@@ -1026,48 +1026,68 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div
+            className={`grid gap-4 sm:grid-cols-2 ${
+              (
+                [
+                  true,
+                  SHOW_QUANTITY_TILE,
+                  true,
+                  SHOW_AVG_ORDER_VALUE_TILE,
+                  SHOW_TOP_PROFIT_CENTRE_TILE,
+                ] as const
+              ).filter(Boolean).length === 2
+                ? "lg:grid-cols-2"
+                : "lg:grid-cols-5"
+            }`}
+          >
             <KpiCard
               label="Total Sales"
-              value={INR(totalRevenue)}
+              value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
               caption="Filtered postings"
             >
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
+            {SHOW_QUANTITY_TILE ? (
+              <KpiCard
+                label="Total quantity"
+                value={NUM(analytics.kpis.quantity)}
+                tone={4}
+                icon={Boxes}
+                caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+              />
+            ) : null}
             <KpiCard
-              label="Total quantity"
-              value={NUM(analytics.kpis.quantity)}
-              tone={4}
-              icon={Boxes}
-              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
-            />
-            <KpiCard
-              label="Active Customers"
+              label="Billed Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
               icon={Users}
               caption="Billed in selection"
             />
-            <KpiCard
-              label="Avg order value"
-              value={INR(analytics.kpis.avgDoc)}
-              tone={3}
-              icon={Gauge}
-              caption="Revenue per document"
-            />
-            <KpiCard
-              label="Top profit centre"
-              value={compact(analytics.kpis.topProfitCentreValue)}
-              tone={5}
-              icon={Building2}
-              caption={analytics.kpis.topProfitCentre}
-            />
+            {SHOW_AVG_ORDER_VALUE_TILE ? (
+              <KpiCard
+                label="Avg order value"
+                value={INRC(analytics.kpis.avgDoc)}
+                tone={3}
+                icon={Gauge}
+                caption="Revenue per document"
+              />
+            ) : null}
+            {SHOW_TOP_PROFIT_CENTRE_TILE ? (
+              <KpiCard
+                label="Top profit centre"
+                value={INRC(analytics.kpis.topProfitCentreValue)}
+                tone={5}
+                icon={Building2}
+                caption={analytics.kpis.topProfitCentre}
+              />
+            ) : null}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
+            <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
               <div
                 className={`rounded-md p-2 ${full ? "h-full" : ""}`}
@@ -1099,7 +1119,7 @@ export function SdLiveDashboard() {
                   />
                   <Tooltip
                     {...tooltipStyle}
-                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]}
+                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INRC(v), n]}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
                     <LabelList
@@ -1167,7 +1187,7 @@ export function SdLiveDashboard() {
                           />
                           {m.name || "—"}
                         </span>
-                        <span className="tabular">{INR(m.value)}</span>
+                        <span className="tabular">{INRC(m.value)}</span>
                       </div>
                     ))}
                   </div>
