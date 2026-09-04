@@ -830,7 +830,7 @@ export function SdLiveDashboard() {
 
   const opts = useMemo(
     () => ({
-      plants: uniqueValues(all, (r) => r.plant),
+      plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
       profitCentres: uniqueValues(all, (r) => r.profitCtr),
     }),
     [all],
@@ -862,7 +862,13 @@ export function SdLiveDashboard() {
     downloadCsv(
       filtered.map((r) => {
         const out: Record<string, string | number> = {};
-        for (const c of COLUMNS) out[c.label] = c.numeric ? Number(c.render(r).replace(/[^\d.-]/g, "")) : c.render(r);
+        for (const c of COLUMNS)
+          out[c.label] =
+            c.key === "amount"
+              ? Math.round(r.amount)
+              : c.numeric
+                ? Number(c.render(r).replace(/[^\d.-]/g, ""))
+                : c.render(r);
         return out;
       }),
       "sd-sales-lines.csv",
@@ -945,16 +951,18 @@ export function SdLiveDashboard() {
                 className="mt-1 h-9"
               />
             </label>
-            <label className="text-xs text-muted-foreground">
-              Plant
-              <div className="mt-1">
-                <MultiSelect
-                  options={toOptions(opts.plants)}
-                  selected={filters.plants}
-                  onChange={(next) => set({ plants: next })}
-                />
-              </div>
-            </label>
+            {SHOW_PLANT_FILTER ? (
+              <label className="text-xs text-muted-foreground">
+                Plant
+                <div className="mt-1">
+                  <MultiSelect
+                    options={toOptions(opts.plants)}
+                    selected={filters.plants}
+                    onChange={(next) => set({ plants: next })}
+                  />
+                </div>
+              </label>
+            ) : null}
             <label className="text-xs text-muted-foreground">
               Profit centre
               <div className="mt-1">
