@@ -240,7 +240,7 @@ function HBar({
           tick={{ fontSize: 10 }}
           stroke="var(--color-muted-foreground)"
         />
-        <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
+        <Tooltip {...tooltipStyle} formatter={(v: number) => [INRC(v), valueLabel]} />
         <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={color}>
           <LabelList
             dataKey="value"
@@ -277,7 +277,7 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
                 </span>
               </span>
               <Badge variant="secondary" className="tabular shrink-0">
-                {INR(item.value)}
+                {INRC(item.value)}
               </Badge>
             </div>
             <div className="mt-1.5 h-1.5 rounded-full bg-muted">
@@ -365,7 +365,7 @@ function MixBars({
         <Tooltip
           {...tooltipStyle}
           formatter={(v: number, _n: string, p: { payload?: { name?: string } }) => [
-            `${INR(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
+            `${INRC(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
             p?.payload?.name ?? "Revenue",
           ]}
         />
@@ -422,7 +422,7 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
             <Tooltip
               {...tooltipStyle}
               formatter={(v: number, n: string) => [
-                `${INR(v)} · ${((v / total) * 100).toFixed(1)}%`,
+                `${INRC(v)} · ${((v / total) * 100).toFixed(1)}%`,
                 n || "—",
               ]}
             />
@@ -665,7 +665,7 @@ const COLUMNS: Column[] = [
   { key: "unit", label: "UOM", render: (r) => r.unit || "—" },
   { key: "quantity", label: "Qty", numeric: true, render: (r) => NUM(r.quantity) },
   { key: "totalAh", label: "Total AH", numeric: true, render: (r) => NUM(r.totalAh) },
-  { key: "amount", label: "Amount", numeric: true, render: (r) => INR(r.amount) },
+  { key: "amount", label: "Amount", numeric: true, render: (r) => INRC(r.amount) },
   { key: "segment", label: "Segment", render: (r) => r.businessSegment || r.segment || "—" },
   { key: "salesRepName", label: "Sales employee", render: (r) => r.salesRepName || "—" },
   { key: "incoterms", label: "Incoterms", render: (r) => r.incoterms || "—" },
