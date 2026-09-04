@@ -73,6 +73,18 @@ function axisCompact(value: number) {
   return NUM(value);
 }
 
+/** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
+const INRC = (value: number) => `₹${compact(value)}`;
+
+/* ---- UI visibility flags: hidden elements keep their code intact; flip ----
+ * ---- a flag back to true to show the element again. ---------------------- */
+const SHOW_QUANTITY_TILE = false;
+const SHOW_AVG_ORDER_VALUE_TILE = false;
+const SHOW_TOP_PROFIT_CENTRE_TILE = false;
+const SHOW_PLANT_FILTER = false;
+/** Plant options removed from the Plant dropdown list. */
+const PLANT_OPTIONS_EXCLUDED = ["1200"];
+
 const KPI_TONES = [
   "var(--kpi-1)",
   "var(--kpi-2)",
@@ -228,7 +240,7 @@ function HBar({
           tick={{ fontSize: 10 }}
           stroke="var(--color-muted-foreground)"
         />
-        <Tooltip {...tooltipStyle} formatter={(v: number) => [INR(v), valueLabel]} />
+        <Tooltip {...tooltipStyle} formatter={(v: number) => [INRC(v), valueLabel]} />
         <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={color}>
           <LabelList
             dataKey="value"
@@ -265,7 +277,7 @@ function RankedList({ items, total }: { items: { name: string; value: number; co
                 </span>
               </span>
               <Badge variant="secondary" className="tabular shrink-0">
-                {INR(item.value)}
+                {INRC(item.value)}
               </Badge>
             </div>
             <div className="mt-1.5 h-1.5 rounded-full bg-muted">
@@ -353,7 +365,7 @@ function MixBars({
         <Tooltip
           {...tooltipStyle}
           formatter={(v: number, _n: string, p: { payload?: { name?: string } }) => [
-            `${INR(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
+            `${INRC(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
             p?.payload?.name ?? "Revenue",
           ]}
         />
@@ -410,7 +422,7 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
             <Tooltip
               {...tooltipStyle}
               formatter={(v: number, n: string) => [
-                `${INR(v)} · ${((v / total) * 100).toFixed(1)}%`,
+                `${INRC(v)} · ${((v / total) * 100).toFixed(1)}%`,
                 n || "—",
               ]}
             />
@@ -653,7 +665,7 @@ const COLUMNS: Column[] = [
   { key: "unit", label: "UOM", render: (r) => r.unit || "—" },
   { key: "quantity", label: "Qty", numeric: true, render: (r) => NUM(r.quantity) },
   { key: "totalAh", label: "Total AH", numeric: true, render: (r) => NUM(r.totalAh) },
-  { key: "amount", label: "Amount", numeric: true, render: (r) => INR(r.amount) },
+  { key: "amount", label: "Amount", numeric: true, render: (r) => INRC(r.amount) },
   { key: "segment", label: "Segment", render: (r) => r.businessSegment || r.segment || "—" },
   { key: "salesRepName", label: "Sales employee", render: (r) => r.salesRepName || "—" },
   { key: "incoterms", label: "Incoterms", render: (r) => r.incoterms || "—" },
@@ -818,7 +830,7 @@ export function SdLiveDashboard() {
 
   const opts = useMemo(
     () => ({
-      plants: uniqueValues(all, (r) => r.plant),
+      plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
       profitCentres: uniqueValues(all, (r) => r.profitCtr),
     }),
     [all],
@@ -850,7 +862,13 @@ export function SdLiveDashboard() {
     downloadCsv(
       filtered.map((r) => {
         const out: Record<string, string | number> = {};
-        for (const c of COLUMNS) out[c.label] = c.numeric ? Number(c.render(r).replace(/[^\d.-]/g, "")) : c.render(r);
+        for (const c of COLUMNS)
+          out[c.label] =
+            c.key === "amount"
+              ? Math.round(r.amount)
+              : c.numeric
+                ? Number(c.render(r).replace(/[^\d.-]/g, ""))
+                : c.render(r);
         return out;
       }),
       "sd-sales-lines.csv",
@@ -933,16 +951,18 @@ export function SdLiveDashboard() {
                 className="mt-1 h-9"
               />
             </label>
-            <label className="text-xs text-muted-foreground">
-              Plant
-              <div className="mt-1">
-                <MultiSelect
-                  options={toOptions(opts.plants)}
-                  selected={filters.plants}
-                  onChange={(next) => set({ plants: next })}
-                />
-              </div>
-            </label>
+            {SHOW_PLANT_FILTER ? (
+              <label className="text-xs text-muted-foreground">
+                Plant
+                <div className="mt-1">
+                  <MultiSelect
+                    options={toOptions(opts.plants)}
+                    selected={filters.plants}
+                    onChange={(next) => set({ plants: next })}
+                  />
+                </div>
+              </label>
+            ) : null}
             <label className="text-xs text-muted-foreground">
               Profit centre
               <div className="mt-1">
@@ -1006,48 +1026,68 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div
+            className={`grid gap-4 sm:grid-cols-2 ${
+              (
+                [
+                  true,
+                  SHOW_QUANTITY_TILE,
+                  true,
+                  SHOW_AVG_ORDER_VALUE_TILE,
+                  SHOW_TOP_PROFIT_CENTRE_TILE,
+                ] as const
+              ).filter(Boolean).length === 2
+                ? "lg:grid-cols-2"
+                : "lg:grid-cols-5"
+            }`}
+          >
             <KpiCard
               label="Total Sales"
-              value={INR(totalRevenue)}
+              value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
               caption="Filtered postings"
             >
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
+            {SHOW_QUANTITY_TILE ? (
+              <KpiCard
+                label="Total quantity"
+                value={NUM(analytics.kpis.quantity)}
+                tone={4}
+                icon={Boxes}
+                caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+              />
+            ) : null}
             <KpiCard
-              label="Total quantity"
-              value={NUM(analytics.kpis.quantity)}
-              tone={4}
-              icon={Boxes}
-              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
-            />
-            <KpiCard
-              label="Active Customers"
+              label="Billed Customers"
               value={NUM(analytics.kpis.customers)}
               tone={2}
               icon={Users}
               caption="Billed in selection"
             />
-            <KpiCard
-              label="Avg order value"
-              value={INR(analytics.kpis.avgDoc)}
-              tone={3}
-              icon={Gauge}
-              caption="Revenue per document"
-            />
-            <KpiCard
-              label="Top profit centre"
-              value={compact(analytics.kpis.topProfitCentreValue)}
-              tone={5}
-              icon={Building2}
-              caption={analytics.kpis.topProfitCentre}
-            />
+            {SHOW_AVG_ORDER_VALUE_TILE ? (
+              <KpiCard
+                label="Avg order value"
+                value={INRC(analytics.kpis.avgDoc)}
+                tone={3}
+                icon={Gauge}
+                caption="Revenue per document"
+              />
+            ) : null}
+            {SHOW_TOP_PROFIT_CENTRE_TILE ? (
+              <KpiCard
+                label="Top profit centre"
+                value={INRC(analytics.kpis.topProfitCentreValue)}
+                tone={5}
+                icon={Building2}
+                caption={analytics.kpis.topProfitCentre}
+              />
+            ) : null}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Revenue trend" accent={1} className="lg:col-span-2" expandable>
+            <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
               <div
                 className={`rounded-md p-2 ${full ? "h-full" : ""}`}
@@ -1079,7 +1119,7 @@ export function SdLiveDashboard() {
                   />
                   <Tooltip
                     {...tooltipStyle}
-                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INR(v), n]}
+                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INRC(v), n]}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
                     <LabelList
@@ -1147,7 +1187,7 @@ export function SdLiveDashboard() {
                           />
                           {m.name || "—"}
                         </span>
-                        <span className="tabular">{INR(m.value)}</span>
+                        <span className="tabular">{INRC(m.value)}</span>
                       </div>
                     ))}
                   </div>
