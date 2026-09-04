@@ -73,6 +73,18 @@ function axisCompact(value: number) {
   return NUM(value);
 }
 
+/** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
+const INRC = (value: number) => `₹${compact(value)}`;
+
+/* ---- UI visibility flags: hidden elements keep their code intact; flip ----
+ * ---- a flag back to true to show the element again. ---------------------- */
+const SHOW_QUANTITY_TILE = false;
+const SHOW_AVG_ORDER_VALUE_TILE = false;
+const SHOW_TOP_PROFIT_CENTRE_TILE = false;
+const SHOW_PLANT_FILTER = false;
+/** Plant options removed from the Plant dropdown list. */
+const PLANT_OPTIONS_EXCLUDED = ["1200"];
+
 const KPI_TONES = [
   "var(--kpi-1)",
   "var(--kpi-2)",
