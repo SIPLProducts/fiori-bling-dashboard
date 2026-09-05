@@ -415,15 +415,18 @@ function MainGroupBars({
   items,
   subGroups,
   full = false,
+  selected,
+  onSelect,
 }: {
   items: NamedTotal[];
   subGroups: Record<string, NamedTotal[]>;
   full?: boolean;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
   const data = selected ? (subGroups[selected] ?? []) : items;
   const drill = (name: string) => {
-    if (!selected && name) setSelected(name);
+    if (!selected && name) onSelect(name);
   };
   const renderNameTick = (props: {
     x?: number;
@@ -965,6 +968,9 @@ function LinesTable({
 export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(true);
+  // Shared drill-down: selecting a main group in either the treemap or the
+  // bar chart updates both cards.
+  const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
