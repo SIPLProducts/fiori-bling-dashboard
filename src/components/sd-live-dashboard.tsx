@@ -1410,6 +1410,8 @@ export function SdLiveDashboard() {
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
                 />
               )}
             </Panel>
