@@ -485,7 +485,7 @@ function MainGroupBars({
         <span className="min-w-0 truncate">
           {selected ? (
             <>
-              <button type="button" className="hover:text-foreground" onClick={() => setSelected(null)}>
+              <button type="button" className="hover:text-foreground" onClick={() => onSelect(null)}>
                 ← All main groups
               </button>
               {" · "}
@@ -531,7 +531,7 @@ function MainGroupBars({
               minPointSize={4}
               cursor={selected ? "default" : "pointer"}
               onClick={(entry: { name?: unknown }) => {
-                if (!selected && entry?.name) setSelected(String(entry.name));
+                if (!selected && entry?.name) onSelect(String(entry.name));
               }}
             >
               <LabelList dataKey="value" position="top" content={renderBarLabel} />
@@ -1408,6 +1408,8 @@ export function SdLiveDashboard() {
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
                 />
               )}
             </Panel>
