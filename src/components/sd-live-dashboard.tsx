@@ -415,15 +415,18 @@ function MainGroupBars({
   items,
   subGroups,
   full = false,
+  selected,
+  onSelect,
 }: {
   items: NamedTotal[];
   subGroups: Record<string, NamedTotal[]>;
   full?: boolean;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
   const data = selected ? (subGroups[selected] ?? []) : items;
   const drill = (name: string) => {
-    if (!selected && name) setSelected(name);
+    if (!selected && name) onSelect(name);
   };
   const renderNameTick = (props: {
     x?: number;
@@ -482,7 +485,7 @@ function MainGroupBars({
         <span className="min-w-0 truncate">
           {selected ? (
             <>
-              <button type="button" className="hover:text-foreground" onClick={() => setSelected(null)}>
+              <button type="button" className="hover:text-foreground" onClick={() => onSelect(null)}>
                 ← All main groups
               </button>
               {" · "}
@@ -528,7 +531,7 @@ function MainGroupBars({
               minPointSize={4}
               cursor={selected ? "default" : "pointer"}
               onClick={(entry: { name?: unknown }) => {
-                if (!selected && entry?.name) setSelected(String(entry.name));
+                if (!selected && entry?.name) onSelect(String(entry.name));
               }}
             >
               <LabelList dataKey="value" position="top" content={renderBarLabel} />
@@ -656,15 +659,27 @@ function MainGroupTreemap({
   items,
   subGroups,
   full = false,
+  selected,
+  onSelect,
 }: {
   items: TreemapItem[];
   subGroups: Record<string, TreemapItem[]>;
   full?: boolean;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
 }) {
-  // Drill path: each entry is the tile clicked to reach the next level.
-  // "Others" drills into the remaining main groups (and nests further);
-  // a named main group drills into its sub groups.
-  const [path, setPath] = useState<string[]>([]);
+  // Drill path: "Others" drills are kept locally (Others has no sub groups to
+  // sync); a named main group is shared with the bar chart via `selected`.
+  const [othersTrail, setOthersTrail] = useState(0);
+  const path = useMemo(() => {
+    const base = Array.from({ length: othersTrail }, () => OTHERS);
+    return selected ? [...base, selected] : base;
+  }, [othersTrail, selected]);
+  const setPath = (next: string[]) => {
+    const lastNamed = [...next].reverse().find((s) => s !== OTHERS) ?? null;
+    onSelect(lastNamed);
+    setOthersTrail(next.filter((s) => s === OTHERS).length);
+  };
 
   const sortedMain = useMemo(() => [...items].sort((a, b) => b.value - a.value), [items]);
 
@@ -965,6 +980,9 @@ function LinesTable({
 export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(true);
+  // Shared drill-down: selecting a main group in either the treemap or the
+  // bar chart updates both cards.
+  const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -1392,6 +1410,8 @@ export function SdLiveDashboard() {
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
                 />
               )}
             </Panel>
@@ -1402,6 +1422,8 @@ export function SdLiveDashboard() {
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
                 />
               )}
             </Panel>
