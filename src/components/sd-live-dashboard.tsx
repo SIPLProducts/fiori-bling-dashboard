@@ -85,6 +85,7 @@ const SHOW_TOP_PROFIT_CENTRE_TILE = false;
 const SHOW_PLANT_FILTER = false;
 /** Plant options removed from the Plant dropdown list. */
 const PLANT_OPTIONS_EXCLUDED = ["1200"];
+const SALES_TYPE_TABS = ["All", "Domestic", "Services", "Exports"] as const;
 
 const KPI_TONES = [
   "var(--kpi-1)",
@@ -982,7 +983,9 @@ export function SdLiveDashboard() {
   const [showFilters, setShowFilters] = useState(true);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
+
   const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
+  const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -992,7 +995,12 @@ export function SdLiveDashboard() {
   const { data: sync } = useQuery({ queryKey: ["sd-sync-status"], queryFn: getSalesSyncStatus });
 
   const all = useMemo(() => lines ?? [], [lines]);
-  const filtered = useMemo(() => applySdFilters(all, filters), [all, filters]);
+  const typeFiltered = useMemo(() => {
+    if (salesTypeTab === "All") return all;
+    const target = salesTypeTab === "Services" ? "service" : salesTypeTab.toLowerCase();
+    return all.filter((r) => (r.salesType || "").trim().toLowerCase() === target);
+  }, [all, salesTypeTab]);
+  const filtered = useMemo(() => applySdFilters(typeFiltered, filters), [typeFiltered, filters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
 
   const opts = useMemo(
@@ -1175,13 +1183,35 @@ export function SdLiveDashboard() {
         ) : null}
       </section>
 
-      <p className="text-xs text-muted-foreground">
-        Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
-        {formatDateTimeISTLabel(sync?.lastSyncedAt)}
-        {sync?.lastStatus && sync.lastStatus !== "success" ? (
-          <span className="text-destructive"> · last run {sync.lastStatus}</span>
-        ) : null}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
+          {formatDateTimeISTLabel(sync?.lastSyncedAt)}
+          {sync?.lastStatus && sync.lastStatus !== "success" ? (
+            <span className="text-destructive"> · last run {sync.lastStatus}</span>
+          ) : null}
+        </p>
+        <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-1">
+          {SALES_TYPE_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => {
+                setSalesTypeTab(tab);
+                setSelectedMainGroup(null);
+              }}
+              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                salesTypeTab === tab
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {!all.length ? (
         <section className="rounded-md border border-border bg-card p-10 text-center shadow-tile">
