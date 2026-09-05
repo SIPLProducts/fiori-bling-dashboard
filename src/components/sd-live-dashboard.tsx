@@ -442,23 +442,26 @@ function MainGroupBars({
         <span className="tabular shrink-0">₹{compact(data.reduce((s, d) => s + d.value, 0))}</span>
       </div>
       <div className={full ? "min-h-0 flex-1" : ""}>
-        <ResponsiveContainer width="100%" height={full ? "100%" : Math.max(220, data.length * 30)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 0, right: 76, top: 4, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
+        <ResponsiveContainer width="100%" height={full ? "100%" : 260}>
+          <BarChart data={data} margin={{ left: 0, right: 8, top: 16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
             <XAxis
-              type="number"
-              tickFormatter={axisCompact}
-              tick={{ fontSize: 11 }}
+              type="category"
+              dataKey="name"
+              interval={0}
+              tickMargin={8}
+              angle={-28}
+              textAnchor="end"
+              height={64}
+              tickFormatter={(v: string) => (v && v.length > 14 ? `${v.slice(0, 13)}…` : v || "—")}
+              tick={{ fontSize: 10 }}
               stroke="var(--color-muted-foreground)"
             />
             <YAxis
-              type="category"
-              dataKey="name"
-              width={190}
-              interval={0}
-              tickMargin={4}
-              tickFormatter={(v: string) => (v && v.length > 36 ? `${v.slice(0, 34)}…` : v || "—")}
-              tick={{ fontSize: 10 }}
+              type="number"
+              width={56}
+              tickFormatter={axisCompact}
+              tick={{ fontSize: 11 }}
               stroke="var(--color-muted-foreground)"
             />
             <Tooltip
@@ -479,7 +482,7 @@ function MainGroupBars({
             >
               <LabelList
                 dataKey="value"
-                position="right"
+                position="top"
                 formatter={(v: number) => compact(v)}
                 fontSize={10}
                 fill="var(--color-foreground)"
@@ -1337,7 +1340,7 @@ export function SdLiveDashboard() {
 
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
@@ -1357,7 +1360,9 @@ export function SdLiveDashboard() {
                 />
               )}
             </Panel>
+          </div>
 
+          <div className="grid gap-4">
             <Panel title="Sales by Segment (Amount)" accent={2}>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
