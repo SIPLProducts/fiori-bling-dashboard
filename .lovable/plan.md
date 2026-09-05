@@ -5,7 +5,7 @@
 1. **Remove the "Month on month" label** on the Sales Growth tile. The caption keeps only the months compared (e.g. "AUG-2026 vs JUL-2026"); the "Month on month ·" prefix is removed.
 
 2. **New card: "Main Group vs Sub Group (Amount)"** placed beside "Sales by Main Group (Amount)":
-   - Default view: a horizontal bar chart of all Main Groups by amount (same style as the Top 10 bar lists — one-line names, proportional bars, ₹ Cr/L/K amount labels, record counts in tooltips).
+   - Default view: a proper X/Y axis bar chart (Recharts `BarChart`) of all Main Groups by amount — X axis = Main Group names, Y axis = amount (₹ Cr/L/K ticks), value labels on the bars, and full details (name, exact amount, record count) in the tooltip.
    - Clicking a Main Group bar drills in: the card title/subtitle shows the selected group and the chart redraws with only that group's Sub Groups as bars. A "← All main groups" back link returns to the top level.
    - The card gets the full-screen expand button like the other cards; drill-down works in full screen too.
    - No new data needed — reuses the existing `byMainGroup` and `subGroupsByMainGroup` analytics.
