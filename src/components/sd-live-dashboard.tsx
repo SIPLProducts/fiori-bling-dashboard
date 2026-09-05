@@ -500,11 +500,8 @@ function MainGroupBars({
               dataKey="name"
               interval={0}
               tickMargin={8}
-              angle={-28}
-              textAnchor="end"
               height={64}
-              tickFormatter={(v: string) => (v && v.length > 14 ? `${v.slice(0, 13)}…` : v || "—")}
-              tick={{ fontSize: 10 }}
+              tick={renderNameTick}
               stroke="var(--color-muted-foreground)"
             />
             <YAxis
