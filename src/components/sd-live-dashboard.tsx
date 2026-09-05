@@ -992,7 +992,12 @@ export function SdLiveDashboard() {
   const { data: sync } = useQuery({ queryKey: ["sd-sync-status"], queryFn: getSalesSyncStatus });
 
   const all = useMemo(() => lines ?? [], [lines]);
-  const filtered = useMemo(() => applySdFilters(all, filters), [all, filters]);
+  const typeFiltered = useMemo(() => {
+    if (salesTypeTab === "All") return all;
+    const target = salesTypeTab === "Services" ? "service" : salesTypeTab.toLowerCase();
+    return all.filter((r) => (r.salesType || "").trim().toLowerCase() === target);
+  }, [all, salesTypeTab]);
+  const filtered = useMemo(() => applySdFilters(typeFiltered, filters), [typeFiltered, filters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
 
   const opts = useMemo(
