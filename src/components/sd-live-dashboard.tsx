@@ -422,6 +422,59 @@ function MainGroupBars({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const data = selected ? (subGroups[selected] ?? []) : items;
+  const drill = (name: string) => {
+    if (!selected && name) setSelected(name);
+  };
+  const renderNameTick = (props: {
+    x?: number;
+    y?: number;
+    payload?: { value?: string };
+  }) => {
+    const { x = 0, y = 0, payload } = props;
+    const raw = payload?.value ?? "";
+    const label = raw && raw.length > 14 ? `${raw.slice(0, 13)}…` : raw || "—";
+    return (
+      <text
+        x={x}
+        y={y}
+        transform={`rotate(-28, ${x}, ${y})`}
+        textAnchor="end"
+        fontSize={10}
+        fill="var(--color-muted-foreground)"
+        style={{ cursor: selected ? "default" : "pointer" }}
+        onClick={() => drill(raw)}
+      >
+        <title>{raw}</title>
+        {label}
+      </text>
+    );
+  };
+  const renderBarLabel = (props: {
+    x?: string | number | undefined;
+    y?: string | number | undefined;
+    width?: string | number | undefined;
+    value?: number | string | undefined;
+    index?: number | undefined;
+  }) => {
+    const x = Number(props.x ?? 0);
+    const y = Number(props.y ?? 0);
+    const width = Number(props.width ?? 0);
+    const { value, index = 0 } = props;
+    const item = data[index];
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 4}
+        textAnchor="middle"
+        fontSize={10}
+        fill="var(--color-foreground)"
+        style={{ cursor: selected ? "default" : "pointer" }}
+        onClick={() => item && drill(item.name)}
+      >
+        {compact(Number(value ?? 0))}
+      </text>
+    );
+  };
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
@@ -450,11 +503,8 @@ function MainGroupBars({
               dataKey="name"
               interval={0}
               tickMargin={8}
-              angle={-28}
-              textAnchor="end"
               height={64}
-              tickFormatter={(v: string) => (v && v.length > 14 ? `${v.slice(0, 13)}…` : v || "—")}
-              tick={{ fontSize: 10 }}
+              tick={renderNameTick}
               stroke="var(--color-muted-foreground)"
             />
             <YAxis
@@ -475,18 +525,13 @@ function MainGroupBars({
               dataKey="value"
               radius={[3, 3, 3, 3]}
               fill={KPI_TONES[3]}
+              minPointSize={4}
               cursor={selected ? "default" : "pointer"}
               onClick={(entry: { name?: unknown }) => {
                 if (!selected && entry?.name) setSelected(String(entry.name));
               }}
             >
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(v: number) => compact(v)}
-                fontSize={10}
-                fill="var(--color-foreground)"
-              />
+              <LabelList dataKey="value" position="top" content={renderBarLabel} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
