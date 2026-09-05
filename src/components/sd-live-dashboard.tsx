@@ -1087,20 +1087,20 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Panel title="Top 10 Profit Centres" accent={1}>
-              <BarList items={analytics.topProfitCentres} tone={0} />
+            <Panel title="Top 10 Profit Centres" accent={1} expandable>
+              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Customers" accent={4}>
-              <BarList items={analytics.topCustomers} tone={3} />
+            <Panel title="Top 10 Customers" accent={4} expandable>
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={3} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Materials" accent={3}>
-              <RankedList items={analytics.topMaterials} total={totalRevenue} />
+            <Panel title="Top 10 Materials" accent={3} expandable>
+              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Sales Employees" accent={2}>
-              <BarList items={analytics.topSalesEmployees} tone={1} />
+            <Panel title="Top 10 Sales Employees" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
           </div>
 
