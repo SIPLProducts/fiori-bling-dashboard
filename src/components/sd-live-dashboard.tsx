@@ -302,20 +302,24 @@ function BarList({
   tone = 0,
   full = false,
 }: {
-  items: { name: string; value: number }[];
+  items: { name: string; value: number; count?: number }[];
   tone?: number;
   full?: boolean;
 }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
+  const tip = (item: { name: string; value: number; count?: number }) =>
+    `${item.name || "—"}\n₹${item.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}${
+      item.count != null ? `\n${item.count.toLocaleString("en-IN")} records` : ""
+    }`;
   return (
     <div className={full ? "flex h-full flex-col gap-1.5" : "space-y-1.5"}>
       <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
       {items.map((item) => (
-        <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`}>
+        <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`} title={tip(item)}>
           <span
             className="w-[34%] shrink-0 truncate whitespace-nowrap text-[11px] text-muted-foreground"
-            title={item.name}
+            title={tip(item)}
           >
             {item.name || "—"}
           </span>
@@ -330,7 +334,10 @@ function BarList({
               }}
             />
           </div>
-          <span className="tabular w-20 shrink-0 whitespace-nowrap text-right text-[11px] font-medium">
+          <span
+            className="tabular w-20 shrink-0 whitespace-nowrap text-right text-[11px] font-medium"
+            title={tip(item)}
+          >
             ₹{compact(item.value)}
           </span>
         </div>
@@ -1087,20 +1094,20 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Panel title="Top 10 Profit Centres" accent={1}>
-              <BarList items={analytics.topProfitCentres} tone={0} />
+            <Panel title="Top 10 Profit Centres" accent={1} expandable>
+              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Customers" accent={4}>
-              <BarList items={analytics.topCustomers} tone={3} />
+            <Panel title="Top 10 Customers" accent={4} expandable>
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={3} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Materials" accent={3}>
-              <RankedList items={analytics.topMaterials} total={totalRevenue} />
+            <Panel title="Top 10 Materials" accent={3} expandable>
+              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
             </Panel>
 
-            <Panel title="Top 10 Sales Employees" accent={2}>
-              <BarList items={analytics.topSalesEmployees} tone={1} />
+            <Panel title="Top 10 Sales Employees" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
           </div>
 
