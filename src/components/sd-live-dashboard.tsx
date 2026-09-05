@@ -522,18 +522,13 @@ function MainGroupBars({
               dataKey="value"
               radius={[3, 3, 3, 3]}
               fill={KPI_TONES[3]}
+              minPointSize={4}
               cursor={selected ? "default" : "pointer"}
               onClick={(entry: { name?: unknown }) => {
                 if (!selected && entry?.name) setSelected(String(entry.name));
               }}
             >
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(v: number) => compact(v)}
-                fontSize={10}
-                fill="var(--color-foreground)"
-              />
+              <LabelList dataKey="value" position="top" content={renderBarLabel} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
