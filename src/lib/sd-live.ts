@@ -209,6 +209,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byPc = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
+  const byEmp = new Map<string, NamedTotal>();
   const bySeg = new Map<string, NamedTotal>();
   const byMain = new Map<string, NamedTotal>();
   const bySub = new Map<string, Map<string, NamedTotal>>();
