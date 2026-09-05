@@ -422,6 +422,56 @@ function MainGroupBars({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const data = selected ? (subGroups[selected] ?? []) : items;
+  const drill = (name: string) => {
+    if (!selected && name) setSelected(name);
+  };
+  const renderNameTick = (props: {
+    x?: number;
+    y?: number;
+    payload?: { value?: string };
+  }) => {
+    const { x = 0, y = 0, payload } = props;
+    const raw = payload?.value ?? "";
+    const label = raw && raw.length > 14 ? `${raw.slice(0, 13)}…` : raw || "—";
+    return (
+      <text
+        x={x}
+        y={y}
+        transform={`rotate(-28, ${x}, ${y})`}
+        textAnchor="end"
+        fontSize={10}
+        fill="var(--color-muted-foreground)"
+        style={{ cursor: selected ? "default" : "pointer" }}
+        onClick={() => drill(raw)}
+      >
+        <title>{raw}</title>
+        {label}
+      </text>
+    );
+  };
+  const renderBarLabel = (props: {
+    x?: number;
+    y?: number;
+    width?: number;
+    value?: number | string;
+    index?: number;
+  }) => {
+    const { x = 0, y = 0, width = 0, value, index = 0 } = props;
+    const item = data[index];
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 4}
+        textAnchor="middle"
+        fontSize={10}
+        fill="var(--color-foreground)"
+        style={{ cursor: selected ? "default" : "pointer" }}
+        onClick={() => item && drill(item.name)}
+      >
+        {compact(Number(value ?? 0))}
+      </text>
+    );
+  };
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
