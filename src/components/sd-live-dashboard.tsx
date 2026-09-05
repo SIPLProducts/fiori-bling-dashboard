@@ -450,13 +450,16 @@ function MainGroupBars({
     );
   };
   const renderBarLabel = (props: {
-    x?: number;
-    y?: number;
-    width?: number;
+    x?: string | number;
+    y?: string | number;
+    width?: string | number;
     value?: number | string;
     index?: number;
   }) => {
-    const { x = 0, y = 0, width = 0, value, index = 0 } = props;
+    const x = Number(props.x ?? 0);
+    const y = Number(props.y ?? 0);
+    const width = Number(props.width ?? 0);
+    const { value, index = 0 } = props;
     const item = data[index];
     return (
       <text
