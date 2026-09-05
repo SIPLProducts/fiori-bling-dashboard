@@ -46,6 +46,7 @@ import {
   emptySdFilters,
   fetchSdLines,
   uniqueValues,
+  type NamedTotal,
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
@@ -408,6 +409,88 @@ function MixBars({
 }
 
 const SEGMENT_PAGE = 6;
+
+/** X/Y bar chart of main groups; clicking a bar drills into that group's sub groups. */
+function MainGroupBars({
+  items,
+  subGroups,
+  full = false,
+}: {
+  items: NamedTotal[];
+  subGroups: Record<string, NamedTotal[]>;
+  full?: boolean;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const data = selected ? (subGroups[selected] ?? []) : items;
+  if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
+  return (
+    <div className={full ? "flex h-full flex-col" : ""}>
+      <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {selected ? (
+            <>
+              <button type="button" className="hover:text-foreground" onClick={() => setSelected(null)}>
+                ← All main groups
+              </button>
+              {" · "}
+              <span className="text-foreground">{selected}</span>
+            </>
+          ) : (
+            "Click a bar to see its sub groups"
+          )}
+        </span>
+        <span className="tabular shrink-0">₹{compact(data.reduce((s, d) => s + d.value, 0))}</span>
+      </div>
+      <div className={full ? "min-h-0 flex-1" : ""}>
+        <ResponsiveContainer width="100%" height={full ? "100%" : Math.max(220, data.length * 30)}>
+          <BarChart data={data} layout="vertical" margin={{ left: 0, right: 76, top: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={axisCompact}
+              tick={{ fontSize: 11 }}
+              stroke="var(--color-muted-foreground)"
+            />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={190}
+              interval={0}
+              tickMargin={4}
+              tickFormatter={(v: string) => (v && v.length > 36 ? `${v.slice(0, 34)}…` : v || "—")}
+              tick={{ fontSize: 10 }}
+              stroke="var(--color-muted-foreground)"
+            />
+            <Tooltip
+              {...tooltipStyle}
+              formatter={(v: number, _name: unknown, item: { payload?: NamedTotal }) => [
+                `${INRC(v)} · ${item?.payload?.count ?? 0} records`,
+                selected ? "Sub group" : "Main group",
+              ]}
+            />
+            <Bar
+              dataKey="value"
+              radius={[3, 3, 3, 3]}
+              fill={KPI_TONES[3]}
+              cursor={selected ? "default" : "pointer"}
+              onClick={(entry: { name?: unknown }) => {
+                if (!selected && entry?.name) setSelected(String(entry.name));
+              }}
+            >
+              <LabelList
+                dataKey="value"
+                position="right"
+                formatter={(v: number) => compact(v)}
+                fontSize={10}
+                fill="var(--color-foreground)"
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
 function SegmentDonut({ items, total }: { items: { name: string; value: number }[]; total: number }) {
   const [page, setPage] = useState(0);
@@ -1101,7 +1184,7 @@ export function SdLiveDashboard() {
               }
               tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 4}
               icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
-              caption={`Month on month · ${analytics.kpis.momLabel}`}
+              caption={analytics.kpis.momLabel}
             />
             {SHOW_AVG_ORDER_VALUE_TILE ? (
               <KpiCard
@@ -1254,10 +1337,20 @@ export function SdLiveDashboard() {
 
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                />
+              )}
+            </Panel>
+
+            <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
+              {(full: boolean) => (
+                <MainGroupBars
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
