@@ -314,7 +314,10 @@ function BarList({
     }`;
   return (
     <div className={full ? "flex h-full flex-col gap-1.5" : "space-y-1.5"}>
-      <div className="flex items-center justify-end text-[11px] font-medium text-muted-foreground">Amount</div>
+      <div className="flex items-center justify-end gap-3 text-[11px] font-medium text-muted-foreground">
+        <span>Amount</span>
+        {full ? <span className="w-20 shrink-0 text-right">Records</span> : null}
+      </div>
       {items.map((item) => (
         <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`} title={tip(item)}>
           <span
@@ -340,6 +343,14 @@ function BarList({
           >
             ₹{compact(item.value)}
           </span>
+          {full ? (
+            <span
+              className="tabular w-20 shrink-0 whitespace-nowrap text-right text-[11px] text-muted-foreground"
+              title={tip(item)}
+            >
+              {item.count != null ? item.count.toLocaleString("en-IN") : "—"}
+            </span>
+          ) : null}
         </div>
       ))}
     </div>
@@ -1035,17 +1046,25 @@ export function SdLiveDashboard() {
         <>
           <div
             className={`grid gap-4 sm:grid-cols-2 ${
-              (
-                [
-                  true,
-                  SHOW_QUANTITY_TILE,
-                  true,
-                  SHOW_AVG_ORDER_VALUE_TILE,
-                  SHOW_TOP_PROFIT_CENTRE_TILE,
-                ] as const
-              ).filter(Boolean).length === 2
-                ? "lg:grid-cols-2"
-                : "lg:grid-cols-5"
+              ({
+                1: "lg:grid-cols-1",
+                2: "lg:grid-cols-2",
+                3: "lg:grid-cols-3",
+                4: "lg:grid-cols-4",
+                5: "lg:grid-cols-5",
+                6: "lg:grid-cols-6",
+              } as Record<number, string>)[
+                (
+                  [
+                    true,
+                    SHOW_QUANTITY_TILE,
+                    true,
+                    SHOW_AVG_ORDER_VALUE_TILE,
+                    true,
+                    SHOW_TOP_PROFIT_CENTRE_TILE,
+                  ] as const
+                ).filter(Boolean).length
+              ]
             }`}
           >
             <KpiCard
@@ -1072,6 +1091,17 @@ export function SdLiveDashboard() {
               tone={2}
               icon={Users}
               caption="Billed in selection"
+            />
+            <KpiCard
+              label="Sales growth"
+              value={
+                analytics.kpis.momPct != null
+                  ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
+                  : "—"
+              }
+              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 4}
+              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
+              caption={`Month on month · ${analytics.kpis.momLabel}`}
             />
             {SHOW_AVG_ORDER_VALUE_TILE ? (
               <KpiCard
