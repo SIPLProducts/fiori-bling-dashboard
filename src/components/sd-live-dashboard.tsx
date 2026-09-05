@@ -1092,6 +1092,17 @@ export function SdLiveDashboard() {
               icon={Users}
               caption="Billed in selection"
             />
+            <KpiCard
+              label="Sales growth"
+              value={
+                analytics.kpis.momPct != null
+                  ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
+                  : "—"
+              }
+              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 4}
+              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
+              caption={`Month on month · ${analytics.kpis.momLabel}`}
+            />
             {SHOW_AVG_ORDER_VALUE_TILE ? (
               <KpiCard
                 label="Avg order value"
