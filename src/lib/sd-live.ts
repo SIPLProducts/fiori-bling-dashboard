@@ -290,7 +290,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     topProfitCentres: pcList.slice(0, 10),
     monthly,
     topCustomers: rank(byCust, 10),
-    topMaterials: rank(byMat, 5),
+    topMaterials: rank(byMat, 10),
+    topSalesEmployees: rank(byEmp, 10),
     byMainGroup: rank(byMain),
     subGroupsByMainGroup: Object.fromEntries(
       [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),
