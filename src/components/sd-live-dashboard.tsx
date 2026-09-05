@@ -1183,13 +1183,35 @@ export function SdLiveDashboard() {
         ) : null}
       </section>
 
-      <p className="text-xs text-muted-foreground">
-        Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
-        {formatDateTimeISTLabel(sync?.lastSyncedAt)}
-        {sync?.lastStatus && sync.lastStatus !== "success" ? (
-          <span className="text-destructive"> · last run {sync.lastStatus}</span>
-        ) : null}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
+          {formatDateTimeISTLabel(sync?.lastSyncedAt)}
+          {sync?.lastStatus && sync.lastStatus !== "success" ? (
+            <span className="text-destructive"> · last run {sync.lastStatus}</span>
+          ) : null}
+        </p>
+        <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-1">
+          {SALES_TYPE_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => {
+                setSalesTypeTab(tab);
+                setSelectedMainGroup(null);
+              }}
+              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                salesTypeTab === tab
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {!all.length ? (
         <section className="rounded-md border border-border bg-card p-10 text-center shadow-tile">
