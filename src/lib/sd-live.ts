@@ -188,6 +188,7 @@ export type SdAnalytics = {
   }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
+  topSalesEmployees: NamedTotal[];
   byMainGroup: NamedTotal[];
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
   rows: SdLine[];
@@ -208,6 +209,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byPc = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
+  const byEmp = new Map<string, NamedTotal>();
   const bySeg = new Map<string, NamedTotal>();
   const byMain = new Map<string, NamedTotal>();
   const bySub = new Map<string, Map<string, NamedTotal>>();
@@ -231,6 +233,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
+    add(byEmp, r.salesRepName, r.amount);
     add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
 
     const main = r.mainGroup || "Unassigned";
@@ -284,10 +287,11 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     },
     mixByType: rank(byType),
     bySegment: rank(bySeg),
-    topProfitCentres: pcList.slice(0, 5),
+    topProfitCentres: pcList.slice(0, 10),
     monthly,
     topCustomers: rank(byCust, 10),
-    topMaterials: rank(byMat, 5),
+    topMaterials: rank(byMat, 10),
+    topSalesEmployees: rank(byEmp, 10),
     byMainGroup: rank(byMain),
     subGroupsByMainGroup: Object.fromEntries(
       [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),

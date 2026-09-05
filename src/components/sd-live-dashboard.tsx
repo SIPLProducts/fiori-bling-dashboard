@@ -1086,6 +1086,24 @@ export function SdLiveDashboard() {
             ) : null}
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Panel title="Top 10 Profit Centres" accent={1}>
+              <BarList items={analytics.topProfitCentres} tone={0} />
+            </Panel>
+
+            <Panel title="Top 10 Customers" accent={4}>
+              <BarList items={analytics.topCustomers} tone={3} />
+            </Panel>
+
+            <Panel title="Top 10 Materials" accent={3}>
+              <RankedList items={analytics.topMaterials} total={totalRevenue} />
+            </Panel>
+
+            <Panel title="Top 10 Sales Employees" accent={2}>
+              <BarList items={analytics.topSalesEmployees} tone={1} />
+            </Panel>
+          </div>
+
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
@@ -1197,14 +1215,9 @@ export function SdLiveDashboard() {
 
 
 
-            <Panel title="Top 5 Profit Centres" accent={1}>
-              <BarList items={analytics.topProfitCentres} tone={0} />
-            </Panel>
+          </div>
 
-            <Panel title="Top 5 materials" accent={3}>
-              <RankedList items={analytics.topMaterials} total={totalRevenue} />
-            </Panel>
-
+          <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
@@ -1212,16 +1225,6 @@ export function SdLiveDashboard() {
                   subGroups={analytics.subGroupsByMainGroup}
                   full={full}
                 />
-              )}
-            </Panel>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Top customers" accent={4} expandable>
-              {(full: boolean) => (
-                <div className={full ? "h-full" : ""}>
-                  <BarList items={analytics.topCustomers.slice(0, 6)} tone={3} full={full} />
-                </div>
               )}
             </Panel>
 
