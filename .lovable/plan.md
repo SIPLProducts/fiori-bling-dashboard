@@ -14,6 +14,6 @@
 
 - `src/components/sd-live-dashboard.tsx`:
   - Sales Growth `KpiCard` caption: drop the `"Month on month · "` prefix, keep `analytics.kpis.momLabel`.
-  - Add a `MainGroupBars` component: local `selected` state, renders `BarList` with `analytics.byMainGroup` (or `analytics.subGroupsByMainGroup[selected]` after drill-in), bars clickable via a small wrapper, back link when drilled in.
+  - Add a `MainGroupBars` component: local `selected` state, renders a Recharts `BarChart` with `analytics.byMainGroup` (or `analytics.subGroupsByMainGroup[selected]` after drill-in), clickable bars (cursor pointer), value `LabelList` on bars, compact axis ticks, and a back link when drilled in.
   - New `Panel title="Main Group vs Sub Group (Amount)" accent={…} expandable` next to the treemap panel.
 - No data, schema, or query changes.
