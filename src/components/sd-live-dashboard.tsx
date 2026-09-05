@@ -85,6 +85,7 @@ const SHOW_TOP_PROFIT_CENTRE_TILE = false;
 const SHOW_PLANT_FILTER = false;
 /** Plant options removed from the Plant dropdown list. */
 const PLANT_OPTIONS_EXCLUDED = ["1200"];
+const SALES_TYPE_TABS = ["All", "Domestic", "Services", "Exports"] as const;
 
 const KPI_TONES = [
   "var(--kpi-1)",
