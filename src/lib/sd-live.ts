@@ -233,6 +233,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
+    add(byEmp, r.salesRepName, r.amount);
     add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
 
     const main = r.mainGroup || "Unassigned";
@@ -286,7 +287,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     },
     mixByType: rank(byType),
     bySegment: rank(bySeg),
-    topProfitCentres: pcList.slice(0, 5),
+    topProfitCentres: pcList.slice(0, 10),
     monthly,
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 5),
