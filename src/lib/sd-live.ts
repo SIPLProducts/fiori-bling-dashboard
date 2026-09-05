@@ -188,6 +188,7 @@ export type SdAnalytics = {
   }[];
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
+  topSalesEmployees: NamedTotal[];
   byMainGroup: NamedTotal[];
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
   rows: SdLine[];
