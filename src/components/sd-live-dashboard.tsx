@@ -982,8 +982,9 @@ export function SdLiveDashboard() {
   const [showFilters, setShowFilters] = useState(true);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
+
   const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
-  const [salesTypeTab, setSalesTypeTab] = useState<SalesTypeTab>("All");
+  const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
