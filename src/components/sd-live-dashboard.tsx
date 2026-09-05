@@ -659,15 +659,27 @@ function MainGroupTreemap({
   items,
   subGroups,
   full = false,
+  selected,
+  onSelect,
 }: {
   items: TreemapItem[];
   subGroups: Record<string, TreemapItem[]>;
   full?: boolean;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
 }) {
-  // Drill path: each entry is the tile clicked to reach the next level.
-  // "Others" drills into the remaining main groups (and nests further);
-  // a named main group drills into its sub groups.
-  const [path, setPath] = useState<string[]>([]);
+  // Drill path: "Others" drills are kept locally (Others has no sub groups to
+  // sync); a named main group is shared with the bar chart via `selected`.
+  const [othersTrail, setOthersTrail] = useState(0);
+  const path = useMemo(() => {
+    const base = Array.from({ length: othersTrail }, () => OTHERS);
+    return selected ? [...base, selected] : base;
+  }, [othersTrail, selected]);
+  const setPath = (next: string[]) => {
+    const lastNamed = [...next].reverse().find((s) => s !== OTHERS) ?? null;
+    onSelect(lastNamed);
+    setOthersTrail(next.filter((s) => s === OTHERS).length);
+  };
 
   const sortedMain = useMemo(() => [...items].sort((a, b) => b.value - a.value), [items]);
 
