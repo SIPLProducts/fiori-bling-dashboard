@@ -1079,17 +1079,26 @@ export function SdLiveDashboard() {
       {/* smart filter bar */}
       <section className="rounded-lg border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-card-foreground"
-          >
-            <Filter className="size-4 text-primary" />
-            Smart filters
-            <Badge variant="secondary" className="ml-1">
-              {activeChips.length}
-            </Badge>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-card-foreground"
+              aria-expanded={showFilters}
+            >
+              <Filter className="size-4 text-primary" />
+              Smart filters
+              <Badge variant="secondary" className="ml-1">
+                {activeChips.length}
+              </Badge>
+              <ChevronDown
+                className={`size-4 text-muted-foreground transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
+            </button>
+            <Button variant="outline" size="sm" onClick={() => setFilters(emptySdFilters)}>
+              <RotateCcw className="mr-1 size-3.5" /> Reset
+            </Button>
+          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="pointer-events-none absolute top-2.5 left-2 size-4 text-muted-foreground" />
@@ -1100,9 +1109,6 @@ export function SdLiveDashboard() {
                 className="h-9 w-64 pl-8"
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setFilters(emptySdFilters)}>
-              <RotateCcw className="mr-1 size-3.5" /> Reset
-            </Button>
           </div>
         </div>
 
@@ -1236,6 +1242,7 @@ export function SdLiveDashboard() {
                 (
                   [
                     true,
+                    true,
                     SHOW_QUANTITY_TILE,
                     true,
                     SHOW_AVG_ORDER_VALUE_TILE,
@@ -1255,6 +1262,13 @@ export function SdLiveDashboard() {
             >
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
+            <KpiCard
+              label="AH Sales"
+              value={NUM(analytics.kpis.totalAh)}
+              tone={1}
+              icon={BatteryCharging}
+              caption="Total AH in selection"
+            />
             {SHOW_QUANTITY_TILE ? (
               <KpiCard
                 label="Total quantity"
