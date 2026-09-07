@@ -1314,8 +1314,8 @@ export function SdLiveDashboard() {
         </div>
 
         {showFilters ? (
-          <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="grid grid-cols-1 gap-3 md:col-span-2 md:grid-cols-2 lg:col-span-2">
+          <div className="grid gap-1 border-t border-border px-4 py-2 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-1 md:col-span-2 md:grid-cols-2 lg:col-span-2">
 
               <label className="text-xs text-muted-foreground">
                 Posting from
@@ -1323,7 +1323,7 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.from}
                   onChange={(e) => set({ from: e.target.value })}
-                  className="mt-1 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
+                  className="mt-0 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
               <label className="text-xs text-muted-foreground">
@@ -1332,14 +1332,14 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.to}
                   onChange={(e) => set({ to: e.target.value })}
-                  className="mt-1 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
+                  className="mt-0 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
             </div>
             {SHOW_PLANT_FILTER ? (
               <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
                 Plant
-                <div className="mt-1">
+                <div className="mt-0">
                   <MultiSelect
                     options={toOptions(opts.plants)}
                     selected={filters.plants}
@@ -1350,7 +1350,7 @@ export function SdLiveDashboard() {
             ) : null}
             <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
               Profit centre
-              <div className="mt-1">
+              <div className="mt-0">
                 <MultiSelect
                   options={toOptions(opts.profitCentres)}
                   selected={filters.profitCentres}
