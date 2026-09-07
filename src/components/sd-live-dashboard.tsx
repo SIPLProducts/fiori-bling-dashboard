@@ -830,7 +830,7 @@ const COLUMNS: Column[] = [
   { key: "unit", label: "UOM", render: (r) => r.unit || "—" },
   { key: "quantity", label: "Qty", numeric: true, render: (r) => NUM(r.quantity) },
   { key: "totalAh", label: "Total AH", numeric: true, render: (r) => NUM(r.totalAh) },
-  { key: "amount", label: "Amount", numeric: true, render: (r) => INRC(r.amount) },
+  { key: "amount", label: "Amount in local cur.", numeric: true, render: (r) => INRC(r.amount) },
   { key: "segment", label: "Segment", render: (r) => r.businessSegment || r.segment || "—" },
   { key: "salesRepName", label: "Sales employee", render: (r) => r.salesRepName || "—" },
   { key: "incoterms", label: "Incoterms", render: (r) => r.incoterms || "—" },
@@ -860,7 +860,7 @@ function LinesTable({
 
   return (
     <Panel
-      title={`ZFISALES_MIS List (${NUM(rows.length)})`}
+      title={`Net Sales List (${NUM(rows.length)})`}
       accent={1}
       actions={
         <div className="flex items-center gap-2">

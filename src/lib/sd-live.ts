@@ -170,6 +170,7 @@ export type SdAnalytics = {
     avgDoc: number;
     linesPerDoc: number;
     quantity: number;
+    totalAh: number;
     avgRealization: number;
     momPct: number | null;
     momLabel: string;
@@ -223,10 +224,12 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const customers = new Set<string>();
   let revenue = 0;
   let quantity = 0;
+  let totalAh = 0;
 
   for (const r of rows) {
     revenue += r.amount;
     quantity += r.quantity;
+    totalAh += r.totalAh;
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
@@ -266,9 +269,12 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     }));
 
   const pcList = rank(byPc);
-  const last = monthly[monthly.length - 1];
-  const prev = monthly[monthly.length - 2];
-  const momPct = last && prev && prev.revenue ? ((last.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100 : null;
+  // Compare the two most recent months that both actually have revenue, so a
+  // near-empty earlier month cannot blow the percentage up.
+  const withRevenue = monthly.filter((m) => m.revenue !== 0);
+  const last = withRevenue[withRevenue.length - 1];
+  const prev = withRevenue[withRevenue.length - 2];
+  const momPct = last && prev ? ((last.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100 : null;
 
   return {
     kpis: {
@@ -279,9 +285,10 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       avgDoc: docs.size ? revenue / docs.size : 0,
       linesPerDoc: docs.size ? rows.length / docs.size : 0,
       quantity,
+      totalAh,
       avgRealization: quantity ? revenue / quantity : 0,
       momPct,
-      momLabel: last ? `${last.month}${prev ? ` vs ${prev.month}` : ""}` : "—",
+      momLabel: last && prev ? `${last.month} vs ${prev.month}` : last ? last.month : "—",
       topProfitCentre: pcList[0]?.name ?? "—",
       topProfitCentreValue: pcList[0]?.value ?? 0,
     },
