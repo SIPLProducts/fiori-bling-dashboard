@@ -862,6 +862,140 @@ const COLUMNS: Column[] = [
 
 const PAGE_SIZE = 50;
 
+/* --------------------------- focused KPI drill table ---------------------- */
+
+export type FocusRow = { a: string; b: string; amount: number; color?: string };
+
+function FocusTable({
+  title,
+  headers,
+  rows,
+  onBack,
+  onExport,
+}: {
+  title: string;
+  headers: [string, string, string];
+  rows: FocusRow[];
+  onBack: () => void;
+  onExport: () => void;
+}) {
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const current = Math.min(page, pages - 1);
+  const slice = rows.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+  const total = useMemo(() => rows.reduce((sum, r) => sum + r.amount, 0), [rows]);
+
+  return (
+    <Panel
+      title={`${title} (${NUM(rows.length)})`}
+      accent={0}
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onExport}>
+            <Download className="mr-1 size-3.5" /> CSV
+          </Button>
+          <Button size="sm" onClick={onBack}>
+            <ChevronLeft className="mr-1 size-3.5" /> Back to dashboard
+          </Button>
+        </div>
+      }
+    >
+      <div className="max-h-[620px] overflow-auto rounded-md border border-border">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-muted">
+            <tr className="text-left text-[11px] tracking-wide text-muted-foreground uppercase">
+              <th className="px-3 py-2.5 font-semibold">{headers[0]}</th>
+              <th className="px-3 py-2.5 font-semibold">{headers[1]}</th>
+              <th className="px-3 py-2.5 text-right font-semibold whitespace-nowrap">{headers[2]}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {slice.map((r, i) => (
+              <tr
+                key={`${r.a}-${r.b}-${i}`}
+                className={`border-t border-border/60 transition-colors hover:bg-accent/40 ${
+                  i % 2 ? "bg-muted/30" : ""
+                }`}
+              >
+                <td className="max-w-[320px] px-3 py-2" style={r.color ? { borderLeft: `3px solid ${r.color}` } : undefined}>
+                  <span className="flex items-center gap-2">
+                    {r.color ? (
+                      <span className="size-2.5 shrink-0 rounded-sm" style={{ background: r.color }} />
+                    ) : null}
+                    <span className="truncate font-medium" title={r.a}>
+                      {r.a}
+                    </span>
+                  </span>
+                </td>
+                <td className="max-w-[420px] px-3 py-2">
+                  <span className="block truncate" title={r.b}>
+                    {r.b}
+                  </span>
+                </td>
+                <td
+                  className={`tabular px-3 py-2 text-right whitespace-nowrap ${
+                    r.amount < 0 ? "text-destructive" : ""
+                  }`}
+                  title={INR(r.amount)}
+                >
+                  {INRC(r.amount)}
+                </td>
+              </tr>
+            ))}
+            {!slice.length ? (
+              <tr>
+                <td colSpan={3} className="px-3 py-10 text-center text-muted-foreground">
+                  No records match the current filters.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+          {rows.length ? (
+            <tfoot className="sticky bottom-0 bg-muted">
+              <tr className="border-t border-border text-sm font-semibold">
+                <td className="px-3 py-2.5" colSpan={2}>
+                  Total
+                </td>
+                <td className="tabular px-3 py-2.5 text-right whitespace-nowrap" title={INR(total)}>
+                  {INRC(total)}
+                </td>
+              </tr>
+            </tfoot>
+          ) : null}
+        </table>
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Showing {slice.length ? current * PAGE_SIZE + 1 : 0}–{current * PAGE_SIZE + slice.length} of{" "}
+          {NUM(rows.length)}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={current === 0}
+            onClick={() => setPage(current - 1)}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <span>
+            Page {current + 1} / {pages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={current >= pages - 1}
+            onClick={() => setPage(current + 1)}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+
 function LinesTable({
   rows,
   onExport,
