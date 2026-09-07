@@ -144,6 +144,8 @@ function KpiCard({
   tone = 0,
   icon: Icon,
   children,
+  onClick,
+  active = false,
 }: {
   label: string;
   value: string;
@@ -151,13 +153,31 @@ function KpiCard({
   tone?: number;
   icon: React.ComponentType<{ className?: string }>;
   children?: React.ReactNode;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
     <section
-      className="relative overflow-hidden rounded-lg border p-4 shadow-tile transition-shadow hover:shadow-lg"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={`relative overflow-hidden rounded-lg border p-4 shadow-tile transition-shadow hover:shadow-lg ${
+        onClick ? "cursor-pointer focus:outline-none" : ""
+      }`}
       style={{
-        borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
+        borderColor: `color-mix(in oklab, ${color} ${active ? 90 : 28}%, var(--color-border))`,
+        boxShadow: active ? `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` : undefined,
         background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
       }}
     >
@@ -180,6 +200,7 @@ function KpiCard({
     </section>
   );
 }
+
 
 function ShareBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
   if (!total) return null;
