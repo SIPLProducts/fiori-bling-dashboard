@@ -888,7 +888,7 @@ function FocusTable({
   return (
     <Panel
       title={`${title} (${NUM(rows.length)})`}
-      accent={0}
+      accent={1}
       actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onExport}>
