@@ -1281,25 +1281,10 @@ export function SdLiveDashboard() {
       {/* smart filter bar */}
       <section className="rounded-lg border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-card-foreground"
-              aria-expanded={showFilters}
-            >
-              <Filter className="size-4 text-primary" />
-              Smart filters
-              <Badge variant="secondary" className="ml-1">
-                {activeChips.length}
-              </Badge>
-              <ChevronDown
-                className={`size-4 text-muted-foreground transition-transform ${showFilters ? "rotate-180" : ""}`}
-              />
-            </button>
-            <Button variant="outline" size="sm" onClick={() => setFilters(emptySdFilters)}>
-              <RotateCcw className="mr-1 size-3.5" /> Reset
-            </Button>
+          <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
+            <Filter className="size-4 text-primary" />
+            Smart filters
+            <Badge variant="secondary">{activeChips.length}</Badge>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -1311,6 +1296,20 @@ export function SdLiveDashboard() {
                 className="h-9 w-64 pl-8"
               />
             </div>
+            <Button variant="outline" size="sm" onClick={() => setFilters(emptySdFilters)}>
+              <RotateCcw className="mr-1 size-3.5" /> Reset
+            </Button>
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-expanded={showFilters}
+              aria-label={showFilters ? "Collapse filters" : "Expand filters"}
+            >
+              <ChevronDown
+                className={`size-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
+            </button>
           </div>
         </div>
 
