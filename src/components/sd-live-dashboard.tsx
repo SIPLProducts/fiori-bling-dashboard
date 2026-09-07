@@ -1314,27 +1314,30 @@ export function SdLiveDashboard() {
         </div>
 
         {showFilters ? (
-          <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-2 lg:grid-cols-4">
-            <label className="text-xs text-muted-foreground">
-              Posting from
-              <Input
-                type="date"
-                value={filters.from}
-                onChange={(e) => set({ from: e.target.value })}
-                className="mt-1 h-9 pr-1"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Posting to
-              <Input
-                type="date"
-                value={filters.to}
-                onChange={(e) => set({ to: e.target.value })}
-                className="mt-1 h-9 pr-1"
-              />
-            </label>
-            {SHOW_PLANT_FILTER ? (
+          <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:col-span-2 md:grid-cols-2 lg:col-span-2">
+
               <label className="text-xs text-muted-foreground">
+                Posting from
+                <Input
+                  type="date"
+                  value={filters.from}
+                  onChange={(e) => set({ from: e.target.value })}
+                  className="mt-1 h-9 pr-0 [&::-webkit-calendar-picker-indicator]:mr-[-2px]"
+                />
+              </label>
+              <label className="text-xs text-muted-foreground">
+                Posting to
+                <Input
+                  type="date"
+                  value={filters.to}
+                  onChange={(e) => set({ to: e.target.value })}
+                  className="mt-1 h-9 pr-0 [&::-webkit-calendar-picker-indicator]:mr-[-2px]"
+                />
+              </label>
+            </div>
+            {SHOW_PLANT_FILTER ? (
+              <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
                 Plant
                 <div className="mt-1">
                   <MultiSelect
@@ -1345,7 +1348,7 @@ export function SdLiveDashboard() {
                 </div>
               </label>
             ) : null}
-            <label className="text-xs text-muted-foreground">
+            <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
               Profit centre
               <div className="mt-1">
                 <MultiSelect
@@ -1373,6 +1376,7 @@ export function SdLiveDashboard() {
             </div>
           </div>
         ) : null}
+
 
         {activeChips.length ? (
           <div className="flex flex-wrap gap-2 border-t border-border px-4 py-2">
