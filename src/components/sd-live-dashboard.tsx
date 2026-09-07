@@ -1208,6 +1208,32 @@ export function SdLiveDashboard() {
       "sd-sales-lines.csv",
     );
 
+  // grouped rows behind the clickable KPI tiles
+  const focusRows: FocusRow[] = useMemo(() => {
+    if (!focus) return [];
+    const pcMap = buildPcColors(filtered).map;
+    const map = new Map<string, FocusRow>();
+    for (const r of filtered) {
+      const pcKey = r.profitCtr || "—";
+      const a =
+        focus === "revenue"
+          ? [pcKey, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ")
+          : r.customerName || r.customer || "—";
+      const b = focus === "revenue" ? r.customerName || r.customer || "—" : r.docNo || "—";
+      const key = `${a}||${b}`;
+      const cur = map.get(key) ?? {
+        a,
+        b,
+        amount: 0,
+        color: focus === "revenue" ? (pcMap.get(pcKey) ?? "var(--color-border)") : undefined,
+      };
+      cur.amount += r.amount;
+      map.set(key, cur);
+    }
+    return [...map.values()].sort((x, y) => y.amount - x.amount);
+  }, [focus, filtered]);
+
+
   if (isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-3">
@@ -1232,30 +1258,6 @@ export function SdLiveDashboard() {
     value,
     color: pcColors.map.get(key) ?? "var(--color-border)",
   }));
-
-  // grouped rows behind the clickable KPI tiles
-  const focusRows: FocusRow[] = useMemo(() => {
-    if (!focus) return [];
-    const map = new Map<string, FocusRow>();
-    for (const r of filtered) {
-      const pcKey = r.profitCtr || "—";
-      const a =
-        focus === "revenue"
-          ? [pcKey, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ")
-          : r.customerName || r.customer || "—";
-      const b = focus === "revenue" ? r.customerName || r.customer || "—" : r.docNo || "—";
-      const key = `${a}||${b}`;
-      const cur = map.get(key) ?? {
-        a,
-        b,
-        amount: 0,
-        color: focus === "revenue" ? (pcColors.map.get(pcKey) ?? "var(--color-border)") : undefined,
-      };
-      cur.amount += r.amount;
-      map.set(key, cur);
-    }
-    return [...map.values()].sort((x, y) => y.amount - x.amount);
-  }, [focus, filtered, pcColors.map]);
 
   const focusHeaders: [string, string, string] =
     focus === "revenue"
