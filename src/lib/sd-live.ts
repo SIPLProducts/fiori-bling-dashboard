@@ -269,11 +269,14 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     }));
 
   const pcList = rank(byPc);
-  // Compare the two most recent months that both actually have revenue, so a
-  // near-empty earlier month cannot blow the percentage up.
+  // Compare the latest month with the most recent earlier month that carries a
+  // meaningful amount, so a nearly empty month cannot blow the percentage up.
   const withRevenue = monthly.filter((m) => m.revenue !== 0);
   const last = withRevenue[withRevenue.length - 1];
-  const prev = withRevenue[withRevenue.length - 2];
+  const floor = last ? Math.abs(last.revenue) * 0.05 : 0;
+  const prev = last
+    ? [...withRevenue.slice(0, -1)].reverse().find((m) => Math.abs(m.revenue) >= floor)
+    : undefined;
   const momPct = last && prev ? ((last.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100 : null;
 
   return {
