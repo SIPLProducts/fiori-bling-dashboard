@@ -58,9 +58,9 @@ export const MODULES: ModuleDef[] = [
   {
     key: "sd",
     code: "SD",
-    title: "Net Sales (ZFISALES_MIS)",
+    title: "Net Sales",
     groupKey: "sales-distribution",
-    groupTitle: "Net Sales (ZFISALES_MIS)",
+    groupTitle: "Net Sales",
     description: "",
     seed: 2101,
     trendLabel: "Net sales",
