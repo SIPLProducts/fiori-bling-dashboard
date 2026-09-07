@@ -1323,7 +1323,7 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.from}
                   onChange={(e) => set({ from: e.target.value })}
-                  className="mt-1 h-9 pr-0 [&::-webkit-calendar-picker-indicator]:mr-[-2px]"
+                  className="mt-1 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
               <label className="text-xs text-muted-foreground">
@@ -1332,7 +1332,7 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.to}
                   onChange={(e) => set({ to: e.target.value })}
-                  className="mt-1 h-9 pr-0 [&::-webkit-calendar-picker-indicator]:mr-[-2px]"
+                  className="mt-1 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
             </div>
