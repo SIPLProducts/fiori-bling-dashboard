@@ -864,7 +864,7 @@ const PAGE_SIZE = 50;
 
 /* --------------------------- focused KPI drill table ---------------------- */
 
-export type FocusRow = { a: string; b: string; amount: number; color?: string };
+export type FocusRow = { a: string; b: string; amount: number; color?: string | undefined };
 
 function FocusTable({
   title,
