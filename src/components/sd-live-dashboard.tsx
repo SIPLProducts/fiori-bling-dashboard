@@ -1458,7 +1458,9 @@ export function SdLiveDashboard() {
               value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
-              caption="Filtered postings"
+              caption="Filtered postings · click for details"
+              onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
+              active={focus === "revenue"}
             >
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
@@ -1483,7 +1485,9 @@ export function SdLiveDashboard() {
               value={NUM(analytics.kpis.customers)}
               tone={2}
               icon={Users}
-              caption="Billed in selection"
+              caption="Billed in selection · click for details"
+              onClick={() => setFocus(focus === "customers" ? null : "customers")}
+              active={focus === "customers"}
             />
             <KpiCard
               label="Sales growth"
