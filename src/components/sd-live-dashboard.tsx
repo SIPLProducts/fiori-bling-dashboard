@@ -30,6 +30,8 @@ import {
   ChevronRight,
   TrendingUp,
   TrendingDown,
+  ChevronDown,
+  BatteryCharging,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
