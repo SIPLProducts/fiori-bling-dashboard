@@ -1321,7 +1321,7 @@ export function SdLiveDashboard() {
                 type="date"
                 value={filters.from}
                 onChange={(e) => set({ from: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-9 pr-1"
               />
             </label>
             <label className="text-xs text-muted-foreground">
@@ -1330,7 +1330,7 @@ export function SdLiveDashboard() {
                 type="date"
                 value={filters.to}
                 onChange={(e) => set({ to: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-9 pr-1"
               />
             </label>
             {SHOW_PLANT_FILTER ? (
