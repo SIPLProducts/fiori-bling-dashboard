@@ -1315,7 +1315,8 @@ export function SdLiveDashboard() {
 
         {showFilters ? (
           <div className="grid gap-3 border-t border-border px-4 py-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="grid grid-cols-1 gap-3 md:col-span-2 lg:col-span-2">
+            <div className="grid grid-cols-1 gap-3 md:col-span-2 md:grid-cols-2 lg:col-span-2">
+
               <label className="text-xs text-muted-foreground">
                 Posting from
                 <Input
