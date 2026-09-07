@@ -1233,6 +1233,47 @@ export function SdLiveDashboard() {
     color: pcColors.map.get(key) ?? "var(--color-border)",
   }));
 
+  // grouped rows behind the clickable KPI tiles
+  const focusRows: FocusRow[] = useMemo(() => {
+    if (!focus) return [];
+    const map = new Map<string, FocusRow>();
+    for (const r of filtered) {
+      const pcKey = r.profitCtr || "—";
+      const a =
+        focus === "revenue"
+          ? [pcKey, r.pcShortName || r.profitCtrName].filter(Boolean).join(" · ")
+          : r.customerName || r.customer || "—";
+      const b = focus === "revenue" ? r.customerName || r.customer || "—" : r.docNo || "—";
+      const key = `${a}||${b}`;
+      const cur = map.get(key) ?? {
+        a,
+        b,
+        amount: 0,
+        color: focus === "revenue" ? (pcColors.map.get(pcKey) ?? "var(--color-border)") : undefined,
+      };
+      cur.amount += r.amount;
+      map.set(key, cur);
+    }
+    return [...map.values()].sort((x, y) => y.amount - x.amount);
+  }, [focus, filtered, pcColors.map]);
+
+  const focusHeaders: [string, string, string] =
+    focus === "revenue"
+      ? ["Profit centre", "Customer name", "Amount in local cur."]
+      : ["Customer name", "Document No", "Amount in local cur."];
+
+  const exportFocus = () =>
+    downloadCsv(
+      focusRows.map((r) => ({
+        [focusHeaders[0]]: r.a,
+        [focusHeaders[1]]: r.b,
+        [focusHeaders[2]]: Math.round(r.amount),
+      })),
+      focus === "revenue" ? "net-sales-by-profit-centre.csv" : "net-sales-by-customer-document.csv",
+    );
+
+
+
   return (
     <div className="space-y-4">
       {/* smart filter bar */}
