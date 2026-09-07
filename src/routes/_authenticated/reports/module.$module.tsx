@@ -84,9 +84,9 @@ function ModuleReportPage() {
 
   if (live) {
     return (
-      <ReportShell title={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)} description={def.description}>
+      <ReportShell title="Net Sales" description={def.description}>
         {!rolesLoading && !allowed ? (
-          <AccessDenied area={(def.title.includes("(") ? def.title : `${def.code} — ${def.title}`)} />
+          <AccessDenied area="Net Sales" />
         ) : (
           <SdLiveDashboard />
         )}
