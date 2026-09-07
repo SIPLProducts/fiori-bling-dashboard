@@ -1520,6 +1520,16 @@ export function SdLiveDashboard() {
             ) : null}
           </div>
 
+          {focus ? (
+            <FocusTable
+              title={focus === "revenue" ? "Total Sales by profit centre & customer" : "Billed Customers by document"}
+              headers={focusHeaders}
+              rows={focusRows}
+              onBack={() => setFocus(null)}
+              onExport={exportFocus}
+            />
+          ) : (
+            <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Panel title="Top 10 Profit Centres" accent={1} expandable>
               {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
@@ -1691,6 +1701,8 @@ export function SdLiveDashboard() {
             pcColors={pcColors.map}
             pcLegend={pcLegend}
           />
+            </>
+          )}
         </>
       )}
     </div>
