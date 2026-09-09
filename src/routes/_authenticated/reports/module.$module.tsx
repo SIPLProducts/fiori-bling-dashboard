@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { LayoutDashboard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
