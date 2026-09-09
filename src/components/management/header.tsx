@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { CalendarDays, ChevronDown, Filter, Menu } from "lucide-react";
-import { DATE_RANGES, FILTER_FIELDS } from "@/lib/management-data";
+import {
+  FILTER_DEFS,
+  RANGE_PRESETS,
+  emptyMgmtFilters,
+  type MgmtFilters,
+  type RangePreset,
+} from "@/lib/management-live";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +20,49 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  range: string;
-  onRangeChange: (range: string) => void;
+  preset: RangePreset;
+  onPresetChange: (preset: RangePreset) => void;
+  rangeLabel: string;
+  filters: MgmtFilters;
+  onFiltersChange: (filters: MgmtFilters) => void;
+  options: Record<string, string[]>;
   onMenuClick: () => void;
 };
 
 const controlClass =
   "flex h-10 items-center gap-2 rounded-lg border border-[#E5EAF1] bg-white px-3 text-[13px] font-medium text-[#101B3D] transition-colors hover:bg-[#F7F9FC]";
 
-export function DashboardHeader({ range, onRangeChange, onMenuClick }: Props) {
+const ALL = "__all__";
+
+export function DashboardHeader({
+  preset,
+  onPresetChange,
+  rangeLabel,
+  filters,
+  onFiltersChange,
+  options,
+  onMenuClick,
+}: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState<MgmtFilters>(filters);
+
+  const open = (next: boolean) => {
+    if (next) setDraft(filters);
+    setFiltersOpen(next);
+  };
+
+  const activeCount = FILTER_DEFS.filter((def) => filters[def.key]).length;
 
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#E5EAF1] bg-[#F7F9FC] px-[18px] py-4">
@@ -45,7 +79,7 @@ export function DashboardHeader({ range, onRangeChange, onMenuClick }: Props) {
           <h1 className="truncate text-[24px] font-bold leading-tight text-[#101B3D]">
             Management Sales Dashboard
           </h1>
-          <p className="truncate text-[13px] text-[#68738A]">Executive Overview</p>
+          <p className="truncate text-[13px] text-[#68738A]">Executive Overview · {rangeLabel}</p>
         </div>
       </div>
 
@@ -53,50 +87,96 @@ export function DashboardHeader({ range, onRangeChange, onMenuClick }: Props) {
         <DropdownMenu>
           <DropdownMenuTrigger className={controlClass}>
             <CalendarDays className="h-4 w-4 text-[#68738A]" />
-            <span className="hidden sm:inline">{range}</span>
+            <span className="hidden sm:inline">{preset}</span>
             <ChevronDown className="h-4 w-4 text-[#68738A]" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            {DATE_RANGES.map((option) => (
-              <DropdownMenuItem key={option} onSelect={() => onRangeChange(option)}>
+            {RANGE_PRESETS.map((option) => (
+              <DropdownMenuItem
+                key={option}
+                onSelect={() => {
+                  onPresetChange(option);
+                  if (option === "Custom range") open(true);
+                }}
+              >
                 {option}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button type="button" className={controlClass} onClick={() => setFiltersOpen(true)}>
+        <button type="button" className={controlClass} onClick={() => open(true)}>
           <Filter className="h-4 w-4 text-[#68738A]" />
-          <span className="hidden sm:inline">Filters</span>
+          <span className="hidden sm:inline">Filters{activeCount ? ` (${activeCount})` : ""}</span>
         </button>
       </div>
 
-      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={filtersOpen} onOpenChange={open}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Filters</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
-            {FILTER_FIELDS.map((field) => (
-              <div key={field} className="min-w-0">
+            <div className="min-w-0">
+              <label className="mb-1 block text-[12px] font-medium text-[#68738A]">
+                Posting from
+              </label>
+              <Input
+                type="date"
+                value={draft.from}
+                onChange={(event) => setDraft({ ...draft, from: event.target.value })}
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="mb-1 block text-[12px] font-medium text-[#68738A]">Posting to</label>
+              <Input
+                type="date"
+                value={draft.to}
+                onChange={(event) => setDraft({ ...draft, to: event.target.value })}
+              />
+            </div>
+
+            {FILTER_DEFS.map((def) => (
+              <div key={def.key} className="min-w-0">
                 <label className="mb-1 block text-[12px] font-medium text-[#68738A]">
-                  {field}
+                  {def.label}
                 </label>
-                <Input
-                  value={filters[field] ?? ""}
-                  placeholder={`Enter ${field}`}
-                  onChange={(event) =>
-                    setFilters((prev) => ({ ...prev, [field]: event.target.value }))
+                <Select
+                  value={draft[def.key] || ALL}
+                  onValueChange={(value) =>
+                    setDraft({ ...draft, [def.key]: value === ALL ? "" : value })
                   }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={`All ${def.label}`} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    <SelectItem value={ALL}>All {def.label}</SelectItem>
+                    {(options[def.key] ?? []).map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFilters({})}>
+            <Button
+              variant="outline"
+              onClick={() => setDraft({ ...emptyMgmtFilters, from: draft.from, to: draft.to })}
+            >
               Reset
             </Button>
-            <Button onClick={() => setFiltersOpen(false)}>Apply</Button>
+            <Button
+              onClick={() => {
+                onFiltersChange(draft);
+                setFiltersOpen(false);
+              }}
+            >
+              Apply
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
