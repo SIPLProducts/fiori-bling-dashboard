@@ -103,14 +103,34 @@ function NetSalesDrilldown() {
       "net-sales-posting-lines.csv",
     );
 
+  const kpiLabels: Record<string, string> = {
+    sales: "Total Sales (Amount)",
+    growth: "Sales Growth %",
+    qty: "Total Quantity",
+    cust: "Active Customers",
+    ah: "Revenue / AH",
+    arpc: "Avg. Revenue / Customer",
+  };
+  const kpiLabel = kpiLabels[search.kpi] ?? "";
+  const fromManagement = search.src === "management";
+
   return (
-    <ReportShell title="Net Sales Drill-down" description="Detailed SAP posting lines">
+    <ReportShell
+      title={kpiLabel ? `${kpiLabel} — Drill-down` : "Net Sales Drill-down"}
+      description="Detailed SAP posting lines by month and customer"
+    >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button asChild variant="outline" size="sm">
-            <Link to="/reports/module/$module" params={{ module: "sd" }}>
-              <ChevronLeft /> Back to Net Sales
-            </Link>
+            {fromManagement ? (
+              <Link to="/management-dashboard">
+                <ChevronLeft /> Back to Dashboard
+              </Link>
+            ) : (
+              <Link to="/reports/module/$module" params={{ module: "sd" }}>
+                <ChevronLeft /> Back to Net Sales
+              </Link>
+            )}
           </Button>
           <div className="relative w-full sm:w-80">
             <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
