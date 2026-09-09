@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle, AlertTriangle } from "lucide-react";
-import { managementAlerts, type ManagementAlert } from "@/lib/management-data";
+import { type ManagementAlert } from "@/lib/management-data";
 import {
   Dialog,
   DialogContent,
@@ -35,9 +35,9 @@ function AlertRow({ alert, last }: { alert: ManagementAlert; last: boolean }) {
   );
 }
 
-export function ManagementAlerts() {
+export function ManagementAlerts({ alerts }: { alerts: ManagementAlert[] }) {
   const [open, setOpen] = useState(false);
-  const visible = managementAlerts.slice(0, 5);
+  const visible = alerts.slice(0, 5);
 
   return (
     <Card
@@ -64,11 +64,11 @@ export function ManagementAlerts() {
             <DialogTitle>Management Alerts</DialogTitle>
           </DialogHeader>
           <ul>
-            {managementAlerts.map((alert, index) => (
+            {alerts.map((alert, index) => (
               <AlertRow
                 key={alert.id}
                 alert={alert}
-                last={index === managementAlerts.length - 1}
+                last={index === alerts.length - 1}
               />
             ))}
           </ul>

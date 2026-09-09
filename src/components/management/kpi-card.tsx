@@ -8,7 +8,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { COMPARISON_LABEL, type KpiDatum } from "@/lib/management-data";
+import { type KpiDatum } from "@/lib/management-data";
 
 const ICONS = {
   rupee: IndianRupee,
@@ -19,7 +19,13 @@ const ICONS = {
   user: User,
 } as const;
 
-export function KpiCard({ kpi }: { kpi: KpiDatum }) {
+export function KpiCard({
+  kpi,
+  comparisonLabel,
+}: {
+  kpi: KpiDatum;
+  comparisonLabel: string;
+}) {
   const Icon = ICONS[kpi.icon];
   const positive = kpi.delta >= 0;
   const Arrow = positive ? ArrowUpRight : ArrowDownRight;
@@ -47,7 +53,7 @@ export function KpiCard({ kpi }: { kpi: KpiDatum }) {
         <span className={`font-semibold ${positive ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
           {Math.abs(kpi.delta).toFixed(1)}%
         </span>
-        <span className="truncate text-[#68738A]">{COMPARISON_LABEL}</span>
+        <span className="truncate text-[#68738A]">{comparisonLabel}</span>
       </div>
     </div>
   );
