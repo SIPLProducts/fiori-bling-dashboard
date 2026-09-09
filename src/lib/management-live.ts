@@ -427,7 +427,7 @@ export function buildManagementView(
   /* ---------------------- live period-over-period alerts ------------------- */
   const alerts: ManagementAlert[] = [];
   const signedPct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
-  const amountLabel = (v: number) => money(v);
+  const amountLabel = (v: number) => `${v < 0 ? "−" : ""}${money(Math.abs(v))}`;
   const comparisonDetail = `${currentLabel} compared with ${previousLabel}`;
 
   if (!previous.length) {
@@ -452,13 +452,14 @@ export function buildManagementView(
         detail: comparisonDetail,
       });
     } else {
+      const unchanged = Math.abs(cur.amount - prv.amount) < 1;
       alerts.push({
         id: "sales-change",
-        tone: growthPct < 0 ? "negative" : "positive",
+        tone: unchanged ? "warning" : growthPct < 0 ? "negative" : "positive",
         category: "Sales",
-        before: `Total sales ${growthPct < 0 ? "declined" : "increased"} by `,
-        highlight: signedPct(growthPct),
-        after: ` (${amountLabel(cur.amount - prv.amount)}) against the previous period.`,
+        before: unchanged ? "Total sales are " : `Total sales ${growthPct < 0 ? "declined" : "increased"} by `,
+        highlight: unchanged ? "unchanged" : signedPct(growthPct),
+        after: unchanged ? " against the previous period." : ` (${amountLabel(cur.amount - prv.amount)}) against the previous period.`,
         detail: comparisonDetail,
       });
     }
