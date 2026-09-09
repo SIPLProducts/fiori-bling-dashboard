@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Sidebar, type NavId, NAV_ITEMS } from "./sidebar";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
@@ -12,12 +13,45 @@ import {
   TopCustomers,
   TopProfitCentres,
 } from "./charts";
-import { kpiData } from "@/lib/management-data";
+import {
+  buildManagementView,
+  dataDateRange,
+  emptyMgmtFilters,
+  fetchSdLines,
+  filterOptions,
+  presetRange,
+  type MgmtFilters,
+  type RangePreset,
+} from "@/lib/management-live";
 
 export function ManagementDashboard() {
   const [active, setActive] = useState<NavId>("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [range, setRange] = useState("Jan 2025 - Aug 2026");
+  const [preset, setPreset] = useState<RangePreset>("All postings");
+  const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
+
+  const { data: rows, isLoading, error } = useQuery({
+    queryKey: ["management-sd-lines"],
+    queryFn: fetchSdLines,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
+  const options = useMemo(() => filterOptions(rows ?? []), [rows]);
+
+  // Keep the posting-date window in step with the chosen preset.
+  useEffect(() => {
+    if (!bounds.min || preset === "Custom range") return;
+    const range = presetRange(preset, bounds);
+    setFilters((prev) =>
+      prev.from === range.from && prev.to === range.to ? prev : { ...prev, ...range },
+    );
+  }, [preset, bounds.min, bounds.max]);
+
+  const view = useMemo(
+    () => (rows ? buildManagementView(rows, filters) : null),
+    [rows, filters],
+  );
 
   const activeLabel =
     active === "settings"
@@ -38,8 +72,16 @@ export function ManagementDashboard() {
 
       <div className="lg:pl-[116px]">
         <DashboardHeader
-          range={range}
-          onRangeChange={setRange}
+          preset={preset}
+          onPresetChange={setPreset}
+          rangeLabel={view ? `${view.currentLabel} · ${view.lineCount.toLocaleString("en-IN")} postings` : "Loading postings…"}
+          filters={filters}
+          onFiltersChange={(next) => {
+            const changedDates = next.from !== filters.from || next.to !== filters.to;
+            if (changedDates) setPreset("Custom range");
+            setFilters(next);
+          }}
+          options={options}
           onMenuClick={() => setMenuOpen((prev) => !prev)}
         />
 
@@ -53,29 +95,43 @@ export function ManagementDashboard() {
                 </p>
               </div>
             </div>
+          ) : error ? (
+            <div className="grid min-h-[40vh] place-items-center rounded-xl border border-[#E5EAF1] bg-white text-[13px] text-[#DC2626]">
+              Sales postings could not be loaded. Please try again.
+            </div>
+          ) : isLoading || !view ? (
+            <div className="grid min-h-[40vh] place-items-center rounded-xl border border-[#E5EAF1] bg-white text-[13px] text-[#68738A]">
+              Loading sales postings…
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {kpiData.map((kpi) => (
-                  <KpiCard key={kpi.id} kpi={kpi} />
+                {view.kpis.map((kpi) => (
+                  <KpiCard key={kpi.id} kpi={kpi} comparisonLabel={view.comparisonLabel} />
                 ))}
               </div>
 
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-[45fr_27fr_28fr]">
-                <SalesTrendChart />
-                <SegmentDonutChart />
-                <TopProfitCentres />
+                <SalesTrendChart
+                  monthly={view.trendMonthly}
+                  quarterly={view.trendQuarterly}
+                  ytd={view.trendYtd}
+                  currentLabel={view.currentLabel}
+                  previousLabel={view.previousLabel}
+                />
+                <SegmentDonutChart data={view.segments} totalCr={view.totalCr} />
+                <TopProfitCentres data={view.profitCentres} />
               </div>
 
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-                <TopCustomers />
-                <ParetoChart />
-                <MainGroupTreemap />
+                <TopCustomers data={view.customers} />
+                <ParetoChart data={view.pareto} />
+                <MainGroupTreemap data={view.mainGroups} />
               </div>
 
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <SalesQuantityChart />
-                <ManagementAlerts />
+                <SalesQuantityChart data={view.salesQuantity} />
+                <ManagementAlerts alerts={view.alerts} />
               </div>
             </div>
           )}
