@@ -1259,6 +1259,8 @@ export function SdLiveDashboard() {
   const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
   const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
+  const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
+
 
 
   const { data: lines, isLoading } = useQuery({
