@@ -65,12 +65,14 @@ export function SalesTrendChart({
   ytd,
   currentLabel,
   previousLabel,
+  onMonthSelect,
 }: {
   monthly: TrendPoint[];
   quarterly: TrendPoint[];
   ytd: TrendPoint[];
   currentLabel: string;
   previousLabel: string;
+  onMonthSelect?: (month: string) => void;
 }) {
   const [mode, setMode] = useState<TrendMode>("Monthly");
   const data = mode === "Monthly" ? monthly : mode === "Quarterly" ? quarterly : ytd;
@@ -100,7 +102,7 @@ export function SalesTrendChart({
     >
       <div className="h-[248px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onClick={(state) => { if (mode === "Monthly" && state?.activeLabel) onMonthSelect?.(String(state.activeLabel)); }} className={mode === "Monthly" && onMonthSelect ? "cursor-pointer" : ""}>
             <CartesianGrid stroke="#EEF2F8" vertical={false} />
             <XAxis dataKey="month" tick={axisStyle} tickLine={false} axisLine={{ stroke: "#E5EAF1" }} />
             <YAxis
@@ -203,10 +205,12 @@ export function HorizontalBarChart({
   title,
   data,
   color,
+  onSelect,
 }: {
   title: string;
   data: NamedValue[];
   color: string;
+  onSelect?: (name: string) => void;
 }) {
   const max = Math.max(1, ...data.map((row) => row.value));
   return (
@@ -216,7 +220,8 @@ export function HorizontalBarChart({
     >
       <ul className="space-y-2">
         {data.map((row) => (
-          <li key={row.name} className="grid grid-cols-[110px_minmax(0,1fr)_54px] items-center gap-2">
+          <li key={row.name}>
+            <button type="button" onClick={() => onSelect?.(row.name)} className={`grid w-full grid-cols-[110px_minmax(0,1fr)_54px] items-center gap-2 rounded-sm text-left ${onSelect ? "cursor-pointer hover:bg-[#F7F9FC] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#1769E8]" : "cursor-default"}`}>
             <span className="truncate text-[11px] text-[#101B3D]" title={row.name}>
               {row.name}
             </span>
@@ -229,6 +234,7 @@ export function HorizontalBarChart({
             <span className="text-right text-[11px] font-semibold text-[#101B3D]">
               {row.value.toFixed(2)}
             </span>
+            </button>
           </li>
         ))}
       </ul>
@@ -364,8 +370,8 @@ export function TopProfitCentres({ data }: { data: NamedValue[] }) {
   );
 }
 
-export function TopCustomers({ data }: { data: NamedValue[] }) {
+export function TopCustomers({ data, onSelect }: { data: NamedValue[]; onSelect?: (name: string) => void }) {
   return (
-    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} />
+    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} {...(onSelect ? { onSelect } : {})} />
   );
 }

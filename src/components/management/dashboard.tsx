@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Sidebar, type NavId, NAV_ITEMS } from "./sidebar";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
@@ -30,6 +31,7 @@ import {
 } from "@/lib/shared-sales-filters";
 
 export function ManagementDashboard() {
+  const navigate = useNavigate();
   const [active, setActive] = useState<NavId>("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
   const [preset, setPreset] = useState<RangePreset>("All postings");
@@ -69,6 +71,31 @@ export function ManagementDashboard() {
     () => (rows ? buildManagementView(rows, filters) : null),
     [rows, filters],
   );
+  const openDrilldown = (selection: { month?: string; customer?: string }) => {
+    let month = "";
+    if (selection.month) {
+      const match = selection.month.match(/^([A-Za-z]{3})\s+(\d{2,4})$/);
+      const yearPart = match?.[2];
+      const year = yearPart ? (yearPart.length === 2 ? `20${yearPart}` : yearPart) : filters.to.slice(0, 4);
+      const parsed = new Date(`${match?.[1] ?? selection.month} 1, ${year}`);
+      if (!Number.isNaN(parsed.getTime())) month = `${year}-${String(parsed.getMonth() + 1).padStart(2, "0")}`;
+    }
+    navigate({
+      to: "/reports/sd/drilldown",
+      search: {
+        month,
+        customer: selection.customer ?? filters.customer,
+        from: filters.from,
+        to: filters.to,
+        salesType: filters.salesType,
+        segments: filters.businessSegment ? [filters.businessSegment] : [],
+        profitCentres: filters.profitCentre ? [filters.profitCentre] : [],
+        plants: filters.plant ? [filters.plant] : [],
+        q: "",
+        page: 1,
+      },
+    });
+  };
 
   const activeLabel =
     active === "settings"
@@ -140,13 +167,14 @@ export function ManagementDashboard() {
                   ytd={view.trendYtd}
                   currentLabel={view.currentLabel}
                   previousLabel={view.previousLabel}
+                  onMonthSelect={(month) => openDrilldown({ month })}
                 />
                 <SegmentDonutChart data={view.segments} totalCr={view.totalCr} />
                 <TopProfitCentres data={view.profitCentres} />
               </div>
 
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-                <TopCustomers data={view.customers} />
+                <TopCustomers data={view.customers} onSelect={(customer) => openDrilldown({ customer })} />
                 <ParetoChart data={view.pareto} />
                 <MainGroupTreemap data={view.mainGroups} />
               </div>

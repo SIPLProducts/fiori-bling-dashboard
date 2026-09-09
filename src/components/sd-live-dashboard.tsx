@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Area,
   Bar,
@@ -481,10 +482,12 @@ function BarList({
   items,
   tone = 0,
   full = false,
+  onSelect,
 }: {
   items: { name: string; value: number; count?: number }[];
   tone?: number;
   full?: boolean;
+  onSelect?: (name: string) => void;
 }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
@@ -499,7 +502,7 @@ function BarList({
         {full ? <span className="w-20 shrink-0 text-right">Records</span> : null}
       </div>
       {items.map((item) => (
-        <div key={item.name} className={`flex items-center gap-3 ${full ? "min-h-0 flex-1" : ""}`} title={tip(item)}>
+        <button type="button" key={item.name} onClick={() => onSelect?.(item.name)} className={`flex w-full items-center gap-3 text-left ${full ? "min-h-0 flex-1" : ""} ${onSelect ? "cursor-pointer rounded-sm hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" : "cursor-default"}`} title={tip(item)}>
           <span
             className="w-[34%] shrink-0 truncate whitespace-nowrap text-[11px] text-muted-foreground"
             title={tip(item)}
@@ -531,7 +534,7 @@ function BarList({
               {item.count != null ? item.count.toLocaleString("en-IN") : "—"}
             </span>
           ) : null}
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -1296,6 +1299,7 @@ function LinesTable({
 /* -------------------------------- dashboard ------------------------------- */
 
 export function SdLiveDashboard() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
@@ -1457,6 +1461,25 @@ export function SdLiveDashboard() {
 
   const trend = buildTrend(analytics.monthly, trendMode);
   const salesVsQty = latestYearMonths(analytics.monthly);
+  const openDrilldown = (selection: { month?: string; customer?: string }) => {
+    const monthIndex = selection.month ? MONTHS.indexOf(selection.month.toUpperCase().slice(0, 3)) : -1;
+    const month = monthIndex >= 0 && trend.cy ? `${trend.cy}-${String(monthIndex + 1).padStart(2, "0")}` : "";
+    navigate({
+      to: "/reports/sd/drilldown",
+      search: {
+        month,
+        customer: selection.customer ?? "",
+        from: filters.from,
+        to: filters.to,
+        salesType: salesTypeTab === "All" ? "" : salesTypeTab === "Services" ? "Service" : salesTypeTab,
+        segments: filters.segments,
+        profitCentres: filters.profitCentres,
+        plants: filters.plants,
+        q: "",
+        page: 1,
+      },
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -1806,7 +1829,7 @@ export function SdLiveDashboard() {
                   </div>
                   <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
                     <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
-                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }}>
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }} onClick={(state) => { if (trendMode === "Monthly" && state?.activeLabel) openDrilldown({ month: String(state.activeLabel) }); }} className={trendMode === "Monthly" ? "cursor-pointer" : ""}>
                         <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
                         <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
                         <YAxis
@@ -1854,7 +1877,7 @@ export function SdLiveDashboard() {
           {/* Row 3 — customers, pareto, main group */}
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Top 10 Customers by Amount" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} />}
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
             </Panel>
 
             <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
