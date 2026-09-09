@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
+import { Route as AuthenticatedManagementDashboardRouteImport } from './routes/_authenticated/management-dashboard'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
 import { Route as AuthenticatedAdminSapApiRouteImport } from './routes/_authenticated/admin/sap-api'
@@ -49,6 +50,12 @@ const AuthenticatedLaunchpadRoute = AuthenticatedLaunchpadRouteImport.update({
   path: '/launchpad',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedManagementDashboardRoute =
+  AuthenticatedManagementDashboardRouteImport.update({
+    id: '/management-dashboard',
+    path: '/management-dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPermissionsRoute =
   AuthenticatedAdminPermissionsRouteImport.update({
     id: '/admin/permissions',
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -192,6 +201,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
+  '/_authenticated/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/launchpad'
+    | '/management-dashboard'
     | '/admin/permissions'
     | '/admin/roles'
     | '/admin/sap-api'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/launchpad'
+    | '/management-dashboard'
     | '/admin/permissions'
     | '/admin/roles'
     | '/admin/sap-api'
@@ -258,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/launchpad'
+    | '/_authenticated/management-dashboard'
     | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/sap-api'
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/launchpad'
       fullPath: '/launchpad'
       preLoaderRoute: typeof AuthenticatedLaunchpadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/management-dashboard': {
+      id: '/_authenticated/management-dashboard'
+      path: '/management-dashboard'
+      fullPath: '/management-dashboard'
+      preLoaderRoute: typeof AuthenticatedManagementDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/permissions': {
@@ -431,6 +451,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
+  AuthenticatedManagementDashboardRoute: typeof AuthenticatedManagementDashboardRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSapApiRoute: typeof AuthenticatedAdminSapApiRoute
@@ -449,6 +470,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLaunchpadRoute: AuthenticatedLaunchpadRoute,
+  AuthenticatedManagementDashboardRoute: AuthenticatedManagementDashboardRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSapApiRoute: AuthenticatedAdminSapApiRoute,

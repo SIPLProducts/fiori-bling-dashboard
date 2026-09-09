@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   ComposedChart,
@@ -360,6 +359,3 @@ export function TopCustomers() {
   );
 }
 
-export function BarChartPlaceholder() {
-  return <BarChart data={[]} />;
-}
