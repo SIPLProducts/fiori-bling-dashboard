@@ -79,6 +79,15 @@ function axisCompact(value: number) {
 /** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
 const INRC = (value: number) => `₹${compact(value)}`;
 
+/** Quantity display in Indian units: Crores / Lakhs / thousands. */
+function QTY(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}\u00A0Cr`;
+  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}\u00A0Lakhs`;
+  return NUM(value);
+}
+
+
 /* ---- UI visibility flags: hidden elements keep their code intact; flip ----
  * ---- a flag back to true to show the element again. ---------------------- */
 const SHOW_QUANTITY_TILE = false;
