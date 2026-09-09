@@ -120,20 +120,12 @@ export type AlertTone = "negative" | "warning" | "positive";
 export type ManagementAlert = {
   id: string;
   tone: AlertTone;
+  category: "Sales" | "Customer" | "Profit Centre";
   before: string;
   highlight: string;
   after: string;
+  detail?: string;
 };
-
-export const managementAlerts: ManagementAlert[] = [
-  { id: "a1", tone: "negative", before: "Segment E sales declined by ", highlight: "2.3%", after: " compared to previous period." },
-  { id: "a2", tone: "warning", before: "Top 5 customers contribute to ", highlight: "27%", after: " of total sales." },
-  { id: "a3", tone: "warning", before: "Profit Centre 07 sales declined by ", highlight: "1.2%", after: " compared to previous period." },
-  { id: "a4", tone: "positive", before: "Segment A achieved highest growth of ", highlight: "14.2%", after: "." },
-  { id: "a5", tone: "positive", before: "Revenue per AH improved by ", highlight: "9.5%", after: " compared to previous period." },
-  { id: "a6", tone: "warning", before: "Main Group D contribution dropped to ", highlight: "13.3%", after: " of total sales." },
-  { id: "a7", tone: "positive", before: "Quantity sold in Jul grew by ", highlight: "17.2%", after: " month on month." },
-];
 
 export const COMPARISON_LABEL = "vs Jan 2024 - Aug 2025";
 

@@ -12,25 +12,25 @@ import { Card } from "./charts";
 function AlertRow({ alert, last }: { alert: ManagementAlert; last: boolean }) {
   const tone =
     alert.tone === "negative"
-      ? { Icon: ArrowDownCircle, color: "#DC2626" }
+      ? { Icon: ArrowDownCircle, icon: "text-destructive", highlight: "text-destructive" }
       : alert.tone === "warning"
-        ? { Icon: AlertTriangle, color: "#F59E0B" }
-        : { Icon: ArrowUpCircle, color: "#16A34A" };
-  const highlightColor =
-    alert.tone === "positive" ? "#16A34A" : alert.tone === "warning" ? "#EA580C" : "#DC2626";
+        ? { Icon: AlertTriangle, icon: "text-warning", highlight: "text-warning-foreground" }
+        : { Icon: ArrowUpCircle, icon: "text-success", highlight: "text-success" };
 
   return (
     <li
-      className={`flex items-start gap-2.5 py-2.5 ${last ? "" : "border-b border-[#EEF2F8]"}`}
+      className={`flex items-start gap-2.5 py-2.5 ${last ? "" : "border-b border-border/70"}`}
     >
-      <tone.Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: tone.color }} />
-      <p className="min-w-0 text-[12.5px] leading-relaxed text-[#101B3D]">
-        {alert.before}
-        <span className="font-semibold" style={{ color: highlightColor }}>
-          {alert.highlight}
-        </span>
-        {alert.after}
-      </p>
+      <tone.Icon className={`mt-0.5 h-4 w-4 shrink-0 ${tone.icon}`} />
+      <div className="min-w-0">
+        <p className="mb-0.5 text-[10px] font-semibold uppercase text-muted-foreground">{alert.category}</p>
+        <p className="break-words text-[12.5px] leading-relaxed text-card-foreground">
+          {alert.before}
+          <span className={`font-semibold ${tone.highlight}`}>{alert.highlight}</span>
+          {alert.after}
+        </p>
+        {alert.detail ? <p className="mt-0.5 break-words text-[10.5px] text-muted-foreground">{alert.detail}</p> : null}
+      </div>
     </li>
   );
 }
@@ -46,7 +46,7 @@ export function ManagementAlerts({ alerts }: { alerts: ManagementAlert[] }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-[12px] font-semibold text-[#1769E8] hover:underline"
+          className="text-[12px] font-semibold text-primary hover:underline"
         >
           View All
         </button>
