@@ -79,7 +79,17 @@ function NetSalesDrilldown() {
   const visible = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const quantity = rows.reduce((sum, row) => sum + row.quantity, 0);
-  const context = [search.month, search.customer, ...search.segments, ...search.profitCentres].filter(Boolean);
+  const kpiLabels: Record<string, string> = {
+    sales: "Total Sales (Amount)",
+    growth: "Sales Growth %",
+    qty: "Total Quantity",
+    cust: "Active Customers",
+    ah: "Revenue / AH",
+    arpc: "Avg. Revenue / Customer",
+  };
+  const kpiLabel = kpiLabels[search.kpi] ?? "";
+  const fromManagement = search.src === "management";
+  const context = [kpiLabel, search.month, search.customer, ...search.segments, ...search.profitCentres].filter(Boolean);
 
   const exportRows = () =>
     downloadCsv(
