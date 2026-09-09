@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, Maximize2 } from "lucide-react";
+import { Home, Maximize2 } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -28,9 +28,11 @@ export function ReportShell({
         <div className="mx-auto max-w-[1400px] px-4 py-4">
           <Link
             to="/launchpad"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+            aria-label="Home"
+            title="Home"
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
           >
-            <ChevronLeft className="size-3.5" /> Launchpad
+            <Home className="size-5" />
           </Link>
           {title ? <h1 className="mt-1 text-2xl font-light text-foreground">{title}</h1> : null}
           {tcode ? (
