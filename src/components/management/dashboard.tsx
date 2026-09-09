@@ -116,20 +116,10 @@ export function ManagementDashboard() {
             });
           }}
           options={options}
-          onMenuClick={() => setMenuOpen((prev) => !prev)}
         />
 
         <main className="max-h-[calc(100vh-78px)] overflow-y-auto px-[18px] py-4">
-          {active !== "dashboard" ? (
-            <div className="grid min-h-[60vh] place-items-center rounded-xl border border-[#E5EAF1] bg-white">
-              <div className="text-center">
-                <p className="text-[18px] font-semibold text-[#101B3D]">{activeLabel}</p>
-                <p className="mt-1 text-[13px] text-[#68738A]">
-                  This section is coming soon. Select Dashboard to return to the executive overview.
-                </p>
-              </div>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="grid min-h-[40vh] place-items-center rounded-xl border border-[#E5EAF1] bg-white text-[13px] text-[#DC2626]">
               Sales postings could not be loaded. Please try again.
             </div>
