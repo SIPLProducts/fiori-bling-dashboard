@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, LogOut, Search, User } from "lucide-react";
+import { Bell, HelpCircle, Home, LogOut, Search, User } from "lucide-react";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
 import hblLogoAsset from "@/assets/hbl-logo.png.asset.json";
