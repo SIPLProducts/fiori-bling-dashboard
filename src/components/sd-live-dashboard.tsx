@@ -104,6 +104,22 @@ const SHOW_PLANT_FILTER = false;
 const PLANT_OPTIONS_EXCLUDED = ["1200"];
 const SALES_TYPE_TABS = ["All", "Domestic", "Services", "Exports"] as const;
 
+/** KPI tiles can be reordered by the user via drag & drop; order is kept per browser. */
+const KPI_TILE_IDS = ["totalSales", "salesGrowth", "totalQuantity", "activeCustomers", "revenuePerAh", "avgRevenueCustomer"] as const;
+type KpiTileId = (typeof KPI_TILE_IDS)[number];
+const KPI_ORDER_STORAGE_KEY = "sd-kpi-tile-order";
+
+function readKpiOrder(): KpiTileId[] {
+  try {
+    const raw = window.localStorage.getItem(KPI_ORDER_STORAGE_KEY);
+    const saved = raw ? (JSON.parse(raw) as string[]) : [];
+    const valid = saved.filter((id): id is KpiTileId => (KPI_TILE_IDS as readonly string[]).includes(id));
+    return [...valid, ...KPI_TILE_IDS.filter((id) => !valid.includes(id))];
+  } catch {
+    return [...KPI_TILE_IDS];
+  }
+}
+
 const KPI_TONES = [
   "var(--kpi-1)",
   "var(--kpi-2)",
