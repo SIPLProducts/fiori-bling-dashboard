@@ -231,8 +231,16 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const bySub = new Map<string, Map<string, NamedTotal>>();
   const byMonth = new Map<
     string,
-    { month: string; revenue: number; quantity: number; docs: Set<string> }
+    {
+      month: string;
+      revenue: number;
+      quantity: number;
+      ah: number;
+      docs: Set<string>;
+      customers: Set<string>;
+    }
   >();
+
 
 
   const docs = new Set<string>();
