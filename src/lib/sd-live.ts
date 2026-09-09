@@ -161,6 +161,8 @@ function add(map: Map<string, NamedTotal>, name: string, value: number) {
   map.set(key, cur);
 }
 
+export type Delta = { pct: number | null; label: string };
+
 export type SdAnalytics = {
   kpis: {
     revenue: number;
@@ -172,11 +174,23 @@ export type SdAnalytics = {
     quantity: number;
     totalAh: number;
     avgRealization: number;
+    revenuePerAh: number;
+    revenuePerCustomer: number;
     momPct: number | null;
     momLabel: string;
     topProfitCentre: string;
     topProfitCentreValue: number;
   };
+  deltas: {
+    revenue: Delta;
+    growth: Delta;
+    quantity: Delta;
+    customers: Delta;
+    revenuePerAh: Delta;
+    revenuePerCustomer: Delta;
+  };
+  pareto: { bucket: string; value: number; cumulativePct: number }[];
+  alerts: { tone: "up" | "down" | "warn"; text: string }[];
   mixByType: NamedTotal[];
   bySegment: NamedTotal[];
   topProfitCentres: NamedTotal[];
@@ -194,6 +208,7 @@ export type SdAnalytics = {
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
   rows: SdLine[];
 };
+
 
 
 
