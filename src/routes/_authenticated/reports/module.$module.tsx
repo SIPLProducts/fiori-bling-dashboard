@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { LayoutDashboard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -88,7 +89,18 @@ function ModuleReportPage() {
         {!rolesLoading && !allowed ? (
           <AccessDenied area="Net Sales" />
         ) : (
-          <SdLiveDashboard />
+          <>
+            <div className="mb-4 flex justify-end">
+              <Link
+                to="/management-dashboard"
+                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-primary hover:bg-muted"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Management Sales Dashboard
+              </Link>
+            </div>
+            <SdLiveDashboard />
+          </>
         )}
       </ReportShell>
     );
