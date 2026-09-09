@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, LogOut, Search, User } from "lucide-react";
+import { Bell, HelpCircle, Home, LogOut, Search, User } from "lucide-react";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
 import hblLogoAsset from "@/assets/hbl-logo.png.asset.json";
@@ -42,6 +42,14 @@ export function ShellBar({
         <span className="flex h-8 items-center rounded-sm bg-white px-2">
           <img src={hblLogoAsset.url} alt="HBL" className="h-6 w-auto object-contain" />
         </span>
+      </Link>
+      <Link
+        to="/launchpad"
+        aria-label="Home"
+        title="Home"
+        className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
+      >
+        <Home className="size-[18px]" />
       </Link>
       <span className="flex-1" aria-hidden="true" />
 
