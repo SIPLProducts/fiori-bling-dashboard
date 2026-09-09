@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function ShellBar({
-  title,
   displayName,
   screens,
 }: {
@@ -44,9 +43,7 @@ export function ShellBar({
           <img src={hblLogoAsset.url} alt="HBL" className="h-6 w-auto object-contain" />
         </span>
       </Link>
-      <span className="hidden text-xs text-shell-muted sm:inline">Procurement Analytics</span>
-
-      <span className="mx-auto text-sm font-medium">{title}</span>
+      <span className="flex-1" aria-hidden="true" />
 
 
       <div className="flex items-center gap-1">
