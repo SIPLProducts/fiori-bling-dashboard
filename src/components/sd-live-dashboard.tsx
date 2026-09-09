@@ -234,6 +234,23 @@ function periodLabel(monthly: MonthRow[], from: string, to: string) {
 }
 
 
+const QUICK_RANGES: { label: string; range: () => { from: string; to: string } }[] = [
+  { label: "Last 7 days", range: () => ({ from: isoDaysAgo(7), to: isoDaysAgo(0) }) },
+  { label: "Last 30 days", range: () => ({ from: isoDaysAgo(30), to: isoDaysAgo(0) }) },
+  { label: "Last 90 days", range: () => ({ from: isoDaysAgo(90), to: isoDaysAgo(0) }) },
+  {
+    label: "This month",
+    range: () => {
+      const d = new Date();
+      return { from: `${d.toISOString().slice(0, 7)}-01`, to: isoDaysAgo(0) };
+    },
+  },
+  {
+    label: "This year",
+    range: () => ({ from: `${new Date().getFullYear()}-01-01`, to: isoDaysAgo(0) }),
+  },
+];
+
 function isoDaysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -1554,7 +1571,7 @@ export function SdLiveDashboard() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Showing {NUM(rows.length)} of {NUM(all.length)} posting lines
+              Showing {NUM(filtered.length)} of {NUM(all.length)} posting lines
             </p>
           </div>
         ) : null}
