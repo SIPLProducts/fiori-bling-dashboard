@@ -32,6 +32,8 @@ import {
   TrendingDown,
   ChevronDown,
   BatteryCharging,
+  CalendarDays,
+
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -138,6 +140,100 @@ function labelEvery(count: number, index?: number) {
   return index % step === 0;
 }
 
+/* -------- Sales trend helpers: current vs previous period aggregation ------ */
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const TREND_MODES = ["Monthly", "Quarterly", "YTD"] as const;
+type TrendMode = (typeof TREND_MODES)[number];
+type MonthRow = { month: string; revenue: number; quantity: number; documents: number };
+
+const shortMonth = (i: number) => {
+  const m = MONTHS[i] ?? "";
+  return m.charAt(0) + m.slice(1, 3).toLowerCase();
+};
+
+function parseMonth(label: string) {
+  const [m, y] = (label || "").split("-");
+  const idx = MONTHS.indexOf((m ?? "").toUpperCase().slice(0, 3));
+  const year = Number(y);
+  return idx >= 0 && Number.isFinite(year) ? { idx, year } : null;
+}
+
+function buildTrend(monthly: MonthRow[], mode: TrendMode) {
+  const parsed = monthly
+    .map((r) => ({ ...r, p: parseMonth(r.month) }))
+    .filter((r): r is MonthRow & { p: { idx: number; year: number } } => r.p != null);
+  if (!parsed.length) return { rows: [] as { label: string; current: number; previous: number | null }[], cy: "", py: "" };
+
+  const cy = Math.max(...parsed.map((r) => r.p.year));
+  const py = cy - 1;
+  const hasPrev = parsed.some((r) => r.p.year === py);
+  const value = (year: number, idx: number) =>
+    parsed.filter((r) => r.p.year === year && r.p.idx === idx).reduce((s, r) => s + r.revenue, 0);
+
+  if (mode === "Quarterly") {
+    const rows = [0, 1, 2, 3].map((q) => {
+      const idxs = [q * 3, q * 3 + 1, q * 3 + 2];
+      return {
+        label: `Q${q + 1}`,
+        current: idxs.reduce((s, i) => s + value(cy, i), 0),
+        previous: hasPrev ? idxs.reduce((s, i) => s + value(py, i), 0) : null,
+      };
+    });
+    return { rows, cy: String(cy), py: hasPrev ? String(py) : "" };
+  }
+
+  let cc = 0;
+  let pc = 0;
+  const rows: { label: string; current: number; previous: number | null }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const c = value(cy, i);
+    const p = value(py, i);
+    cc += c;
+    pc += p;
+    if (mode === "Monthly" && !c && !p) continue;
+    rows.push({
+      label: shortMonth(i),
+      current: mode === "YTD" ? cc : c,
+      previous: hasPrev ? (mode === "YTD" ? pc : p) : null,
+    });
+  }
+  return { rows, cy: String(cy), py: hasPrev ? String(py) : "" };
+}
+
+/** Amount + quantity per month for the most recent year. */
+function latestYearMonths(monthly: MonthRow[]) {
+  const parsed = monthly
+    .map((r) => ({ ...r, p: parseMonth(r.month) }))
+    .filter((r): r is MonthRow & { p: { idx: number; year: number } } => r.p != null);
+  if (!parsed.length)
+    return monthly.map((r) => ({ label: r.month, revenue: r.revenue, quantity: r.quantity }));
+  const cy = Math.max(...parsed.map((r) => r.p.year));
+  return parsed
+    .filter((r) => r.p.year === cy)
+    .sort((a, b) => a.p.idx - b.p.idx)
+    .map((r) => ({ label: shortMonth(r.p.idx), revenue: r.revenue, quantity: r.quantity }));
+}
+
+/** Human label for the active posting-date range shown next to the title. */
+function periodLabel(monthly: MonthRow[], from: string, to: string) {
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime())
+      ? ""
+      : `${shortMonth(d.getMonth())} ${d.getFullYear()}`;
+  };
+  if (from || to) return `${fmt(from) || "…"} - ${fmt(to) || "…"}`;
+  const first = monthly[0]?.month;
+  const last = monthly[monthly.length - 1]?.month;
+  const pretty = (label?: string) => {
+    const p = label ? parseMonth(label) : null;
+    return p ? `${shortMonth(p.idx)} ${p.year}` : "";
+  };
+  return first && last ? `${pretty(first)} - ${pretty(last)}` : "All postings";
+}
+
+
 function isoDaysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -184,29 +280,25 @@ function KpiCard({
             }
           : undefined
       }
-      className={`relative overflow-hidden rounded-lg border p-4 shadow-tile transition-shadow hover:shadow-lg ${
+      className={`relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-tile transition-shadow hover:shadow-lg ${
         onClick ? "cursor-pointer focus:outline-none" : ""
       }`}
-      style={{
-        borderColor: `color-mix(in oklab, ${color} ${active ? 90 : 28}%, var(--color-border))`,
-        boxShadow: active ? `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` : undefined,
-        background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
-      }}
+      style={
+        active
+          ? { boxShadow: `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` }
+          : undefined
+      }
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-          <p className="tabular mt-2 text-2xl font-semibold" style={{ color }}>
-            {value}
-          </p>
-        </div>
+      <div className="flex items-center gap-3">
         <span
-          className="grid size-9 shrink-0 place-items-center rounded-md"
-          style={{ background: `color-mix(in oklab, ${color} 20%, transparent)`, color }}
+          className="grid size-11 shrink-0 place-items-center rounded-full"
+          style={{ background: `color-mix(in oklab, ${color} 14%, var(--color-card))`, color }}
         >
-          <Icon className="size-4" />
+          <Icon className="size-5" />
         </span>
+        <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
       </div>
+      <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{value}</p>
       {delta && delta.pct != null ? (
         <p className="mt-1.5 flex items-center gap-1 text-xs">
           <span
@@ -224,6 +316,7 @@ function KpiCard({
     </section>
   );
 }
+
 
 
 function ShareBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
@@ -1161,13 +1254,15 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
   const [selectedMainGroup, setSelectedMainGroup] = useState<string | null>(null);
   const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
+  const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
+
 
 
   const { data: lines, isLoading } = useQuery({
@@ -1300,11 +1395,32 @@ export function SdLiveDashboard() {
 
 
 
+  const trend = buildTrend(analytics.monthly, trendMode);
+  const salesVsQty = latestYearMonths(analytics.monthly);
+
   return (
     <div className="space-y-4">
+      {/* executive header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Management Sales Dashboard</h2>
+          <p className="text-sm text-muted-foreground">Executive Overview</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile">
+            <CalendarDays className="size-4 text-muted-foreground" />
+            {periodLabel(analytics.monthly, filters.from, filters.to)}
+          </span>
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
+            <Filter className="mr-1 size-4" /> Filters
+          </Button>
+        </div>
+      </div>
+
       {/* smart filter bar */}
       <section className="rounded-lg border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+
           <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
             <Filter className="size-4 text-primary" />
             Smart filters
@@ -1468,9 +1584,7 @@ export function SdLiveDashboard() {
               caption="Filtered postings · click for details"
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
-            >
-              <ShareBars items={analytics.mixByType} total={totalRevenue} />
-            </KpiCard>
+            />
             <KpiCard
               label="Sales Growth %"
               value={
@@ -1529,26 +1643,102 @@ export function SdLiveDashboard() {
             />
           ) : (
             <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Panel title="Top 10 Profit Centres" accent={1} expandable>
+          {/* Row 2 — trend, segment mix, top profit centres */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel
+              title="Sales Trend (Amount)"
+              accent={1}
+              expandable
+              actions={
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                  {TREND_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setTrendMode(mode)}
+                      className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                        trendMode === mode
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              }
+            >
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className="mb-1 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
+                      Current period ({trend.cy})
+                    </span>
+                    {trend.py ? (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="h-0 w-5 border-t-2 border-dashed"
+                          style={{ borderColor: "var(--color-muted-foreground)" }}
+                        />
+                        Previous period ({trend.py})
+                      </span>
+                    ) : null}
+                    <span className="ml-auto">Amount (₹)</span>
+                  </div>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8 }}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={70}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <Tooltip {...tooltipStyle} formatter={(v: number) => INRC(v)} />
+                        <Line
+                          type="monotone"
+                          dataKey="current"
+                          name="Current period"
+                          stroke="var(--kpi-1)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="previous"
+                          name="Previous period"
+                          stroke="var(--color-muted-foreground)"
+                          strokeDasharray="5 5"
+                          strokeWidth={2}
+                          dot={{ r: 2.5 }}
+                          connectNulls
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </Panel>
+
+            <Panel title="Sales by Segment (Amount)" accent={2} expandable>
+              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
+            </Panel>
+
+            <Panel title="Top 10 Profit Centres by Amount" accent={4} expandable>
               {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Customers" accent={4} expandable>
-              {(full: boolean) => <BarList items={analytics.topCustomers} tone={3} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Materials" accent={3} expandable>
-              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Sales Employees" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
           </div>
 
+          {/* Row 3 — customers, pareto, main group */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Customer Contribution (Pareto)" accent={1} className="lg:col-span-2" expandable>
+            <Panel title="Top 10 Customers by Amount" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} />}
+            </Panel>
+
+            <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
               {(full: boolean) => (
                 <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
                   <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
@@ -1565,7 +1755,7 @@ export function SdLiveDashboard() {
                       orientation="right"
                       width={44}
                       domain={[0, 100]}
-                      tick={{ fontSize: 11, fill: "#dc2626" }}
+                      tick={{ fontSize: 11, fill: "#f97316" }}
                       tickFormatter={(v: number) => `${Math.round(v)}%`}
                     />
                     <Tooltip
@@ -1593,19 +1783,94 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="cumulativePct"
                       name="Cumulative %"
-                      stroke="#dc2626"
+                      stroke="#f97316"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     >
                       <LabelList
                         dataKey="cumulativePct"
                         position="top"
-                        style={{ fontSize: 10, fill: "#dc2626", fontWeight: 600 }}
+                        style={{ fontSize: 10, fill: "#f97316", fontWeight: 600 }}
                         formatter={(v: number) => `${v.toFixed(0)}%`}
                       />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
+              )}
+            </Panel>
+
+            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
+              {(full: boolean) => (
+                <MainGroupTreemap
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
+                />
+              )}
+            </Panel>
+          </div>
+
+          {/* Row 4 — sales vs quantity, alerts */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Sales vs Quantity Trend" accent={3} expandable>
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className="mb-1 flex items-center gap-4 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
+                      Amount (₹)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-2)" }} />
+                      Quantity
+                    </span>
+                  </div>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <ResponsiveContainer width="100%" height={full ? "100%" : 280}>
+                      <ComposedChart data={salesVsQty} margin={{ top: 16, left: 0, right: 8 }}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={70}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <YAxis
+                          yAxisId="qty"
+                          orientation="right"
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={60}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <Tooltip
+                          {...tooltipStyle}
+                          formatter={(v: number, n: string) => [n === "Quantity" ? NUM(v) : INRC(v), n]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          name="Amount"
+                          stroke="var(--kpi-1)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                        <Line
+                          yAxisId="qty"
+                          type="monotone"
+                          dataKey="quantity"
+                          name="Quantity"
+                          stroke="var(--kpi-2)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               )}
             </Panel>
 
@@ -1637,87 +1902,14 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-
-
+          {/* Additional analysis kept below the management view */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
-              {(full: boolean) => (
-              <div
-                className={`rounded-md p-2 ${full ? "h-full" : ""}`}
-                style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
-              >
-              <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
+            <Panel title="Top 10 Materials" accent={3} expandable>
+              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
+            </Panel>
 
-                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 0, right: 0 }}>
-                  <defs>
-                    <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="var(--kpi-1)" stopOpacity={0.06} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                  <YAxis
-                    tickFormatter={axisCompact}
-                    tick={{ fontSize: 11 }}
-                    width={84}
-                    tickMargin={2}
-                    stroke="var(--color-muted-foreground)"
-                  />
-                  <YAxis
-                    yAxisId="docs"
-                    orientation="right"
-                    tick={{ fontSize: 11 }}
-                    stroke="var(--color-muted-foreground)"
-                  />
-                  <Tooltip
-                    {...tooltipStyle}
-                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INRC(v), n]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
-                    <LabelList
-                      dataKey="revenue"
-                      position="top"
-                      offset={8}
-                      formatter={(v: number, _n?: unknown, idx?: number) =>
-                        labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
-                      }
-                      fontSize={10}
-                      fontWeight={600}
-                      fill="var(--kpi-1)"
-                      stroke="var(--color-card)"
-                      strokeWidth={3}
-                      paintOrder="stroke"
-                    />
-                  </Area>
-                  <Line
-                    yAxisId="docs"
-                    type="monotone"
-                    dataKey="documents"
-                    stroke="var(--kpi-3)"
-                    strokeWidth={2}
-                    dot={false}
-                  >
-                    <LabelList
-                      dataKey="documents"
-                      position="bottom"
-                      offset={8}
-                      formatter={(v: number, _n?: unknown, idx?: number) =>
-                        labelEvery(analytics.monthly.length, idx) ? NUM(v) : ""
-                      }
-                      fontSize={10}
-                      fontWeight={600}
-                      fill="var(--kpi-3)"
-                      stroke="var(--color-card)"
-                      strokeWidth={3}
-                      paintOrder="stroke"
-                    />
-                  </Line>
-
-                </ComposedChart>
-              </ResponsiveContainer>
-              </div>
-              )}
+            <Panel title="Top 10 Sales Employees" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
 
             <Panel title="Sales mix by type" accent={2} expandable>
@@ -1747,24 +1939,9 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
-
-
-
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
-              {(full: boolean) => (
-                <MainGroupTreemap
-                  items={analytics.byMainGroup}
-                  subGroups={analytics.subGroupsByMainGroup}
-                  full={full}
-                  selected={selectedMainGroup}
-                  onSelect={setSelectedMainGroup}
-                />
-              )}
-            </Panel>
-
+          <div className="grid gap-4">
             <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
@@ -1778,11 +1955,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4">
-            <Panel title="Sales by Segment (Amount)" accent={2}>
-              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
-            </Panel>
-          </div>
+
 
 
 
