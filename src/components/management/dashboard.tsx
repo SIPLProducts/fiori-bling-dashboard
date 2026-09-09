@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { subscribeSdLines } from "@/lib/sd-live";
 import { useNavigate } from "@tanstack/react-router";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
@@ -33,12 +34,23 @@ export function ManagementDashboard() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<RangePreset>("All postings");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
+  const queryClient = useQueryClient();
 
   const { data: rows, isLoading, error } = useQuery({
     queryKey: ["management-sd-lines"],
     queryFn: fetchSdLines,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Refresh whenever new postings land in the sales table.
+  useEffect(
+    () =>
+      subscribeSdLines(() => {
+        void queryClient.invalidateQueries({ queryKey: ["management-sd-lines"] });
+      }),
+    [queryClient],
+  );
+
 
   const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
   const options = useMemo(() => filterOptions(rows ?? []), [rows]);
