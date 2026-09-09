@@ -15,16 +15,16 @@ const strings = (value: unknown) =>
 
 export const Route = createFileRoute("/_authenticated/reports/sd/drilldown")({
   validateSearch: (search: Record<string, unknown>) => ({
-    month: typeof search.month === "string" ? search.month : "",
-    customer: typeof search.customer === "string" ? search.customer : "",
-    from: typeof search.from === "string" ? search.from : "",
-    to: typeof search.to === "string" ? search.to : "",
-    salesType: typeof search.salesType === "string" ? search.salesType : "",
-    segments: strings(search.segments),
-    profitCentres: strings(search.profitCentres),
-    plants: strings(search.plants),
-    q: typeof search.q === "string" ? search.q : "",
-    page: Number.isFinite(Number(search.page)) ? Math.max(1, Math.floor(Number(search.page))) : 1,
+    month: typeof search["month"] === "string" ? search["month"] : "",
+    customer: typeof search["customer"] === "string" ? search["customer"] : "",
+    from: typeof search["from"] === "string" ? search["from"] : "",
+    to: typeof search["to"] === "string" ? search["to"] : "",
+    salesType: typeof search["salesType"] === "string" ? search["salesType"] : "",
+    segments: strings(search["segments"]),
+    profitCentres: strings(search["profitCentres"]),
+    plants: strings(search["plants"]),
+    q: typeof search["q"] === "string" ? search["q"] : "",
+    page: Number.isFinite(Number(search["page"])) ? Math.max(1, Math.floor(Number(search["page"]))) : 1,
   }),
   head: () => ({
     meta: [

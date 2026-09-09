@@ -102,7 +102,7 @@ export function SalesTrendChart({
     >
       <div className="h-[248px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onClick={(state) => { if (mode === "Monthly" && state?.activeLabel) onMonthSelect?.(String(state.activeLabel)); }} className={mode === "Monthly" && onMonthSelect ? "cursor-pointer" : undefined}>
+          <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onClick={(state) => { if (mode === "Monthly" && state?.activeLabel) onMonthSelect?.(String(state.activeLabel)); }} className={mode === "Monthly" && onMonthSelect ? "cursor-pointer" : ""}>
             <CartesianGrid stroke="#EEF2F8" vertical={false} />
             <XAxis dataKey="month" tick={axisStyle} tickLine={false} axisLine={{ stroke: "#E5EAF1" }} />
             <YAxis
@@ -372,6 +372,6 @@ export function TopProfitCentres({ data }: { data: NamedValue[] }) {
 
 export function TopCustomers({ data, onSelect }: { data: NamedValue[]; onSelect?: (name: string) => void }) {
   return (
-    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} onSelect={onSelect} />
+    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} {...(onSelect ? { onSelect } : {})} />
   );
 }

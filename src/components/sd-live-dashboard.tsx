@@ -1829,7 +1829,7 @@ export function SdLiveDashboard() {
                   </div>
                   <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
                     <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
-                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }} onClick={(state) => { if (trendMode === "Monthly" && state?.activeLabel) openDrilldown({ month: String(state.activeLabel) }); }} className={trendMode === "Monthly" ? "cursor-pointer" : undefined}>
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }} onClick={(state) => { if (trendMode === "Monthly" && state?.activeLabel) openDrilldown({ month: String(state.activeLabel) }); }} className={trendMode === "Monthly" ? "cursor-pointer" : ""}>
                         <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
                         <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
                         <YAxis

@@ -25,6 +25,7 @@ import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_aut
 import { Route as AuthenticatedTablesIndexRouteImport } from './routes/_authenticated/tables/index'
 import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authenticated/tables/$tableKey'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
+import { Route as AuthenticatedReportsSdDrilldownRouteImport } from './routes/_authenticated/reports/sd/drilldown'
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
@@ -120,6 +121,12 @@ const AuthenticatedReportsModuleModuleRoute =
     path: '/reports/module/$module',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSdDrilldownRoute =
+  AuthenticatedReportsSdDrilldownRouteImport.update({
+    id: '/reports/sd/drilldown',
+    path: '/reports/sd/drilldown',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSdFinanceGstRoute =
   AuthenticatedReportsSdFinanceGstRouteImport.update({
     id: '/reports/sd/finance-gst',
@@ -167,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables/': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
@@ -189,6 +197,7 @@ export interface FileRoutesByTo {
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
@@ -213,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/_authenticated/tables/': typeof AuthenticatedTablesIndexRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/_authenticated/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/tables/$tableKey'
     | '/tables/'
     | '/reports/module/$module'
+    | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/tables/$tableKey'
     | '/tables'
     | '/reports/module/$module'
+    | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/register'
@@ -282,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tables/$tableKey'
     | '/_authenticated/tables/'
     | '/_authenticated/reports/module/$module'
+    | '/_authenticated/reports/sd/drilldown'
     | '/_authenticated/reports/sd/finance-gst'
     | '/_authenticated/reports/sd/kpi'
     | '/_authenticated/reports/sd/register'
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsModuleModuleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sd/drilldown': {
+      id: '/_authenticated/reports/sd/drilldown'
+      path: '/reports/sd/drilldown'
+      fullPath: '/reports/sd/drilldown'
+      preLoaderRoute: typeof AuthenticatedReportsSdDrilldownRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/sd/finance-gst': {
       id: '/_authenticated/reports/sd/finance-gst'
       path: '/reports/sd/finance-gst'
@@ -463,6 +483,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTablesTableKeyRoute: typeof AuthenticatedTablesTableKeyRoute
   AuthenticatedTablesIndexRoute: typeof AuthenticatedTablesIndexRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
+  AuthenticatedReportsSdDrilldownRoute: typeof AuthenticatedReportsSdDrilldownRoute
   AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
   AuthenticatedReportsSdKpiRoute: typeof AuthenticatedReportsSdKpiRoute
   AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
@@ -484,6 +505,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTablesTableKeyRoute: AuthenticatedTablesTableKeyRoute,
   AuthenticatedTablesIndexRoute: AuthenticatedTablesIndexRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
+  AuthenticatedReportsSdDrilldownRoute: AuthenticatedReportsSdDrilldownRoute,
   AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
   AuthenticatedReportsSdKpiRoute: AuthenticatedReportsSdKpiRoute,
   AuthenticatedReportsSdRegisterRoute: AuthenticatedReportsSdRegisterRoute,
