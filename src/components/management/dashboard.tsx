@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { DashboardHeader } from "./header";
@@ -43,26 +43,45 @@ export function ManagementDashboard() {
   const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
   const options = useMemo(() => filterOptions(rows ?? []), [rows]);
 
+  // Set when a shared posting-date range was applied, so the preset effect
+  // below does not immediately overwrite it with the "All postings" range.
+  const sharedDatesApplied = useRef(false);
+
   useEffect(() => {
-    const applyShared = (shared: ReturnType<typeof readSharedSalesFilters>) =>
+    const applyShared = (shared: ReturnType<typeof readSharedSalesFilters>) => {
+      if (shared.from || shared.to) {
+        sharedDatesApplied.current = true;
+        setPreset("Custom range");
+      }
       setFilters((prev) => ({
         ...prev,
         businessSegment: shared.segments[0] ?? "",
         customer: shared.customers[0] ?? "",
         profitCentre: shared.profitCentres[0] ?? "",
+        ...(shared.from || shared.to ? { from: shared.from, to: shared.to } : {}),
       }));
+    };
     applyShared(readSharedSalesFilters());
     return subscribeSharedSalesFilters(applyShared);
   }, []);
 
   // Keep the posting-date window in step with the chosen preset.
   useEffect(() => {
-    if (!bounds.min || preset === "Custom range") return;
+    if (!bounds.min || preset === "Custom range" || sharedDatesApplied.current) return;
     const range = presetRange(preset, bounds);
     setFilters((prev) =>
       prev.from === range.from && prev.to === range.to ? prev : { ...prev, ...range },
     );
   }, [preset, bounds.min, bounds.max]);
+
+  const onPresetChange = (next: RangePreset) => {
+    sharedDatesApplied.current = false;
+    setPreset(next);
+    if (next !== "Custom range" && bounds.min) {
+      const range = presetRange(next, bounds);
+      writeSharedSalesFilters({ ...readSharedSalesFilters(), from: range.from, to: range.to });
+    }
+  };
 
   const view = useMemo(
     () => (rows ? buildManagementView(rows, filters) : null),
