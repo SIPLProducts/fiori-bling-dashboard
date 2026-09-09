@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, ChevronDown, Filter, Menu } from "lucide-react";
+import { CalendarDays, ChevronDown, Filter } from "lucide-react";
 import {
   FILTER_DEFS,
   RANGE_PRESETS,
@@ -37,7 +37,6 @@ type Props = {
   filters: MgmtFilters;
   onFiltersChange: (filters: MgmtFilters) => void;
   options: Record<string, string[]>;
-  onMenuClick: () => void;
 };
 
 const controlClass =
@@ -52,7 +51,6 @@ export function DashboardHeader({
   filters,
   onFiltersChange,
   options,
-  onMenuClick,
 }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draft, setDraft] = useState<MgmtFilters>(filters);
@@ -67,14 +65,6 @@ export function DashboardHeader({
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#E5EAF1] bg-[#F7F9FC] px-[18px] py-4">
       <div className="flex min-w-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={onMenuClick}
-          aria-label="Toggle menu"
-          className="shrink-0 rounded-md p-1.5 text-[#101B3D] hover:bg-[#EEF2F8]"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
         <div className="min-w-0">
           <h1 className="truncate text-[24px] font-bold leading-tight text-[#101B3D]">
             Management Sales Dashboard
