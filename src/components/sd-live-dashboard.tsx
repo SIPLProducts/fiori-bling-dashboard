@@ -43,7 +43,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MultiSelect } from "@/components/multi-select";
 import { downloadCsv } from "@/lib/chart-export";
-import { formatDateTimeISTLabel } from "@/lib/format";
 import {
   applySdFilters,
   buildSdAnalytics,
@@ -54,7 +53,6 @@ import {
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
-import { getSalesSyncStatus } from "@/lib/zfisales.functions";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -1310,8 +1308,6 @@ export function SdLiveDashboard() {
     queryFn: fetchSdLines,
   });
 
-  const { data: sync } = useQuery({ queryKey: ["sd-sync-status"], queryFn: getSalesSyncStatus });
-
   const all = useMemo(() => lines ?? [], [lines]);
   const typeFiltered = useMemo(() => {
     if (salesTypeTab === "All") return all;
@@ -1616,14 +1612,7 @@ export function SdLiveDashboard() {
         ) : null}
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          Source: ZFISALES_DETAIL · {NUM(all.length)} synced lines · last synced{" "}
-          {formatDateTimeISTLabel(sync?.lastSyncedAt)}
-          {sync?.lastStatus && sync.lastStatus !== "success" ? (
-            <span className="text-destructive"> · last run {sync.lastStatus}</span>
-          ) : null}
-        </p>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-1">
           {SALES_TYPE_TABS.map((tab) => (
             <button
