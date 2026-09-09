@@ -234,6 +234,23 @@ function periodLabel(monthly: MonthRow[], from: string, to: string) {
 }
 
 
+const QUICK_RANGES: { label: string; range: () => { from: string; to: string } }[] = [
+  { label: "Last 7 days", range: () => ({ from: isoDaysAgo(7), to: isoDaysAgo(0) }) },
+  { label: "Last 30 days", range: () => ({ from: isoDaysAgo(30), to: isoDaysAgo(0) }) },
+  { label: "Last 90 days", range: () => ({ from: isoDaysAgo(90), to: isoDaysAgo(0) }) },
+  {
+    label: "This month",
+    range: () => {
+      const d = new Date();
+      return { from: `${d.toISOString().slice(0, 7)}-01`, to: isoDaysAgo(0) };
+    },
+  },
+  {
+    label: "This year",
+    range: () => ({ from: `${new Date().getFullYear()}-01-01`, to: isoDaysAgo(0) }),
+  },
+];
+
 function isoDaysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -1418,25 +1435,36 @@ export function SdLiveDashboard() {
       </div>
 
       {/* smart filter bar */}
-      <section className="rounded-lg border border-border bg-card shadow-tile">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-
-          <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
-            <Filter className="size-4 text-primary" />
-            Smart filters
-            <Badge variant="secondary">{activeChips.length}</Badge>
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-card-foreground">
+            <Filter className="size-4 shrink-0 text-primary" />
+            <span className="truncate">Smart filters</span>
+            {activeChips.length ? (
+              <Badge variant="secondary" className="shrink-0">
+                {activeChips.length}
+              </Badge>
+            ) : (
+              <span className="shrink-0 text-xs font-normal text-muted-foreground">All data</span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="relative hidden sm:block">
               <Search className="pointer-events-none absolute top-2.5 left-2 size-4 text-muted-foreground" />
               <Input
                 value={filters.search}
                 onChange={(e) => set({ search: e.target.value })}
                 placeholder="Search document, customer, material"
-                className="h-9 w-64 pl-8"
+                className="h-9 w-56 pl-8 lg:w-72"
               />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setFilters(emptySdFilters)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              disabled={!activeChips.length}
+              onClick={() => setFilters(emptySdFilters)}
+            >
               <RotateCcw className="mr-1 size-3.5" /> Reset
             </Button>
             <button
@@ -1454,66 +1482,97 @@ export function SdLiveDashboard() {
         </div>
 
         {showFilters ? (
-          <div className="grid gap-1 border-t border-border px-4 py-2 md:grid-cols-2 lg:grid-cols-3">
-            <div className="grid grid-cols-1 gap-1 md:col-span-2 md:grid-cols-2 lg:col-span-2">
+          <div className="space-y-3 border-t border-border bg-muted/30 px-4 py-3">
+            <div className="relative sm:hidden">
+              <Search className="pointer-events-none absolute top-2.5 left-2 size-4 text-muted-foreground" />
+              <Input
+                value={filters.search}
+                onChange={(e) => set({ search: e.target.value })}
+                placeholder="Search document, customer, material"
+                className="h-9 w-full pl-8"
+              />
+            </div>
 
-              <label className="text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Quick range</span>
+              {QUICK_RANGES.map((preset) => {
+                const range = preset.range();
+                const active = filters.from === range.from && filters.to === range.to;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => set(active ? { from: "", to: "" } : range)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                        : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+              {filters.from || filters.to ? (
+                <button
+                  type="button"
+                  onClick={() => set({ from: "", to: "" })}
+                  className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear dates
+                </button>
+              ) : null}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Posting from
                 <Input
                   type="date"
                   value={filters.from}
+                  max={filters.to || undefined}
                   onChange={(e) => set({ from: e.target.value })}
-                  className="mt-0 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
+                  className="mt-1 h-9 w-full pr-2 font-normal text-foreground [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
-              <label className="text-xs text-muted-foreground">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Posting to
                 <Input
                   type="date"
                   value={filters.to}
+                  min={filters.from || undefined}
                   onChange={(e) => set({ to: e.target.value })}
-                  className="mt-0 h-9 w-full max-w-[180px] pr-2 [&::-webkit-calendar-picker-indicator]:mr-0"
+                  className="mt-1 h-9 w-full pr-2 font-normal text-foreground [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
-            </div>
-            {SHOW_PLANT_FILTER ? (
-              <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
-                Plant
-                <div className="mt-0">
+              {SHOW_PLANT_FILTER ? (
+                <label className="min-w-0 text-xs font-medium text-muted-foreground">
+                  Plant
+                  <div className="mt-1">
+                    <MultiSelect
+                      options={toOptions(opts.plants)}
+                      selected={filters.plants}
+                      onChange={(next) => set({ plants: next })}
+                    />
+                  </div>
+                </label>
+              ) : null}
+              <label className="min-w-0 text-xs font-medium text-muted-foreground md:col-span-2 lg:col-span-2">
+                Profit centre
+                <div className="mt-1">
                   <MultiSelect
-                    options={toOptions(opts.plants)}
-                    selected={filters.plants}
-                    onChange={(next) => set({ plants: next })}
+                    options={toOptions(opts.profitCentres)}
+                    selected={filters.profitCentres}
+                    onChange={(next) => set({ profitCentres: next })}
                   />
                 </div>
               </label>
-            ) : null}
-            <label className="text-xs text-muted-foreground md:col-span-2 lg:col-span-1">
-              Profit centre
-              <div className="mt-0">
-                <MultiSelect
-                  options={toOptions(opts.profitCentres)}
-                  selected={filters.profitCentres}
-                  onChange={(next) => set({ profitCentres: next })}
-                />
-              </div>
-            </label>
-            <div className="col-span-full flex flex-wrap gap-2">
-              {[
-                { label: "Last 7 days", from: isoDaysAgo(7) },
-                { label: "Last 30 days", from: isoDaysAgo(30) },
-                { label: "Last 90 days", from: isoDaysAgo(90) },
-              ].map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => set({ from: preset.from, to: isoDaysAgo(0) })}
-                >
-                  {preset.label}
-                </Button>
-              ))}
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Showing {NUM(filtered.length)} of {NUM(all.length)} posting lines
+            </p>
           </div>
         ) : null}
 
