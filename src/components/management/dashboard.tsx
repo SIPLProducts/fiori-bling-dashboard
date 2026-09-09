@@ -96,24 +96,10 @@ export function ManagementDashboard() {
     });
   };
 
-  const activeLabel =
-    active === "settings"
-      ? "Settings"
-      : (NAV_ITEMS.find((item) => item.id === active)?.label ?? "Dashboard");
-
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
-      <Sidebar
-        active={active}
-        onSelect={(id) => {
-          setActive(id);
-          setMenuOpen(false);
-        }}
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
+      <div>
 
-      <div className="lg:pl-[116px]">
         <DashboardHeader
           preset={preset}
           onPresetChange={setPreset}
