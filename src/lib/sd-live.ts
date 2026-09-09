@@ -274,22 +274,33 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
-      byMonth.get(label) ?? { month: label, revenue: 0, quantity: 0, docs: new Set<string>() };
+      byMonth.get(label) ?? {
+        month: label,
+        revenue: 0,
+        quantity: 0,
+        ah: 0,
+        docs: new Set<string>(),
+        customers: new Set<string>(),
+      };
     bucket.revenue += r.amount;
     bucket.quantity += r.quantity;
+    bucket.ah += r.totalAh;
     if (r.docNo) bucket.docs.add(r.docNo);
+    if (r.customer) bucket.customers.add(r.customer);
     byMonth.set(label, bucket);
   }
 
-  const monthly = [...byMonth.values()]
-    .sort((a, b) => monthSortKey(a.month).localeCompare(monthSortKey(b.month)))
-    .map((m) => ({
-      month: m.month,
-      revenue: m.revenue,
-      documents: m.docs.size,
-      quantity: m.quantity,
-      realization: m.quantity ? m.revenue / m.quantity : 0,
-    }));
+  const monthBuckets = [...byMonth.values()].sort((a, b) =>
+    monthSortKey(a.month).localeCompare(monthSortKey(b.month)),
+  );
+  const monthly = monthBuckets.map((m) => ({
+    month: m.month,
+    revenue: m.revenue,
+    documents: m.docs.size,
+    quantity: m.quantity,
+    realization: m.quantity ? m.revenue / m.quantity : 0,
+  }));
+
 
   const pcList = rank(byPc);
   // Compare the latest month with the most recent earlier month that carries a
@@ -302,6 +313,79 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     : undefined;
   const momPct = last && prev ? ((last.revenue - prev.revenue) / Math.abs(prev.revenue)) * 100 : null;
 
+  const revenuePerAh = totalAh ? revenue / totalAh : 0;
+  const revenuePerCustomer = customers.size ? revenue / customers.size : 0;
+
+  // Month-on-month deltas for the management tiles, using the same pair of
+  // meaningful months as the headline growth number.
+  const bucketOf = (label?: string) => monthBuckets.find((m) => m.month === label);
+  const lastB = bucketOf(last?.month);
+  const prevB = bucketOf(prev?.month);
+  const cmpLabel = lastB && prevB ? `vs ${prevB.month}` : "—";
+  const pctOf = (a: number, b: number): number | null =>
+    lastB && prevB && b !== 0 ? ((a - b) / Math.abs(b)) * 100 : null;
+  const d = (a?: number, b?: number): Delta => ({
+    pct: lastB && prevB ? pctOf(a ?? 0, b ?? 0) : null,
+    label: cmpLabel,
+  });
+  const rate = (bkt?: { revenue: number; ah: number }) =>
+    bkt && bkt.ah ? bkt.revenue / bkt.ah : 0;
+  const perCust = (bkt?: { revenue: number; customers: Set<string> }) =>
+    bkt && bkt.customers.size ? bkt.revenue / bkt.customers.size : 0;
+
+  const deltas = {
+    revenue: d(lastB?.revenue, prevB?.revenue),
+    growth: d(lastB?.revenue, prevB?.revenue),
+    quantity: d(lastB?.quantity, prevB?.quantity),
+    customers: d(lastB?.customers.size, prevB?.customers.size),
+    revenuePerAh: d(rate(lastB), rate(prevB)),
+    revenuePerCustomer: d(perCust(lastB), perCust(prevB)),
+  };
+
+  // Customer concentration (Pareto) over the whole filtered selection.
+  const custList = rank(byCust);
+  const custTotal = custList.reduce((sum, c) => sum + c.value, 0);
+  const cut = (n: number) => custList.slice(0, n).reduce((sum, c) => sum + c.value, 0);
+  const buckets = [10, 20, 30, 50, 100].filter((n) => n <= Math.max(custList.length, 10));
+  const pareto = buckets.map((n) => ({
+    bucket: `Top ${n}`,
+    value: cut(n) - cut(buckets[buckets.indexOf(n) - 1] ?? 0),
+    cumulativePct: custTotal ? (cut(n) / custTotal) * 100 : 0,
+  }));
+  const covered = buckets.length ? cut(buckets[buckets.length - 1]!) : 0;
+  if (custTotal - covered > 0)
+    pareto.push({ bucket: "Others", value: custTotal - covered, cumulativePct: 100 });
+
+  // Management alerts derived from the current selection.
+  const segList = rank(bySeg);
+  const alerts: { tone: "up" | "down" | "warn"; text: string }[] = [];
+  const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  if (momPct != null)
+    alerts.push({
+      tone: momPct >= 0 ? "up" : "down",
+      text: `Sales ${momPct >= 0 ? "grew" : "declined"} ${pct(momPct)} in ${last?.month} ${cmpLabel}.`,
+    });
+  if (custTotal)
+    alerts.push({
+      tone: "warn",
+      text: `Top 5 customers contribute ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
+    });
+  if (segList[0])
+    alerts.push({
+      tone: "up",
+      text: `${segList[0].name} is the largest segment at ${((segList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
+    });
+  if (pcList[0])
+    alerts.push({
+      tone: "up",
+      text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)} Cr.`,
+    });
+  if (deltas.revenuePerAh.pct != null)
+    alerts.push({
+      tone: deltas.revenuePerAh.pct >= 0 ? "up" : "down",
+      text: `Revenue per AH ${deltas.revenuePerAh.pct >= 0 ? "improved" : "dropped"} ${pct(deltas.revenuePerAh.pct)} ${cmpLabel}.`,
+    });
+
   return {
     kpis: {
       revenue,
@@ -313,11 +397,17 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       quantity,
       totalAh,
       avgRealization: quantity ? revenue / quantity : 0,
+      revenuePerAh,
+      revenuePerCustomer,
       momPct,
       momLabel: last && prev ? `${last.month} vs ${prev.month}` : last ? last.month : "—",
       topProfitCentre: pcList[0]?.name ?? "—",
       topProfitCentreValue: pcList[0]?.value ?? 0,
     },
+    deltas,
+    pareto,
+    alerts,
+
     mixByType: rank(byType),
     bySegment: rank(bySeg),
     topProfitCentres: pcList.slice(0, 10),

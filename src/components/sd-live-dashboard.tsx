@@ -79,6 +79,15 @@ function axisCompact(value: number) {
 /** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
 const INRC = (value: number) => `₹${compact(value)}`;
 
+/** Quantity display in Indian units: Crores / Lakhs / thousands. */
+function QTY(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}\u00A0Cr`;
+  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}\u00A0Lakhs`;
+  return NUM(value);
+}
+
+
 /* ---- UI visibility flags: hidden elements keep their code intact; flip ----
  * ---- a flag back to true to show the element again. ---------------------- */
 const SHOW_QUANTITY_TILE = false;
@@ -141,6 +150,7 @@ function KpiCard({
   label,
   value,
   caption,
+  delta,
   tone = 0,
   icon: Icon,
   children,
@@ -150,12 +160,14 @@ function KpiCard({
   label: string;
   value: string;
   caption?: string;
+  delta?: { pct: number | null; label: string };
   tone?: number;
   icon: React.ComponentType<{ className?: string }>;
   children?: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
 }) {
+
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
     <section
@@ -195,8 +207,20 @@ function KpiCard({
           <Icon className="size-4" />
         </span>
       </div>
+      {delta && delta.pct != null ? (
+        <p className="mt-1.5 flex items-center gap-1 text-xs">
+          <span
+            className="tabular font-semibold"
+            style={{ color: delta.pct >= 0 ? "var(--kpi-up, #16a34a)" : "var(--kpi-down, #dc2626)" }}
+          >
+            {delta.pct >= 0 ? "↑" : "↓"} {Math.abs(delta.pct).toFixed(1)}%
+          </span>
+          <span className="truncate text-muted-foreground">{delta.label}</span>
+        </p>
+      ) : null}
       {caption ? <p className="mt-1 truncate text-xs text-muted-foreground">{caption}</p> : null}
       {children}
+
     </section>
   );
 }
@@ -1434,35 +1458,13 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div
-            className={`grid gap-4 sm:grid-cols-2 ${
-              ({
-                1: "lg:grid-cols-1",
-                2: "lg:grid-cols-2",
-                3: "lg:grid-cols-3",
-                4: "lg:grid-cols-4",
-                5: "lg:grid-cols-5",
-                6: "lg:grid-cols-6",
-              } as Record<number, string>)[
-                (
-                  [
-                    true,
-                    true,
-                    SHOW_QUANTITY_TILE,
-                    true,
-                    SHOW_AVG_ORDER_VALUE_TILE,
-                    true,
-                    SHOW_TOP_PROFIT_CENTRE_TILE,
-                  ] as const
-                ).filter(Boolean).length
-              ]
-            }`}
-          >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <KpiCard
-              label="Total Sales"
+              label="Total Sales (Amount)"
               value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
+              delta={analytics.deltas.revenue}
               caption="Filtered postings · click for details"
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
@@ -1470,32 +1472,7 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
-              label="AH Sales"
-              value={compact(analytics.kpis.totalAh)}
-              tone={1}
-              icon={BatteryCharging}
-              caption="Total AH in selection"
-            />
-            {SHOW_QUANTITY_TILE ? (
-              <KpiCard
-                label="Total quantity"
-                value={NUM(analytics.kpis.quantity)}
-                tone={4}
-                icon={Boxes}
-                caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
-              />
-            ) : null}
-            <KpiCard
-              label="Billed Customers"
-              value={NUM(analytics.kpis.customers)}
-              tone={2}
-              icon={Users}
-              caption="Billed in selection · click for details"
-              onClick={() => setFocus(focus === "customers" ? null : "customers")}
-              active={focus === "customers"}
-            />
-            <KpiCard
-              label="Sales growth"
+              label="Sales Growth %"
               value={
                 analytics.kpis.momPct != null
                   ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
@@ -1505,25 +1482,42 @@ export function SdLiveDashboard() {
               icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
               caption={analytics.kpis.momLabel}
             />
-            {SHOW_AVG_ORDER_VALUE_TILE ? (
-              <KpiCard
-                label="Avg order value"
-                value={INRC(analytics.kpis.avgDoc)}
-                tone={3}
-                icon={Gauge}
-                caption="Revenue per document"
-              />
-            ) : null}
-            {SHOW_TOP_PROFIT_CENTRE_TILE ? (
-              <KpiCard
-                label="Top profit centre"
-                value={INRC(analytics.kpis.topProfitCentreValue)}
-                tone={5}
-                icon={Building2}
-                caption={analytics.kpis.topProfitCentre}
-              />
-            ) : null}
+            <KpiCard
+              label="Total Quantity"
+              value={QTY(analytics.kpis.quantity)}
+              tone={3}
+              icon={Boxes}
+              delta={analytics.deltas.quantity}
+              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+            />
+            <KpiCard
+              label="Active Customers"
+              value={NUM(analytics.kpis.customers)}
+              tone={2}
+              icon={Users}
+              delta={analytics.deltas.customers}
+              caption="Billed in selection · click for details"
+              onClick={() => setFocus(focus === "customers" ? null : "customers")}
+              active={focus === "customers"}
+            />
+            <KpiCard
+              label="Revenue / AH"
+              value={`₹${analytics.kpis.revenuePerAh.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+              tone={1}
+              icon={BatteryCharging}
+              delta={analytics.deltas.revenuePerAh}
+              caption={`AH sold: ${compact(analytics.kpis.totalAh)}`}
+            />
+            <KpiCard
+              label="Avg. Revenue / Customer"
+              value={INRC(analytics.kpis.revenuePerCustomer)}
+              tone={5}
+              icon={Gauge}
+              delta={analytics.deltas.revenuePerCustomer}
+              caption="Sales per billed customer"
+            />
           </div>
+
 
           {focus ? (
             <FocusTable
@@ -1552,6 +1546,98 @@ export function SdLiveDashboard() {
               {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
           </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title="Customer Contribution (Pareto)" accent={1} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
+                <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
+                  <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      yAxisId="left"
+                      width={64}
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: number) => axisCompact(v)}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      width={44}
+                      domain={[0, 100]}
+                      tick={{ fontSize: 11, fill: "#dc2626" }}
+                      tickFormatter={(v: number) => `${Math.round(v)}%`}
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === "Cumulative %" ? `${value.toFixed(1)}%` : INRC(value)
+                      }
+                    />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="value"
+                      name="Sales amount"
+                      fill="var(--kpi-1)"
+                      radius={[3, 3, 0, 0]}
+                    >
+                      <LabelList
+                        dataKey="value"
+                        position="top"
+                        style={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                        formatter={(v: number) => compact(v)}
+                      />
+                    </Bar>
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="cumulativePct"
+                      name="Cumulative %"
+                      stroke="#dc2626"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    >
+                      <LabelList
+                        dataKey="cumulativePct"
+                        position="top"
+                        style={{ fontSize: 10, fill: "#dc2626", fontWeight: 600 }}
+                        formatter={(v: number) => `${v.toFixed(0)}%`}
+                      />
+                    </Line>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </Panel>
+
+            <Panel title="Management Alerts" accent={5}>
+              <ul className="space-y-2.5">
+                {analytics.alerts.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span
+                      className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                      style={{
+                        background:
+                          a.tone === "down"
+                            ? "color-mix(in oklab, #dc2626 15%, transparent)"
+                            : a.tone === "warn"
+                              ? "color-mix(in oklab, #f59e0b 20%, transparent)"
+                              : "color-mix(in oklab, #16a34a 18%, transparent)",
+                        color: a.tone === "down" ? "#dc2626" : a.tone === "warn" ? "#b45309" : "#16a34a",
+                      }}
+                    >
+                      {a.tone === "down" ? "↓" : a.tone === "warn" ? "!" : "↑"}
+                    </span>
+                    <span className="text-muted-foreground">{a.text}</span>
+                  </li>
+                ))}
+                {analytics.alerts.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">No alerts for this selection.</li>
+                ) : null}
+              </ul>
+            </Panel>
+          </div>
+
+
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
