@@ -274,22 +274,33 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
     const bucket =
-      byMonth.get(label) ?? { month: label, revenue: 0, quantity: 0, docs: new Set<string>() };
+      byMonth.get(label) ?? {
+        month: label,
+        revenue: 0,
+        quantity: 0,
+        ah: 0,
+        docs: new Set<string>(),
+        customers: new Set<string>(),
+      };
     bucket.revenue += r.amount;
     bucket.quantity += r.quantity;
+    bucket.ah += r.totalAh;
     if (r.docNo) bucket.docs.add(r.docNo);
+    if (r.customer) bucket.customers.add(r.customer);
     byMonth.set(label, bucket);
   }
 
-  const monthly = [...byMonth.values()]
-    .sort((a, b) => monthSortKey(a.month).localeCompare(monthSortKey(b.month)))
-    .map((m) => ({
-      month: m.month,
-      revenue: m.revenue,
-      documents: m.docs.size,
-      quantity: m.quantity,
-      realization: m.quantity ? m.revenue / m.quantity : 0,
-    }));
+  const monthBuckets = [...byMonth.values()].sort((a, b) =>
+    monthSortKey(a.month).localeCompare(monthSortKey(b.month)),
+  );
+  const monthly = monthBuckets.map((m) => ({
+    month: m.month,
+    revenue: m.revenue,
+    documents: m.docs.size,
+    quantity: m.quantity,
+    realization: m.quantity ? m.revenue / m.quantity : 0,
+  }));
+
 
   const pcList = rank(byPc);
   // Compare the latest month with the most recent earlier month that carries a
