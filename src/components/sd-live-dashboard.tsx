@@ -1330,7 +1330,7 @@ export function SdLiveDashboard() {
   const opts = useMemo(
     () => ({
       plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
-      profitCentres: uniqueValues(all, (r) => r.profitCtr),
+      profitCentres: uniqueValues(all, (r) => r.pcShortName || r.profitCtrName || r.profitCtr),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
     }),
