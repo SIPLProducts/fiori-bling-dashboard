@@ -184,29 +184,25 @@ function KpiCard({
             }
           : undefined
       }
-      className={`relative overflow-hidden rounded-lg border p-4 shadow-tile transition-shadow hover:shadow-lg ${
+      className={`relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-tile transition-shadow hover:shadow-lg ${
         onClick ? "cursor-pointer focus:outline-none" : ""
       }`}
-      style={{
-        borderColor: `color-mix(in oklab, ${color} ${active ? 90 : 28}%, var(--color-border))`,
-        boxShadow: active ? `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` : undefined,
-        background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
-      }}
+      style={
+        active
+          ? { boxShadow: `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` }
+          : undefined
+      }
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-          <p className="tabular mt-2 text-2xl font-semibold" style={{ color }}>
-            {value}
-          </p>
-        </div>
+      <div className="flex items-center gap-3">
         <span
-          className="grid size-9 shrink-0 place-items-center rounded-md"
-          style={{ background: `color-mix(in oklab, ${color} 20%, transparent)`, color }}
+          className="grid size-11 shrink-0 place-items-center rounded-full"
+          style={{ background: `color-mix(in oklab, ${color} 14%, var(--color-card))`, color }}
         >
-          <Icon className="size-4" />
+          <Icon className="size-5" />
         </span>
+        <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
       </div>
+      <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{value}</p>
       {delta && delta.pct != null ? (
         <p className="mt-1.5 flex items-center gap-1 text-xs">
           <span
@@ -224,6 +220,7 @@ function KpiCard({
     </section>
   );
 }
+
 
 
 function ShareBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
