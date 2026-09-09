@@ -37,7 +37,6 @@ type Props = {
   filters: MgmtFilters;
   onFiltersChange: (filters: MgmtFilters) => void;
   options: Record<string, string[]>;
-  onMenuClick: () => void;
 };
 
 const controlClass =
