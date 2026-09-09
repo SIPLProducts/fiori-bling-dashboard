@@ -1325,6 +1325,27 @@ export function SdLiveDashboard() {
   const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
+  const [kpiOrder, setKpiOrder] = useState<KpiTileId[]>(() => [...KPI_TILE_IDS]);
+  const dragKpiId = useRef<KpiTileId | null>(null);
+
+  useEffect(() => {
+    setKpiOrder(readKpiOrder());
+  }, []);
+
+  const reorderKpis = (targetId: KpiTileId) => {
+    const from = dragKpiId.current;
+    if (!from || from === targetId) return;
+    setKpiOrder((prev) => {
+      const next = prev.filter((id) => id !== from);
+      next.splice(next.indexOf(targetId), 0, from);
+      try {
+        window.localStorage.setItem(KPI_ORDER_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore storage errors */
+      }
+      return next;
+    });
+  };
 
 
 
