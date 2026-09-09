@@ -884,6 +884,14 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_sap_credential_keys: { Args: never; Returns: string[] }
+      net_sales_summary: {
+        Args: never
+        Returns: {
+          sales_type: string
+          total: number
+          type_total: number
+        }[]
+      }
       resolve_login_email: { Args: { _identifier: string }; Returns: string }
       set_sap_credential: {
         Args: { _cred_key: string; _secret: string }
