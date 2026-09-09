@@ -34,12 +34,23 @@ export function ManagementDashboard() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<RangePreset>("All postings");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
+  const queryClient = useQueryClient();
 
   const { data: rows, isLoading, error } = useQuery({
     queryKey: ["management-sd-lines"],
     queryFn: fetchSdLines,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Refresh whenever new postings land in the sales table.
+  useEffect(
+    () =>
+      subscribeSdLines(() => {
+        void queryClient.invalidateQueries({ queryKey: ["management-sd-lines"] });
+      }),
+    [queryClient],
+  );
+
 
   const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
   const options = useMemo(() => filterOptions(rows ?? []), [rows]);
