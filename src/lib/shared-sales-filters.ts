@@ -2,12 +2,16 @@ export type SharedSalesFilters = {
   segments: string[];
   customers: string[];
   profitCentres: string[];
+  from: string;
+  to: string;
 };
 
 export const emptySharedSalesFilters: SharedSalesFilters = {
   segments: [],
   customers: [],
   profitCentres: [],
+  from: "",
+  to: "",
 };
 
 const STORAGE_KEY = "mis-shared-sales-filters";
@@ -20,6 +24,8 @@ function normalize(value: unknown): SharedSalesFilters {
     segments: strings(candidate.segments),
     customers: strings(candidate.customers),
     profitCentres: strings(candidate.profitCentres),
+    from: typeof candidate.from === "string" ? candidate.from : "",
+    to: typeof candidate.to === "string" ? candidate.to : "",
   };
 }
 

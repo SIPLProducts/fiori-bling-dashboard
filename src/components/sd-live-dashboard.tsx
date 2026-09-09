@@ -1380,11 +1380,13 @@ export function SdLiveDashboard() {
 
   const set = (patch: Partial<SdFilters>) => setFilters((prev) => {
     const next = { ...prev, ...patch };
-    if ("segments" in patch || "customers" in patch || "profitCentres" in patch) {
+    if ("segments" in patch || "customers" in patch || "profitCentres" in patch || "from" in patch || "to" in patch) {
       writeSharedSalesFilters({
         segments: next.segments,
         customers: next.customers,
         profitCentres: next.profitCentres,
+        from: next.from,
+        to: next.to,
       });
     }
     return next;
@@ -1570,7 +1572,7 @@ export function SdLiveDashboard() {
               disabled={!activeChips.length}
               onClick={() => {
                 setFilters(emptySdFilters);
-                writeSharedSalesFilters({ segments: [], customers: [], profitCentres: [] });
+                writeSharedSalesFilters({ segments: [], customers: [], profitCentres: [], from: "", to: "" });
               }}
             >
               <RotateCcw className="mr-1 size-3.5" /> Reset
