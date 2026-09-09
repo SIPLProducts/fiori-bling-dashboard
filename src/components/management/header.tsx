@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, ChevronDown, Filter, Menu } from "lucide-react";
+import { CalendarDays, ChevronDown, Filter } from "lucide-react";
 import {
   FILTER_DEFS,
   RANGE_PRESETS,
