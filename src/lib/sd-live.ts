@@ -47,21 +47,42 @@ const COLUMNS =
   "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount, business_segment";
 
 const PAGE = 1000;
+/** How many page requests run at once; keeps the first paint fast on 30k+ lines. */
+const CONCURRENCY = 8;
 
 type Row = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "" : String(v));
 const n = (v: unknown) => Number(v ?? 0);
 
+async function fetchPage(from: number): Promise<Row[]> {
+  const { data, error } = await supabase
+    .from("zfisales_detail")
+    .select(COLUMNS)
+    .order("posting_date", { ascending: true })
+    .range(from, from + PAGE - 1);
+  if (error) throw error;
+  return (data ?? []) as unknown as Row[];
+}
+
+/** Live posting lines straight from the sales table, paged in parallel. */
 export async function fetchSdLines(): Promise<SdLine[]> {
   const rows: SdLine[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from("zfisales_detail")
-      .select(COLUMNS)
-      .order("posting_date", { ascending: true })
-      .range(from, from + PAGE - 1);
-    if (error) throw error;
-    const page = (data ?? []) as unknown as Row[];
+  const { count, error: countError } = await supabase
+    .from("zfisales_detail")
+    .select("id", { count: "exact", head: true });
+  if (countError) throw countError;
+
+  const total = count ?? 0;
+  const offsets: number[] = [];
+  for (let from = 0; from < total; from += PAGE) offsets.push(from);
+
+  const pages: Row[][] = [];
+  for (let i = 0; i < offsets.length; i += CONCURRENCY) {
+    const batch = offsets.slice(i, i + CONCURRENCY);
+    pages.push(...(await Promise.all(batch.map((from) => fetchPage(from)))));
+  }
+
+  for (const page of pages) {
     for (const r of page) {
       rows.push({
         docNo: s(r["doc_no"]),
