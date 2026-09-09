@@ -17,16 +17,12 @@ import {
 } from "recharts";
 import {
   CHART_COLORS,
-  customerData,
-  mainGroupData,
-  paretoData,
-  profitCentreData,
-  salesTrendData,
-  salesTrendQuarterly,
-  salesTrendYtd,
-  salesQuantityData,
-  segmentData,
+  type MainGroupBlock,
   type NamedValue,
+  type ParetoPoint,
+  type SalesQtyPoint,
+  type SegmentSlice,
+  type TrendPoint,
 } from "@/lib/management-data";
 
 export function Card({
@@ -63,10 +59,21 @@ const tooltipStyle = {
 const TREND_MODES = ["Monthly", "Quarterly", "YTD"] as const;
 type TrendMode = (typeof TREND_MODES)[number];
 
-export function SalesTrendChart() {
+export function SalesTrendChart({
+  monthly,
+  quarterly,
+  ytd,
+  currentLabel,
+  previousLabel,
+}: {
+  monthly: TrendPoint[];
+  quarterly: TrendPoint[];
+  ytd: TrendPoint[];
+  currentLabel: string;
+  previousLabel: string;
+}) {
   const [mode, setMode] = useState<TrendMode>("Monthly");
-  const data =
-    mode === "Monthly" ? salesTrendData : mode === "Quarterly" ? salesTrendQuarterly : salesTrendYtd;
+  const data = mode === "Monthly" ? monthly : mode === "Quarterly" ? quarterly : ytd;
 
   return (
     <Card
@@ -113,7 +120,7 @@ export function SalesTrendChart() {
             <Line
               type="monotone"
               dataKey="current"
-              name="Current Period (Jan 2025 - Aug 2026)"
+              name={`Current Period (${currentLabel})`}
               stroke={CHART_COLORS.blue}
               strokeWidth={2.4}
               dot={false}
@@ -121,7 +128,7 @@ export function SalesTrendChart() {
             <Line
               type="monotone"
               dataKey="previous"
-              name="Previous Period (Jan 2024 - Aug 2025)"
+              name={`Previous Period (${previousLabel})`}
               stroke="#94A3B8"
               strokeWidth={2}
               strokeDasharray="5 4"
@@ -134,7 +141,13 @@ export function SalesTrendChart() {
   );
 }
 
-export function SegmentDonutChart() {
+export function SegmentDonutChart({
+  data,
+  totalCr,
+}: {
+  data: SegmentSlice[];
+  totalCr: number;
+}) {
   return (
     <Card title="Sales by Segment (Amount)">
       <div className="flex items-center gap-3">
@@ -142,7 +155,7 @@ export function SegmentDonutChart() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={segmentData}
+                data={data}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={54}
@@ -150,7 +163,7 @@ export function SegmentDonutChart() {
                 paddingAngle={1}
                 stroke="none"
               >
-                {segmentData.map((slice) => (
+                {data.map((slice) => (
                   <Cell key={slice.name} fill={slice.color} />
                 ))}
               </Pie>
@@ -162,19 +175,21 @@ export function SegmentDonutChart() {
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
             <div>
-              <p className="text-[15px] font-bold text-[#101B3D]">₹ 417.42 Cr</p>
+              <p className="text-[15px] font-bold text-[#101B3D]">₹ {totalCr.toFixed(2)} Cr</p>
               <p className="text-[11px] text-[#68738A]">Total</p>
             </div>
           </div>
         </div>
         <ul className="min-w-0 flex-1 space-y-1.5">
-          {segmentData.map((slice) => (
+          {data.map((slice) => (
             <li key={slice.name} className="flex min-w-0 items-center gap-2 text-[12px]">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-sm"
                 style={{ backgroundColor: slice.color }}
               />
-              <span className="truncate text-[#101B3D]">{slice.name}</span>
+              <span className="truncate text-[#101B3D]" title={slice.name}>
+                {slice.name}
+              </span>
               <span className="ml-auto shrink-0 font-semibold text-[#68738A]">{slice.pct}%</span>
             </li>
           ))}
@@ -193,7 +208,7 @@ export function HorizontalBarChart({
   data: NamedValue[];
   color: string;
 }) {
-  const max = Math.max(...data.map((row) => row.value));
+  const max = Math.max(1, ...data.map((row) => row.value));
   return (
     <Card
       title={title}
@@ -221,12 +236,12 @@ export function HorizontalBarChart({
   );
 }
 
-export function ParetoChart() {
+export function ParetoChart({ data }: { data: ParetoPoint[] }) {
   return (
     <Card title="Customer Contribution (Pareto)">
       <div className="h-[248px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={paretoData} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="#EEF2F8" vertical={false} />
             <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={{ stroke: "#E5EAF1" }} />
             <YAxis yAxisId="left" tick={axisStyle} tickLine={false} axisLine={false} width={44} />
@@ -273,11 +288,11 @@ export function ParetoChart() {
   );
 }
 
-export function MainGroupTreemap() {
+export function MainGroupTreemap({ data }: { data: MainGroupBlock[] }) {
   return (
     <Card title="Sales by Main Group (Amount)">
       <div className="grid h-[248px] grid-cols-2 grid-rows-3 gap-2">
-        {mainGroupData.map((block) => (
+        {data.map((block) => (
           <button
             key={block.name}
             type="button"
@@ -295,12 +310,12 @@ export function MainGroupTreemap() {
   );
 }
 
-export function SalesQuantityChart() {
+export function SalesQuantityChart({ data }: { data: SalesQtyPoint[] }) {
   return (
     <Card title="Sales vs Quantity Trend">
       <div className="h-[260px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={salesQuantityData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="#EEF2F8" vertical={false} />
             <XAxis dataKey="month" tick={axisStyle} tickLine={false} axisLine={{ stroke: "#E5EAF1" }} />
             <YAxis yAxisId="left" tick={axisStyle} tickLine={false} axisLine={false} width={44} />
@@ -339,23 +354,18 @@ export function SalesQuantityChart() {
   );
 }
 
-export function TopProfitCentres() {
+export function TopProfitCentres({ data }: { data: NamedValue[] }) {
   return (
     <HorizontalBarChart
       title="Top 10 Profit Centres by Amount"
-      data={profitCentreData}
+      data={data}
       color={CHART_COLORS.blue}
     />
   );
 }
 
-export function TopCustomers() {
+export function TopCustomers({ data }: { data: NamedValue[] }) {
   return (
-    <HorizontalBarChart
-      title="Top 10 Customers by Amount"
-      data={customerData}
-      color={CHART_COLORS.teal}
-    />
+    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} />
   );
 }
-
