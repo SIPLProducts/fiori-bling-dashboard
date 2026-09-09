@@ -1393,10 +1393,32 @@ export function SdLiveDashboard() {
 
 
 
+  const trend = buildTrend(analytics.monthly, trendMode);
+  const salesVsQty = latestYearMonths(analytics.monthly);
+
   return (
     <div className="space-y-4">
+      {/* executive header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Management Sales Dashboard</h2>
+          <p className="text-sm text-muted-foreground">Executive Overview</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile">
+            <CalendarDays className="size-4 text-muted-foreground" />
+            {periodLabel(analytics.monthly, filters.from, filters.to)}
+          </span>
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
+            <Filter className="mr-1 size-4" /> Filters
+          </Button>
+        </div>
+      </div>
+
       {/* smart filter bar */}
       <section className="rounded-lg border border-border bg-card shadow-tile">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
             <Filter className="size-4 text-primary" />
