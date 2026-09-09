@@ -75,6 +75,15 @@ export function DashboardHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <Link
+          to="/reports/module/sd"
+          className={controlClass}
+          title="Back to Net Sales"
+        >
+          <ArrowLeft className="h-4 w-4 text-[#68738A]" />
+          <span className="hidden sm:inline">Net Sales</span>
+        </Link>
+
         <DropdownMenu>
           <DropdownMenuTrigger className={controlClass}>
             <CalendarDays className="h-4 w-4 text-[#68738A]" />
