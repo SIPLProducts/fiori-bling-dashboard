@@ -73,9 +73,12 @@ export function ManagementDashboard() {
   );
   const openDrilldown = (selection: { month?: string; customer?: string }) => {
     let month = "";
-    if (selection.month && filters.to) {
-      const parsed = new Date(`${selection.month} 1, ${filters.to.slice(0, 4)}`);
-      if (!Number.isNaN(parsed.getTime())) month = `${filters.to.slice(0, 4)}-${String(parsed.getMonth() + 1).padStart(2, "0")}`;
+    if (selection.month) {
+      const match = selection.month.match(/^([A-Za-z]{3})\s+(\d{2,4})$/);
+      const yearPart = match?.[2];
+      const year = yearPart ? (yearPart.length === 2 ? `20${yearPart}` : yearPart) : filters.to.slice(0, 4);
+      const parsed = new Date(`${match?.[1] ?? selection.month} 1, ${year}`);
+      if (!Number.isNaN(parsed.getTime())) month = `${year}-${String(parsed.getMonth() + 1).padStart(2, "0")}`;
     }
     navigate({
       to: "/reports/sd/drilldown",
