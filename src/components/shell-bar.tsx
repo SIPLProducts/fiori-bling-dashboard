@@ -43,14 +43,6 @@ export function ShellBar({
           <img src={hblLogoAsset.url} alt="HBL" className="h-6 w-auto object-contain" />
         </span>
       </Link>
-      <Link
-        to="/launchpad"
-        aria-label="Home"
-        title="Home"
-        className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
-      >
-        <Home className="size-[18px]" />
-      </Link>
       <span className="flex-1" aria-hidden="true" />
 
 
