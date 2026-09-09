@@ -219,6 +219,44 @@ function group(rows: SdLine[], pick: (r: SdLine) => string) {
   return [...map.entries()].sort((a, b) => b[1] - a[1]);
 }
 
+type EntityAmount = { key: string; name: string; amount: number };
+
+function entityAmounts(
+  rows: SdLine[],
+  keyOf: (r: SdLine) => string,
+  nameOf: (r: SdLine) => string,
+) {
+  const map = new Map<string, EntityAmount>();
+  for (const row of rows) {
+    const key = keyOf(row) || nameOf(row) || "Unassigned";
+    const existing = map.get(key) ?? { key, name: nameOf(row) || key, amount: 0 };
+    existing.amount += row.amount;
+    if (nameOf(row)) existing.name = nameOf(row);
+    map.set(key, existing);
+  }
+  return map;
+}
+
+type EntityChange = EntityAmount & { previous: number; change: number; pct: number | null };
+
+function compareEntities(current: Map<string, EntityAmount>, previous: Map<string, EntityAmount>) {
+  const keys = new Set([...current.keys(), ...previous.keys()]);
+  return [...keys].map<EntityChange>((key) => {
+    const cur = current.get(key);
+    const prv = previous.get(key);
+    const amount = cur?.amount ?? 0;
+    const previousAmount = prv?.amount ?? 0;
+    return {
+      key,
+      name: cur?.name || prv?.name || key,
+      amount,
+      previous: previousAmount,
+      change: amount - previousAmount,
+      pct: previousAmount === 0 ? null : ((amount - previousAmount) / Math.abs(previousAmount)) * 100,
+    };
+  });
+}
+
 function pctDelta(current: number, previous: number): number {
   if (!previous) return current ? 100 : 0;
   return ((current - previous) / Math.abs(previous)) * 100;
@@ -386,71 +424,116 @@ export function buildManagementView(
     quantity: Number((m.quantity / LAKH).toFixed(2)),
   }));
 
-  /* --------------------------------- alerts -------------------------------- */
+  /* ---------------------- live period-over-period alerts ------------------- */
   const alerts: ManagementAlert[] = [];
-  const sign = (v: number) => `${v >= 0 ? "+" : "-"}${Math.abs(v).toFixed(1)}%`;
-  alerts.push({
-    id: "growth",
-    tone: growthPct >= 0 ? "positive" : "negative",
-    before: `Total sales ${growthPct >= 0 ? "grew" : "declined"} by `,
-    highlight: sign(growthPct),
-    after: ` ${comparisonLabel}.`,
-  });
-  alerts.push({
-    id: "top5",
-    tone: "warning",
-    before: "Top 5 customers contribute ",
-    highlight: `${((cut(5) / custTotal) * 100).toFixed(1)}%`,
-    after: " of total sales.",
-  });
-  if (segments[0]) {
+  const signedPct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
+  const amountLabel = (v: number) => `${v < 0 ? "−" : ""}${money(Math.abs(v))}`;
+  const comparisonDetail = `${currentLabel} compared with ${previousLabel}`;
+
+  if (!previous.length) {
     alerts.push({
-      id: "seg",
-      tone: "positive",
-      before: `${segments[0].name} is the largest segment at `,
-      highlight: `${segments[0].pct}%`,
-      after: " of total sales.",
-    });
-  }
-  if (profitCentres[0]) {
-    alerts.push({
-      id: "pc",
-      tone: "positive",
-      before: `${profitCentres[0].name} leads profit centres with `,
-      highlight: `₹ ${profitCentres[0].value.toFixed(2)} Cr`,
-      after: ".",
-    });
-  }
-  const ahDelta = pctDelta(revPerAh, prevRevPerAh);
-  alerts.push({
-    id: "ah",
-    tone: ahDelta >= 0 ? "positive" : "negative",
-    before: `Revenue per AH ${ahDelta >= 0 ? "improved" : "dropped"} by `,
-    highlight: sign(ahDelta),
-    after: ` ${comparisonLabel}.`,
-  });
-  const lastMonth = curMonths[curMonths.length - 1];
-  const beforeLast = curMonths[curMonths.length - 2];
-  if (lastMonth && beforeLast) {
-    const qty = pctDelta(lastMonth.quantity, beforeLast.quantity);
-    alerts.push({
-      id: "qty",
-      tone: qty >= 0 ? "positive" : "warning",
-      before: `Quantity in ${lastMonth.label} moved `,
-      highlight: sign(qty),
-      after: ` against ${beforeLast.label}.`,
-    });
-  }
-  if (mainGroups[mainGroups.length - 1]) {
-    const smallest = mainGroups[mainGroups.length - 1]!;
-    alerts.push({
-      id: "main",
+      id: "no-comparison",
       tone: "warning",
-      before: `${smallest.name} contributes only `,
-      highlight: `${smallest.pct}%`,
-      after: " of total sales.",
+      category: "Sales",
+      before: "No postings are available for the previous period. ",
+      highlight: "Change alerts are unavailable",
+      after: " for this selection.",
+      detail: currentLabel,
     });
+  } else {
+    if (prv.amount === 0) {
+      alerts.push({
+        id: "sales-baseline",
+        tone: "warning",
+        category: "Sales",
+        before: "Total sales are ",
+        highlight: amountLabel(cur.amount),
+        after: ", but the previous period has no sales baseline.",
+        detail: comparisonDetail,
+      });
+    } else {
+      const unchanged = Math.abs(cur.amount - prv.amount) < 1;
+      alerts.push({
+        id: "sales-change",
+        tone: unchanged ? "warning" : growthPct < 0 ? "negative" : "positive",
+        category: "Sales",
+        before: unchanged ? "Total sales are " : `Total sales ${growthPct < 0 ? "declined" : "increased"} by `,
+        highlight: unchanged ? "unchanged" : signedPct(growthPct),
+        after: unchanged ? " against the previous period." : ` (${amountLabel(cur.amount - prv.amount)}) against the previous period.`,
+        detail: comparisonDetail,
+      });
+    }
+
+    const addEntityAlerts = (
+      category: "Customer" | "Profit Centre",
+      currentMap: Map<string, EntityAmount>,
+      previousMap: Map<string, EntityAmount>,
+    ) => {
+      const changes = compareEntities(currentMap, previousMap);
+      const materiality = Math.max(Math.abs(cur.amount) * 0.001, LAKH);
+      const meaningful = changes.filter((item) => Math.abs(item.change) >= materiality);
+      const pool = meaningful.length ? meaningful : changes;
+      const disappeared = pool
+        .filter((item) => item.previous !== 0 && item.amount === 0)
+        .sort((a, b) => Math.abs(b.previous) - Math.abs(a.previous))[0];
+      const decline = pool
+        .filter((item) => item.previous !== 0 && item.amount !== 0 && item.change < 0)
+        .sort((a, b) => a.change - b.change)[0];
+      const gain = pool
+        .filter((item) => item.amount !== 0 && item.change > 0)
+        .sort((a, b) => b.change - a.change)[0];
+      const slug = category === "Customer" ? "customer" : "profit-centre";
+
+      if (disappeared) {
+        alerts.push({
+          id: `${slug}-inactive-${disappeared.key}`,
+          tone: "negative",
+          category,
+          before: `${disappeared.name} recorded `,
+          highlight: "no current sales",
+          after: ` after ${amountLabel(disappeared.previous)} in the previous period.`,
+          detail: comparisonDetail,
+        });
+      }
+      if (decline) {
+        alerts.push({
+          id: `${slug}-decline-${decline.key}`,
+          tone: "negative",
+          category,
+          before: `${decline.name} sales declined by `,
+          highlight: signedPct(decline.pct ?? 0),
+          after: ` (${amountLabel(decline.change)}).`,
+          detail: `Current ${amountLabel(decline.amount)} · previous ${amountLabel(decline.previous)}`,
+        });
+      }
+      if (gain) {
+        const isNew = gain.previous === 0;
+        alerts.push({
+          id: `${slug}-gain-${gain.key}`,
+          tone: "positive",
+          category,
+          before: `${gain.name} is ${isNew ? "new in this period with " : "up by "}`,
+          highlight: isNew ? amountLabel(gain.amount) : signedPct(gain.pct ?? 0),
+          after: isNew ? " in sales." : ` (${amountLabel(gain.change)}).`,
+          detail: isNew ? comparisonDetail : `Current ${amountLabel(gain.amount)} · previous ${amountLabel(gain.previous)}`,
+        });
+      }
+    };
+
+    addEntityAlerts(
+      "Customer",
+      entityAmounts(current, (r) => r.customer, (r) => r.customerName || r.customer),
+      entityAmounts(previous, (r) => r.customer, (r) => r.customerName || r.customer),
+    );
+    addEntityAlerts(
+      "Profit Centre",
+      entityAmounts(current, (r) => r.profitCtr, (r) => r.pcShortName || r.profitCtrName || r.profitCtr),
+      entityAmounts(previous, (r) => r.profitCtr, (r) => r.pcShortName || r.profitCtrName || r.profitCtr),
+    );
   }
+
+  const toneRank = { negative: 0, warning: 1, positive: 2 } as const;
+  alerts.sort((a, b) => toneRank[a.tone] - toneRank[b.tone] || a.id.localeCompare(b.id));
 
   return {
     totalCr: cr(cur.amount),
