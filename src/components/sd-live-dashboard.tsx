@@ -32,6 +32,8 @@ import {
   TrendingDown,
   ChevronDown,
   BatteryCharging,
+  CalendarDays,
+
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
