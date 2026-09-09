@@ -91,6 +91,8 @@ export function ManagementDashboard() {
         segments: filters.businessSegment ? [filters.businessSegment] : [],
         profitCentres: filters.profitCentre ? [filters.profitCentre] : [],
         plants: filters.plant ? [filters.plant] : [],
+        kpi: "",
+        src: "",
         q: "",
         page: 1,
       },

@@ -1512,6 +1512,8 @@ export function SdLiveDashboard() {
         segments: filters.segments,
         profitCentres: filters.profitCentres,
         plants: filters.plants,
+        kpi: "",
+        src: "",
         q: "",
         page: 1,
       },
