@@ -1548,6 +1548,98 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title="Customer Contribution (Pareto)" accent={1} className="lg:col-span-2" expandable>
+              {(full: boolean) => (
+                <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
+                  <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      yAxisId="left"
+                      width={64}
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: number) => axisCompact(v)}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      width={44}
+                      domain={[0, 100]}
+                      tick={{ fontSize: 11, fill: "#dc2626" }}
+                      tickFormatter={(v: number) => `${Math.round(v)}%`}
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === "Cumulative %" ? `${value.toFixed(1)}%` : INRC(value)
+                      }
+                    />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="value"
+                      name="Sales amount"
+                      fill="var(--kpi-1)"
+                      radius={[3, 3, 0, 0]}
+                    >
+                      <LabelList
+                        dataKey="value"
+                        position="top"
+                        style={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                        formatter={(v: number) => compact(v)}
+                      />
+                    </Bar>
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="cumulativePct"
+                      name="Cumulative %"
+                      stroke="#dc2626"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    >
+                      <LabelList
+                        dataKey="cumulativePct"
+                        position="top"
+                        style={{ fontSize: 10, fill: "#dc2626", fontWeight: 600 }}
+                        formatter={(v: number) => `${v.toFixed(0)}%`}
+                      />
+                    </Line>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </Panel>
+
+            <Panel title="Management Alerts" accent={5}>
+              <ul className="space-y-2.5">
+                {analytics.alerts.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span
+                      className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                      style={{
+                        background:
+                          a.tone === "down"
+                            ? "color-mix(in oklab, #dc2626 15%, transparent)"
+                            : a.tone === "warn"
+                              ? "color-mix(in oklab, #f59e0b 20%, transparent)"
+                              : "color-mix(in oklab, #16a34a 18%, transparent)",
+                        color: a.tone === "down" ? "#dc2626" : a.tone === "warn" ? "#b45309" : "#16a34a",
+                      }}
+                    >
+                      {a.tone === "down" ? "↓" : a.tone === "warn" ? "!" : "↑"}
+                    </span>
+                    <span className="text-muted-foreground">{a.text}</span>
+                  </li>
+                ))}
+                {analytics.alerts.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">No alerts for this selection.</li>
+                ) : null}
+              </ul>
+            </Panel>
+          </div>
+
+
+
+          <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
               {(full: boolean) => (
               <div
