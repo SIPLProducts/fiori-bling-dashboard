@@ -15,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
+import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
 
 const ICONS: Record<string, typeof Grid3x3> = {
   grid: Grid3x3,
@@ -81,6 +82,12 @@ export function TileCard({
 }) {
   const Icon = ICONS[tile.icon] ?? Grid3x3;
   const to = tile.target_path ?? "/launchpad";
+
+  // The plain SD launch tile is replaced by the live Total Sales card.
+  if (tile.kind === "launch" && to === "/reports/module/sd") {
+    return <NetSalesLaunchCard />;
+  }
+
 
 
   const body = (
