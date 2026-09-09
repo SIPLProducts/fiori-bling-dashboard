@@ -1471,7 +1471,7 @@ export function SdLiveDashboard() {
             </KpiCard>
             <KpiCard
               label="AH Sales"
-              value={NUM(analytics.kpis.totalAh)}
+              value={compact(analytics.kpis.totalAh)}
               tone={1}
               icon={BatteryCharging}
               caption="Total AH in selection"
