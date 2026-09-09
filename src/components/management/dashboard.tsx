@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Sidebar, type NavId, NAV_ITEMS } from "./sidebar";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
 import { ManagementAlerts } from "./alerts";
