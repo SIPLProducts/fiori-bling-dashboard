@@ -23,6 +23,11 @@ import {
   type MgmtFilters,
   type RangePreset,
 } from "@/lib/management-live";
+import {
+  readSharedSalesFilters,
+  subscribeSharedSalesFilters,
+  writeSharedSalesFilters,
+} from "@/lib/shared-sales-filters";
 
 export function ManagementDashboard() {
   const [active, setActive] = useState<NavId>("dashboard");
@@ -38,6 +43,18 @@ export function ManagementDashboard() {
 
   const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
   const options = useMemo(() => filterOptions(rows ?? []), [rows]);
+
+  useEffect(() => {
+    const applyShared = (shared: ReturnType<typeof readSharedSalesFilters>) =>
+      setFilters((prev) => ({
+        ...prev,
+        businessSegment: shared.segments[0] ?? "",
+        customer: shared.customers[0] ?? "",
+        profitCentre: shared.profitCentres[0] ?? "",
+      }));
+    applyShared(readSharedSalesFilters());
+    return subscribeSharedSalesFilters(applyShared);
+  }, []);
 
   // Keep the posting-date window in step with the chosen preset.
   useEffect(() => {
@@ -80,6 +97,11 @@ export function ManagementDashboard() {
             const changedDates = next.from !== filters.from || next.to !== filters.to;
             if (changedDates) setPreset("Custom range");
             setFilters(next);
+            writeSharedSalesFilters({
+              segments: next.businessSegment ? [next.businessSegment] : [],
+              customers: next.customer ? [next.customer] : [],
+              profitCentres: next.profitCentre ? [next.profitCentre] : [],
+            });
           }}
           options={options}
           onMenuClick={() => setMenuOpen((prev) => !prev)}

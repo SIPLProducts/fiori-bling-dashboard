@@ -115,6 +115,8 @@ export type SdFilters = {
   to: string;
   plants: string[];
   profitCentres: string[];
+  segments: string[];
+  customers: string[];
   search: string;
 };
 
@@ -123,6 +125,8 @@ export const emptySdFilters: SdFilters = {
   to: "",
   plants: [],
   profitCentres: [],
+  segments: [],
+  customers: [],
   search: "",
 };
 
@@ -134,6 +138,8 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
     if (f.to && r.postingDate && r.postingDate > f.to) return false;
     if (!inList(f.plants, r.plant)) return false;
     if (!inList(f.profitCentres, r.profitCtr)) return false;
+    if (!inList(f.segments, r.businessSegment || r.segment)) return false;
+    if (!inList(f.customers, r.customerName || r.customer)) return false;
     if (
       term &&
       ![r.docNo, r.customer, r.customerName, r.material, r.materialDesc, r.salesOrder, r.model]
