@@ -1753,61 +1753,94 @@ export function SdLiveDashboard() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <KpiCard
-              label="Total Sales (Amount)"
-              value={INRC(totalRevenue)}
-              tone={0}
-              icon={IndianRupee}
-              delta={analytics.deltas.revenue}
-              caption="Filtered postings · click for details"
-              onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
-              active={focus === "revenue"}
-            />
-            <KpiCard
-              label="Sales Growth %"
-              value={
-                analytics.kpis.momPct != null
-                  ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
-                  : "—"
-              }
-              tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 4}
-              icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
-              caption={analytics.kpis.momLabel}
-            />
-            <KpiCard
-              label="Total Quantity"
-              value={QTY(analytics.kpis.quantity)}
-              tone={3}
-              icon={Boxes}
-              delta={analytics.deltas.quantity}
-              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
-            />
-            <KpiCard
-              label="Active Customers"
-              value={NUM(analytics.kpis.customers)}
-              tone={2}
-              icon={Users}
-              delta={analytics.deltas.customers}
-              caption="Billed in selection · click for details"
-              onClick={() => setFocus(focus === "customers" ? null : "customers")}
-              active={focus === "customers"}
-            />
-            <KpiCard
-              label="Revenue / AH"
-              value={`₹${analytics.kpis.revenuePerAh.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-              tone={1}
-              icon={BatteryCharging}
-              delta={analytics.deltas.revenuePerAh}
-              caption={`AH sold: ${compact(analytics.kpis.totalAh)}`}
-            />
-            <KpiCard
-              label="Avg. Revenue / Customer"
-              value={INRC(analytics.kpis.revenuePerCustomer)}
-              tone={5}
-              icon={Gauge}
-              delta={analytics.deltas.revenuePerCustomer}
-              caption="Sales per billed customer"
-            />
+            {kpiOrder.map((tileId) => {
+              const card =
+                tileId === "totalSales" ? (
+                  <KpiCard
+                    label="Total Sales (Amount)"
+                    value={INRC(totalRevenue)}
+                    tone={0}
+                    icon={IndianRupee}
+                    delta={analytics.deltas.revenue}
+                    caption="Filtered postings · click for details"
+                    onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
+                    active={focus === "revenue"}
+                  />
+                ) : tileId === "salesGrowth" ? (
+                  <KpiCard
+                    label="Sales Growth %"
+                    value={
+                      analytics.kpis.momPct != null
+                        ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
+                        : "—"
+                    }
+                    tone={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? 5 : 4}
+                    icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
+                    caption={analytics.kpis.momLabel}
+                  />
+                ) : tileId === "totalQuantity" ? (
+                  <KpiCard
+                    label="Total Quantity"
+                    value={QTY(analytics.kpis.quantity)}
+                    tone={3}
+                    icon={Boxes}
+                    delta={analytics.deltas.quantity}
+                    caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+                  />
+                ) : tileId === "activeCustomers" ? (
+                  <KpiCard
+                    label="Active Customers"
+                    value={NUM(analytics.kpis.customers)}
+                    tone={2}
+                    icon={Users}
+                    delta={analytics.deltas.customers}
+                    caption="Billed in selection · click for details"
+                    onClick={() => setFocus(focus === "customers" ? null : "customers")}
+                    active={focus === "customers"}
+                  />
+                ) : tileId === "revenuePerAh" ? (
+                  <KpiCard
+                    label="Revenue / AH"
+                    value={`₹${analytics.kpis.revenuePerAh.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                    tone={1}
+                    icon={BatteryCharging}
+                    delta={analytics.deltas.revenuePerAh}
+                    caption={`AH sold: ${compact(analytics.kpis.totalAh)}`}
+                  />
+                ) : (
+                  <KpiCard
+                    label="Avg. Revenue / Customer"
+                    value={INRC(analytics.kpis.revenuePerCustomer)}
+                    tone={5}
+                    icon={Gauge}
+                    delta={analytics.deltas.revenuePerCustomer}
+                    caption="Sales per billed customer"
+                  />
+                );
+              return (
+                <div
+                  key={tileId}
+                  draggable
+                  onDragStart={(e) => {
+                    dragKpiId.current = tileId;
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    reorderKpis(tileId);
+                    dragKpiId.current = null;
+                  }}
+                  title="Drag to rearrange"
+                  className="cursor-grab active:cursor-grabbing"
+                >
+                  {card}
+                </div>
+              );
+            })}
           </div>
 
 
