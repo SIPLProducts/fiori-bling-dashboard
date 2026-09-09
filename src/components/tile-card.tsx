@@ -15,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
+import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
 
 const ICONS: Record<string, typeof Grid3x3> = {
   grid: Grid3x3,
@@ -81,6 +82,35 @@ export function TileCard({
 }) {
   const Icon = ICONS[tile.icon] ?? Grid3x3;
   const to = tile.target_path ?? "/launchpad";
+
+  // The plain SD launch tile is replaced by the live Total Sales card,
+  // falling back to the original tile look if live data is unavailable.
+  if (tile.kind === "launch" && to === "/reports/module/sd") {
+    const fallback = (
+      <Link
+        to="/reports/module/$module"
+        params={{ module: "sd" }}
+        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        <div className="flex h-[152px] w-full flex-col justify-between rounded-md border border-border bg-card p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-tile-hover">
+          <div>
+            <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
+              {tile.title}
+            </div>
+            {tile.subtitle ? (
+              <div className="mt-0.5 text-xs text-muted-foreground">{tile.subtitle}</div>
+            ) : null}
+          </div>
+          <div className="flex justify-end">
+            <Icon className="size-6 text-primary/80" strokeWidth={1.5} />
+          </div>
+        </div>
+      </Link>
+    );
+    return <NetSalesLaunchCard fallback={fallback} />;
+  }
+
+
 
 
   const body = (
