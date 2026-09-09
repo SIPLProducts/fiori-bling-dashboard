@@ -113,17 +113,6 @@ function NetSalesDrilldown() {
       "net-sales-posting-lines.csv",
     );
 
-  const kpiLabels: Record<string, string> = {
-    sales: "Total Sales (Amount)",
-    growth: "Sales Growth %",
-    qty: "Total Quantity",
-    cust: "Active Customers",
-    ah: "Revenue / AH",
-    arpc: "Avg. Revenue / Customer",
-  };
-  const kpiLabel = kpiLabels[search.kpi] ?? "";
-  const fromManagement = search.src === "management";
-
   return (
     <ReportShell
       title={kpiLabel ? `${kpiLabel} — Drill-down` : "Net Sales Drill-down"}
