@@ -121,17 +121,22 @@ export function ManagementDashboard() {
 
         <DashboardHeader
           preset={preset}
-          onPresetChange={setPreset}
+          onPresetChange={onPresetChange}
           rangeLabel={view ? `${view.currentLabel} · ${view.lineCount.toLocaleString("en-IN")} postings` : "Loading postings…"}
           filters={filters}
           onFiltersChange={(next) => {
             const changedDates = next.from !== filters.from || next.to !== filters.to;
-            if (changedDates) setPreset("Custom range");
+            if (changedDates) {
+              sharedDatesApplied.current = false;
+              setPreset("Custom range");
+            }
             setFilters(next);
             writeSharedSalesFilters({
               segments: next.businessSegment ? [next.businessSegment] : [],
               customers: next.customer ? [next.customer] : [],
               profitCentres: next.profitCentre ? [next.profitCentre] : [],
+              from: next.from,
+              to: next.to,
             });
           }}
           options={options}
