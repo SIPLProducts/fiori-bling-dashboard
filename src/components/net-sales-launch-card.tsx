@@ -25,10 +25,7 @@ function compact(value: number) {
 type Summary = { total: number; shares: { name: string; value: number }[] };
 
 async function fetchSummary(): Promise<Summary | null> {
-  const { data, error } = await (supabase.rpc as (name: string) => Promise<{
-    data: { total: number; sales_type: string; type_total: number }[] | null;
-    error: { message: string } | null;
-  }>)("net_sales_summary");
+  const { data, error } = await supabase.rpc("net_sales_summary");
   if (error || !data?.length) return null;
   const byType = new Map<string, number>();
   let total = 0;
