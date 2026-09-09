@@ -141,6 +141,7 @@ function KpiCard({
   label,
   value,
   caption,
+  delta,
   tone = 0,
   icon: Icon,
   children,
@@ -150,12 +151,14 @@ function KpiCard({
   label: string;
   value: string;
   caption?: string;
+  delta?: { pct: number | null; label: string };
   tone?: number;
   icon: React.ComponentType<{ className?: string }>;
   children?: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
 }) {
+
   const color = KPI_TONES[tone % KPI_TONES.length];
   return (
     <section
