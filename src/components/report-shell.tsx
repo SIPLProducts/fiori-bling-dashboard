@@ -32,7 +32,7 @@ export function ReportShell({
           >
             <ChevronLeft className="size-3.5" /> Launchpad
           </Link>
-          <h1 className="mt-1 text-2xl font-light text-foreground">{title}</h1>
+          {title ? <h1 className="mt-1 text-2xl font-light text-foreground">{title}</h1> : null}
           {tcode ? (
             <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
               {tcode}
