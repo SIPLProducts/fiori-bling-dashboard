@@ -138,6 +138,100 @@ function labelEvery(count: number, index?: number) {
   return index % step === 0;
 }
 
+/* -------- Sales trend helpers: current vs previous period aggregation ------ */
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const TREND_MODES = ["Monthly", "Quarterly", "YTD"] as const;
+type TrendMode = (typeof TREND_MODES)[number];
+type MonthRow = { month: string; revenue: number; quantity: number; documents: number };
+
+const shortMonth = (i: number) => {
+  const m = MONTHS[i] ?? "";
+  return m.charAt(0) + m.slice(1, 3).toLowerCase();
+};
+
+function parseMonth(label: string) {
+  const [m, y] = (label || "").split("-");
+  const idx = MONTHS.indexOf((m ?? "").toUpperCase().slice(0, 3));
+  const year = Number(y);
+  return idx >= 0 && Number.isFinite(year) ? { idx, year } : null;
+}
+
+function buildTrend(monthly: MonthRow[], mode: TrendMode) {
+  const parsed = monthly
+    .map((r) => ({ ...r, p: parseMonth(r.month) }))
+    .filter((r): r is MonthRow & { p: { idx: number; year: number } } => r.p != null);
+  if (!parsed.length) return { rows: [] as { label: string; current: number; previous: number | null }[], cy: "", py: "" };
+
+  const cy = Math.max(...parsed.map((r) => r.p.year));
+  const py = cy - 1;
+  const hasPrev = parsed.some((r) => r.p.year === py);
+  const value = (year: number, idx: number) =>
+    parsed.filter((r) => r.p.year === year && r.p.idx === idx).reduce((s, r) => s + r.revenue, 0);
+
+  if (mode === "Quarterly") {
+    const rows = [0, 1, 2, 3].map((q) => {
+      const idxs = [q * 3, q * 3 + 1, q * 3 + 2];
+      return {
+        label: `Q${q + 1}`,
+        current: idxs.reduce((s, i) => s + value(cy, i), 0),
+        previous: hasPrev ? idxs.reduce((s, i) => s + value(py, i), 0) : null,
+      };
+    });
+    return { rows, cy: String(cy), py: hasPrev ? String(py) : "" };
+  }
+
+  let cc = 0;
+  let pc = 0;
+  const rows: { label: string; current: number; previous: number | null }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const c = value(cy, i);
+    const p = value(py, i);
+    cc += c;
+    pc += p;
+    if (mode === "Monthly" && !c && !p) continue;
+    rows.push({
+      label: shortMonth(i),
+      current: mode === "YTD" ? cc : c,
+      previous: hasPrev ? (mode === "YTD" ? pc : p) : null,
+    });
+  }
+  return { rows, cy: String(cy), py: hasPrev ? String(py) : "" };
+}
+
+/** Amount + quantity per month for the most recent year. */
+function latestYearMonths(monthly: MonthRow[]) {
+  const parsed = monthly
+    .map((r) => ({ ...r, p: parseMonth(r.month) }))
+    .filter((r): r is MonthRow & { p: { idx: number; year: number } } => r.p != null);
+  if (!parsed.length)
+    return monthly.map((r) => ({ label: r.month, revenue: r.revenue, quantity: r.quantity }));
+  const cy = Math.max(...parsed.map((r) => r.p.year));
+  return parsed
+    .filter((r) => r.p.year === cy)
+    .sort((a, b) => a.p.idx - b.p.idx)
+    .map((r) => ({ label: shortMonth(r.p.idx), revenue: r.revenue, quantity: r.quantity }));
+}
+
+/** Human label for the active posting-date range shown next to the title. */
+function periodLabel(monthly: MonthRow[], from: string, to: string) {
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime())
+      ? ""
+      : `${shortMonth(d.getMonth())} ${d.getFullYear()}`;
+  };
+  if (from || to) return `${fmt(from) || "…"} - ${fmt(to) || "…"}`;
+  const first = monthly[0]?.month;
+  const last = monthly[monthly.length - 1]?.month;
+  const pretty = (label?: string) => {
+    const p = label ? parseMonth(label) : null;
+    return p ? `${shortMonth(p.idx)} ${p.year}` : "";
+  };
+  return first && last ? `${pretty(first)} - ${pretty(last)}` : "All postings";
+}
+
+
 function isoDaysAgo(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
