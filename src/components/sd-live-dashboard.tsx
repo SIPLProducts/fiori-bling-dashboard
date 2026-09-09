@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -43,6 +43,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MultiSelect } from "@/components/multi-select";
 import { downloadCsv } from "@/lib/chart-export";
+import {
+  readSharedSalesFilters,
+  subscribeSharedSalesFilters,
+  writeSharedSalesFilters,
+} from "@/lib/shared-sales-filters";
 import {
   applySdFilters,
   buildSdAnalytics,
@@ -1309,6 +1314,11 @@ export function SdLiveDashboard() {
   });
 
   const all = useMemo(() => lines ?? [], [lines]);
+  useEffect(() => {
+    const shared = readSharedSalesFilters();
+    setFilters((prev) => ({ ...prev, ...shared }));
+    return subscribeSharedSalesFilters((next) => setFilters((prev) => ({ ...prev, ...next })));
+  }, []);
   const typeFiltered = useMemo(() => {
     if (salesTypeTab === "All") return all;
     const target = salesTypeTab === "Services" ? "service" : salesTypeTab.toLowerCase();
@@ -1320,12 +1330,24 @@ export function SdLiveDashboard() {
   const opts = useMemo(
     () => ({
       plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
-      profitCentres: uniqueValues(all, (r) => r.profitCtr),
+      profitCentres: uniqueValues(all, (r) => r.pcShortName || r.profitCtrName || r.profitCtr),
+      segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
+      customers: uniqueValues(all, (r) => r.customerName || r.customer),
     }),
     [all],
   );
 
-  const set = (patch: Partial<SdFilters>) => setFilters((prev) => ({ ...prev, ...patch }));
+  const set = (patch: Partial<SdFilters>) => setFilters((prev) => {
+    const next = { ...prev, ...patch };
+    if ("segments" in patch || "customers" in patch || "profitCentres" in patch) {
+      writeSharedSalesFilters({
+        segments: next.segments,
+        customers: next.customers,
+        profitCentres: next.profitCentres,
+      });
+    }
+    return next;
+  });
   const toOptions = (values: string[]) => values.map((v) => ({ value: v, label: v }));
 
   const activeChips: { label: string; clear: () => void }[] = [];
@@ -1337,6 +1359,8 @@ export function SdLiveDashboard() {
   const listChips: [keyof SdFilters, string][] = [
     ["plants", "Plant"],
     ["profitCentres", "Profit centre"],
+    ["segments", "Segment"],
+    ["customers", "Customer"],
   ];
   for (const [key, label] of listChips) {
     const value = filters[key] as string[];
@@ -1482,7 +1506,10 @@ export function SdLiveDashboard() {
               size="sm"
               className="h-9"
               disabled={!activeChips.length}
-              onClick={() => setFilters(emptySdFilters)}
+              onClick={() => {
+                setFilters(emptySdFilters);
+                writeSharedSalesFilters({ segments: [], customers: [], profitCentres: [] });
+              }}
             >
               <RotateCcw className="mr-1 size-3.5" /> Reset
             </Button>
@@ -1584,6 +1611,26 @@ export function SdLiveDashboard() {
                     options={toOptions(opts.profitCentres)}
                     selected={filters.profitCentres}
                     onChange={(next) => set({ profitCentres: next })}
+                  />
+                </div>
+              </label>
+              <label className="min-w-0 text-xs font-medium text-muted-foreground lg:col-span-2">
+                Segment
+                <div className="mt-1">
+                  <MultiSelect
+                    options={toOptions(opts.segments)}
+                    selected={filters.segments}
+                    onChange={(next) => set({ segments: next })}
+                  />
+                </div>
+              </label>
+              <label className="min-w-0 text-xs font-medium text-muted-foreground lg:col-span-2">
+                Customer
+                <div className="mt-1">
+                  <MultiSelect
+                    options={toOptions(opts.customers)}
+                    selected={filters.customers}
+                    onChange={(next) => set({ customers: next })}
                   />
                 </div>
               </label>
