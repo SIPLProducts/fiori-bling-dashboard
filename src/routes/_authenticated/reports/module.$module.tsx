@@ -84,7 +84,7 @@ function ModuleReportPage() {
 
   if (live) {
     return (
-      <ReportShell title="Net Sales" description={def.description}>
+      <ReportShell title="" description={def.description}>
         {!rolesLoading && !allowed ? (
           <AccessDenied area="Net Sales" />
         ) : (
