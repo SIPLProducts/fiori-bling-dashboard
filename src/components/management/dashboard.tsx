@@ -31,8 +31,6 @@ import {
 
 export function ManagementDashboard() {
   const navigate = useNavigate();
-  const [active, setActive] = useState<NavId>("dashboard");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [preset, setPreset] = useState<RangePreset>("All postings");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
 
