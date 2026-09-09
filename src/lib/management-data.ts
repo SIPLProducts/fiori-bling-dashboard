@@ -31,8 +31,8 @@ const PREVIOUS = [21, 18, 23, 32, 27, 28, 37, 39, 44, 48, 42, 46];
 
 export const salesTrendData: TrendPoint[] = MONTHS.map((month, i) => ({
   month,
-  current: CURRENT[i],
-  previous: PREVIOUS[i],
+  current: CURRENT[i] ?? 0,
+  previous: PREVIOUS[i] ?? 0,
 }));
 
 export const salesTrendQuarterly: TrendPoint[] = [
@@ -46,8 +46,8 @@ export const salesTrendYtd: TrendPoint[] = MONTHS.reduce<TrendPoint[]>((acc, mon
   const prevRow = acc[i - 1];
   acc.push({
     month,
-    current: (prevRow?.current ?? 0) + CURRENT[i],
-    previous: (prevRow?.previous ?? 0) + PREVIOUS[i],
+    current: (prevRow?.current ?? 0) + (CURRENT[i] ?? 0),
+    previous: (prevRow?.previous ?? 0) + (PREVIOUS[i] ?? 0),
   });
   return acc;
 }, []);
