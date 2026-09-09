@@ -297,19 +297,30 @@ function KpiCard({
             }
           : undefined
       }
-      className={`relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-tile transition-shadow hover:shadow-lg ${
-        onClick ? "cursor-pointer focus:outline-none" : ""
+      className={`group relative overflow-hidden rounded-xl border p-4 shadow-tile transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-tile-hover ${
+        onClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" : ""
       }`}
-      style={
-        active
-          ? { boxShadow: `0 0 0 2px color-mix(in oklab, ${color} 45%, transparent)` }
-          : undefined
-      }
+      style={{
+        background: `linear-gradient(145deg, color-mix(in oklab, ${color} 7%, var(--color-card)) 0%, var(--color-card) 68%)`,
+        borderColor: `color-mix(in oklab, ${color} ${active ? "42%" : "20%"}, var(--color-border))`,
+        boxShadow: active
+          ? `0 0 0 2px color-mix(in oklab, ${color} 35%, transparent), var(--shadow-tile)`
+          : undefined,
+      }}
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ background: color }}
+      />
       <div className="flex items-center gap-3">
         <span
-          className="grid size-11 shrink-0 place-items-center rounded-full"
-          style={{ background: `color-mix(in oklab, ${color} 14%, var(--color-card))`, color }}
+          className="grid size-11 shrink-0 place-items-center rounded-full ring-1 transition-transform duration-200 group-hover:scale-105"
+          style={{
+            background: `color-mix(in oklab, ${color} 15%, var(--color-card))`,
+            color,
+            boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 18%, transparent)`,
+          }}
         >
           <Icon className="size-5" />
         </span>
@@ -320,7 +331,7 @@ function KpiCard({
         <p className="mt-1.5 flex items-center gap-1 text-xs">
           <span
             className="tabular font-semibold"
-            style={{ color: delta.pct >= 0 ? "var(--kpi-up, #16a34a)" : "var(--kpi-down, #dc2626)" }}
+            style={{ color: delta.pct >= 0 ? "var(--kpi-up)" : "var(--kpi-down)" }}
           >
             {delta.pct >= 0 ? "↑" : "↓"} {Math.abs(delta.pct).toFixed(1)}%
           </span>
