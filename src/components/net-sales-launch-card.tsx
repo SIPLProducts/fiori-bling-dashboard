@@ -42,7 +42,7 @@ async function fetchSummary(): Promise<Summary | null> {
 }
 
 /** Launchpad replacement for the plain SD tile: live Total Sales card. */
-export function NetSalesLaunchCard() {
+export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: ["net-sales-summary"],
     queryFn: fetchSummary,
@@ -51,14 +51,10 @@ export function NetSalesLaunchCard() {
 
   const color = KPI_TONES[0];
 
-  if (isLoading || !data) {
-    if (isLoading) {
-      return (
-        <div className="h-[152px] w-full animate-pulse rounded-lg border border-border bg-card" />
-      );
-    }
-    return null; // caller falls back to the plain tile
+  if (isLoading) {
+    return <div className="h-[152px] w-full animate-pulse rounded-lg border border-border bg-card" />;
   }
+  if (!data) return <>{fallback}</>;
 
   return (
     <Link
