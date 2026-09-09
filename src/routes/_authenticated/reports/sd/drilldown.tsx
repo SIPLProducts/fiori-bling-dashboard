@@ -23,6 +23,8 @@ export const Route = createFileRoute("/_authenticated/reports/sd/drilldown")({
     segments: strings(search["segments"]),
     profitCentres: strings(search["profitCentres"]),
     plants: strings(search["plants"]),
+    kpi: typeof search["kpi"] === "string" ? search["kpi"] : "",
+    src: typeof search["src"] === "string" ? search["src"] : "",
     q: typeof search["q"] === "string" ? search["q"] : "",
     page: Number.isFinite(Number(search["page"])) ? Math.max(1, Math.floor(Number(search["page"]))) : 1,
   }),
