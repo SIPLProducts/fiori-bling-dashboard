@@ -71,7 +71,7 @@ export function ManagementDashboard() {
     () => (rows ? buildManagementView(rows, filters) : null),
     [rows, filters],
   );
-  const openDrilldown = (selection: { month?: string; customer?: string }) => {
+  const openDrilldown = (selection: { month?: string; customer?: string; kpi?: string }) => {
     let month = "";
     if (selection.month) {
       const match = selection.month.match(/^([A-Za-z]{3})\s+(\d{2,4})$/);
@@ -91,8 +91,8 @@ export function ManagementDashboard() {
         segments: filters.businessSegment ? [filters.businessSegment] : [],
         profitCentres: filters.profitCentre ? [filters.profitCentre] : [],
         plants: filters.plant ? [filters.plant] : [],
-        kpi: "",
-        src: "",
+        kpi: selection.kpi ?? "",
+        src: selection.kpi ? "management" : "",
         q: "",
         page: 1,
       },
@@ -158,7 +158,15 @@ export function ManagementDashboard() {
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {view.kpis.map((kpi) => (
-                  <KpiCard key={kpi.id} kpi={kpi} comparisonLabel={view.comparisonLabel} />
+                  <button
+                    key={kpi.id}
+                    type="button"
+                    onClick={() => openDrilldown({ kpi: kpi.id })}
+                    className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1769E8] rounded-xl"
+                    aria-label={`View ${kpi.label} line items`}
+                  >
+                    <KpiCard kpi={kpi} comparisonLabel={view.comparisonLabel} />
+                  </button>
                 ))}
               </div>
 
