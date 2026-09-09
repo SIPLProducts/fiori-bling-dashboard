@@ -134,6 +134,7 @@
   --chart-grid-line: oklch(0.7 0.02 252 / 18%);
   --chart-label-strong: oklch(0.98 0.004 247);
   --chart-tooltip-border: oklch(0.72 0.06 252 / 48%);
+  --chart-emphasis: oklch(0.75 0.16 68);
 }
 
 
@@ -196,6 +197,7 @@
   --chart-grid-line: oklch(0.72 0.02 252 / 18%);
   --chart-label-strong: oklch(0.98 0.004 247);
   --chart-tooltip-border: oklch(0.72 0.06 252 / 48%);
+  --chart-emphasis: oklch(0.8 0.14 68);
 }
 
 

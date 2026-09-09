@@ -1768,16 +1768,17 @@ export function SdLiveDashboard() {
                     ) : null}
                     <span className="ml-auto">Amount (₹)</span>
                   </div>
-                  <div className={full ? "min-h-0 flex-1" : ""}>
+                  <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
                     <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
-                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8 }}>
-                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
                         <YAxis
                           tickFormatter={axisCompact}
-                          tick={{ fontSize: 11 }}
-                          width={70}
-                          stroke="var(--color-muted-foreground)"
+                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+                          width={60}
+                          stroke="var(--chart-axis-line)"
+                          tickLine={false}
                         />
                         <Tooltip {...tooltipStyle} formatter={(v: number) => INRC(v)} />
                         <Line
@@ -1822,23 +1823,28 @@ export function SdLiveDashboard() {
 
             <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
               {(full: boolean) => (
+                <div className={`cxo-chart-surface ${full ? "h-full" : ""}`}>
                 <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
                   <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                    <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
+                    <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
                     <YAxis
                       yAxisId="left"
-                      width={64}
-                      tick={{ fontSize: 11 }}
+                      width={58}
+                      tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
                       tickFormatter={(v: number) => axisCompact(v)}
+                      stroke="var(--chart-axis-line)"
+                      tickLine={false}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
                       width={44}
                       domain={[0, 100]}
-                      tick={{ fontSize: 11, fill: "#f97316" }}
+                      tick={{ fontSize: 10, fill: "var(--chart-emphasis)" }}
                       tickFormatter={(v: number) => `${Math.round(v)}%`}
+                      stroke="var(--chart-axis-line)"
+                      tickLine={false}
                     />
                     <Tooltip
                       {...tooltipStyle}
@@ -1856,7 +1862,7 @@ export function SdLiveDashboard() {
                       <LabelList
                         dataKey="value"
                         position="top"
-                        style={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                        style={{ fontSize: 10, fill: "var(--chart-label-strong)" }}
                         formatter={(v: number) => compact(v)}
                       />
                     </Bar>
@@ -1865,19 +1871,20 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="cumulativePct"
                       name="Cumulative %"
-                      stroke="#f97316"
+                      stroke="var(--chart-emphasis)"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     >
                       <LabelList
                         dataKey="cumulativePct"
                         position="top"
-                        style={{ fontSize: 10, fill: "#f97316", fontWeight: 600 }}
+                        style={{ fontSize: 10, fill: "var(--chart-emphasis)", fontWeight: 600 }}
                         formatter={(v: number) => `${v.toFixed(0)}%`}
                       />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
+                </div>
               )}
             </Panel>
 
@@ -1909,24 +1916,26 @@ export function SdLiveDashboard() {
                       Quantity
                     </span>
                   </div>
-                  <div className={full ? "min-h-0 flex-1" : ""}>
+                  <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
                     <ResponsiveContainer width="100%" height={full ? "100%" : 280}>
                       <ComposedChart data={salesVsQty} margin={{ top: 16, left: 0, right: 8 }}>
-                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
                         <YAxis
                           tickFormatter={axisCompact}
-                          tick={{ fontSize: 11 }}
-                          width={70}
-                          stroke="var(--color-muted-foreground)"
+                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+                          width={60}
+                          stroke="var(--chart-axis-line)"
+                          tickLine={false}
                         />
                         <YAxis
                           yAxisId="qty"
                           orientation="right"
                           tickFormatter={axisCompact}
-                          tick={{ fontSize: 11 }}
-                          width={60}
-                          stroke="var(--color-muted-foreground)"
+                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+                          width={54}
+                          stroke="var(--chart-axis-line)"
+                          tickLine={false}
                         />
                         <Tooltip
                           {...tooltipStyle}
