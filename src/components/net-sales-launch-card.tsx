@@ -63,7 +63,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
       className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <section
-        className="relative flex h-[152px] w-full cursor-pointer flex-col overflow-hidden rounded-lg border p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg"
+        className="relative flex w-full cursor-pointer flex-col rounded-lg border p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg"
         style={{
           borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
           background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
