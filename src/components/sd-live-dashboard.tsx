@@ -394,15 +394,15 @@ function ShareBars({ items, total }: { items: { name: string; value: number }[];
 
 const tooltipStyle = {
   contentStyle: {
-    background: "var(--chart-surface-raised)",
-    color: "var(--chart-label-strong)",
-    border: "1px solid var(--chart-tooltip-border)",
+    background: "var(--card)",
+    color: "var(--card-foreground)",
+    border: "1px solid var(--border)",
     borderRadius: 6,
     fontSize: 12,
-    boxShadow: "0 12px 28px color-mix(in oklab, var(--chart-surface) 55%, transparent)",
+    boxShadow: "var(--shadow-tile-hover)",
   },
-  labelStyle: { color: "var(--chart-label-strong)", fontWeight: 600 },
-  itemStyle: { color: "var(--chart-axis-label)" },
+  labelStyle: { color: "var(--card-foreground)", fontWeight: 600 },
+  itemStyle: { color: "var(--muted-foreground)" },
 } as const;
 
 function HBar({

@@ -127,14 +127,14 @@
   --kpi-tint: 12%;
   --kpi-up: oklch(0.5 0.14 152);
   --kpi-down: oklch(0.55 0.2 25);
-  --chart-surface: oklch(0.245 0.034 255);
-  --chart-surface-raised: oklch(0.285 0.038 255);
-  --chart-axis-label: oklch(0.86 0.018 250);
-  --chart-axis-line: oklch(0.54 0.025 252 / 58%);
-  --chart-grid-line: oklch(0.7 0.02 252 / 18%);
-  --chart-label-strong: oklch(0.98 0.004 247);
-  --chart-tooltip-border: oklch(0.72 0.06 252 / 48%);
-  --chart-emphasis: oklch(0.75 0.16 68);
+  --chart-surface: transparent;
+  --chart-surface-raised: var(--card);
+  --chart-axis-label: oklch(0.45 0.02 252);
+  --chart-axis-line: oklch(0.72 0.025 252 / 55%);
+  --chart-grid-line: oklch(0.78 0.02 252 / 40%);
+  --chart-label-strong: var(--foreground);
+  --chart-tooltip-border: var(--border);
+  --chart-emphasis: oklch(0.62 0.16 55);
 }
 
 
@@ -219,9 +219,5 @@
 }
 
 @utility cxo-chart-surface {
-  border: 1px solid var(--chart-axis-line);
-  border-radius: var(--radius-md);
-  background: var(--chart-surface);
   padding: 0.75rem 0.75rem 0.25rem;
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--chart-label-strong) 7%, transparent);
 }
