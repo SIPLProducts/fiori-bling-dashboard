@@ -1559,9 +1559,7 @@ export function SdLiveDashboard() {
               caption="Filtered postings · click for details"
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
-            >
-              <ShareBars items={analytics.mixByType} total={totalRevenue} />
-            </KpiCard>
+            />
             <KpiCard
               label="Sales Growth %"
               value={
@@ -1620,26 +1618,102 @@ export function SdLiveDashboard() {
             />
           ) : (
             <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Panel title="Top 10 Profit Centres" accent={1} expandable>
+          {/* Row 2 — trend, segment mix, top profit centres */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel
+              title="Sales Trend (Amount)"
+              accent={1}
+              expandable
+              actions={
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                  {TREND_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setTrendMode(mode)}
+                      className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                        trendMode === mode
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              }
+            >
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className="mb-1 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
+                      Current period ({trend.cy})
+                    </span>
+                    {trend.py ? (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="h-0 w-5 border-t-2 border-dashed"
+                          style={{ borderColor: "var(--color-muted-foreground)" }}
+                        />
+                        Previous period ({trend.py})
+                      </span>
+                    ) : null}
+                    <span className="ml-auto">Amount (₹)</span>
+                  </div>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8 }}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={70}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <Tooltip {...tooltipStyle} formatter={(v: number) => INRC(v)} />
+                        <Line
+                          type="monotone"
+                          dataKey="current"
+                          name="Current period"
+                          stroke="var(--kpi-1)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="previous"
+                          name="Previous period"
+                          stroke="var(--color-muted-foreground)"
+                          strokeDasharray="5 5"
+                          strokeWidth={2}
+                          dot={{ r: 2.5 }}
+                          connectNulls
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </Panel>
+
+            <Panel title="Sales by Segment (Amount)" accent={2} expandable>
+              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
+            </Panel>
+
+            <Panel title="Top 10 Profit Centres by Amount" accent={4} expandable>
               {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Customers" accent={4} expandable>
-              {(full: boolean) => <BarList items={analytics.topCustomers} tone={3} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Materials" accent={3} expandable>
-              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
-            </Panel>
-
-            <Panel title="Top 10 Sales Employees" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
           </div>
 
+          {/* Row 3 — customers, pareto, main group */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Customer Contribution (Pareto)" accent={1} className="lg:col-span-2" expandable>
+            <Panel title="Top 10 Customers by Amount" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} />}
+            </Panel>
+
+            <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
               {(full: boolean) => (
                 <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
                   <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
@@ -1656,7 +1730,7 @@ export function SdLiveDashboard() {
                       orientation="right"
                       width={44}
                       domain={[0, 100]}
-                      tick={{ fontSize: 11, fill: "#dc2626" }}
+                      tick={{ fontSize: 11, fill: "#f97316" }}
                       tickFormatter={(v: number) => `${Math.round(v)}%`}
                     />
                     <Tooltip
@@ -1684,19 +1758,94 @@ export function SdLiveDashboard() {
                       type="monotone"
                       dataKey="cumulativePct"
                       name="Cumulative %"
-                      stroke="#dc2626"
+                      stroke="#f97316"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     >
                       <LabelList
                         dataKey="cumulativePct"
                         position="top"
-                        style={{ fontSize: 10, fill: "#dc2626", fontWeight: 600 }}
+                        style={{ fontSize: 10, fill: "#f97316", fontWeight: 600 }}
                         formatter={(v: number) => `${v.toFixed(0)}%`}
                       />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
+              )}
+            </Panel>
+
+            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
+              {(full: boolean) => (
+                <MainGroupTreemap
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
+                />
+              )}
+            </Panel>
+          </div>
+
+          {/* Row 4 — sales vs quantity, alerts */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Sales vs Quantity Trend" accent={3} expandable>
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className="mb-1 flex items-center gap-4 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
+                      Amount (₹)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-2)" }} />
+                      Quantity
+                    </span>
+                  </div>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <ResponsiveContainer width="100%" height={full ? "100%" : 280}>
+                      <ComposedChart data={salesVsQty} margin={{ top: 16, left: 0, right: 8 }}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                        <YAxis
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={70}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <YAxis
+                          yAxisId="qty"
+                          orientation="right"
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 11 }}
+                          width={60}
+                          stroke="var(--color-muted-foreground)"
+                        />
+                        <Tooltip
+                          {...tooltipStyle}
+                          formatter={(v: number, n: string) => [n === "Quantity" ? NUM(v) : INRC(v), n]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          name="Amount"
+                          stroke="var(--kpi-1)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                        <Line
+                          yAxisId="qty"
+                          type="monotone"
+                          dataKey="quantity"
+                          name="Quantity"
+                          stroke="var(--kpi-2)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               )}
             </Panel>
 
@@ -1728,87 +1877,14 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-
-
+          {/* Additional analysis kept below the management view */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Sales trend" accent={1} className="lg:col-span-2" expandable>
-              {(full: boolean) => (
-              <div
-                className={`rounded-md p-2 ${full ? "h-full" : ""}`}
-                style={{ background: "color-mix(in oklab, var(--kpi-1) 6%, transparent)" }}
-              >
-              <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
+            <Panel title="Top 10 Materials" accent={3} expandable>
+              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
+            </Panel>
 
-                <ComposedChart data={analytics.monthly} margin={{ top: 26, left: 0, right: 0 }}>
-                  <defs>
-                    <linearGradient id="sdFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="var(--kpi-1)" stopOpacity={0.06} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="2 6" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                  <YAxis
-                    tickFormatter={axisCompact}
-                    tick={{ fontSize: 11 }}
-                    width={84}
-                    tickMargin={2}
-                    stroke="var(--color-muted-foreground)"
-                  />
-                  <YAxis
-                    yAxisId="docs"
-                    orientation="right"
-                    tick={{ fontSize: 11 }}
-                    stroke="var(--color-muted-foreground)"
-                  />
-                  <Tooltip
-                    {...tooltipStyle}
-                    formatter={(v: number, n: string) => [n === "documents" ? NUM(v) : INRC(v), n]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--kpi-1)" fill="url(#sdFill)" strokeWidth={2}>
-                    <LabelList
-                      dataKey="revenue"
-                      position="top"
-                      offset={8}
-                      formatter={(v: number, _n?: unknown, idx?: number) =>
-                        labelEvery(analytics.monthly.length, idx) ? compact(v) : ""
-                      }
-                      fontSize={10}
-                      fontWeight={600}
-                      fill="var(--kpi-1)"
-                      stroke="var(--color-card)"
-                      strokeWidth={3}
-                      paintOrder="stroke"
-                    />
-                  </Area>
-                  <Line
-                    yAxisId="docs"
-                    type="monotone"
-                    dataKey="documents"
-                    stroke="var(--kpi-3)"
-                    strokeWidth={2}
-                    dot={false}
-                  >
-                    <LabelList
-                      dataKey="documents"
-                      position="bottom"
-                      offset={8}
-                      formatter={(v: number, _n?: unknown, idx?: number) =>
-                        labelEvery(analytics.monthly.length, idx) ? NUM(v) : ""
-                      }
-                      fontSize={10}
-                      fontWeight={600}
-                      fill="var(--kpi-3)"
-                      stroke="var(--color-card)"
-                      strokeWidth={3}
-                      paintOrder="stroke"
-                    />
-                  </Line>
-
-                </ComposedChart>
-              </ResponsiveContainer>
-              </div>
-              )}
+            <Panel title="Top 10 Sales Employees" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
 
             <Panel title="Sales mix by type" accent={2} expandable>
@@ -1838,24 +1914,9 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
-
-
-
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
-              {(full: boolean) => (
-                <MainGroupTreemap
-                  items={analytics.byMainGroup}
-                  subGroups={analytics.subGroupsByMainGroup}
-                  full={full}
-                  selected={selectedMainGroup}
-                  onSelect={setSelectedMainGroup}
-                />
-              )}
-            </Panel>
-
+          <div className="grid gap-4">
             <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
@@ -1869,11 +1930,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4">
-            <Panel title="Sales by Segment (Amount)" accent={2}>
-              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
-            </Panel>
-          </div>
+
 
 
 
