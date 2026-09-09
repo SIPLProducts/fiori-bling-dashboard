@@ -76,7 +76,8 @@ export function DashboardHeader({
 
       <div className="flex shrink-0 items-center gap-2">
         <Link
-          to="/reports/module/sd"
+          to="/reports/module/$module"
+          params={{ module: "sd" }}
           className={controlClass}
           title="Back to Net Sales"
         >
