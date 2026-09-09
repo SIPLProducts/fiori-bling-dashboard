@@ -1449,35 +1449,13 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div
-            className={`grid gap-4 sm:grid-cols-2 ${
-              ({
-                1: "lg:grid-cols-1",
-                2: "lg:grid-cols-2",
-                3: "lg:grid-cols-3",
-                4: "lg:grid-cols-4",
-                5: "lg:grid-cols-5",
-                6: "lg:grid-cols-6",
-              } as Record<number, string>)[
-                (
-                  [
-                    true,
-                    true,
-                    SHOW_QUANTITY_TILE,
-                    true,
-                    SHOW_AVG_ORDER_VALUE_TILE,
-                    true,
-                    SHOW_TOP_PROFIT_CENTRE_TILE,
-                  ] as const
-                ).filter(Boolean).length
-              ]
-            }`}
-          >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <KpiCard
-              label="Total Sales"
+              label="Total Sales (Amount)"
               value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
+              delta={analytics.deltas.revenue}
               caption="Filtered postings · click for details"
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
@@ -1485,32 +1463,7 @@ export function SdLiveDashboard() {
               <ShareBars items={analytics.mixByType} total={totalRevenue} />
             </KpiCard>
             <KpiCard
-              label="AH Sales"
-              value={compact(analytics.kpis.totalAh)}
-              tone={1}
-              icon={BatteryCharging}
-              caption="Total AH in selection"
-            />
-            {SHOW_QUANTITY_TILE ? (
-              <KpiCard
-                label="Total quantity"
-                value={NUM(analytics.kpis.quantity)}
-                tone={4}
-                icon={Boxes}
-                caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
-              />
-            ) : null}
-            <KpiCard
-              label="Billed Customers"
-              value={NUM(analytics.kpis.customers)}
-              tone={2}
-              icon={Users}
-              caption="Billed in selection · click for details"
-              onClick={() => setFocus(focus === "customers" ? null : "customers")}
-              active={focus === "customers"}
-            />
-            <KpiCard
-              label="Sales growth"
+              label="Sales Growth %"
               value={
                 analytics.kpis.momPct != null
                   ? `${analytics.kpis.momPct >= 0 ? "+" : ""}${analytics.kpis.momPct.toFixed(1)}%`
@@ -1520,25 +1473,42 @@ export function SdLiveDashboard() {
               icon={analytics.kpis.momPct != null && analytics.kpis.momPct < 0 ? TrendingDown : TrendingUp}
               caption={analytics.kpis.momLabel}
             />
-            {SHOW_AVG_ORDER_VALUE_TILE ? (
-              <KpiCard
-                label="Avg order value"
-                value={INRC(analytics.kpis.avgDoc)}
-                tone={3}
-                icon={Gauge}
-                caption="Revenue per document"
-              />
-            ) : null}
-            {SHOW_TOP_PROFIT_CENTRE_TILE ? (
-              <KpiCard
-                label="Top profit centre"
-                value={INRC(analytics.kpis.topProfitCentreValue)}
-                tone={5}
-                icon={Building2}
-                caption={analytics.kpis.topProfitCentre}
-              />
-            ) : null}
+            <KpiCard
+              label="Total Quantity"
+              value={QTY(analytics.kpis.quantity)}
+              tone={3}
+              icon={Boxes}
+              delta={analytics.deltas.quantity}
+              caption={`Units billed${topUnit ? ` (${topUnit})` : ""}`}
+            />
+            <KpiCard
+              label="Active Customers"
+              value={NUM(analytics.kpis.customers)}
+              tone={2}
+              icon={Users}
+              delta={analytics.deltas.customers}
+              caption="Billed in selection · click for details"
+              onClick={() => setFocus(focus === "customers" ? null : "customers")}
+              active={focus === "customers"}
+            />
+            <KpiCard
+              label="Revenue / AH"
+              value={`₹${analytics.kpis.revenuePerAh.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+              tone={1}
+              icon={BatteryCharging}
+              delta={analytics.deltas.revenuePerAh}
+              caption={`AH sold: ${compact(analytics.kpis.totalAh)}`}
+            />
+            <KpiCard
+              label="Avg. Revenue / Customer"
+              value={INRC(analytics.kpis.revenuePerCustomer)}
+              tone={5}
+              icon={Gauge}
+              delta={analytics.deltas.revenuePerCustomer}
+              caption="Sales per billed customer"
+            />
           </div>
+
 
           {focus ? (
             <FocusTable
