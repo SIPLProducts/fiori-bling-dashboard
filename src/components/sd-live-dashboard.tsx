@@ -198,8 +198,20 @@ function KpiCard({
           <Icon className="size-4" />
         </span>
       </div>
+      {delta && delta.pct != null ? (
+        <p className="mt-1.5 flex items-center gap-1 text-xs">
+          <span
+            className="tabular font-semibold"
+            style={{ color: delta.pct >= 0 ? "var(--kpi-up, #16a34a)" : "var(--kpi-down, #dc2626)" }}
+          >
+            {delta.pct >= 0 ? "↑" : "↓"} {Math.abs(delta.pct).toFixed(1)}%
+          </span>
+          <span className="truncate text-muted-foreground">{delta.label}</span>
+        </p>
+      ) : null}
       {caption ? <p className="mt-1 truncate text-xs text-muted-foreground">{caption}</p> : null}
       {children}
+
     </section>
   );
 }
