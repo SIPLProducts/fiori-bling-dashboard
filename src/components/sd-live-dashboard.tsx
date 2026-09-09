@@ -1254,7 +1254,7 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
