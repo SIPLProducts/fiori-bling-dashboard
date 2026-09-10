@@ -105,10 +105,11 @@ export function DraggableCardGrid({
             setOver(null);
           }}
           title="Drag to rearrange"
-          style={{ gridColumn: `span ${card.span} / span ${card.span}` }}
           className={[
             "min-w-0 cursor-grab rounded-xl transition-all active:cursor-grabbing",
-            "col-span-1 sm:col-span-2 lg:col-span-6",
+            "col-span-1 sm:col-span-2",
+            LG_SPAN[card.span] ?? "lg:col-span-6",
+            XL_SPAN[card.span] ?? "xl:col-span-6",
             dragging === card.id ? "opacity-50" : "",
             over === card.id && dragging && dragging !== card.id
               ? "ring-2 ring-[#1769E8] ring-offset-2 ring-offset-[#F7F9FC]"
