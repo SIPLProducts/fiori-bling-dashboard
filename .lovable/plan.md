@@ -1,44 +1,31 @@
-# Clear the sales table and make large syncs work
+# Clear the sales table and fix the server sync error
 
-## 1. Delete all sales records on your server (plain query, no migration)
+## 1. Delete all records from the sales table (query only, no migration)
 
-Run this on the self-hosted server. It empties the sales table only; structure, users and settings are untouched.
+Open the SQL Editor on your self-hosted backend (port 8000 Studio) and run:
 
-```bash
-docker exec -i supabase-db psql -U postgres -d postgres \
-  -c "DELETE FROM public.zfisales_detail;"
+```sql
+DELETE FROM public.zfisales_detail;
 ```
 
-Check the result:
+This removes only the rows; the table structure, users and settings stay. It is permanent — the next successful sync refills the table from SAP. It will never run automatically on Production because it is not in any migration file.
 
-```bash
-docker exec -i supabase-db psql -U postgres -d postgres \
-  -c "SELECT count(*) FROM public.zfisales_detail;"
-```
+Your table currently holds 27,074 records; deleting and re-syncing from SAP is fine.
 
-It should print 0. If the database container has a different name, find it with `docker ps` and replace `supabase-db`.
+## 2. Why the sync fails with "URI too long"
 
-This is permanent and cannot be undone; the next sync refills the table from SAP.
+The scheduler correctly calls SAP and receives the records. Then, before saving, it checks which records already exist — but it asks about 500 records in a single request. Each record key is long, so the request address becomes too big for the gateway, which rejects it with "URI too long" and nothing is saved.
 
-## 2. Why the sync currently fails
-
-The scheduler works and SAP returns records, but before saving it asks the database about 500 records in one web request. With long record keys the request address exceeds the gateway limit, giving "URI too long", so nothing is saved. At 30,000 records this fails every time.
-
-## 3. Change to make in the scheduler
+## 3. Code fix (after approval)
 
 In `middleware/scheduler.mjs`:
 
-- Ask about existing records in groups of 40 instead of 500, keeping every request address short.
-- Keep saving in groups of 500, since saving sends data in the body and has no address limit.
-- Process the run in sequential chunks so memory stays flat even with 30,000+ records.
-- Log progress every few thousand records so long runs are visible.
-- Keep the new/updated/skipped counting exactly as today.
+- Check existing records in groups of 40 instead of 500, keeping every request address short.
+- Keep saving in groups of 500 (saving uses the request body, which has no address limit).
+- Process chunks in sequence so even 30,000+ records sync with flat memory.
+- Log progress every few thousand records.
 
-A 30,000-record run becomes about 750 short lookups plus 60 save batches, comfortably inside the existing 10-minute timeout.
-
-Nothing in the portal or database schema changes.
-
-## 4. Deploy on the server
+## 4. Deploy and verify on the server
 
 ```bash
 cd /opt/MIS_Projects/Quality
@@ -48,11 +35,11 @@ pm2 restart mis-q-middleware
 pm2 logs mis-q-middleware --lines 40 --nostream
 ```
 
-Within five minutes the SAP API Settings screen should show a successful run with received/new/updated counts instead of "URI too long".
+Within five minutes the SAP API Settings screen should show a successful run with received/new/updated counts.
 
-## Still outstanding
+## 5. Port fix (Test button, when convenient)
 
-The middleware listens on port 3000 because PM2 kept an older saved value. The scheduler is unaffected, but the Test button uses port 3002:
+The middleware listens on 3000 because PM2 saved an older value; the portal Test button uses 3002:
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
