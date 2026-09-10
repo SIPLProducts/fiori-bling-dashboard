@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import express from "express";
+import { createScheduler } from "./scheduler.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -388,6 +389,23 @@ app.post("/sap/call", requireSharedSecret, async (req, res) => {
       message: `SAP was never contacted: ${err.message}`,
     });
   }
+});
+
+/* -------------------------- on-prem sync scheduler ------------------------- */
+
+const scheduler = createScheduler({ callSap, resolveSystem, logLine, newTraceId });
+
+/** Force one sync now (same code path the scheduler uses). */
+app.post("/sync/run", requireSharedSecret, async (req, res) => {
+  const endpoint = String(req.body?.endpoint || "").trim();
+  if (!endpoint) return res.status(400).json({ ok: false, message: "endpoint is required" });
+  const result = await scheduler.runEndpoint(endpoint, { manual: true });
+  res.status(result.status === "error" ? 502 : 200).json({ ok: result.status !== "error", ...result });
+});
+
+/** What the scheduler currently believes is configured — for troubleshooting. */
+app.get("/sync/status", requireSharedSecret, async (_req, res) => {
+  res.json({ ok: true, enabled: scheduler.enabled });
 });
 
 app.use((_req, res) => res.status(404).json({ stage: "not-found", error: "Not found" }));
