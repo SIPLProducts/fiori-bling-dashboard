@@ -167,7 +167,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       if (error) throw new Error(error.message);
       for (const r of data ?? []) existing.add(r.record_key);
       if (keys.length > PROGRESS_EVERY && (i + LOOKUP_BATCH) % PROGRESS_EVERY < LOOKUP_BATCH) {
-        log(`lookup progress: ${Math.min(i + LOOKUP_BATCH, keys.length)}/${keys.length}`);
+        console.log(`[mis-sap-middleware] lookup progress: ${Math.min(i + LOOKUP_BATCH, keys.length)}/${keys.length}`);
       }
     }
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -176,7 +176,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         .upsert(rows.slice(i, i + BATCH), { onConflict: "record_key" });
       if (error) throw new Error(error.message);
       if (rows.length > PROGRESS_EVERY && (i + BATCH) % PROGRESS_EVERY < BATCH) {
-        log(`upsert progress: ${Math.min(i + BATCH, rows.length)}/${rows.length}`);
+        console.log(`[mis-sap-middleware] upsert progress: ${Math.min(i + BATCH, rows.length)}/${rows.length}`);
       }
     }
     const updated = rows.filter((r) => existing.has(r.record_key)).length;
