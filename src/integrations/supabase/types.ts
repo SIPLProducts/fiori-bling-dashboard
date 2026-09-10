@@ -188,6 +188,7 @@ export type Database = {
           last_test_status: string | null
           module_key: string
           name: string
+          posting_range: string
           query_params: Json
           response_notes: string | null
           response_root: string | null
@@ -215,6 +216,7 @@ export type Database = {
           last_test_status?: string | null
           module_key?: string
           name: string
+          posting_range?: string
           query_params?: Json
           response_notes?: string | null
           response_root?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           last_test_status?: string | null
           module_key?: string
           name?: string
+          posting_range?: string
           query_params?: Json
           response_notes?: string | null
           response_root?: string | null
