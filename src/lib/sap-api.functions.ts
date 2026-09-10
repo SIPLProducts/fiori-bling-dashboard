@@ -382,10 +382,28 @@ const callMiddlewareServer = createServerFn({ method: "POST" })
     return { status: response.status, text: await response.text() };
   });
 
+/**
+ * Static build: the browser talks to the same-origin `/sap-mw/` Nginx bridge,
+ * which adds the shared secret server-side. Hosted build: the server function.
+ */
+async function middlewareRoundTrip(
+  path: string,
+  body?: unknown,
+): Promise<{ status: number; text: string }> {
+  if (!IS_STATIC_BUILD) return callMiddlewareServer({ data: { path, body } });
+  const res = await fetch(`${STATIC_MIDDLEWARE_BASE}${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    signal: AbortSignal.timeout(600000),
+  });
+  return { status: res.status, text: await res.text() };
+}
+
 async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
   const started = Date.now();
   try {
-    const res = await callMiddlewareServer({ data: { path, body } });
+    const res = await middlewareRoundTrip(path, body);
     const text = res.text;
     let payload: Record<string, unknown> = {};
     try {
