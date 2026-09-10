@@ -40,13 +40,21 @@ export function ShellBar({
     <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-shell px-4 text-shell-foreground">
       <Link to="/launchpad" className="flex items-center gap-2">
         <span className="flex h-8 items-center rounded-sm bg-white px-2">
-          <img src={hblLogoAsset.url} alt="HBL" className="h-6 w-auto object-contain" />
+          <img src={hblLogo} alt="HBL" className="h-6 w-auto object-contain" />
         </span>
       </Link>
       <span className="flex-1" aria-hidden="true" />
 
 
       <div className="flex items-center gap-1">
+        <Link
+          to="/launchpad"
+          aria-label="Home"
+          title="Home"
+          className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
+        >
+          <Home className="size-[18px]" />
+        </Link>
         <button
           type="button"
           aria-label="Search"
