@@ -37,50 +37,69 @@ build with port 9000 and the Production anon key.
 
 1. Upload all files from the repo's `supabase/migrations/` to
    `/opt/MIS_Projects/Quality/supabase/migrations/` (keep existing ones).
-2. Apply **only the migrations not yet applied**, oldest first:
+2. The database requires its password even from inside the container. Load it
+   from the existing backend `.env` without printing it, then apply the five
+   migrations that failed in the terminal output:
 
 ```bash
-cd /opt/MIS_Projects/Quality/supabase/migrations
-for f in $(ls *.sql | sort); do
+cd /opt/MIS_Projects/Quality/backend
+set -a
+source .env
+set +a
+
+for f in \
+  20260902061812_2a548a62-5eec-410e-bf60-3fed50510f14.sql \
+  20260902071515_aed71e84-f1ae-46b8-9bd6-4eeb972905ef.sql \
+  20260902071633_9c236de1-e2c8-4cbc-a304-d25620ac94cb.sql \
+  20260902173656_31331764-b81d-41f0-b937-6fcdbce88438.sql \
+  20260909024306_c058a5bf-ce28-4b41-b8f1-6891d3307bf6.sql; do
   echo "==> $f"
-  docker exec -i mis_q_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < "$f" \
-    && echo "applied" || echo "FAILED or already applied — check message above"
+  docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
+    psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+    < "/opt/MIS_Projects/Quality/supabase/migrations/$f" || break
 done
 ```
 
-A migration that fails with "already exists" was applied before — skip it and
-continue. Verify afterwards:
+The loop now stops on the first real SQL error instead of incorrectly calling
+every failure “already applied.” If it reports `already exists`, first inspect
+the named object before deciding to skip that migration. Verify afterwards:
 
 ```bash
-docker exec -i mis_q_db psql -U supabase_admin -d postgres -c \
+docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
+  psql -U supabase_admin -d postgres -c \
   "select count(*) from zfisales_detail; select key from roles order by sort_order;"
 ```
 
-## Step 3 — Create the first admin user
+## Step 3 — Bring the existing users to Quality
 
-One-time script run inside the DB container (replace email/password/username):
+Lovable-hosted users are in a different authentication database and do not
+appear on this server automatically. Copy the user list, profile fields, role
+assignments, and screen permissions to Quality. Passwords are not copied or
+displayed; create each account with a temporary password and require the user
+to change it after first login.
+
+Create the first Sharvi Admin through the local Auth Admin API so the auth
+schema, identities, profile trigger, and role trigger stay consistent:
 
 ```bash
-docker exec -i mis_q_db psql -U supabase_admin -d postgres <<'SQL'
-WITH u AS (
-  INSERT INTO auth.users (id, instance_id, email, encrypted_password,
-    email_confirmed_at, raw_user_meta_data, aud, role, created_at, updated_at)
-  VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000',
-    'sharvi.admin@siplproducts.com',
-    extensions.crypt('ChangeMe!2026', extensions.gen_salt('bf')),
-    now(), '{"username":"sharvi.admin","first_name":"Sharvi","last_name":"Admin"}',
-    'authenticated', 'authenticated', now(), now())
-  RETURNING id
-)
-INSERT INTO public.profiles (id, email, username, first_name, last_name, status)
-SELECT id, 'sharvi.admin@siplproducts.com', 'sharvi.admin', 'Sharvi', 'Admin', 'active' FROM u;
-SQL
+cd /opt/MIS_Projects/Quality/backend
+set -a; source .env; set +a
+
+read -s -p "Temporary admin password: " ADMIN_PASSWORD; echo
+curl --fail-with-body -X POST http://127.0.0.1:8000/auth/v1/admin/users \
+  -H "apikey: $SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"sharvi.admin@siplproducts.com\",\"password\":\"$ADMIN_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"username\":\"sharvi.admin\",\"first_name\":\"Sharvi\",\"last_name\":\"Admin\"}}"
+unset ADMIN_PASSWORD
 ```
 
 The `handle_new_user` trigger automatically grants the first user the
-`super_admin` role with full access. Log in at
-`http://10.10.4.165:8081` with that email or username, then change the password
-and create the other users from **Administration → User Management**.
+`super_admin` role with full access. Log in at `http://10.10.4.165:8081`, then
+create the remaining existing users in **Administration → User Management**
+with their matching usernames, profile fields, roles, and temporary passwords.
+This is the safe migration path because existing password hashes are not
+exported from the hosted authentication service.
 
 ## Step 4 — Install the SAP middleware (port 3002)
 
@@ -116,6 +135,9 @@ and run **Test Connection**.
 Same five steps with the Production differences:
 - build with `VITE_SUPABASE_URL=http://10.10.4.165:9000/supabase` and the
   Production anon key
+- Production correction: `VITE_SUPABASE_PUBLISHABLE_KEY` must use the anon JWT
+  (the one whose payload role is `anon`), never the `service_role` JWT. Keep the
+  service-role key only as `SERVICE_ROLE_KEY` in the server's private `.env`.
 - paths under `/opt/MIS_Projects/Production/...`, containers `mis_p_*`,
   DB port 5433, middleware port 3010, `APP_BASE_URL=http://10.10.4.165:9000/middleware`
 - create the Production admin user with a different password
