@@ -11,6 +11,25 @@ export type DashboardCard = {
 
 const STORAGE_KEY = "mgmt-card-order";
 
+/** Static Tailwind classes so the compiler keeps them. Keys are 12-column spans. */
+const XL_SPAN: Record<number, string> = {
+  2: "xl:col-span-2",
+  3: "xl:col-span-3",
+  4: "xl:col-span-4",
+  5: "xl:col-span-5",
+  6: "xl:col-span-6",
+  12: "xl:col-span-12",
+};
+
+const LG_SPAN: Record<number, string> = {
+  2: "lg:col-span-2",
+  3: "lg:col-span-3",
+  4: "lg:col-span-3",
+  5: "lg:col-span-6",
+  6: "lg:col-span-6",
+  12: "lg:col-span-6",
+};
+
 export function readCardOrder(): string[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
