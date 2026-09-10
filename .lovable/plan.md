@@ -5,7 +5,7 @@
 - PM2 reports `mis-q-middleware` version **1.0.0**. The scheduler build is **1.3.0**. The server is running an old copy of the middleware.
 - The PM2 log only shows `POST /sap/call` (manual Test button). There is no `scheduler started` line, so no timed sync exists on that machine.
 - Your screenshot of the middleware folder lists only `.env`, `.env.example`, `bun.lock`, `Dockerfile`, `package.json`, `README.md`, `server.mjs`. The three new files are missing.
-- The new files **are** committed here (commit `d2de26a`, "Added scheduled sync to server"): `middleware/scheduler.mjs`, `middleware/sync-core.mjs`, `middleware/src/sync-core.entry.ts`, plus an updated `middleware/server.mjs` and `middleware/package.json`.
+- The new files **are** already pushed to `origin/main` (commit `d2de26a`, "Added scheduled sync to server"): `middleware/scheduler.mjs`, `middleware/sync-core.mjs`, `middleware/src/sync-core.entry.ts`, `deploy/enable-scheduler.sh`, plus an updated `middleware/server.mjs` and `middleware/package.json`. Verified against the remote branch. Your D: folder and the Quality server simply have not pulled since 02-09; a `git pull` on each brings them in.
 
 So nothing is broken in the code — the copy on the Quality server (and on your D: drive) is simply out of date. Your `.env` values are fine; two extra lines are still needed.
 
