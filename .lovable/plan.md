@@ -1,61 +1,38 @@
-# Restore the Quality scheduler settings
+# Correct the Quality middleware port without touching the code
 
-## What your latest screen shows
+## Confirmed status
 
-- The active `middleware/.env` has `PORT=3002`, which is correct.
-- The active file currently ends at `SUPABASE_URL`; it has **no** `SUPABASE_SERVICE_ROLE_KEY`, so the scheduler cannot authenticate.
-- `.env.backup` contains the malformed key with a leading space and two `=` characters. Do not copy that line.
-- Port 3000 came from values previously saved in PM2's process environment. Recreating the PM2 process makes it read port 3002 from the active file.
+The middleware is running correctly (`v1.3.0`) and the scheduler starts. The Node 20 message is only a future-support warning.
 
-## 1. Copy the valid key directly from the backend file
+The remaining issue is that PM2 has `PORT=3000` saved in its environment. That value takes priority over `PORT=3002` in `.env`, so nothing listens on port 3002.
 
-Close Nano, then run this in a fresh terminal without sourcing any file:
+## Run these commands exactly
 
-```bash
-cd /opt/MIS_Projects/Quality
-
-KEY=$(grep -m1 '^SERVICE_ROLE_KEY=' backend/.env | cut -d= -f2- | tr -d '\r')
-[ -n "$KEY" ] || { echo "SERVICE_ROLE_KEY missing in backend/.env"; exit 1; }
-
-sed -i '/^[[:space:]]*SUPABASE_SERVICE_ROLE_KEY=/d' middleware/.env
-printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$KEY" >> middleware/.env
-unset KEY
-
-grep -c '^SUPABASE_SERVICE_ROLE_KEY=' middleware/.env
-grep -m1 '^PORT=' middleware/.env
-```
-
-The last two commands must print:
-
-```text
-1
-PORT=3002
-```
-
-Do not open or copy the key from `.env.backup`; that copy is malformed.
-
-## 2. Recreate the PM2 process with a clean environment
+Do not source `backend/.env`, and do not run `pm2 flush`.
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
+
 pm2 delete mis-q-middleware
-pm2 start server.mjs --name mis-q-middleware
+
+env -u PORT -u SUPABASE_SERVICE_ROLE_KEY \
+  pm2 start /opt/MIS_Projects/Quality/middleware/server.mjs \
+  --name mis-q-middleware \
+  --cwd /opt/MIS_Projects/Quality/middleware
+
 pm2 save
-pm2 flush mis-q-middleware
-pm2 logs mis-q-middleware --lines 30
+pm2 logs mis-q-middleware --lines 20 --nostream
 ```
 
-Expected fresh messages:
+Expected line:
 
 ```text
-v1.3.0 listening on :3002
-service role key     : configured
-scheduler started — schedules are read from the portal every minute
+[mis-sap-middleware] v1.3.0 listening on :3002
 ```
 
-Wait one minute. There should be no new `Invalid authentication credentials` message.
+## Test the running middleware
 
-## 3. Force one sync using the secret from the file
+Only after the log shows port 3002:
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
@@ -69,24 +46,25 @@ curl -X POST http://127.0.0.1:3002/sync/run \
 unset SECRET
 ```
 
-The earlier rejected request used the placeholder text instead of the actual secret.
+The first command is `cd`, not `d`.
 
-## 4. If authentication is still rejected
+## If it still prints port 3000
 
-Test the backend key itself without printing it:
+Run this diagnostic without exposing any secrets:
 
 ```bash
-cd /opt/MIS_Projects/Quality
-KEY=$(grep -m1 '^SERVICE_ROLE_KEY=' backend/.env | cut -d= -f2- | tr -d '\r')
-curl -s -o /dev/null -w '%{http_code}\n' \
-  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-  'http://127.0.0.1:8000/rest/v1/sap_endpoints?select=id&limit=1'
-unset KEY
+pm2 env 0 | grep '^PORT:'
 ```
 
-- `200`: the key is valid; repeat steps 1 and 2.
-- `401`: the key in `backend/.env` does not match the running Quality backend and that backend configuration must be corrected.
+If it prints `PORT: 3000`, start the process with the required value explicitly:
+
+```bash
+cd /opt/MIS_Projects/Quality/middleware
+pm2 delete mis-q-middleware
+PORT=3002 pm2 start server.mjs --name mis-q-middleware
+pm2 save
+```
 
 ## Security follow-up
 
-The SAP password and middleware secret were pasted into chat. After synchronization works, rotate both values and update the middleware file and portal setting together.
+The SAP password and middleware secret were pasted into chat. Rotate both after synchronization is confirmed.
