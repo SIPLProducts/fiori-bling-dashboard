@@ -16,6 +16,16 @@ repeated for Production.
 - First admin user (e.g. Sharvi Admin) created by a one-time SQL script
 - Nginx configs stay as they are — the port matrix and routes already match
 
+## Step 0 — Repo fix: make `build:static` work on Windows
+
+`npm run build:static` fails on Windows PowerShell with
+`'STATIC_BUILD' is not recognized` because the script uses Unix env syntax.
+Fix in the repo: change the script to a small Node wrapper
+(`scripts/build-static.mjs`) that sets `STATIC_BUILD=1` itself and then runs
+the Vite build plus `flatten-dist.mjs`, and update `package.json` to
+`"build:static": "node scripts/build-static.mjs"`. After that, the same
+`npm run build:static` command works on Windows, macOS and Linux.
+
 ## Step 1 — Build the frontend locally (VS Code)
 
 ```bash
@@ -32,6 +42,10 @@ Upload the **contents** of the new `dist/` via WinSCP to
 `/opt/MIS_Projects/Quality/frontend/dist/` (delete the old files inside first).
 The `VITE_*` values are baked into the bundle, so Production later needs its own
 build with port 9000 and the Production anon key.
+
+Note on folders: the middleware lives at the project root in `middleware/`
+(`server.mjs`, `package.json`, `.env.example`) — that is the one to upload.
+There is intentionally no middleware folder inside `deploy/`.
 
 ## Step 2 — Apply ALL migrations (Quality database is empty)
 
@@ -153,5 +167,8 @@ Same five steps with the Production differences:
 
 ## Repo changes
 
-None — this is a server procedure only; `deploy/README.md` already documents
-the layout. No application code changes.
+- `package.json` — `build:static` calls the new Node wrapper (Windows-safe)
+- `scripts/build-static.mjs` — sets `STATIC_BUILD=1`, runs `vite build`, then
+  `scripts/flatten-dist.mjs`
+- Everything else is a server procedure only; `deploy/README.md` already
+  documents the layout.
