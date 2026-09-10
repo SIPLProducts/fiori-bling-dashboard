@@ -11,7 +11,7 @@ import {
   withPostingDates,
 } from "./sap-pull-shared";
 
-
+const BATCH = 500;
 
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
