@@ -742,7 +742,9 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   // The whole round trip runs on the portal server: middleware -> parse ->
   // upsert. Multi-MB SAP responses never travel through the browser.
   const started = Date.now();
-  const run = await runEndpointSyncServer({ data: { endpointName: endpoint.name } });
+  const run = IS_STATIC_BUILD
+    ? await runEndpointSyncBrowser(endpoint.name)
+    : await runEndpointSyncServer({ data: { endpointName: endpoint.name } });
   console.info("[SAP response]", endpoint.name, { status: run.status, durationMs: run.durationMs });
 
   const durationMs = run.durationMs ?? Date.now() - started;
