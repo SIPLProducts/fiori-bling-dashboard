@@ -167,5 +167,8 @@ Same five steps with the Production differences:
 
 ## Repo changes
 
-None — this is a server procedure only; `deploy/README.md` already documents
-the layout. No application code changes.
+- `package.json` — `build:static` calls the new Node wrapper (Windows-safe)
+- `scripts/build-static.mjs` — sets `STATIC_BUILD=1`, runs `vite build`, then
+  `scripts/flatten-dist.mjs`
+- Everything else is a server procedure only; `deploy/README.md` already
+  documents the layout.
