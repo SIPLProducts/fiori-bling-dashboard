@@ -20,7 +20,7 @@ Give the server its own always-running scheduler by putting it inside the SAP mi
 
 What gets built:
 
-1. **Scheduler inside the middleware.** Every minute it reads the saved endpoints from your local database and runs the ones whose interval is due, using exactly the interval saved on the Scheduler tab. Change the interval in the UI and the middleware picks it up on the next minute — nothing hard-coded.
+1. **Scheduler inside the middleware, fully dynamic.** Every minute it re-reads the saved endpoints from your local database and runs the ones that are due. Interval, on/off switch, endpoint path, method, request payload and dates, SAP system and client, and the active/inactive flag are all taken live from what is saved in the screens — nothing is fixed in code. Change anything in the UI and the next tick uses it; add a second endpoint later and it is scheduled automatically.
 2. **Full sync in the middleware.** It calls SAP through the same path Test uses, maps the rows with the same logic the app uses today (shared code, not a second copy), and inserts new records / updates existing ones by the same record key. An empty SAP response never deletes anything.
 3. **Run history written for every run**, so the Scheduler tab shows real "Last run", success/failure, and received / new / updated counts on the server just like your screenshot 4.
 4. **Single-run guard** so a slow pull cannot overlap with the next tick.
