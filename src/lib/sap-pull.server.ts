@@ -4,74 +4,12 @@
  * screen and by the scheduled 10-minute job.
  */
 import { mapPayload } from "./zfisales-sync.server";
-
-const BATCH = 500;
-
-/**
- * Recovers the complete objects of a JSON array that was cut mid-document
- * (an older middleware build truncates responses). Scans with string/escape
- * awareness so a cut inside a quoted value cannot corrupt the salvage.
- */
-function salvageTruncatedArray(text: string): unknown[] | null {
-  const trimmed = text.trimStart();
-  if (!trimmed.startsWith("[")) return null;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  let lastComplete = -1;
-  for (let i = 0; i < trimmed.length; i += 1) {
-    const ch = trimmed[i];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (ch === "\\") {
-      if (inString) escaped = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (ch === "{" || ch === "[") depth += 1;
-    else if (ch === "}" || ch === "]") {
-      depth -= 1;
-      if (depth === 1) lastComplete = i;
-    }
-  }
-  if (lastComplete < 0) return null;
-  try {
-    const rows = JSON.parse(`${trimmed.slice(0, lastComplete + 1)}]`) as unknown[];
-    return Array.isArray(rows) && rows.length ? rows : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * When the middleware's own JSON envelope is cut mid-document, the SAP payload
- * still sits inside its `"body":"..."` string. Extract and unescape it so the
- * salvage above can run on the array itself.
- */
-function extractEmbeddedBody(text: string): string | null {
-  const marker = '"body":"';
-  const start = text.indexOf(marker);
-  if (start < 0) return null;
-  const raw = text.slice(start + marker.length);
-  try {
-    // Close the string so JSON.parse can unescape it; drop a dangling escape.
-    const safe = raw.replace(/\\$/, "");
-    return JSON.parse(`"${safe.replace(/"$/, "")}"`) as string;
-  } catch {
-    // Unescape manually as a last resort.
-    return raw
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, "\n")
-      .replace(/\\t/g, "\t")
-      .replace(/\\\\/g, "\\");
-  }
-}
+import {
+  extractEmbeddedBody,
+  keyValueObject,
+  salvageTruncatedArray,
+  withPostingDates,
+} from "./sap-pull-shared";
 
 
 
