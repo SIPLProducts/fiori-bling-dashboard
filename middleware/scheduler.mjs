@@ -22,6 +22,10 @@ import {
 } from "./sync-core.mjs";
 
 const BATCH = 500;
+// The duplicate check sends record keys in the request URL; long keys make
+// large batches exceed the gateway URL limit. Keep lookups small.
+const LOOKUP_BATCH = 40;
+const PROGRESS_EVERY = 5000;
 const RUN_HISTORY_LIMIT = 6;
 /** A run older than this is treated as dead, so a crash cannot block forever. */
 const STALE_RUN_MS = 30 * 60 * 1000;
@@ -155,19 +159,25 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
     const keys = rows.map((r) => r.record_key);
     const existing = new Set();
-    for (let i = 0; i < keys.length; i += BATCH) {
+    for (let i = 0; i < keys.length; i += LOOKUP_BATCH) {
       const { data, error } = await db
         .from("zfisales_detail")
         .select("record_key")
-        .in("record_key", keys.slice(i, i + BATCH));
+        .in("record_key", keys.slice(i, i + LOOKUP_BATCH));
       if (error) throw new Error(error.message);
       for (const r of data ?? []) existing.add(r.record_key);
+      if (keys.length > PROGRESS_EVERY && (i + LOOKUP_BATCH) % PROGRESS_EVERY < LOOKUP_BATCH) {
+        console.log(`[mis-sap-middleware] lookup progress: ${Math.min(i + LOOKUP_BATCH, keys.length)}/${keys.length}`);
+      }
     }
     for (let i = 0; i < rows.length; i += BATCH) {
       const { error } = await db
         .from("zfisales_detail")
         .upsert(rows.slice(i, i + BATCH), { onConflict: "record_key" });
       if (error) throw new Error(error.message);
+      if (rows.length > PROGRESS_EVERY && (i + BATCH) % PROGRESS_EVERY < BATCH) {
+        console.log(`[mis-sap-middleware] upsert progress: ${Math.min(i + BATCH, rows.length)}/${rows.length}`);
+      }
     }
     const updated = rows.filter((r) => existing.has(r.record_key)).length;
     return { received, inserted: rows.length - updated, updated, skipped };
