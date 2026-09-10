@@ -7,3 +7,4 @@
 - [x] Add a self-hosted existing-user password/profile/role repair script
 - [x] Static build: route SAP middleware calls through the /sap-mw Nginx bridge (fixes 405 on Quality)
 - [x] Static SAP sync: preserve request dates, securely record run history, avoid oversized key lookups, and report row counts
+- [x] Self-hosted: run the SAP sync scheduler inside the middleware (dynamic config, run history, manual trigger)

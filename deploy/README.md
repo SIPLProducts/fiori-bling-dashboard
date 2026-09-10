@@ -362,6 +362,10 @@ Run these after every migration in `supabase/migrations/` has been applied.
    SAP_DEV_CLIENT=243
    SAP_DEV_USER=SIPL_MOUNIKA
    SAP_DEV_PASSWORD=<SAP password>
+   # Automatic scheduled sync — the static portal has no app server, so the
+   # middleware runs the scheduler. Both values are server-side only.
+   SUPABASE_URL=http://127.0.0.1:8000                 # Production: :9010
+   SUPABASE_SERVICE_ROLE_KEY=<service role key>
    ```
 
    ```bash
@@ -369,7 +373,19 @@ Run these after every migration in `supabase/migrations/` has been applied.
    npm install --omit=dev
    pm2 restart mis-q-middleware || pm2 start server.mjs --name mis-q-middleware
    pm2 save
+   pm2 logs mis-q-middleware --lines 20   # expect: "scheduler started"
    ```
+
+   Force one sync to verify before waiting for the interval:
+
+   ```bash
+   curl -X POST http://127.0.0.1:3002/sync/run \
+     -H 'content-type: application/json' \
+     -H "x-shared-secret: $MIDDLEWARE_SHARED_SECRET" \
+     -d '{"endpoint":"Sales_Reports_KPI"}'
+   ```
+
+   The Scheduler tab then shows the run with received / new / updated counts.
 
 ## One-shot setup (recommended)
 

@@ -131,3 +131,57 @@ Connectivity → Recent middleware activity**.
 `GET /diag/sap?system=dev` performs a bare probe of the SAP base URL — no report
 call — and reports host, port, status and connect time. The portal exposes it as
 the **Ping SAP host** button next to Test connection.
+
+## Automatic scheduled sync (self-hosted portal)
+
+On Lovable-hosted deployments the schedule is fired by the cloud database. A
+self-hosted portal is a static site behind Nginx, so there is no always-running
+app server to receive that trigger. This service runs the scheduler instead.
+
+Add these two settings to `middleware/.env` and restart the service:
+
+```dotenv
+SUPABASE_URL=http://127.0.0.1:8000          # local API gateway (Kong)
+SUPABASE_SERVICE_ROLE_KEY=<service role key> # server-side only
+```
+
+Startup then logs `scheduler started`. If either value is missing it logs
+`scheduler DISABLED` and the service behaves exactly as before.
+
+Everything the scheduler does is read from the portal on every tick — nothing
+is hard-coded:
+
+| Read every minute from | Used for |
+| --- | --- |
+| `sap_endpoints.schedule_expression` | when to run (5-field cron) |
+| `sap_endpoints.scheduler_enabled` / `is_active` | whether to run at all |
+| `sap_endpoints.endpoint_path`, `http_method`, `query_params`, `headers`, `body_template` | the SAP request |
+| `sap_systems.base_url`, `sap_client` | which SAP system and client |
+
+SAP passwords still come only from this service's `.env`.
+
+Each run writes a `sap_sync_runs` row (received / new / updated / skipped,
+bytes, duration, HTTP status, error) and updates the endpoint's last run and
+last synced stamps, so **SAP API Settings → Scheduler** shows real history. Only
+the newest 6 runs per endpoint are kept. Rows are inserted or updated by
+`record_key`; an empty SAP response never deletes anything.
+
+Force one run from the server:
+
+```bash
+curl -X POST http://127.0.0.1:3002/sync/run \
+  -H 'content-type: application/json' \
+  -H "x-shared-secret: $MIDDLEWARE_SHARED_SECRET" \
+  -d '{"endpoint":"Sales_Reports_KPI"}'
+```
+
+`GET /sync/status` reports whether the scheduler is enabled.
+
+### Row mapping stays in one place
+
+`sync-core.mjs` is generated from the portal's own mapping code. After changing
+`src/lib/zfisales-map.ts` or `src/lib/sap-pull-shared.ts`, regenerate it:
+
+```bash
+cd middleware && npm run build:sync-core
+```
