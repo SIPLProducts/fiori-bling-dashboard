@@ -108,7 +108,46 @@ frontend.
 All container ports are published to `127.0.0.1` only — Nginx is the single
 public entry point.
 
+## Enable automatic scheduled sync on self-hosted
+
+The hosted (Lovable) deployment uses a database timer. A self-hosted static SPA
+has no always-running app server, so the SAP middleware service (which already
+runs 24/7 under PM2) now hosts its own scheduler.
+
+Prerequisites:
+
+1. The middleware `.env` must contain the local database API URL and the
+   **server-only** service role key:
+
+   ```text
+   SUPABASE_URL=http://127.0.0.1:8000
+   SUPABASE_SERVICE_ROLE_KEY=<Quality service role key>
+   ```
+
+2. The SAP endpoint in the portal must have **Enable scheduled sync** on and a
+   valid cron expression (e.g. `*/5 * * * *`).
+
+Run the helper script on the server:
+
+```bash
+cd /opt/MIS_Projects/Quality/deploy
+chmod +x enable-scheduler.sh
+./enable-scheduler.sh
+```
+
+For Production:
+
+```bash
+cd /opt/MIS_Projects/Production/deploy
+ENV=production MIDDLEWARE_DIR=/opt/MIS_Projects/Production/middleware \
+  PM2_NAME=mis-p-middleware PORT=3010 ./enable-scheduler.sh
+```
+
+The script installs dependencies, builds the shared sync bundle, restarts PM2,
+and prints a `curl` command you can use to force an immediate test run.
+
 ## 1. Build the frontend locally
+
 
 In VS Code / your local repo:
 
@@ -140,8 +179,10 @@ npm run build:static
 > `PORT` must match the upstream (Quality 3002, Production 3010).
 >
 > With the bridge in place, Test connection, middleware health/logs, SAP ping and
-> the endpoint Test/sync all work on the static build. The unattended 10-minute
-> scheduler (`/api/public/sap/pull/*`) still only runs on the hosted deployment.
+> the endpoint Test/sync all work on the static build. The unattended scheduler
+> on self-hosted deployments is handled by the middleware itself (see
+> "Enable automatic scheduled sync on self-hosted" below).
+
 
 This creates `dist/` in the repo root containing `index.html`, `assets/`,
 `favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server
