@@ -964,19 +964,50 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field
+                label="Posting date range"
+                hint="Preset windows follow today on every sync; custom dates stay fixed."
+              >
+                <Select
+                  value={form.posting_range}
+                  onValueChange={(value) => {
+                    const range = value as EndpointInput["posting_range"];
+                    set("posting_range", range);
+                    const rolling = postingWindow(range);
+                    if (rolling) applyPayloadValues({ BUDAT_F: rolling.from, BUDAT_T: rolling.to });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POSTING_RANGES.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Posting From Date" hint="Sent as BUDAT_F (YYYYMMDD).">
                 <Input
                   type="date"
                   value={fromSapDate(payloadValue("BUDAT_F"))}
-                  onChange={(e) => applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) })}
+                  onChange={(e) => {
+                    set("posting_range", "custom");
+                    applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) });
+                  }}
                 />
               </Field>
               <Field label="Posting To Date" hint="Sent as BUDAT_T (YYYYMMDD).">
                 <Input
                   type="date"
                   value={fromSapDate(payloadValue("BUDAT_T"))}
-                  onChange={(e) => applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) })}
+                  onChange={(e) => {
+                    set("posting_range", "custom");
+                    applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) });
+                  }}
                 />
               </Field>
             </div>
