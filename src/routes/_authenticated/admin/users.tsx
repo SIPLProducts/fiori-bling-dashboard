@@ -18,6 +18,16 @@ import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PasswordMatchHint, PasswordStrength } from "@/components/password-strength";
 import {
   Dialog,
