@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Search, UserPlus } from "lucide-react";
+import { Loader2, Search, Trash2, UserPlus } from "lucide-react";
 import {
   activatePortalUser,
   createPortalUser,
+  deletePortalUser,
   listPortalUsers,
   updatePortalUser,
   type PortalUser,
