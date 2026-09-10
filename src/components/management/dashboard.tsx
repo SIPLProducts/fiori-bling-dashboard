@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
 import { ManagementAlerts } from "./alerts";
+import { DraggableCardGrid, clearCardOrder } from "./card-grid";
 import {
   MainGroupTreemap,
   ParetoChart,
@@ -34,6 +35,8 @@ export function ManagementDashboard() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<RangePreset>("All postings");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
+  // Bumped when the user resets the card arrangement.
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const queryClient = useQueryClient();
 
   const { data: rows, isLoading, error } = useQuery({

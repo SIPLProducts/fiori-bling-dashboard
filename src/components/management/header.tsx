@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, CalendarDays, ChevronDown, Filter } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { CalendarDays, ChevronDown, Filter, RotateCcw } from "lucide-react";
 import {
   FILTER_DEFS,
   RANGE_PRESETS,
