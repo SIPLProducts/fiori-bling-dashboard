@@ -234,8 +234,8 @@ export async function updatePortalUser(input: {
   await setRoleAssignment(form.id, form.roleKey);
 
   if (form.password) {
-    await requireSuperAdmin(); // resetting another user's password stays Sharvi Admin only
-
+    // Anyone granted the User Management screen may reset a password; the
+    // database function still protects Sharvi Admin accounts.
     const { error: pwError } = await supabase.rpc("admin_set_user_password", {
       _user_id: form.id,
       _new_password: form.password,
@@ -243,6 +243,17 @@ export async function updatePortalUser(input: {
     if (pwError) throw new Error(pwError.message);
   }
 
+  return { ok: true };
+}
+
+/** Permanently removes an account, its profile and its role assignment. */
+export async function deletePortalUser(input: { data: { id: string } }) {
+  const currentUserId = await requireScreen("admin.users", "User Management");
+  if (input.data.id === currentUserId) {
+    throw new Error("You cannot delete your own account");
+  }
+  const { error } = await supabase.rpc("admin_delete_user", { _user_id: input.data.id });
+  if (error) throw new Error(error.message);
   return { ok: true };
 }
 

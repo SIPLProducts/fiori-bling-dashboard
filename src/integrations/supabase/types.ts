@@ -862,6 +862,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       admin_set_user_password: {
         Args: { _new_password: string; _user_id: string }
         Returns: undefined

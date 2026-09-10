@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Search, UserPlus } from "lucide-react";
+import { Loader2, Search, Trash2, UserPlus } from "lucide-react";
 import {
   activatePortalUser,
   createPortalUser,
+  deletePortalUser,
   listPortalUsers,
   updatePortalUser,
   type PortalUser,
@@ -17,6 +18,16 @@ import { listRoles, visibleRoles } from "@/lib/access";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PasswordMatchHint, PasswordStrength } from "@/components/password-strength";
 import {
   Dialog,
@@ -87,6 +98,7 @@ function AdminUsers() {
   const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.users");
 
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PortalUser | null>(null);
   const [editing, setEditing] = useState<PortalUser | null>(null);
   const [form, setForm] = useState<UserFormInput>(EMPTY_FORM);
   const [search, setSearch] = useState("");
@@ -148,6 +160,16 @@ function AdminUsers() {
   const activateMutation = useMutation({
     mutationFn: (userId: string) => activatePortalUser(userId),
     onSuccess: () => toast.success("Account activated — the user can sign in now"),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => deletePortalUser({ data: { id: userId } }),
+    onSuccess: () => {
+      toast.success("User deleted");
+      setPendingDelete(null);
+      refresh();
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -305,6 +327,15 @@ function AdminUsers() {
                           <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
                             Edit
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setPendingDelete(user)}
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Delete
+                          </Button>
                         </div>
                       </TableCell>
 
@@ -316,6 +347,45 @@ function AdminUsers() {
           </div>
         </Panel>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `${
+                    [pendingDelete.first_name, pendingDelete.last_name].filter(Boolean).join(" ") ||
+                    pendingDelete.display_name ||
+                    pendingDelete.email ||
+                    "This user"
+                  } will lose access immediately. This cannot be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (pendingDelete) deleteMutation.mutate(pendingDelete.id);
+              }}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-3xl">
