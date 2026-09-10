@@ -234,8 +234,8 @@ export async function updatePortalUser(input: {
   await setRoleAssignment(form.id, form.roleKey);
 
   if (form.password) {
-    await requireSuperAdmin(); // resetting another user's password stays Sharvi Admin only
-
+    // Anyone granted the User Management screen may reset a password; the
+    // database function still protects Sharvi Admin accounts.
     const { error: pwError } = await supabase.rpc("admin_set_user_password", {
       _user_id: form.id,
       _new_password: form.password,
