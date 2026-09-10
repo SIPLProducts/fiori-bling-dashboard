@@ -350,3 +350,28 @@ Run these after every migration in `supabase/migrations/` has been applied.
    pm2 restart mis-q-middleware || pm2 start server.mjs --name mis-q-middleware
    pm2 save
    ```
+
+## One-shot setup (recommended)
+
+After migrations are applied on the server, run the single script that does
+everything else — creates the 5 users, seeds the SAP settings, imports all
+33,174 sales lines, and verifies the result:
+
+```bash
+cd /opt/MIS_Projects/Quality/deploy
+chmod +x quality-setup-all.sh
+./quality-setup-all.sh
+```
+
+For Production run it with overrides:
+
+```bash
+DB_CONTAINER=mis_p_db \
+SUPABASE_API=http://10.10.4.165:9000/supabase \
+BACKEND_ENV=/opt/MIS_Projects/Production/backend/.env \
+./quality-setup-all.sh
+```
+
+The script ends by printing the three `middleware/.env` lines to change
+(PORT, APP_BASE_URL, MIDDLEWARE_SHARED_SECRET) — those still need your chosen
+shared secret, then `pm2 restart mis-q-middleware`.
