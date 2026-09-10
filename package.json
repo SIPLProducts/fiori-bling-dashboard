@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:static": "STATIC_BUILD=1 vite build && node scripts/flatten-dist.mjs",
+    "build:static": "node scripts/build-static.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
