@@ -107,8 +107,12 @@ import {
  */
 function reportTest(result: TestResult) {
   const trace = result.traceId ? ` · trace ${result.traceId}` : "";
+  if (result.noData) {
+    toast.warning(`${result.message}${trace}`);
+    return;
+  }
   if (result.ok) {
-    toast.success(`Middleware reached — SAP returned ${result.sapStatus ?? 200} in ${result.durationMs} ms${trace}`);
+    toast.success(`${result.message}${trace}`);
     return;
   }
   if (result.sapContacted) {
