@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Maximize2 } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -26,15 +26,8 @@ export function ReportShell({
 
       <div className="border-b border-border bg-card">
         <div className="mx-auto max-w-[1400px] px-4 py-4">
-          <Link
-            to="/launchpad"
-            aria-label="Home"
-            title="Home"
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
-          >
-            <Home className="size-5" />
-          </Link>
-          {title ? <h1 className="mt-1 text-2xl font-light text-foreground">{title}</h1> : null}
+          {/* Home moved to the top navigation bar; this space is used by the screen. */}
+          {title ? <h1 className="text-2xl font-light text-foreground">{title}</h1> : null}
           {tcode ? (
             <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
               {tcode}
