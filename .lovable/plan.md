@@ -1,52 +1,43 @@
-# Why the scheduler still isn't running on Quality
+# Getting the middleware scheduler running on Quality
 
-## What the evidence shows
+## What we know now
 
-- PM2 reports `mis-q-middleware` version **1.0.0**. The scheduler build is **1.3.0**. The server is running an old copy of the middleware.
-- The PM2 log only shows `POST /sap/call` (manual Test button). There is no `scheduler started` line, so no timed sync exists on that machine.
-- Your screenshot of the middleware folder lists only `.env`, `.env.example`, `bun.lock`, `Dockerfile`, `package.json`, `README.md`, `server.mjs`. The three new files are missing.
-- The new files **are** already pushed to `origin/main` (commit `d2de26a`, "Added scheduled sync to server"): `middleware/scheduler.mjs`, `middleware/sync-core.mjs`, `middleware/src/sync-core.entry.ts`, `deploy/enable-scheduler.sh`, plus an updated `middleware/server.mjs` and `middleware/package.json`. Verified against the remote branch. Your D: folder and the Quality server simply have not pulled since 02-09; a `git pull` on each brings them in.
+- The new files did reach the server: the latest PM2 error is `Cannot find package '@supabase/supabase-js' imported from .../scheduler.mjs` — that file only exists in the new build.
+- The crash is just missing npm dependencies. `package.json` now lists `@supabase/supabase-js` and `esbuild`, but `npm install` has not been run on the server since the files were copied.
 
-So nothing is broken in the code — the copy on the Quality server (and on your D: drive) is simply out of date. Your `.env` values are fine; two extra lines are still needed.
+## Immediate fix (do this now)
 
-## What to do on the Quality server
+```bash
+cd /opt/MIS_Projects/Quality/middleware
+npm install
+pm2 restart mis-q-middleware --update-env
+pm2 logs mis-q-middleware --lines 30
+```
 
-1. Update the checkout so it includes commit `d2de26a`:
-   ```bash
-   cd /opt/MIS_Projects/Quality
-   git fetch --all
-   git pull
-   ```
-   If that folder is not a git checkout, copy these files from your machine after pulling there:
-   `middleware/scheduler.mjs`, `middleware/sync-core.mjs`, `middleware/src/sync-core.entry.ts`, `middleware/server.mjs`, `middleware/package.json`, `deploy/enable-scheduler.sh`.
+Expect `v1.3.0 listening on :3002` and `scheduler started`. That is the whole fix for the current error.
 
-2. Add two server-only lines to `/opt/MIS_Projects/Quality/middleware/.env` (keep everything you already have):
+## Remaining setup (one time)
+
+1. Add two server-only lines to `/opt/MIS_Projects/Quality/middleware/.env` (keep everything already there):
    ```dotenv
    SUPABASE_URL=http://127.0.0.1:8000
    SUPABASE_SERVICE_ROLE_KEY=<Quality service role key>
    ```
+   Then restart again: `pm2 restart mis-q-middleware --update-env`.
 
-3. Install and restart:
-   ```bash
-   cd /opt/MIS_Projects/Quality/middleware
-   npm install
-   pm2 restart mis-q-middleware --update-env
-   pm2 logs mis-q-middleware --lines 30
-   ```
-   Expect `v1.3.0 listening on :3002` and `scheduler started`.
-
-4. Force one run to confirm:
+2. Force one run to confirm:
    ```bash
    curl -X POST http://127.0.0.1:3002/sync/run \
      -H 'content-type: application/json' \
      -H 'x-shared-secret: bf4a75740a9b2655be4bd2bc08745c4a' \
      -d '{"endpoint":"Sales_Reports_KPI"}'
    ```
-   Then check SAP API Settings, Scheduler tab: "Last run" and history should populate.
+   Then open SAP API Settings, Scheduler tab: "Last run" and history should populate.
 
 ## Notes
 
-- `deploy/enable-scheduler.sh` does steps 3 and 4 automatically once the files are present.
-- The scheduler reads cron, active flags, dates and system settings from the database each minute, so any change made in the SAP API Settings screen takes effect without a restart.
-- Server timezone matters: cron times are matched against the server clock. If IST times are expected, the box should be on IST (`timedatectl`).
-- Nothing in the app source needs to change for this. If you want, I can also rotate the shared secret you pasted here, since it is now exposed in chat.
+- `deploy/enable-scheduler.sh` (also on the server now) runs the install + restart + status check for you.
+- The scheduler reads cron, enable/active flags, date ranges and SAP system settings from the database every minute, so changes in the SAP API Settings screen apply without a restart.
+- Cron times match the server clock; if you want IST schedules, check `timedatectl` on the box.
+- The shared secret you pasted in chat is now exposed. I recommend rotating it: generate a new value, put it in the Quality `.env` (`MIDDLEWARE_SHARED_SECRET`), update the same value in the portal settings, and restart PM2. Tell me if you want me to generate one.
+- For Production later, repeat the same steps under `/opt/MIS_Projects/Production/middleware` with PM2 process `mis-p-middleware` and port `3010`.
