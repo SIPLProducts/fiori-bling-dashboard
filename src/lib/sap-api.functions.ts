@@ -613,8 +613,8 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
       _records_skipped: values.skipped ?? 0,
       _response_bytes: values.bytes ?? 0,
       _duration_ms: values.durationMs ?? Date.now() - started,
-      _http_status: values.httpStatus ?? null,
-      _message: values.message ?? null,
+      ...(values.httpStatus == null ? {} : { _http_status: values.httpStatus }),
+      ...(values.message == null ? {} : { _message: values.message }),
     });
     if (error) throw new Error(`Could not finish sync run: ${error.message}`);
   };
@@ -793,7 +793,9 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   const ok = run.status === "synced";
   const noData = ok && run.received === 0;
   const message = ok
-    ? run.message || `Data synced successfully — ${run.received.toLocaleString()} records (${run.inserted.toLocaleString()} new, ${run.updated.toLocaleString()} updated)`
+    ? run.message || (noData
+      ? "No data available for this selection"
+      : `Data synced successfully — ${run.received.toLocaleString()} records (${run.inserted.toLocaleString()} new, ${run.updated.toLocaleString()} updated)`)
     : run.message;
 
   await supabase
