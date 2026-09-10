@@ -140,8 +140,10 @@ npm run build:static
 > `PORT` must match the upstream (Quality 3002, Production 3010).
 >
 > With the bridge in place, Test connection, middleware health/logs, SAP ping and
-> the endpoint Test/sync all work on the static build. The unattended 10-minute
-> scheduler (`/api/public/sap/pull/*`) still only runs on the hosted deployment.
+> the endpoint Test/sync all work on the static build. The unattended scheduler
+> on self-hosted deployments is handled by the middleware itself (see
+> "Enable automatic scheduled sync on self-hosted" below).
+
 
 This creates `dist/` in the repo root containing `index.html`, `assets/`,
 `favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server
