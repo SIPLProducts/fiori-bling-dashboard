@@ -25,15 +25,13 @@ TEMP_PASSWORD="${TEMP_PASSWORD:-Welcome@2026}"
 
 # email|username|first|last|contact|plant|department|role_key
 USERS=(
-  "masteradmin@sharviinfotech.com|sharvi|sharvi|admin|9090909090||super_admin"
+  "masteradmin@sharviinfotech.com|sharvi|sharvi|admin|9090909090|||super_admin"
   "abshankar@hbl.in|44195|Bhavani Shankar|Anupindi|9393012944||IT Application|admin"
   "koti@hbl.in|51270|Ram|Koti|9898989898|1600|Sales|user"
   "sunilkumar@sharviinfotech.com|0056|Sunil Kumar|Akula|7989328372|1600|Devloper|user"
   "demo@nexus-portal.app|demo|Demo|User||||super_admin"
 )
-# note: the sharvi admin row has an empty department field, keep 8 fields:
-USERS[0]="masteradmin@sharviinfotech.com|sharvi|sharvi|admin|9090909090|||super_admin"
-USERS[4]="demo@nexus-portal.app|demo|Demo|User||||super_admin"
+
 
 psql_exec() {
   docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i "$DB_CONTAINER" \
