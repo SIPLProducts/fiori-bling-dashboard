@@ -1,55 +1,53 @@
-# Fix "row-level security policy" error when saving a user's role
+# Fix both User Management save errors
 
-## What happens today
+## What you are seeing
 
-Saving a user in User Management removes their old role row and then adds the new
-one as two separate database writes from the browser. Each write is checked
-individually by the database's access rules, which re-read the *signed-in* user's
-own role row at that moment. Two things can make the second write fail with
-"new row violates row-level security policy for table user_role_assignments":
+1. Local: saving a user shows "new row violates row-level security policy for
+   table user_role_assignments".
+2. Server: saving a password shows "Only a Sharvi Admin can change a Sharvi
+   Admin password".
 
-- The old row is deleted first. If the person being edited is the signed-in user
-  themselves, the delete removes the very row the database uses to confirm the
-  editor's permission, so the follow-up insert is rejected — and the editor is
-  left with no role at all.
-- The delete silently affects zero rows when permission is missing, so the first
-  visible sign of trouble is the insert error, which hides the real cause.
+## Why
 
-Confirmed in the database: the rule on `user_role_assignments` is
-`has_screen(auth.uid(),'admin.users') AND (role_key <> 'super_admin' OR is_super_admin(auth.uid()))`,
-and `has_screen` resolves the caller's permission from that same table.
+- The role change is done as two separate writes from the browser (remove the
+  old role row, then add the new one). Each write is re-checked against the
+  signed-in person's own role row. Because the old row is deleted first, editing
+  yourself wipes the very row that proves your permission, and the follow-up
+  insert is refused. A refused delete also fails silently, so the insert error is
+  the first thing you see.
+- The password and delete rules still carry an extra "Sharvi Admin only" gate on
+  Sharvi Admin accounts, which contradicts the agreed rule that screen access
+  means full control on that screen.
 
 ## The fix
 
-1. **One safe database action instead of two writes.**
-   Add `public.admin_set_user_role(_user_id uuid, _role_key text)` as a
-   `SECURITY DEFINER` function that:
-   - captures the caller's permission *before* touching any rows
-     (`has_screen(auth.uid(),'admin.users')`, otherwise raises a clear
-     "User Management access required" message);
-   - blocks granting or removing the Sharvi Admin role unless the caller is a
-     Sharvi Admin, and blocks the caller removing their own Sharvi Admin role;
-   - rejects an unknown role key with a readable message;
-   - replaces the assignment (delete + insert) in a single atomic step, so a
-     failure never leaves a user with no role;
-   - keeps `public.user_roles` in step for callers that read it.
-   Granted to `authenticated` only.
+1. **One safe database action for role changes.**
+   Add `public.admin_set_user_role(_user_id, _role_key)` (`SECURITY DEFINER`)
+   that captures the caller's `admin.users` permission before touching any rows,
+   rejects an unknown role with a readable message, and replaces the assignment
+   (delete + insert) atomically, keeping `public.user_roles` in step. Granted to
+   authenticated users only. `setRoleAssignment` in `src/lib/admin.functions.ts`
+   calls this instead of the direct delete/insert.
 
-2. **App calls the function.**
-   In `src/lib/admin.functions.ts`, `setRoleAssignment` calls
-   `supabase.rpc("admin_set_user_role", ...)` instead of the direct delete/insert,
-   and surfaces the function's message in the error toast. Existing checks in
-   `createPortalUser` / `updatePortalUser` stay as they are.
+2. **Screen access means full control.**
+   Remove the Sharvi-Admin-only gates from `admin_set_user_password` and
+   `admin_delete_user`, and drop the equivalent checks in
+   `src/lib/admin.functions.ts` (`setRoleAssignment` role-grant guard). Anyone
+   granted User Management can create, edit, reset passwords, change roles and
+   delete — for any account.
 
-3. **Clearer failure text.**
-   The toast shows the database's plain-English reason (for example
-   "Only a Sharvi Admin can grant the Sharvi Admin role") instead of the raw
-   row-level-security wording.
+3. **Safety rules that remain.**
+   You still cannot delete your own account, and you cannot remove your own
+   Sharvi Admin role (that would lock you out mid-edit).
+
+4. **Clearer messages.** The toast shows the database's plain-English reason
+   rather than raw row-level-security wording.
 
 ## Verification
 
-- Sign in as an Admin (User Management granted) and change another user's role —
-  saves cleanly.
-- Change a user who currently has no role — saves cleanly.
-- Attempt to grant Sharvi Admin as a non-Sharvi-Admin — clear refusal message.
+- As an Admin (User Management granted): change another user's role, reset a
+  Sharvi Admin's password, delete a test user — all succeed.
+- Attempt self-delete and self-demotion — refused with a clear message.
 - Typecheck with `bunx tsgo --noEmit`.
+- Note: the same migration must be applied on the Quality/Production server for
+  the server-side error to clear.
