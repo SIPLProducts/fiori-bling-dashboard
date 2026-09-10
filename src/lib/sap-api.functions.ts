@@ -18,6 +18,7 @@ import {
   salvageTruncatedArray,
   STATIC_MIDDLEWARE_BASE,
   withPostingDates,
+  type PostingRange,
 } from "./sap-pull-shared";
 import { mapPayload } from "./zfisales-map";
 
@@ -768,11 +769,11 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   await requireSuperAdmin();
   const query = Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value]));
   const headers = Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value]));
-  let parsedBody: unknown = endpoint.body_template ?? undefined;
+  let parsedBody: unknown = withPostingDates(endpoint.body_template, endpoint.posting_range) ?? undefined;
   try {
-    if (endpoint.body_template) parsedBody = JSON.parse(endpoint.body_template);
+    if (typeof parsedBody === "string") parsedBody = JSON.parse(parsedBody);
   } catch {
-    parsedBody = endpoint.body_template;
+    /* keep the raw body */
   }
   const outbound: OutboundRequest = {
     url: resolveEndpointUrl(endpoint, systems),

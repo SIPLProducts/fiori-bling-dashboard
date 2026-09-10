@@ -160,7 +160,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
 
   const { data: endpoint } = await db
     .from("sap_endpoints")
-    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active")
+    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active, posting_range")
     .eq("name", endpointName)
     .maybeSingle();
   if (!endpoint) return { status: "error", message: `Endpoint ${endpointName} is not configured` };
@@ -184,7 +184,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     authType: endpoint.auth_type,
     query: keyValueObject(endpoint.query_params),
     headers: keyValueObject(endpoint.headers),
-    body: withPostingDates(endpoint.body_template),
+    body: withPostingDates(endpoint.body_template, endpoint.posting_range),
   };
 
   const startedMs = Date.now();
