@@ -162,6 +162,16 @@ function AdminUsers() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => deletePortalUser({ data: { id: userId } }),
+    onSuccess: () => {
+      toast.success("User deleted");
+      setPendingDelete(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
   function openCreate() {
     setEditing(null);
