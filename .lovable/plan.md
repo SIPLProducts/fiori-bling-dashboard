@@ -1,70 +1,51 @@
-# Correct the Quality middleware port without touching the code
+# Fix the "URI too long" sync failure
 
-## Confirmed status
+## What is happening
 
-The middleware is running correctly (`v1.3.0`) and the scheduler starts. The Node 20 message is only a future-support warning.
+The on-prem scheduler is now working end to end:
 
-The remaining issue is that PM2 has `PORT=3000` saved in its environment. That value takes priority over `PORT=3002` in `.env`, so nothing listens on port 3002.
+- It reads the saved 5-minute schedule from the portal.
+- It calls SAP and receives 405 records successfully.
 
-## Run these commands exactly
+It then fails at the last step. Before saving, it asks the database which of those 405 records already exist, and it asks about 500 records in one request. Each record key is long, so the request web address exceeds the size the local gateway accepts and it answers "URI too long". Nothing is saved, and the run is recorded as an error.
 
-Do not source `backend/.env`, and do not run `pm2 flush`.
+This is the same limit that was fixed earlier for syncs started from the browser, but the new background scheduler still uses the large group size.
 
-```bash
-cd /opt/MIS_Projects/Quality/middleware
+## Change to make
 
-pm2 delete mis-q-middleware
+In `middleware/scheduler.mjs`:
 
-env -u PORT -u SUPABASE_SERVICE_ROLE_KEY \
-  pm2 start /opt/MIS_Projects/Quality/middleware/server.mjs \
-  --name mis-q-middleware \
-  --cwd /opt/MIS_Projects/Quality/middleware
+- Add a separate, much smaller group size for the existence check (40 records per request) while keeping 500 for the save step, which does not use the web address for data.
+- Apply the smaller size in the loop that reads `record_key` from `zfisales_detail`.
+- Leave the save/upsert loop and all counting logic unchanged, so new/updated numbers stay accurate.
 
-pm2 save
-pm2 logs mis-q-middleware --lines 20 --nostream
-```
+No portal, database, or configuration change is required.
 
-Expected line:
-
-```text
-[mis-sap-middleware] v1.3.0 listening on :3002
-```
-
-## Test the running middleware
-
-Only after the log shows port 3002:
+## What you do on the server after approval
 
 ```bash
-cd /opt/MIS_Projects/Quality/middleware
-SECRET=$(grep -m1 '^MIDDLEWARE_SHARED_SECRET=' .env | cut -d= -f2-)
-
-curl -X POST http://127.0.0.1:3002/sync/run \
-  -H 'content-type: application/json' \
-  -H "x-shared-secret: $SECRET" \
-  -d '{"endpoint":"Sales_Reports_KPI"}'
-
-unset SECRET
+cd /opt/MIS_Projects/Quality
+git pull
+cd middleware
+pm2 restart mis-q-middleware
+pm2 logs mis-q-middleware --lines 30 --nostream
 ```
 
-The first command is `cd`, not `d`.
+Within five minutes the log should show a completed run, and the SAP API Settings screen should show a successful run with the received/new/updated counts instead of "URI too long".
 
-## If it still prints port 3000
+Apply the same steps on Production (`/opt/MIS_Projects/Production/middleware`, process `mis-p-middleware`) once Quality is confirmed.
 
-Run this diagnostic without exposing any secrets:
+## Still outstanding
 
-```bash
-pm2 env 0 | grep '^PORT:'
-```
-
-If it prints `PORT: 3000`, start the process with the required value explicitly:
+The middleware listens on port 3000 because PM2 kept an older saved value. That does not affect the scheduler, which calls SAP directly, but the portal's manual Test button goes through port 3002. Recreate the process cleanly when convenient:
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
 pm2 delete mis-q-middleware
-PORT=3002 pm2 start server.mjs --name mis-q-middleware
+env -u PORT pm2 start server.mjs --name mis-q-middleware
 pm2 save
 ```
 
 ## Security follow-up
 
-The SAP password and middleware secret were pasted into chat. Rotate both after synchronization is confirmed.
+The SAP password and middleware secret were pasted into chat; rotate both once syncing is stable.
