@@ -3,13 +3,22 @@
 ## What we know now
 
 - The module error is fixed: `@supabase/supabase-js@2.109.0` installed, Node prints `Supabase module OK`, and PM2 points to `/opt/MIS_Projects/Quality/middleware/server.mjs`.
-- The middleware was still showing old behavior because it had not been restarted after the fix. The old successful log lines were from before the restart.
+- The restart exposed the next confirmed issue: Quality runs Node.js 20, while the installed database client expects a WebSocket transport. The middleware exits during startup before the scheduler can begin.
 
-## Final restart and verification
+## Code fix
 
-Run:
+- Add the Node-compatible `ws` package to middleware dependencies.
+- Pass its WebSocket implementation to the database client in `scheduler.mjs`.
+- This keeps Quality on Node.js 20; no server-wide Node upgrade is required.
+- Rebuild and verify middleware startup locally before deployment.
+
+## Quality deployment after the new commit is available
+
+Pull/copy the updated `middleware/package.json`, lockfile, and `scheduler.mjs`, then run:
 
 ```bash
+cd /opt/MIS_Projects/Quality/middleware
+npm install
 pm2 restart mis-q-middleware --update-env
 pm2 flush
 pm2 logs mis-q-middleware --lines 80
@@ -20,7 +29,7 @@ Expect fresh lines in this order:
 - `[mis-sap-middleware] listening on :3002`
 - `scheduler started`
 
-If instead it says `scheduler DISABLED`, one of these two lines is still missing from `/opt/MIS_Projects/Quality/middleware/.env`:
+If it says `scheduler DISABLED`, one of these two lines is still missing from `/opt/MIS_Projects/Quality/middleware/.env`:
 
 ```dotenv
 SUPABASE_URL=http://127.0.0.1:8000
