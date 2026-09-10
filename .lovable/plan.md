@@ -43,6 +43,12 @@
 4. **Clearer messages.** The toast shows the database's plain-English reason
    rather than raw row-level-security wording.
 
+5. **SAP API Settings is unchanged.** It stays Sharvi Admin only — the Admin
+   role is not granted that screen, and its data rules remain Sharvi-Admin-only.
+   So approving this gives Admin full control on User Management, Roles and
+   Screen Permissions (and any other screen granted to it), but not SAP API
+   Settings.
+
 ## Verification
 
 - As an Admin (User Management granted): change another user's role, reset a
