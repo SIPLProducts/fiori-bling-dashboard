@@ -11,6 +11,7 @@
  * the database on every tick. Nothing about the schedule is fixed in code.
  */
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import {
   mapPayload,
   extractEmbeddedBody,
@@ -75,7 +76,12 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
   const enabled = Boolean(url && key);
   const db = enabled
-    ? createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+    ? createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        // Node.js 20 has no native WebSocket; the scheduler does not use
+        // Realtime, but supabase-js still probes for a WebSocket at startup.
+        realtime: { transport: WebSocket },
+      })
     : null;
 
   /** Endpoint names currently being synced by this process. */
