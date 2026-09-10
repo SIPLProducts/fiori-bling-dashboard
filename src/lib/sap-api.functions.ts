@@ -791,7 +791,7 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
 
   const durationMs = run.durationMs ?? Date.now() - started;
   const ok = run.status === "synced";
-  const noData = ok && run.received === 0;
+  const noData = ok && run.inserted + run.updated === 0;
   const message = ok
     ? run.message || (noData
       ? "No data available for this selection"
