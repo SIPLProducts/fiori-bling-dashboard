@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { subscribeSdLines } from "@/lib/sd-live";
 import { useNavigate } from "@tanstack/react-router";
+import { ShellBar } from "@/components/shell-bar";
+import { useLaunchpad } from "@/lib/use-launchpad";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
 import { ManagementAlerts } from "./alerts";
