@@ -327,6 +327,15 @@ function AdminUsers() {
                           <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
                             Edit
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setPendingDelete(user)}
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Delete
+                          </Button>
                         </div>
                       </TableCell>
 
