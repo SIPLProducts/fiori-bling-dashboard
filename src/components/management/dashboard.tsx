@@ -40,6 +40,7 @@ export function ManagementDashboard() {
   // Bumped when the user resets the card arrangement.
   const [layoutVersion, setLayoutVersion] = useState(0);
   const queryClient = useQueryClient();
+  const { data: launchpad } = useLaunchpad();
 
   const { data: rows, isLoading, error } = useQuery({
     queryKey: ["management-sd-lines"],
