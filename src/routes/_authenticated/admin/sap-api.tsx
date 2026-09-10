@@ -384,6 +384,7 @@ function defaultEndpoint(): EndpointInput {
     scheduler_enabled: false,
     schedule_expression: "",
     is_active: true,
+    posting_range: "last7d",
   };
 }
 
@@ -456,13 +457,15 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
     scheduler_enabled: endpoint.scheduler_enabled,
     schedule_expression: endpoint.schedule_expression ?? "",
     is_active: endpoint.is_active,
+    posting_range: endpoint.posting_range ?? "custom",
   };
   return withDefaultDates(base);
 }
 
 /**
- * Backfill BUDAT_F / BUDAT_T when a saved endpoint has none (or an invalid
- * value): To = today, From = today minus 7 days. Valid saved dates are kept.
+ * Backfill BUDAT_F / BUDAT_T. With a preset range the pickers show the window
+ * that will actually be sent (recomputed from today); with custom dates only
+ * missing/invalid values default to To = today, From = today − 7 days.
  */
 function withDefaultDates(input: EndpointInput): EndpointInput {
   const payload = parsePayload(input.body_template) ?? {};
@@ -471,9 +474,12 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
     BUDAT_F: payload["BUDAT_F"] || headerValue("BUDAT_F"),
     BUDAT_T: payload["BUDAT_T"] || headerValue("BUDAT_T"),
   };
-  const fixes: Record<string, string> = {};
-  if (!/^\d{8}$/.test(current.BUDAT_F ?? "")) fixes["BUDAT_F"] = toSapDate(isoDaysAgo(7));
-  if (!/^\d{8}$/.test(current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
+  const rolling = postingWindow(input.posting_range);
+  const fixes: Record<string, string> = rolling
+    ? { BUDAT_F: rolling.from, BUDAT_T: rolling.to }
+    : {};
+  if (!/^\d{8}$/.test(fixes.BUDAT_F ?? current.BUDAT_F ?? "")) fixes["BUDAT_F"] = toSapDate(isoDaysAgo(7));
+  if (!/^\d{8}$/.test(fixes.BUDAT_T ?? current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
   if (!Object.keys(fixes).length) return input;
   const nextPayload: Record<string, string> = { ...payload, ...current, ...fixes };
 
