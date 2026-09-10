@@ -478,8 +478,8 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   const fixes: Record<string, string> = rolling
     ? { BUDAT_F: rolling.from, BUDAT_T: rolling.to }
     : {};
-  if (!/^\d{8}$/.test(fixes.BUDAT_F ?? current.BUDAT_F ?? "")) fixes["BUDAT_F"] = toSapDate(isoDaysAgo(7));
-  if (!/^\d{8}$/.test(fixes.BUDAT_T ?? current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
+  if (!/^\d{8}$/.test(fixes["BUDAT_F"] ?? current.BUDAT_F ?? "")) fixes["BUDAT_F"] = toSapDate(isoDaysAgo(7));
+  if (!/^\d{8}$/.test(fixes["BUDAT_T"] ?? current.BUDAT_T ?? "")) fixes["BUDAT_T"] = toSapDate(isoDaysAgo(0));
   if (!Object.keys(fixes).length) return input;
   const nextPayload: Record<string, string> = { ...payload, ...current, ...fixes };
 
