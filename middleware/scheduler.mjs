@@ -200,7 +200,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       const { data: endpoint, error } = await db
         .from("sap_endpoints")
         .select(
-          "name, endpoint_path, system_key, http_method, query_params, headers, body_template, is_active",
+          "name, endpoint_path, system_key, http_method, query_params, headers, body_template, is_active, posting_range",
         )
         .eq("name", endpointName)
         .maybeSingle();
@@ -231,7 +231,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         sapClient: systemRow?.sap_client ?? undefined,
       });
 
-      const bodyText = withPostingDates(endpoint.body_template);
+      const bodyText = withPostingDates(endpoint.body_template, endpoint.posting_range);
       snapshot = {
         source: manual ? "middleware-manual" : "middleware-scheduler",
         systemKey: system.key,

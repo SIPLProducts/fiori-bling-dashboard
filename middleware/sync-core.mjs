@@ -194,7 +194,29 @@ function extractEmbeddedBody(text) {
     return raw.replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\t/g, "	").replace(/\\\\/g, "\\");
   }
 }
-function withPostingDates(raw) {
+var sapDateOf = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+function postingWindow(range, now = /* @__PURE__ */ new Date()) {
+  const to = new Date(now);
+  const from = new Date(now);
+  switch (range) {
+    case "last7d":
+      from.setDate(from.getDate() - 7);
+      break;
+    case "last1m":
+      from.setMonth(from.getMonth() - 1);
+      break;
+    case "last6m":
+      from.setMonth(from.getMonth() - 6);
+      break;
+    case "last1y":
+      from.setFullYear(from.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return { from: sapDateOf(from), to: sapDateOf(to) };
+}
+function withPostingDates(raw, range) {
   if (!raw || !raw.trim()) return raw ?? void 0;
   let parsed;
   try {
@@ -204,10 +226,16 @@ function withPostingDates(raw) {
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
   const obj = parsed;
+  const window = postingWindow(range);
+  if (window) {
+    if ("BUDAT_F" in obj) obj["BUDAT_F"] = window.from;
+    if ("BUDAT_T" in obj) obj["BUDAT_T"] = window.to;
+    return JSON.stringify(obj);
+  }
   const sapDate = (daysAgo) => {
     const d = /* @__PURE__ */ new Date();
     d.setDate(d.getDate() - daysAgo);
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    return sapDateOf(d);
   };
   const valid = (v) => /^\d{8}$/.test(String(v ?? "").trim());
   if ("BUDAT_F" in obj && !valid(obj["BUDAT_F"])) obj["BUDAT_F"] = sapDate(7);

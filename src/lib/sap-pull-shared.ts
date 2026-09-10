@@ -69,8 +69,54 @@ export function extractEmbeddedBody(text: string): string | null {
   }
 }
 
-/** Never send an empty posting-date window: default To = today, From = today − 7 days. */
-export function withPostingDates(raw: string | null | undefined): string | undefined {
+/** Posting-date window options saved on each endpoint. */
+export type PostingRange = "last7d" | "last1m" | "last6m" | "last1y" | "custom";
+
+export const POSTING_RANGES: { value: PostingRange; label: string }[] = [
+  { value: "last7d", label: "Last 7 days" },
+  { value: "last1m", label: "Last 1 month" },
+  { value: "last6m", label: "Last 6 months" },
+  { value: "last1y", label: "Last 1 year" },
+  { value: "custom", label: "Custom dates" },
+];
+
+const sapDateOf = (d: Date) =>
+  `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * Computes the posting window for a preset at the moment of the call:
+ * To = today, From = today minus the chosen span. Returns null for `custom`,
+ * meaning the dates stored in the payload are used unchanged.
+ */
+export function postingWindow(range: string | null | undefined, now: Date = new Date()): { from: string; to: string } | null {
+  const to = new Date(now);
+  const from = new Date(now);
+  switch (range) {
+    case "last7d":
+      from.setDate(from.getDate() - 7);
+      break;
+    case "last1m":
+      from.setMonth(from.getMonth() - 1);
+      break;
+    case "last6m":
+      from.setMonth(from.getMonth() - 6);
+      break;
+    case "last1y":
+      from.setFullYear(from.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return { from: sapDateOf(from), to: sapDateOf(to) };
+}
+
+/**
+ * Ensures BUDAT_F / BUDAT_T in the payload. With a preset `range` the window
+ * is recomputed for every call, so a scheduled endpoint always follows today;
+ * with `custom` the saved dates are kept and only empty/invalid ones default
+ * to To = today, From = today − 7 days.
+ */
+export function withPostingDates(raw: string | null | undefined, range?: string | null): string | undefined {
   if (!raw || !raw.trim()) return raw ?? undefined;
   let parsed: unknown;
   try {
@@ -80,10 +126,16 @@ export function withPostingDates(raw: string | null | undefined): string | undef
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
   const obj = parsed as Record<string, unknown>;
+  const window = postingWindow(range);
+  if (window) {
+    if ("BUDAT_F" in obj) obj["BUDAT_F"] = window.from;
+    if ("BUDAT_T" in obj) obj["BUDAT_T"] = window.to;
+    return JSON.stringify(obj);
+  }
   const sapDate = (daysAgo: number) => {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    return sapDateOf(d);
   };
   const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
   if ("BUDAT_F" in obj && !valid(obj["BUDAT_F"])) obj["BUDAT_F"] = sapDate(7);
