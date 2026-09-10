@@ -133,6 +133,12 @@ export function ManagementDashboard() {
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
       <div>
+        <ShellBar
+          title="Management Sales Dashboard"
+          displayName={launchpad?.profile?.display_name}
+          screens={launchpad?.screens}
+        />
+
 
         <DashboardHeader
           preset={preset}
