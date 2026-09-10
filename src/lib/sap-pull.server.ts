@@ -4,76 +4,14 @@
  * screen and by the scheduled 10-minute job.
  */
 import { mapPayload } from "./zfisales-sync.server";
+import {
+  extractEmbeddedBody,
+  keyValueObject,
+  salvageTruncatedArray,
+  withPostingDates,
+} from "./sap-pull-shared";
 
 const BATCH = 500;
-
-/**
- * Recovers the complete objects of a JSON array that was cut mid-document
- * (an older middleware build truncates responses). Scans with string/escape
- * awareness so a cut inside a quoted value cannot corrupt the salvage.
- */
-function salvageTruncatedArray(text: string): unknown[] | null {
-  const trimmed = text.trimStart();
-  if (!trimmed.startsWith("[")) return null;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  let lastComplete = -1;
-  for (let i = 0; i < trimmed.length; i += 1) {
-    const ch = trimmed[i];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (ch === "\\") {
-      if (inString) escaped = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (ch === "{" || ch === "[") depth += 1;
-    else if (ch === "}" || ch === "]") {
-      depth -= 1;
-      if (depth === 1) lastComplete = i;
-    }
-  }
-  if (lastComplete < 0) return null;
-  try {
-    const rows = JSON.parse(`${trimmed.slice(0, lastComplete + 1)}]`) as unknown[];
-    return Array.isArray(rows) && rows.length ? rows : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * When the middleware's own JSON envelope is cut mid-document, the SAP payload
- * still sits inside its `"body":"..."` string. Extract and unescape it so the
- * salvage above can run on the array itself.
- */
-function extractEmbeddedBody(text: string): string | null {
-  const marker = '"body":"';
-  const start = text.indexOf(marker);
-  if (start < 0) return null;
-  const raw = text.slice(start + marker.length);
-  try {
-    // Close the string so JSON.parse can unescape it; drop a dangling escape.
-    const safe = raw.replace(/\\$/, "");
-    return JSON.parse(`"${safe.replace(/"$/, "")}"`) as string;
-  } catch {
-    // Unescape manually as a last resort.
-    return raw
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, "\n")
-      .replace(/\\t/g, "\t")
-      .replace(/\\\\/g, "\\");
-  }
-}
-
-
 
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
@@ -236,37 +174,6 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     ? await db.from("sap_systems").select("key, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
     : await db.from("sap_systems").select("key, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
 
-  /** Never send an empty posting-date window: default To = today, From = today − 7 days. */
-  const withPostingDates = (raw: string | null | undefined): string | undefined => {
-    if (!raw || !raw.trim()) return raw ?? undefined;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return raw;
-    }
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
-    const obj = parsed as Record<string, unknown>;
-    const sapDate = (daysAgo: number) => {
-      const d = new Date();
-      d.setDate(d.getDate() - daysAgo);
-      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-    };
-    const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
-    if ("BUDAT_F" in obj && !valid(obj["BUDAT_F"])) obj["BUDAT_F"] = sapDate(7);
-    if ("BUDAT_T" in obj && !valid(obj["BUDAT_T"])) obj["BUDAT_T"] = sapDate(0);
-    return JSON.stringify(obj);
-  };
-
-  const toObject = (raw: unknown) =>
-    Array.isArray(raw)
-      ? Object.fromEntries(
-          (raw as { key?: unknown; value?: unknown }[])
-            .filter((r) => r && typeof r === "object" && String(r.key ?? "").trim())
-            .map((r) => [String(r.key), String(r.value ?? "")]),
-        )
-      : {};
-
   const outbound = {
     middlewareUrl: `${base}/sap/call`,
     systemKey: system?.key ?? null,
@@ -275,8 +182,8 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     path: endpoint.endpoint_path,
     method: endpoint.http_method,
     authType: endpoint.auth_type,
-    query: toObject(endpoint.query_params),
-    headers: toObject(endpoint.headers),
+    query: keyValueObject(endpoint.query_params),
+    headers: keyValueObject(endpoint.headers),
     body: withPostingDates(endpoint.body_template),
   };
 

@@ -5,3 +5,4 @@
 - [x] Sales by Segment donut: show 6 segments
 - [x] Replace Management Alerts with filter-aware posting comparisons
 - [x] Add a self-hosted existing-user password/profile/role repair script
+- [x] Static build: route SAP middleware calls through the /sap-mw Nginx bridge (fixes 405 on Quality)

@@ -10,6 +10,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { accessForUser } from "./access";
 import { isValidCron, normalizeCron } from "./cron";
+import {
+  extractEmbeddedBody,
+  formatBytes,
+  IS_STATIC_BUILD,
+  keyValueObject,
+  salvageTruncatedArray,
+  STATIC_MIDDLEWARE_BASE,
+  withPostingDates,
+} from "./sap-pull-shared";
+import { mapPayload } from "./zfisales-map";
 
 export type KeyValue = { key: string; value: string };
 
@@ -382,10 +392,28 @@ const callMiddlewareServer = createServerFn({ method: "POST" })
     return { status: response.status, text: await response.text() };
   });
 
+/**
+ * Static build: the browser talks to the same-origin `/sap-mw/` Nginx bridge,
+ * which adds the shared secret server-side. Hosted build: the server function.
+ */
+async function middlewareRoundTrip(
+  path: string,
+  body?: unknown,
+): Promise<{ status: number; text: string }> {
+  if (!IS_STATIC_BUILD) return callMiddlewareServer({ data: { path, body } });
+  const res = await fetch(`${STATIC_MIDDLEWARE_BASE}${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    signal: AbortSignal.timeout(600000),
+  });
+  return { status: res.status, text: await res.text() };
+}
+
 async function callMiddleware(path: string, body?: unknown): Promise<TestResult> {
   const started = Date.now();
   try {
-    const res = await callMiddlewareServer({ data: { path, body } });
+    const res = await middlewareRoundTrip(path, body);
     const text = res.text;
     let payload: Record<string, unknown> = {};
     try {
@@ -494,6 +522,203 @@ export function resolveEndpointUrl(endpoint: {
   return resolved.toString();
 }
 
+type SyncRunResult = {
+  status: "synced" | "skipped" | "error";
+  message: string;
+  received: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+  durationMs: number;
+  httpStatus: number | null;
+  preview: string | null;
+};
+
+const UPSERT_BATCH = 500;
+
+/**
+ * Static build only: the call -> parse -> upsert round trip runs in the
+ * browser, hitting the middleware through the same-origin `/sap-mw/` bridge.
+ * Mirrors the server pull, including the truncated-payload salvage.
+ */
+async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResult> {
+  const empty = { received: 0, inserted: 0, updated: 0, skipped: 0, preview: null, httpStatus: null };
+  const started = Date.now();
+  const fail = (message: string, extra: Partial<SyncRunResult> = {}): SyncRunResult => ({
+    status: "error",
+    message,
+    ...empty,
+    durationMs: Date.now() - started,
+    ...extra,
+  });
+
+  const { data: endpoint } = await supabase
+    .from("sap_endpoints")
+    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active")
+    .eq("name", endpointName)
+    .maybeSingle();
+  if (!endpoint) return fail(`Endpoint ${endpointName} is not configured`);
+  if (!endpoint.is_active) {
+    return { status: "skipped", message: "Endpoint is inactive", ...empty, durationMs: 0 };
+  }
+
+  const { data: system } = endpoint.system_key
+    ? await supabase.from("sap_systems").select("key, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
+    : await supabase.from("sap_systems").select("key, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
+
+  const outbound = {
+    systemKey: system?.key ?? null,
+    baseUrl: system?.base_url ?? null,
+    sapClient: system?.sap_client ?? null,
+    path: endpoint.endpoint_path,
+    method: endpoint.http_method,
+    authType: endpoint.auth_type,
+    query: keyValueObject(endpoint.query_params),
+    headers: keyValueObject(endpoint.headers),
+    body: withPostingDates(endpoint.body_template),
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(`${STATIC_MIDDLEWARE_BASE}/sap/call`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(outbound),
+      signal: AbortSignal.timeout(600000),
+    });
+  } catch (err) {
+    return fail(
+      `Middleware unreachable (${err instanceof Error ? err.message : "fetch failed"}) — SAP was not contacted`,
+    );
+  }
+
+  const text = await response.text();
+  const bytes = new TextEncoder().encode(text).length;
+  const durationMs = Date.now() - started;
+  let envelope: Record<string, unknown> = {};
+  try {
+    envelope = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    envelope = {};
+  }
+
+  if (!response.ok) {
+    const detail = typeof envelope["message"] === "string" ? (envelope["message"] as string) : "";
+    const hop = `Middleware returned HTTP ${response.status}`;
+    return fail(detail ? `${hop}: ${detail}` : hop, { durationMs, httpStatus: response.status });
+  }
+
+  const bodyText =
+    (typeof envelope["body"] === "string" ? (envelope["body"] as string) : extractEmbeddedBody(text)) ?? text;
+  let payload: unknown;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch {
+    const salvaged = salvageTruncatedArray(bodyText);
+    if (!salvaged) {
+      const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
+      return fail(`SAP returned ${formatBytes(bytes)} that could not be parsed as JSON — starts with: ${preview}`, {
+        durationMs,
+        httpStatus: response.status,
+        preview,
+      });
+    }
+    payload = salvaged;
+  }
+
+  const { received, rows, skipped } = mapPayload(payload, endpointName);
+  const startedAt = new Date(started).toISOString();
+  const { data: run } = await supabase
+    .from("sap_sync_runs")
+    .insert({
+      endpoint: endpointName,
+      status: "running",
+      started_at: startedAt,
+      records_received: received,
+      records_skipped: skipped,
+      response_bytes: bytes,
+      duration_ms: durationMs,
+      http_status: response.status,
+      request_snapshot: outbound as never,
+    })
+    .select("id")
+    .single();
+
+  const finish = async (patch: Record<string, unknown>) => {
+    if (run?.id) {
+      await supabase
+        .from("sap_sync_runs")
+        .update({ finished_at: new Date().toISOString(), ...patch })
+        .eq("id", run.id);
+    }
+  };
+
+  const preview = bodyText.slice(0, 4000);
+  if (!rows.length) {
+    const message = received
+      ? "No mappable rows in the SAP response — existing data left unchanged"
+      : "No data returned — existing data left unchanged";
+    await finish({ status: "success", error_message: message });
+    return {
+      status: "synced",
+      message,
+      received,
+      inserted: 0,
+      updated: 0,
+      skipped,
+      durationMs,
+      httpStatus: response.status,
+      preview,
+    };
+  }
+
+  try {
+    const keys = rows.map((r) => r.record_key);
+    const existing = new Set<string>();
+    for (let i = 0; i < keys.length; i += UPSERT_BATCH) {
+      const { data, error } = await supabase
+        .from("zfisales_detail")
+        .select("record_key")
+        .in("record_key", keys.slice(i, i + UPSERT_BATCH));
+      if (error) throw error;
+      for (const r of data ?? []) existing.add(r.record_key);
+    }
+    for (let i = 0; i < rows.length; i += UPSERT_BATCH) {
+      const { error } = await supabase
+        .from("zfisales_detail")
+        .upsert(rows.slice(i, i + UPSERT_BATCH) as never, { onConflict: "record_key" });
+      if (error) throw error;
+    }
+    const updated = rows.filter((r) => existing.has(r.record_key)).length;
+    const inserted = rows.length - updated;
+    await finish({ status: "success", records_inserted: inserted, records_updated: updated });
+    const now = new Date().toISOString();
+    await supabase
+      .from("sap_endpoints")
+      .update({
+        ...(inserted + updated > 0 ? { last_synced_at: now } : {}),
+        last_run_at: now,
+        last_run_status: "success",
+      })
+      .eq("name", endpointName);
+    return {
+      status: "synced",
+      message: "",
+      received,
+      inserted,
+      updated,
+      skipped,
+      durationMs,
+      httpStatus: response.status,
+      preview,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upsert failed";
+    await finish({ status: "error", error_message: message });
+    return fail(message, { durationMs, httpStatus: response.status, preview });
+  }
+}
+
 export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[]): Promise<TestResult> {
   await requireSuperAdmin();
   const query = Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value]));
@@ -517,7 +742,9 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   // The whole round trip runs on the portal server: middleware -> parse ->
   // upsert. Multi-MB SAP responses never travel through the browser.
   const started = Date.now();
-  const run = await runEndpointSyncServer({ data: { endpointName: endpoint.name } });
+  const run = IS_STATIC_BUILD
+    ? await runEndpointSyncBrowser(endpoint.name)
+    : await runEndpointSyncServer({ data: { endpointName: endpoint.name } });
   console.info("[SAP response]", endpoint.name, { status: run.status, durationMs: run.durationMs });
 
   const durationMs = run.durationMs ?? Date.now() - started;

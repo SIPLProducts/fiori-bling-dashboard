@@ -119,9 +119,29 @@ npm run build:static
 
 > Use `build:static` for this on-prem Nginx deployment — it flattens the output
 > and drops the server bundle. Plain `npm run build` keeps the server bundle and
-> is what the hosted (Lovable) deployment uses; server-side features such as the
-> SAP middleware test and the scheduled `/api/public/sap/pull/*` sync only work
-> on that hosted deployment, never on this static build.
+> is what the hosted (Lovable) deployment uses.
+>
+> **SAP middleware bridge.** Because the static build has no app server, a POST
+> to `/_serverFn/...` returns `405 Not Allowed` from Nginx. The static bundle
+> therefore calls the middleware through a same-origin bridge instead, so both
+> Nginx configs must contain:
+>
+> ```nginx
+> location /sap-mw/ {
+>     proxy_pass http://mis_q_middleware/;          # mis_p_middleware in Production
+>     proxy_set_header x-shared-secret "<MIDDLEWARE_SHARED_SECRET>";
+>     proxy_read_timeout 600s;
+>     proxy_send_timeout 600s;
+> }
+> ```
+>
+> Nginx injects the shared secret, so it never reaches the browser. The value
+> must match `MIDDLEWARE_SHARED_SECRET` in `middleware/.env`, and the middleware
+> `PORT` must match the upstream (Quality 3002, Production 3010).
+>
+> With the bridge in place, Test connection, middleware health/logs, SAP ping and
+> the endpoint Test/sync all work on the static build. The unattended 10-minute
+> scheduler (`/api/public/sap/pull/*`) still only runs on the hosted deployment.
 
 This creates `dist/` in the repo root containing `index.html`, `assets/`,
 `favicon.png` and `robots.txt`. Upload the **contents** of `dist/` to the server

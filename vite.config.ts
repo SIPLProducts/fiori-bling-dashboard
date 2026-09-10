@@ -14,6 +14,12 @@ const isStaticBuild = process.env["STATIC_BUILD"] === "1";
 
 export default defineConfig({
   vite: {
+    // The on-prem static SPA has no app server, so the browser must call the
+    // middleware through the same-origin /sap-mw/ Nginx bridge instead of a
+    // server function. This flag is how client code tells the builds apart.
+    define: {
+      "import.meta.env.VITE_STATIC_BUILD": JSON.stringify(isStaticBuild ? "1" : ""),
+    },
     build: {
       rollupOptions: {
         treeshake: false,
