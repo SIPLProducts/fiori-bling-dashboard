@@ -48,7 +48,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const STARTED_AT = Date.now();
 
 /**
@@ -428,4 +428,11 @@ app.listen(PORT, () => {
   if (!SHARED_SECRET) {
     console.warn("[mis-sap-middleware] WARNING: MIDDLEWARE_SHARED_SECRET is missing — all protected calls will return 401.");
   }
+  console.log(
+    `[mis-sap-middleware] portal database      : ${process.env.SUPABASE_URL ? process.env.SUPABASE_URL : "NOT SET (scheduler off)"}`,
+  );
+  console.log(
+    `[mis-sap-middleware] service role key     : ${process.env.SUPABASE_SERVICE_ROLE_KEY ? "configured" : "MISSING (scheduler off)"}`,
+  );
+  scheduler.start();
 });
