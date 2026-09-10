@@ -62,6 +62,7 @@ export type SapEndpoint = {
   last_test_message: string | null;
   last_test_duration_ms: number | null;
   last_synced_at: string | null;
+  posting_range: PostingRange;
 };
 
 export type MiddlewareConfig = {
@@ -134,6 +135,7 @@ export type EndpointInput = {
   scheduler_enabled: boolean;
   schedule_expression: string;
   is_active: boolean;
+  posting_range: PostingRange;
 };
 
 /**
@@ -172,6 +174,7 @@ function endpointPayload(input: EndpointInput) {
     scheduler_enabled: input.scheduler_enabled,
     schedule_expression: input.schedule_expression.trim() || null,
     is_active: input.is_active,
+    posting_range: input.posting_range,
   };
 }
 
@@ -557,7 +560,7 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
 
   const { data: endpoint } = await supabase
     .from("sap_endpoints")
-    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active")
+    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active, posting_range")
     .eq("name", endpointName)
     .maybeSingle();
   if (!endpoint) return fail(`Endpoint ${endpointName} is not configured`);
@@ -578,7 +581,7 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
     authType: endpoint.auth_type,
     query: keyValueObject(endpoint.query_params),
     headers: keyValueObject(endpoint.headers),
-    body: withPostingDates(endpoint.body_template),
+    body: withPostingDates(endpoint.body_template, endpoint.posting_range),
   };
 
   const startedAt = new Date(started).toISOString();
