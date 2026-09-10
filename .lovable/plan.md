@@ -1,43 +1,59 @@
-# Fix the "URI too long" sync failure
+# Fix large syncs and clear the sales table on your server
 
-## What is happening
+## What is happening now
 
-The on-prem scheduler is now working end to end:
+The background scheduler is working: it reads the saved 5-minute schedule and SAP returns records successfully. It then fails with "URI too long" because, before saving, it asks the database about 500 records in one web request. With long record keys the address exceeds the gateway limit, so nothing is saved.
 
-- It reads the saved 5-minute schedule from the portal.
-- It calls SAP and receives 405 records successfully.
-
-It then fails at the last step. Before saving, it asks the database which of those 405 records already exist, and it asks about 500 records in one request. Each record key is long, so the request web address exceeds the size the local gateway accepts and it answers "URI too long". Nothing is saved, and the run is recorded as an error.
-
-This is the same limit that was fixed earlier for syncs started from the browser, but the new background scheduler still uses the large group size.
+At 30,000 records this would fail immediately every time.
 
 ## Change to make
 
 In `middleware/scheduler.mjs`:
 
-- Add a separate, much smaller group size for the existence check (40 records per request) while keeping 500 for the save step, which does not use the web address for data.
-- Apply the smaller size in the loop that reads `record_key` from `zfisales_detail`.
-- Leave the save/upsert loop and all counting logic unchanged, so new/updated numbers stay accurate.
+- Check which records already exist in small groups of 40 instead of 500, so the request address always stays short.
+- Keep saving in groups of 500 (saving sends data in the body, not the address).
+- Add a short progress line every few thousand records so large runs are visible in the log.
+- Keep counting new versus updated records exactly as today.
 
-No portal, database, or configuration change is required.
+This makes a 30,000-record sync work: roughly 750 short existence checks plus 60 save batches, all within the existing 10-minute timeout.
 
-## What you do on the server after approval
+No portal or database change is needed.
+
+## Deploy on the server
 
 ```bash
 cd /opt/MIS_Projects/Quality
 git pull
 cd middleware
 pm2 restart mis-q-middleware
-pm2 logs mis-q-middleware --lines 30 --nostream
+pm2 logs mis-q-middleware --lines 40 --nostream
 ```
 
-Within five minutes the log should show a completed run, and the SAP API Settings screen should show a successful run with the received/new/updated counts instead of "URI too long".
+Within five minutes the SAP API Settings screen should show a successful run with received/new/updated counts.
 
-Apply the same steps on Production (`/opt/MIS_Projects/Production/middleware`, process `mis-p-middleware`) once Quality is confirmed.
+## Clearing all sales records on your server
+
+Run this on the self-hosted server only. It permanently removes every row in the sales table; the structure and all other data stay intact.
+
+```bash
+docker exec -i supabase-db psql -U postgres -d postgres \
+  -c "TRUNCATE TABLE public.zfisales_detail;"
+```
+
+If your database container has a different name, list it with `docker ps` and substitute it.
+
+Verify:
+
+```bash
+docker exec -i supabase-db psql -U postgres -d postgres \
+  -c "SELECT count(*) FROM public.zfisales_detail;"
+```
+
+The count should be 0. The next scheduled sync then refills the table from SAP.
 
 ## Still outstanding
 
-The middleware listens on port 3000 because PM2 kept an older saved value. That does not affect the scheduler, which calls SAP directly, but the portal's manual Test button goes through port 3002. Recreate the process cleanly when convenient:
+The middleware listens on port 3000 because PM2 saved an older value. The scheduler is unaffected, but the portal's Test button uses port 3002. Fix when convenient:
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
