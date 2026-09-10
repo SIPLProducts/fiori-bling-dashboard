@@ -246,6 +246,17 @@ export async function updatePortalUser(input: {
   return { ok: true };
 }
 
+/** Permanently removes an account, its profile and its role assignment. */
+export async function deletePortalUser(input: { data: { id: string } }) {
+  const currentUserId = await requireScreen("admin.users", "User Management");
+  if (input.data.id === currentUserId) {
+    throw new Error("You cannot delete your own account");
+  }
+  const { error } = await supabase.rpc("admin_delete_user", { _user_id: input.data.id });
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
 export async function setUserStatus(input: { data: { id: string; status: UserStatus } }) {
   const currentUserId = await requireScreen("admin.users", "User Management");
   if (input.data.id === currentUserId && input.data.status === "inactive") {
