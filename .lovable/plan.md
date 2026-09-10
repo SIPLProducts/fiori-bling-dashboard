@@ -1,25 +1,44 @@
-# Fix large syncs and clear the sales table on your server
+# Clear the sales table and make large syncs work
 
-## What is happening now
+## 1. Delete all sales records on your server (plain query, no migration)
 
-The background scheduler is working: it reads the saved 5-minute schedule and SAP returns records successfully. It then fails with "URI too long" because, before saving, it asks the database about 500 records in one web request. With long record keys the address exceeds the gateway limit, so nothing is saved.
+Run this on the self-hosted server. It empties the sales table only; structure, users and settings are untouched.
 
-At 30,000 records this would fail immediately every time.
+```bash
+docker exec -i supabase-db psql -U postgres -d postgres \
+  -c "DELETE FROM public.zfisales_detail;"
+```
 
-## Change to make
+Check the result:
+
+```bash
+docker exec -i supabase-db psql -U postgres -d postgres \
+  -c "SELECT count(*) FROM public.zfisales_detail;"
+```
+
+It should print 0. If the database container has a different name, find it with `docker ps` and replace `supabase-db`.
+
+This is permanent and cannot be undone; the next sync refills the table from SAP.
+
+## 2. Why the sync currently fails
+
+The scheduler works and SAP returns records, but before saving it asks the database about 500 records in one web request. With long record keys the request address exceeds the gateway limit, giving "URI too long", so nothing is saved. At 30,000 records this fails every time.
+
+## 3. Change to make in the scheduler
 
 In `middleware/scheduler.mjs`:
 
-- Check which records already exist in small groups of 40 instead of 500, so the request address always stays short.
-- Keep saving in groups of 500 (saving sends data in the body, not the address).
-- Add a short progress line every few thousand records so large runs are visible in the log.
-- Keep counting new versus updated records exactly as today.
+- Ask about existing records in groups of 40 instead of 500, keeping every request address short.
+- Keep saving in groups of 500, since saving sends data in the body and has no address limit.
+- Process the run in sequential chunks so memory stays flat even with 30,000+ records.
+- Log progress every few thousand records so long runs are visible.
+- Keep the new/updated/skipped counting exactly as today.
 
-This makes a 30,000-record sync work: roughly 750 short existence checks plus 60 save batches, all within the existing 10-minute timeout.
+A 30,000-record run becomes about 750 short lookups plus 60 save batches, comfortably inside the existing 10-minute timeout.
 
-No portal or database change is needed.
+Nothing in the portal or database schema changes.
 
-## Deploy on the server
+## 4. Deploy on the server
 
 ```bash
 cd /opt/MIS_Projects/Quality
@@ -29,31 +48,11 @@ pm2 restart mis-q-middleware
 pm2 logs mis-q-middleware --lines 40 --nostream
 ```
 
-Within five minutes the SAP API Settings screen should show a successful run with received/new/updated counts.
-
-## Clearing all sales records on your server
-
-Run this on the self-hosted server only. It permanently removes every row in the sales table; the structure and all other data stay intact.
-
-```bash
-docker exec -i supabase-db psql -U postgres -d postgres \
-  -c "TRUNCATE TABLE public.zfisales_detail;"
-```
-
-If your database container has a different name, list it with `docker ps` and substitute it.
-
-Verify:
-
-```bash
-docker exec -i supabase-db psql -U postgres -d postgres \
-  -c "SELECT count(*) FROM public.zfisales_detail;"
-```
-
-The count should be 0. The next scheduled sync then refills the table from SAP.
+Within five minutes the SAP API Settings screen should show a successful run with received/new/updated counts instead of "URI too long".
 
 ## Still outstanding
 
-The middleware listens on port 3000 because PM2 saved an older value. The scheduler is unaffected, but the portal's Test button uses port 3002. Fix when convenient:
+The middleware listens on port 3000 because PM2 kept an older saved value. The scheduler is unaffected, but the Test button uses port 3002:
 
 ```bash
 cd /opt/MIS_Projects/Quality/middleware
