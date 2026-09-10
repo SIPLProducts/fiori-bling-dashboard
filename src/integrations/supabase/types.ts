@@ -870,6 +870,21 @@ export type Database = {
         Args: { _cron: string; _enabled: boolean; _endpoint: string }
         Returns: string
       }
+      finish_sync_run: {
+        Args: {
+          _duration_ms?: number
+          _http_status?: number
+          _message?: string
+          _records_inserted?: number
+          _records_received?: number
+          _records_skipped?: number
+          _records_updated?: number
+          _response_bytes?: number
+          _run_id: string
+          _status: string
+        }
+        Returns: undefined
+      }
       get_sap_credential: { Args: { _cred_key: string }; Returns: string }
       has_role: {
         Args: {
@@ -896,6 +911,14 @@ export type Database = {
       set_sap_credential: {
         Args: { _cred_key: string; _secret: string }
         Returns: undefined
+      }
+      start_sync_run: {
+        Args: {
+          _endpoint: string
+          _request_snapshot: Json
+          _started_at: string
+        }
+        Returns: string
       }
     }
     Enums: {
