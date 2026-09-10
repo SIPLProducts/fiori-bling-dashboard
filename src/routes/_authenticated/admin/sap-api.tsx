@@ -84,6 +84,7 @@ import {
   type SapSystem,
   type TestResult,
 } from "@/lib/sap-api.functions";
+import { POSTING_RANGES, postingWindow } from "@/lib/sap-pull-shared";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
