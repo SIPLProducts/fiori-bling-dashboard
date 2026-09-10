@@ -98,6 +98,7 @@ function AdminUsers() {
   const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.users");
 
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PortalUser | null>(null);
   const [editing, setEditing] = useState<PortalUser | null>(null);
   const [form, setForm] = useState<UserFormInput>(EMPTY_FORM);
   const [search, setSearch] = useState("");
