@@ -867,6 +867,10 @@ export type Database = {
         Args: { _new_password: string; _user_id: string }
         Returns: undefined
       }
+      admin_set_user_role: {
+        Args: { _role_key: string; _user_id: string }
+        Returns: undefined
+      }
       apply_sap_sync_schedule: {
         Args: { _cron: string; _enabled: boolean; _endpoint: string }
         Returns: string

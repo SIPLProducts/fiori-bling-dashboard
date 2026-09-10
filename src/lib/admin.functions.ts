@@ -270,26 +270,18 @@ export async function setUserStatus(input: { data: { id: string; status: UserSta
   return { ok: true };
 }
 
-/** A user holds exactly one role; this replaces any previous assignment. */
+/**
+ * A user holds exactly one role. The swap runs as one database action so a
+ * failure can never leave the user with no role, and so the caller's own
+ * permission row is never removed mid-update.
+ */
 async function setRoleAssignment(userId: string, roleKey: string) {
-  const access = await currentAccess();
-  const currentUserId = access.userId;
-  if (roleKey === SUPER_ADMIN_ROLE_KEY && !access.isSuperAdmin) {
-    throw new Error("Only a Sharvi Admin can grant the Sharvi Admin role");
-  }
-  if (access.isSuperAdmin && userId === currentUserId && roleKey !== SUPER_ADMIN_ROLE_KEY) {
-    throw new Error("You cannot remove your own Sharvi Admin role");
-  }
-
-
-  const del = await supabase.from("user_role_assignments").delete().eq("user_id", userId);
-  if (del.error) throw del.error;
   if (!roleKey) return;
-
-  const ins = await supabase
-    .from("user_role_assignments")
-    .insert({ user_id: userId, role_key: roleKey });
-  if (ins.error) throw ins.error;
+  const { error } = await supabase.rpc("admin_set_user_role", {
+    _user_id: userId,
+    _role_key: roleKey,
+  });
+  if (error) throw new Error(error.message);
 }
 
 
