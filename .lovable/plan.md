@@ -33,36 +33,30 @@ Upload the **contents** of the new `dist/` via WinSCP to
 The `VITE_*` values are baked into the bundle, so Production later needs its own
 build with port 9000 and the Production anon key.
 
-## Step 2 — Apply the new database migrations (Quality)
+## Step 2 — Apply ALL migrations (Quality database is empty)
+
+The error `relation "public.app_crypto_keys" does not exist` proves the Quality
+database never received the application schema — no tables at all. So every
+migration must run from the first one, in filename order, not just the last
+five.
 
 1. Upload all files from the repo's `supabase/migrations/` to
-   `/opt/MIS_Projects/Quality/supabase/migrations/` (keep existing ones).
-2. The database requires its password even from inside the container. Load it
-   from the existing backend `.env` without printing it, then apply the five
-   migrations that failed in the terminal output:
+   `/opt/MIS_Projects/Quality/supabase/migrations/`.
+2. Run them all in order, loading the database password from the backend
+   `.env` (it is required even inside the container):
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
-set -a
-source .env
-set +a
+set -a; source .env; set +a
 
-for f in \
-  20260902061812_2a548a62-5eec-410e-bf60-3fed50510f14.sql \
-  20260902071515_aed71e84-f1ae-46b8-9bd6-4eeb972905ef.sql \
-  20260902071633_9c236de1-e2c8-4cbc-a304-d25620ac94cb.sql \
-  20260902173656_31331764-b81d-41f0-b937-6fcdbce88438.sql \
-  20260909024306_c058a5bf-ce28-4b41-b8f1-6891d3307bf6.sql; do
-  echo "==> $f"
+for f in $(ls /opt/MIS_Projects/Quality/supabase/migrations/*.sql | sort); do
+  echo "==> $(basename $f)"
   docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
-    psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
-    < "/opt/MIS_Projects/Quality/supabase/migrations/$f" || break
+    psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < "$f" || break
 done
 ```
 
-The loop now stops on the first real SQL error instead of incorrectly calling
-every failure “already applied.” If it reports `already exists`, first inspect
-the named object before deciding to skip that migration. Verify afterwards:
+The loop stops at the first real error so nothing is silently skipped. Verify:
 
 ```bash
 docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
@@ -70,36 +64,42 @@ docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
   "select count(*) from zfisales_detail; select key from roles order by sort_order;"
 ```
 
-## Step 3 — Bring the existing users to Quality
+## Step 3 — Link the admin user and bring the other users over
 
-Lovable-hosted users are in a different authentication database and do not
-appear on this server automatically. Copy the user list, profile fields, role
-assignments, and screen permissions to Quality. Passwords are not copied or
-displayed; create each account with a temporary password and require the user
-to change it after first login.
-
-Create the first Sharvi Admin through the local Auth Admin API so the auth
-schema, identities, profile trigger, and role trigger stay consistent:
+The Sharvi Admin account was already created successfully in Auth
+(`sharvi.admin@siplproducts.com`). Because the tables did not exist at that
+moment, its profile and role rows were not created by the trigger. After Step 2
+completes, create them once:
 
 ```bash
 cd /opt/MIS_Projects/Quality/backend
 set -a; source .env; set +a
 
-read -s -p "Temporary admin password: " ADMIN_PASSWORD; echo
-curl --fail-with-body -X POST http://127.0.0.1:8000/auth/v1/admin/users \
-  -H "apikey: $SERVICE_ROLE_KEY" \
-  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"sharvi.admin@siplproducts.com\",\"password\":\"$ADMIN_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"username\":\"sharvi.admin\",\"first_name\":\"Sharvi\",\"last_name\":\"Admin\"}}"
-unset ADMIN_PASSWORD
+docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i mis_q_db \
+  psql -U supabase_admin -d postgres <<'SQL'
+INSERT INTO public.profiles (id, email, username, first_name, last_name, status)
+SELECT id, email, 'sharvi.admin', 'Sharvi', 'Admin', 'active'
+FROM auth.users WHERE email = 'sharvi.admin@siplproducts.com'
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.user_role_assignments (user_id, role_key)
+SELECT id, 'super_admin' FROM auth.users
+WHERE email = 'sharvi.admin@siplproducts.com'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin' FROM auth.users
+WHERE email = 'sharvi.admin@siplproducts.com'
+ON CONFLICT DO NOTHING;
+SQL
 ```
 
-The `handle_new_user` trigger automatically grants the first user the
-`super_admin` role with full access. Log in at `http://10.10.4.165:8081`, then
-create the remaining existing users in **Administration → User Management**
-with their matching usernames, profile fields, roles, and temporary passwords.
-This is the safe migration path because existing password hashes are not
-exported from the hosted authentication service.
+Log in at `http://10.10.4.165:8081` with that email or username, then create
+the remaining users in **Administration → User Management** with their
+usernames, profile fields, roles and temporary passwords. Password hashes are
+not exported from the hosted service, so each user sets a new password on first
+login.
+
 
 ## Step 4 — Install the SAP middleware (port 3002)
 
