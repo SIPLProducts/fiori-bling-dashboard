@@ -4,3 +4,4 @@
 - [x] Top customers: show 6, tighter bar rows
 - [x] Sales by Segment donut: show 6 segments
 - [x] Replace Management Alerts with filter-aware posting comparisons
+- [x] Add a self-hosted existing-user password/profile/role repair script
