@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { subscribeSdLines } from "@/lib/sd-live";
 import { useNavigate } from "@tanstack/react-router";
+import { ShellBar } from "@/components/shell-bar";
+import { useLaunchpad } from "@/lib/use-launchpad";
 import { DashboardHeader } from "./header";
 import { KpiCard } from "./kpi-card";
 import { ManagementAlerts } from "./alerts";
+import { DraggableCardGrid, clearCardOrder } from "./card-grid";
 import {
   MainGroupTreemap,
   ParetoChart,
@@ -34,7 +37,10 @@ export function ManagementDashboard() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<RangePreset>("All postings");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
+  // Bumped when the user resets the card arrangement.
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const queryClient = useQueryClient();
+  const { data: launchpad } = useLaunchpad();
 
   const { data: rows, isLoading, error } = useQuery({
     queryKey: ["management-sd-lines"],
@@ -130,6 +136,12 @@ export function ManagementDashboard() {
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
       <div>
+        <ShellBar
+          title="Management Sales Dashboard"
+          displayName={launchpad?.profile?.display_name}
+          screens={launchpad?.screens}
+        />
+
 
         <DashboardHeader
           preset={preset}
@@ -152,6 +164,10 @@ export function ManagementDashboard() {
             });
           }}
           options={options}
+          onResetLayout={() => {
+            clearCardOrder();
+            setLayoutVersion((v) => v + 1);
+          }}
         />
 
         <main className="max-h-[calc(100vh-78px)] overflow-y-auto px-[18px] py-4">
@@ -164,45 +180,67 @@ export function ManagementDashboard() {
               Loading sales postings…
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {view.kpis.map((kpi) => (
-                  <button
-                    key={kpi.id}
-                    type="button"
-                    onClick={() => openDrilldown({ kpi: kpi.id })}
-                    className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1769E8] rounded-xl"
-                    aria-label={`View ${kpi.label} line items`}
-                  >
-                    <KpiCard kpi={kpi} comparisonLabel={view.comparisonLabel} />
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[45fr_27fr_28fr]">
-                <SalesTrendChart
-                  monthly={view.trendMonthly}
-                  quarterly={view.trendQuarterly}
-                  ytd={view.trendYtd}
-                  currentLabel={view.currentLabel}
-                  previousLabel={view.previousLabel}
-                  onMonthSelect={(month) => openDrilldown({ month })}
-                />
-                <SegmentDonutChart data={view.segments} totalCr={view.totalCr} />
-                <TopProfitCentres data={view.profitCentres} />
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-                <TopCustomers data={view.customers} onSelect={(customer) => openDrilldown({ customer })} />
-                <ParetoChart data={view.pareto} />
-                <MainGroupTreemap data={view.mainGroups} />
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <SalesQuantityChart data={view.salesQuantity} />
-                <ManagementAlerts alerts={view.alerts} />
-              </div>
-            </div>
+            <DraggableCardGrid
+              version={layoutVersion}
+              cards={[
+                ...view.kpis.map((kpi) => ({
+                  id: `kpi:${kpi.id}`,
+                  span: 2,
+                  node: (
+                    <button
+                      type="button"
+                      onClick={() => openDrilldown({ kpi: kpi.id })}
+                      className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1769E8] rounded-xl"
+                      aria-label={`View ${kpi.label} line items`}
+                    >
+                      <KpiCard kpi={kpi} comparisonLabel={view.comparisonLabel} />
+                    </button>
+                  ),
+                })),
+                {
+                  id: "chart:trend",
+                  span: 5,
+                  node: (
+                    <SalesTrendChart
+                      monthly={view.trendMonthly}
+                      quarterly={view.trendQuarterly}
+                      ytd={view.trendYtd}
+                      currentLabel={view.currentLabel}
+                      previousLabel={view.previousLabel}
+                      onMonthSelect={(month) => openDrilldown({ month })}
+                    />
+                  ),
+                },
+                {
+                  id: "chart:segments",
+                  span: 3,
+                  node: <SegmentDonutChart data={view.segments} totalCr={view.totalCr} />,
+                },
+                {
+                  id: "chart:profit-centres",
+                  span: 4,
+                  node: <TopProfitCentres data={view.profitCentres} />,
+                },
+                {
+                  id: "chart:customers",
+                  span: 4,
+                  node: (
+                    <TopCustomers
+                      data={view.customers}
+                      onSelect={(customer) => openDrilldown({ customer })}
+                    />
+                  ),
+                },
+                { id: "chart:pareto", span: 4, node: <ParetoChart data={view.pareto} /> },
+                { id: "chart:main-groups", span: 4, node: <MainGroupTreemap data={view.mainGroups} /> },
+                {
+                  id: "chart:sales-quantity",
+                  span: 6,
+                  node: <SalesQuantityChart data={view.salesQuantity} />,
+                },
+                { id: "chart:alerts", span: 6, node: <ManagementAlerts alerts={view.alerts} /> },
+              ]}
+            />
           )}
         </main>
       </div>

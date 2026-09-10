@@ -9,9 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ensureDemoUser } from "@/lib/demo.functions";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo-config";
-import hblLogoAsset from "@/assets/hbl-logo.png.asset.json";
+import hblLogo from "@/assets/hbl-logo.png";
 
-const hblLogo = hblLogoAsset.url;
 const REMEMBER_KEY = "hbl-remembered-identifier";
 
 export const Route = createFileRoute("/auth")({
