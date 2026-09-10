@@ -52,6 +52,7 @@ export function DashboardHeader({
   filters,
   onFiltersChange,
   options,
+  onResetLayout,
 }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draft, setDraft] = useState<MgmtFilters>(filters);

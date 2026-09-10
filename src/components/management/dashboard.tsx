@@ -155,6 +155,10 @@ export function ManagementDashboard() {
             });
           }}
           options={options}
+          onResetLayout={() => {
+            clearCardOrder();
+            setLayoutVersion((v) => v + 1);
+          }}
         />
 
         <main className="max-h-[calc(100vh-78px)] overflow-y-auto px-[18px] py-4">
