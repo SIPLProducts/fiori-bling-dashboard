@@ -1,55 +1,44 @@
-# Copy Quality access and SAP settings into Production
+# Replace Demo access with Admin test login
 
-Production login and the launchpad now load correctly, so the frontend and authentication are no longer blocking access. The Production screenshot identifies the immediate issue: `masteradmin@sharviinfotech.com` is being evaluated as **Viewer**, while Quality evaluates the same account as **Sharvi Admin**. The application builds its menus and tiles from `public.user_role_assignments` and `public.role_screens`; a `super_admin` assignment gives every screen automatically. Quality’s current users, roles, screen permissions, and SAP settings should be copied into Production without touching sales rows or Docker volumes.
+## Goal
 
-## Recovery steps
+Remove the public Demo access block from the sign-in page. In User Management, add a **Login** action only beside active users whose assigned role key is `admin`, so an authorized administrator can test that account without knowing or exposing its password.
 
-1. **Back up the affected Production data**
-   - Save Production Auth accounts and identities plus `profiles`, `roles`, `role_screens`, `user_role_assignments`, legacy `user_roles`, and the SAP configuration tables before changing them.
-   - Do not rerun the full Production upgrade and do not copy or truncate sales/SAP data.
+## Changes
 
-2. **Compare Quality and Production data**
-   - Find `masteradmin@sharviinfotech.com` in `auth.users` and confirm its matching active `profiles` row.
-   - Compare that user’s `user_role_assignments` rows between Quality and Production.
-   - Confirm Production contains the `super_admin` role and the required access-control migrations, grants, and read policies.
-   - Check the legacy `user_roles` row separately, but treat `user_role_assignments` as authoritative because that is what the current portal reads.
-   - Compare row counts and keys for `sap_systems`, `sap_endpoints`, `sap_middleware_config`, `sap_table_mappings`, and `sap_table_fields`.
+1. **Remove Demo access**
+   - Remove the Demo credentials, Demo access panel, one-click Demo login, and demo-account provisioning code from the sign-in page.
+   - Remove the demo account from the self-hosted user-creation seed so future Quality and Production setups do not recreate it.
+   - Keep the normal email/username and password sign-in form unchanged.
 
-3. **Create a focused Quality-to-Production copy utility**
-   - Add `deploy/production-copy-access-sap.sh`; this is safer than a single pasted SQL query because Quality and Production run in separate database containers.
-   - Export from `mis_q_db` with `pg_dump --data-only --column-inserts --disable-triggers`:
-     - `auth.users`, `auth.identities`, and `public.profiles` for login accounts;
-     - `public.roles`, `public.role_screens`, `public.user_role_assignments`, and `public.user_roles` for roles and screen access;
-     - `public.sap_systems`, `public.sap_endpoints`, `public.sap_middleware_config`, `public.sap_table_mappings`, and `public.sap_table_fields` for SAP settings.
-   - Do not copy `zfisales_detail`, sync history, encrypted SAP credentials, encryption keys, or any Docker/backend secrets in this focused repair.
-   - Require an explicit `--confirm-copy-quality-access-sap` flag before replacing these Production rows.
+2. **Add Admin test login in User Management**
+   - Show a **Login** action only when the row is active and its exact assigned role is `admin`.
+   - Do not show it for Sharvi Admin (`super_admin`), Viewer, Buyer, Approver, inactive users, or the currently signed-in account.
+   - Ask for confirmation before switching accounts and clearly name the selected Admin user.
 
-4. **Import in a foreign-key-safe transaction**
-   - Stop `mis-p-middleware` before the copy so the scheduler cannot read partially replaced settings.
-   - Clear only the listed Production tables in child-to-parent order, then import the Quality snapshot with triggers temporarily disabled for that transaction.
-   - Preserve matching Quality Auth IDs and password hashes so assignments continue to reference the correct users.
-   - After import, enforce Production-only values: middleware port `3010`, middleware URL `http://10.10.4.165:9000/middleware`, and keep all endpoint schedules disabled until validation completes.
-   - Never truncate `zfisales_detail` and never use `docker compose down -v`.
+3. **Secure account switching**
+   - The server verifies the caller's live session and confirms they currently have User Management screen access.
+   - Re-check the target account from the database: it must exist, be active, and still hold the `admin` role.
+   - Generate a short-lived, single-use sign-in token through the backend authentication service; never read, store, return, or display the target user's password.
+   - Support both deployments: a protected TanStack server function for Lovable-hosted use and a bearer-validated middleware endpoint for the self-hosted static portal.
+   - The self-hosted endpoint validates the caller's bearer token and permission itself; it does not trust browser-supplied role details or expose the service key.
 
-5. **Validate database API visibility**
-   - Query `user_role_assignments` through Production’s database API using the signed-in account and confirm it can read `super_admin`.
-   - If direct SQL is correct but the API response is empty, repair the table grants/read policy and reload the Production database API schema cache.
-   - Confirm `is_super_admin(user_id)` and `has_screen(user_id, 'admin.users')` return true from an authenticated application request.
+4. **Switch session cleanly**
+   - On confirmation, cancel requests and clear signed-in caches, exchange the one-time token, then open the launchpad as the selected Admin user.
+   - If verification or token exchange fails, keep the original session and show a clear error.
+   - The tested Admin account uses the normal Sign out action when testing is complete.
 
-6. **Refresh the Production session**
-   - Sign out of Production, clear only the Production site session/cache, and sign in again.
-   - Confirm the account menu shows User Management, Roles, Screen Permissions, and SAP API Settings.
-   - Confirm launchpad tiles match Quality and the role headline shows Sharvi Admin rather than Viewer.
+5. **Remove the existing Demo account safely**
+   - Stop all automatic creation of `demo@nexus-portal.app`.
+   - Delete the existing Demo account through the existing protected User Management delete path in each environment, rather than adding direct Auth-table SQL to a migration.
 
-7. **Validate SAP before scheduling**
-   - Restart `mis-p-middleware` with its existing Production `.env`; the copy utility must not replace passwords or service keys.
-   - Confirm it listens on `3010`, reads the copied endpoint list, and completes one manual `Sales_Reports_KPI` sync.
-   - Re-enable only the schedules that were enabled in Quality after the manual Production sync succeeds.
+6. **Verify**
+   - Confirm Demo access is absent from `/auth`.
+   - Confirm Login appears only for active `admin` rows.
+   - Confirm an authorized User Management holder can switch into an Admin account and sees that account's permissions.
+   - Confirm inactive, non-Admin, Sharvi Admin, self-target, unauthenticated, and tampered requests are rejected.
+   - Confirm both Lovable preview and the self-hosted `/sap-mw/` path work without exposing credentials.
 
-8. **Prevent recurrence**
-   - Add post-upgrade checks to `production-upgrade-all.sh` verifying every copied active profile has a role assignment and that the copied masteradmin account is `super_admin` before declaring success.
-   - Document the focused copy command, verification queries, and rollback command in `PRODUCTION-UPGRADE.md`.
+## Deployment note
 
-## Expected result
-
-Production has the same users, roles, screen permissions, and non-secret SAP settings as Quality. Signing in as `masteradmin@sharviinfotech.com` produces the same Sharvi Admin menus and launchpad tiles, without replacing Production sales data or secrets.
+Production and Quality middleware must be updated and restarted after pulling the change. Existing Demo accounts are removed once from User Management in each environment; no database migration directly edits authentication tables.
