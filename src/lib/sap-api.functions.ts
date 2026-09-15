@@ -254,12 +254,13 @@ export async function saveSapSystem(id: string | null, input: SystemInput): Prom
   await requireSuperAdmin();
   if (!input.label.trim()) throw new Error("Label is required");
   const baseUrl = input.base_url.trim().replace(/\/+$/, "");
-  if (!baseUrl) throw new Error("SAP Base URL is required");
-  try {
-    const parsed = new URL(baseUrl);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
-  } catch {
-    throw new Error("SAP Base URL must be a complete http:// or https:// address");
+  if (baseUrl) {
+    try {
+      const parsed = new URL(baseUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
+    } catch {
+      throw new Error("SAP Base URL must be a complete http:// or https:// address");
+    }
   }
   const payload = {
     key: (input.key || input.label).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -349,6 +350,11 @@ export type TestResult = {
   request?: OutboundRequest;
   /** SAP answered successfully but the selected request returned no rows. */
   noData?: boolean;
+};
+
+export type MiddlewareSystemStatus = {
+  key: string;
+  credentials: boolean;
 };
 
 export type OutboundRequest = {
@@ -461,6 +467,28 @@ async function callMiddleware(path: string, body?: unknown): Promise<TestResult>
   }
 }
 
+/** Password availability only; the middleware never returns the password. */
+export async function getMiddlewareSystemStatuses(): Promise<MiddlewareSystemStatus[]> {
+  await requireSuperAdmin();
+  const result = await middlewareRoundTrip("/health");
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = JSON.parse(result.text) as Record<string, unknown>;
+  } catch {
+    throw new Error(`Middleware returned an invalid health response (HTTP ${result.status})`);
+  }
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(describe("unknown", payload, `Middleware health check failed (HTTP ${result.status})`));
+  }
+  if (!Array.isArray(payload["systems"])) return [];
+  return payload["systems"].flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    if (typeof row["key"] !== "string") return [];
+    return [{ key: row["key"], credentials: row["credentials"] === true }];
+  });
+}
+
 /** Recent middleware activity lines (newest last). */
 export async function fetchMiddlewareLogs(limit = 80): Promise<string[]> {
   await requireSuperAdmin();
@@ -499,12 +527,13 @@ export async function testMiddleware(): Promise<TestResult> {
 export async function testSapSystem(system: SapSystem): Promise<TestResult> {
   await requireSuperAdmin();
   const baseUrl = system.base_url.trim();
-  if (!baseUrl) throw new Error("Enter and save the SAP Base URL before testing this system");
-  try {
-    const parsed = new URL(baseUrl);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
-  } catch {
-    throw new Error("SAP Base URL must be a complete http:// or https:// address");
+  if (baseUrl) {
+    try {
+      const parsed = new URL(baseUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
+    } catch {
+      throw new Error("SAP Base URL must be a complete http:// or https:// address");
+    }
   }
   const result = await callMiddleware("/sap/test", {
     systemKey: system.key,
@@ -598,13 +627,14 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
   }
 
   const { data: system } = endpoint.system_key
-    ? await supabase.from("sap_systems").select("key, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
-    : await supabase.from("sap_systems").select("key, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
+    ? await supabase.from("sap_systems").select("key, base_url, sap_client, username").eq("key", endpoint.system_key).maybeSingle()
+    : await supabase.from("sap_systems").select("key, base_url, sap_client, username").eq("is_active", true).limit(1).maybeSingle();
 
   const outbound = {
     systemKey: system?.key ?? null,
     baseUrl: system?.base_url ?? null,
     sapClient: system?.sap_client ?? null,
+    username: system?.username ?? null,
     path: endpoint.endpoint_path,
     method: endpoint.http_method,
     authType: endpoint.auth_type,

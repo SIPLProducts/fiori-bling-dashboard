@@ -50,7 +50,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.4.0";
+const VERSION = "1.4.1";
 const STARTED_AT = Date.now();
 
 /**
@@ -222,6 +222,12 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
   if (!system.baseUrl && !/^https?:\/\//i.test(String(path || ""))) {
     throw new Error("No SAP base URL configured for this system");
   }
+  if (!system.username) {
+    throw new Error(`SAP username is not configured for system "${system.key}" in SAP Systems or middleware .env`);
+  }
+  if (!system.password) {
+    throw new Error(`SAP password is not configured for system "${system.key}" in middleware .env`);
+  }
   const url = buildUrl(system, path, query || {});
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -311,7 +317,6 @@ app.get("/health", requireSharedSecret, (_req, res) => {
     baseUrl: APP_BASE_URL || null,
     uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
     systems: Object.entries(SYSTEMS)
-      .filter(([, cfg]) => cfg.baseUrl)
       .map(([key, cfg]) => ({ key, baseUrl: cfg.baseUrl, credentials: Boolean(cfg.password) })),
   });
 });

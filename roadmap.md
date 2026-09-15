@@ -11,3 +11,4 @@
 - [x] Production in-place upgrade package: post-24-Aug migrations, Quality data copy, frontend, middleware, PM2, and Nginx
 - [x] Replace public Demo access with protected Admin test login from User Management
 - [x] Prevent SAP API Settings crashes from empty/invalid systems and clarify configuration ownership
+- [x] Show middleware-only SAP password status and use UI-first connection settings with `.env` fallback
