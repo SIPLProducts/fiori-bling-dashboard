@@ -14,7 +14,11 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<TestLoginToken> => {
     if (data.userId === context.userId) throw new Error("You are already signed in as this user");
 
-    const [{ data: callerRoles, error: callerRoleError }, { data: target, error: targetError }] =
+    const [
+      { data: callerRoles, error: callerRoleError },
+      { data: target, error: targetError },
+      { data: targetRole, error: targetRoleError },
+    ] =
       await Promise.all([
         context.supabase
           .from("user_role_assignments")
@@ -22,12 +26,19 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
           .eq("user_id", context.userId),
         context.supabase
           .from("profiles")
-          .select("id, email, status, user_role_assignments(role_key)")
+          .select("id, email, status")
           .eq("id", data.userId)
+          .maybeSingle(),
+        context.supabase
+          .from("user_role_assignments")
+          .select("role_key")
+          .eq("user_id", data.userId)
+          .eq("role_key", "admin")
           .maybeSingle(),
       ]);
     if (callerRoleError) throw callerRoleError;
     if (targetError) throw targetError;
+    if (targetRoleError) throw targetRoleError;
 
     const roleKeys = (callerRoles ?? []).map((row) => row.role_key);
     const isSuperAdmin = roleKeys.includes("super_admin");
@@ -45,8 +56,7 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
     }
     if (!hasUserManagement) throw new Error("Forbidden: User Management access required");
 
-    const targetRoles = (target?.user_role_assignments ?? []).map((row) => row.role_key);
-    if (!target || target.status !== "active" || !target.email || !targetRoles.includes("admin")) {
+    if (!target || target.status !== "active" || !target.email || !targetRole) {
       throw new Error("Test login is available only for active Admin users");
     }
 
