@@ -66,7 +66,7 @@ docker exec "$PRODUCTION_DB" pg_dump -U supabase_admin -d postgres | gzip > "$BA
 cp "$PRODUCTION_ENV" "$BACKUP_DIR/backend.env"
 
 echo "[2/10] Updating Production deployment files without touching Docker volumes"
-mkdir -p "$PRODUCTION_ROOT/backend" "$PRODUCTION_ROOT/supabase/migrations" "$PRODUCTION_ROOT/frontend/dist" "$PRODUCTION_ROOT/middleware"
+mkdir -p "$PRODUCTION_ROOT/backend/supabase" "$PRODUCTION_ROOT/supabase/migrations" "$PRODUCTION_ROOT/frontend/dist" "$PRODUCTION_ROOT/middleware"
 cp "$SCRIPT_DIR/docker/docker-compose.production.yml" "$PRODUCTION_ROOT/backend/docker-compose.production.yml"
 [[ -d "$SCRIPT_DIR/docker/supabase" ]] && rsync -a "$SCRIPT_DIR/docker/supabase/" "$PRODUCTION_ROOT/backend/supabase/"
 rsync -a "$REPO_ROOT/supabase/migrations/" "$PRODUCTION_ROOT/supabase/migrations/"
@@ -97,6 +97,7 @@ docker exec "$QUALITY_DB" pg_dump -U supabase_admin -d postgres --data-only --di
   -t public.profiles -t public.user_roles -t public.roles -t public.role_screens -t public.user_role_assignments \
   -t public.sap_systems -t public.sap_endpoints -t public.sap_middleware_config \
   -t public.sap_table_mappings -t public.sap_table_fields -t public.sap_sync_runs \
+  -t public.app_crypto_keys -t public.sap_credentials \
   -t public.zfisales_detail > "$COPY_SQL"
 
 echo "[5/10] Replacing Production application data with the Quality snapshot"
@@ -108,16 +109,20 @@ TRUNCATE auth.identities, auth.users,
   public.user_role_assignments, public.user_roles, public.role_screens, public.roles, public.profiles,
   public.sap_sync_runs, public.sap_table_fields, public.sap_table_mappings,
   public.sap_endpoints, public.sap_systems, public.sap_middleware_config,
+  public.sap_credentials, public.app_crypto_keys,
   public.zfisales_detail CASCADE;
 COMMIT;
 SQL
 sql_p < "$COPY_SQL"
 # Keep schedules paused until the Production bridge and one manual sync pass.
+SCHEDULE_RESTORE_SQL="$BACKUP_DIR/restore-schedules.sql"
+sql_p -Atqc "select format('update public.sap_endpoints set scheduler_enabled = true where name = %L;', name) from public.sap_endpoints where scheduler_enabled" > "$SCHEDULE_RESTORE_SQL"
 sql_p -c "update public.sap_endpoints set scheduler_enabled = false"
 sql_p -c "update public.sap_middleware_config set middleware_port=3010, middleware_url='http://10.10.4.165:9000/middleware'"
 
 echo "[6/10] Building and installing the Production frontend"
 cd "$REPO_ROOT"
+npm install
 VITE_SUPABASE_URL="http://10.10.4.165:9000/supabase" \
 VITE_SUPABASE_PUBLISHABLE_KEY="$PROD_ANON" \
 VITE_SUPABASE_PROJECT_ID="mis-production" npm run build:static
@@ -176,7 +181,7 @@ curl -fsS -X POST http://127.0.0.1:3010/sync/run \
 grep -q '"ok":true' "$BACKUP_DIR/manual-sync-result.json" || die "Manual SAP sync failed; scheduler remains disabled"
 
 echo "[10/10] Restoring copied schedules and verifying counts"
-sql_p -c "update public.sap_endpoints set scheduler_enabled = true where is_active and coalesce(schedule_expression,'') <> ''"
+sql_p < "$SCHEDULE_RESTORE_SQL"
 sql_p -c "select count(*) as production_users from public.profiles"
 sql_p -c "select count(*) as production_sales_rows, round(sum(amount)/10000000,2) as total_sales_cr from public.zfisales_detail"
 pm2 restart "$PM2_NAME"
