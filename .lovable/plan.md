@@ -1,6 +1,6 @@
 # Recover the incomplete Production upgrade
 
-Restore the existing Production installation at `http://10.10.4.165:9000` without deleting Docker volumes or overwriting working Production data again. The middleware is online on port `3010`, but its database request confirms that `public.sap_endpoints` is absent. The supplied Nginx configuration already has the required static-page fallback and service paths, so the login-page failure must be diagnosed from the deployed frontend files and actual HTTP responses before changing Nginx.
+Restore the existing Production installation at `http://10.10.4.165:9000` without deleting Docker volumes or overwriting working Production data again. The middleware is healthy on port `3010` and reaches the correct SAP address, but the Production database API reports `public.sap_endpoints` as absent even though the table is visible in Production Studio. The Production browser remains at “Opening HBL MIS Portal…”, while Quality renders the login page. Production Studio shows two Auth accounts, so this is not simply an empty Auth user list. The supplied Nginx configuration already has the required static-page fallback and service paths; recovery will isolate the Production database API/schema cache, profile rows, and frontend startup request.
 
 ## Immediate recovery sequence
 
@@ -10,22 +10,23 @@ Restore the existing Production installation at `http://10.10.4.165:9000` withou
 
 2. **Inspect the current Production state**
    - Confirm all Production containers and ports `5433`, `9010`, `9012`, `3010`, and `9000`.
-   - Query Production directly for `public.sap_endpoints`, `public.profiles`, `public.zfisales_detail`, and the migration ledger.
+   - Query Production directly for `public.sap_endpoints`, `public.profiles`, `auth.users`, `public.zfisales_detail`, and the migration ledger; confirm the two visible Auth accounts also have active profile rows and role assignments.
+   - Request `sap_endpoints` through the same port `9010`, service key, and headers used by the middleware, then compare that result with direct SQL. This distinguishes a missing table from a stale database API cache or a gateway connected to the wrong Production database.
    - Check whether the post-24-August migration files exist under the Production repository, and compare the ledger with the files actually present.
    - Check `frontend/dist/index.html`, its referenced `/assets/*` files, file permissions, and Nginx access/error logs.
-   - Request `/`, `/auth`, one referenced asset, `/supabase/auth/v1/health`, and `/healthz` locally to identify whether login failure is a missing build, missing asset, permissions problem, or unavailable database API.
+   - Request `/`, `/auth`, one referenced asset, `/supabase/auth/v1/health`, `/supabase/rest/v1/`, and `/healthz` locally; capture the first failing browser request responsible for the endless “Opening HBL MIS Portal…” screen.
 
 3. **Repair the database schema safely**
    - Take a fresh timestamped Production database backup first.
-   - Apply the missing migrations in filename order using `supabase_admin` and record each only after it succeeds.
+   - If direct SQL confirms missing objects, apply the missing migrations in filename order using `supabase_admin` and record each only after it succeeds.
    - Do not truncate or recopy Production data during this recovery.
    - Verify that `sap_endpoints` and its related SAP tables, grants, policies, functions, and the `posting_range` column exist.
-   - Reload the database API schema cache after the migrations.
+   - If direct SQL confirms the tables already exist, do not reapply migrations blindly; restart/reload only the Production database API and verify it points to `mis_p_db`, then reload its schema cache.
 
 4. **Restore the Production login page**
    - If the deployed build is absent or incomplete, rebuild it with Production values: database API `http://10.10.4.165:9000/supabase`, Production anon key, and project ID `mis-production`.
    - Replace `frontend/dist` atomically while retaining the current folder as a rollback copy.
-   - If files are intact, correct only the diagnosed Nginx path, permissions, or database API issue.
+   - If files are intact, correct only the diagnosed Nginx path, permissions, Production database URL/key, or startup-request issue.
    - Test Nginx before reload, then verify `/auth` renders and its JavaScript/CSS assets return `200`.
 
 5. **Correct and restart middleware**
@@ -35,6 +36,7 @@ Restore the existing Production installation at `http://10.10.4.165:9000` withou
    - Recreate `mis-p-middleware` with inherited port/database variables removed, then confirm `listening on :3010`, `scheduler started`, and a successful scheduler configuration read.
 
 6. **Validate before enabling schedules**
+   - Confirm every Production Auth account expected from Quality has an active profile and role assignment; repair missing profile/role rows without recreating valid Auth accounts.
    - Confirm login resolution and sign-in for a copied Production user.
    - Compare Production user and sales-row counts with the expected copied snapshot.
    - Test `/healthz`, database auth health, middleware health, and `/sap-mw/health`.
@@ -47,6 +49,7 @@ Restore the existing Production installation at `http://10.10.4.165:9000` withou
 - Make it verify every required post-upgrade table and column after migration, including `sap_endpoints`, before continuing.
 - Add a recovery mode that performs backup, missing migrations, frontend deployment, and validation without truncating or copying Quality data.
 - Add explicit frontend checks for `index.html`, referenced assets, `/auth`, and database-auth health.
+- Add a same-credential database API probe for `sap_endpoints` and fail before starting middleware when the API cannot see the migrated schema.
 - Extend `PRODUCTION-UPGRADE.md` with this incomplete-upgrade recovery command sequence and expected results.
 - Keep the Nginx secret as a deployment placeholder in Git; never commit the real replacement value.
 
