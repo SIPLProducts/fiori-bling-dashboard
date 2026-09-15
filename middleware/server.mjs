@@ -196,7 +196,7 @@ function resolveSystem(body = {}) {
     // password only ever comes from this service's environment.
     baseUrl: (body.baseUrl || configured.baseUrl || "").replace(/\/+$/, ""),
     client: body.sapClient || configured.client || "",
-    username: configured.username || body.username || "",
+    username: body.username || configured.username || "",
     password: configured.password || "",
   };
 }
