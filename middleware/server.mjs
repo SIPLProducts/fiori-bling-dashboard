@@ -333,7 +333,17 @@ app.get("/diag/sap", requireSharedSecret, async (req, res) => {
       message: `No base URL configured for SAP system "${system.key}".`,
     });
   }
-  const url = new URL(system.baseUrl);
+  let url;
+  try {
+    url = new URL(system.baseUrl);
+    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("unsupported protocol");
+  } catch {
+    return res.status(400).json({
+      ok: false,
+      stage: "sap-unreachable",
+      message: `The Base URL configured for SAP system "${system.key}" is invalid. Use a complete http:// or https:// address.`,
+    });
+  }
   const started = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.min(REQUEST_TIMEOUT_MS, 10000));

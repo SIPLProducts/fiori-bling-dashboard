@@ -1,9 +1,8 @@
 /**
  * SAP API Settings data access.
  *
- * Stores non-secret configuration (URLs, paths, headers, mappings) plus
- * write-only credentials: SAP passwords and the proxy secret are encrypted by
- * a security-definer database function and can never be read back by the UI.
+ * Stores non-secret configuration (URLs, paths, headers and mappings). SAP
+ * passwords and the middleware shared secret remain on the middleware server.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { createServerFn } from "@tanstack/react-start";
@@ -230,7 +229,6 @@ export type SystemInput = {
   base_url: string;
   sap_client: string;
   username: string;
-  password: string;
   is_active: boolean;
 };
 
@@ -255,11 +253,19 @@ async function saveCredential(credKey: string, secret: string): Promise<void> {
 export async function saveSapSystem(id: string | null, input: SystemInput): Promise<void> {
   await requireSuperAdmin();
   if (!input.label.trim()) throw new Error("Label is required");
+  const baseUrl = input.base_url.trim().replace(/\/+$/, "");
+  if (!baseUrl) throw new Error("SAP Base URL is required");
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
+  } catch {
+    throw new Error("SAP Base URL must be a complete http:// or https:// address");
+  }
   const payload = {
     key: (input.key || input.label).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     label: input.label.trim(),
     environment: input.environment,
-    base_url: input.base_url.trim(),
+    base_url: baseUrl,
     sap_client: input.sap_client.trim() || null,
     username: input.username.trim() || null,
     is_active: input.is_active,
@@ -268,7 +274,6 @@ export async function saveSapSystem(id: string | null, input: SystemInput): Prom
     ? await supabase.from("sap_systems").update(payload).eq("id", id)
     : await supabase.from("sap_systems").insert(payload);
   if (error) throw error;
-  if (input.password.trim()) await saveCredential(payload.key, input.password);
   if (input.is_active) {
     await supabase.from("sap_systems").update({ is_active: false }).neq("key", payload.key);
   }
@@ -493,6 +498,14 @@ export async function testMiddleware(): Promise<TestResult> {
 
 export async function testSapSystem(system: SapSystem): Promise<TestResult> {
   await requireSuperAdmin();
+  const baseUrl = system.base_url.trim();
+  if (!baseUrl) throw new Error("Enter and save the SAP Base URL before testing this system");
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
+  } catch {
+    throw new Error("SAP Base URL must be a complete http:// or https:// address");
+  }
   const result = await callMiddleware("/sap/test", {
     systemKey: system.key,
     baseUrl: system.base_url,
@@ -516,16 +529,31 @@ export function resolveEndpointUrl(endpoint: {
   system_key: string | null;
 }, systems: SapSystem[]): string {
   const path = endpoint.endpoint_path.trim();
-  if (/^https?:\/\//i.test(path)) return path;
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      return new URL(path).toString();
+    } catch {
+      return "Invalid endpoint URL";
+    }
+  }
   const system =
     systems.find((s) => s.key === endpoint.system_key) ?? systems.find((s) => s.is_active) ?? systems[0];
-  if (!system) return path || "—";
+  if (!system) return path ? "SAP system not configured" : "Endpoint path not configured";
   const base = system.base_url.replace(/\/+$/, "");
-  const resolved = new URL(`${base}${path.startsWith("/") ? path : `/${path}`}`);
-  if (system.sap_client && !resolved.searchParams.has("sap-client")) {
-    resolved.searchParams.set("sap-client", system.sap_client);
+  if (!base) return "SAP Base URL not configured";
+  try {
+    const parsedBase = new URL(base);
+    if (parsedBase.protocol !== "http:" && parsedBase.protocol !== "https:") {
+      return "Invalid SAP Base URL";
+    }
+    const resolved = new URL(path ? (path.startsWith("/") ? path : `/${path}`) : "/", parsedBase);
+    if (system.sap_client && !resolved.searchParams.has("sap-client")) {
+      resolved.searchParams.set("sap-client", system.sap_client);
+    }
+    return resolved.toString();
+  } catch {
+    return "Invalid SAP Base URL";
   }
-  return resolved.toString();
 }
 
 type SyncRunResult = {
