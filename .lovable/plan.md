@@ -1,6 +1,6 @@
 # Production deployment package for 10.10.4.165:9000
 
-Create a Production deployment package under `deploy/` that repeats the proven Quality setup while keeping Production isolated and copying the current Quality users, permissions, SAP settings, and sales data.
+Upgrade the **existing, already-running Production installation** using files inside the current `deploy/` folder. Keep its established folder layout and Docker volumes, deploy all newer application/middleware/database changes already proven in Quality, and copy the current Quality users, permissions, SAP settings, and sales data into Production.
 
 ## Production ports
 
@@ -15,24 +15,24 @@ Create a Production deployment package under `deploy/` that repeats the proven Q
 
 ## Files to add or update
 
-- Add `deploy/production-deploy-all.sh`: one guided script for preflight checks, backup, database startup/migrations, Quality-to-Production data copy, frontend deployment, middleware installation, PM2 restart, Nginx installation, and final health checks.
-- Add `deploy/PRODUCTION-DEPLOYMENT.md`: short copy/paste instructions, required files, expected success messages, rollback steps, and troubleshooting.
-- Update `deploy/nginx/mis-production.conf` for port `9000` and add the required `/sap-mw/` bridge with 10-minute SAP timeouts and server-side shared-secret injection.
-- Correct `deploy/docker/docker-compose.production.yml` to use `supabase_admin` consistently and bind the Production API gateway to `127.0.0.1:9010` instead of exposing it on every network interface.
+- Add `deploy/production-upgrade-all.sh`: one guided **in-place upgrade** script for preflight checks, backups, migrations, Quality-to-Production data copy, frontend replacement, middleware update, PM2 restart, Nginx update, and final health checks.
+- Add `deploy/PRODUCTION-UPGRADE.md`: short copy/paste instructions for upgrading the existing server, expected success messages, rollback steps, and troubleshooting.
+- Update the existing `deploy/nginx/mis-production.conf` for its current port `9000` and add the required `/sap-mw/` bridge with 10-minute SAP timeouts and server-side shared-secret injection.
+- Correct the existing `deploy/docker/docker-compose.production.yml` to use `supabase_admin` consistently and bind the Production API gateway to `127.0.0.1:9010` instead of exposing it on every network interface.
 - Add a Production middleware environment template without real passwords or keys.
 
 ## One-run deployment flow
 
-1. Validate all Production and Quality folders, required files, Docker containers, free ports, and secret variables before changing anything.
+1. Validate the existing Production and Quality folders, current Docker containers, PM2 process, ports, required files, and secret variables before changing anything.
 2. Create timestamped backups of the existing Production database, frontend, middleware configuration, and Nginx file.
-3. Install the corrected Production Docker, gateway, role, and migration files; start or update containers without deleting volumes.
-4. Apply every migration in order using `supabase_admin`, including the rolling Posting Date range update.
+3. Update the existing Production Docker, gateway, role, and migration files in place; recreate only changed containers and never delete volumes.
+4. Apply only migrations not yet present in the existing Production database, in filename order using `supabase_admin`, including the latest access-control, scheduler, large-sync, and rolling Posting Date updates.
 5. Copy from Quality into Production:
    - login accounts and identities, preserving current password hashes;
    - profiles, roles, role assignments, and screen permissions;
    - SAP systems, endpoints, table mappings/fields, middleware settings, and sync history;
    - all `zfisales_detail` rows.
-6. Keep Production-specific values after the copy: middleware port `3010`, middleware URL `http://10.10.4.165:9000/middleware`, database API `http://127.0.0.1:9010`, and Production keys from `Production/backend/.env`.
+6. Keep the existing Production secrets and environment identity. After copying Quality application data, enforce Production-specific values: middleware port `3010`, middleware URL `http://10.10.4.165:9000/middleware`, database API `http://127.0.0.1:9010`, and Production keys from `Production/backend/.env`.
 7. Deploy the Production static frontend built specifically with `http://10.10.4.165:9000/supabase` and the Production anon key.
 8. Install middleware dependencies, regenerate `sync-core.mjs`, and recreate PM2 as `mis-p-middleware` with a clean environment so no Quality or inherited `PORT` value overrides `3010`.
 9. Install/reload Nginx only after `nginx -t` passes.
@@ -49,7 +49,7 @@ Create a Production deployment package under `deploy/` that repeats the proven Q
 
 ## Production Nginx corrections
 
-The supplied Nginx file is missing `/sap-mw/`, which the static portal requires for Test and manual sync. The deployment version will retain `listen 9000`, proxy middleware to `3010`, API gateway to `9010`, Studio to `9012`, and add the secure bridge. The middleware shared-secret placeholder must be filled from the server during deployment, not committed to Git.
+The currently running Production Nginx configuration is older and missing `/sap-mw/`, which the updated static portal requires for Test and manual sync. It will be backed up and upgraded in place. The deployment version will retain `listen 9000`, proxy middleware to `3010`, API gateway to `9010`, Studio to `9012`, and add the secure bridge. The middleware shared-secret placeholder must be filled from the server during deployment, not committed to Git.
 
 ## Validation result expected
 
