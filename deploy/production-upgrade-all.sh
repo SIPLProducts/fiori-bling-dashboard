@@ -176,18 +176,7 @@ curl -fsS -X POST http://127.0.0.1:3010/sync/run \
 grep -q '"ok":true' "$BACKUP_DIR/manual-sync-result.json" || die "Manual SAP sync failed; scheduler remains disabled"
 
 echo "[10/10] Restoring copied schedules and verifying counts"
-sql_p <<SQL
-UPDATE public.sap_endpoints p
-SET scheduler_enabled = q.scheduler_enabled,
-    schedule_expression = q.schedule_expression
-FROM dblink('host=host.docker.internal port=5432 dbname=postgres', 'select name, scheduler_enabled, schedule_expression from public.sap_endpoints')
-  AS q(name text, scheduler_enabled boolean, schedule_expression text)
-WHERE p.name = q.name;
-SQL
-# dblink may not be available/reachable; restore enabled state directly from the dump when known.
-if ! sql_p -Atqc "select bool_or(scheduler_enabled) from public.sap_endpoints" | grep -qx t; then
-  sql_p -c "update public.sap_endpoints set scheduler_enabled = true where is_active and coalesce(schedule_expression,'') <> ''"
-fi
+sql_p -c "update public.sap_endpoints set scheduler_enabled = true where is_active and coalesce(schedule_expression,'') <> ''"
 sql_p -c "select count(*) as production_users from public.profiles"
 sql_p -c "select count(*) as production_sales_rows, round(sum(amount)/10000000,2) as total_sales_cr from public.zfisales_detail"
 pm2 restart "$PM2_NAME"

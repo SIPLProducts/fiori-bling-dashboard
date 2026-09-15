@@ -259,9 +259,9 @@ curl -I http://127.0.0.1:9010/          # Supabase Kong (Production)
 
 ## 5. Nginx
 
-The configs are **plain HTTP (port 80) only** — no `listen 443`, no
-`ssl_certificate`, no Certbot, no HTTPS redirect. TLS is terminated on your
-existing upstream load balancer / reverse proxy.
+The configs are **plain HTTP only** — Quality uses its configured listener and
+Production listens on `9000`. There is no `listen 443`, no `ssl_certificate`,
+no Certbot, and no HTTPS redirect.
 
 Nginx serves the SPA straight from `frontend/dist/` with a `try_files` fallback
 to `index.html`, so deep links such as `/launchpad` work on refresh.
@@ -289,8 +289,8 @@ Routes exposed by each server block:
 If you serve by IP instead of a hostname, swap `server_name` for the commented
 `server_name _;` line in the config.
 
-Nothing listens on 8081 / 9000 any more — if Nginx already has a
-`listen 8081;` or `listen 9000;` block from an earlier setup, remove it.
+Production intentionally listens on `9000` at `10.10.4.165`. Keep only one
+enabled Nginx server block for that address and port.
 
 ## 6. Redeploy after a code change
 

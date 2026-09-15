@@ -16,14 +16,14 @@
 set -euo pipefail
 
 ENV=${ENV:-quality}
-MIDDLEWARE_DIR=${MIDDLEWARE_DIR:-/opt/MIS_Projects/Quality/middleware}
-PM2_NAME=${PM2_NAME:-mis-q-middleware}
-PORT=${PORT:-3002}
-
 if [[ "$ENV" == "production" ]]; then
   MIDDLEWARE_DIR=${MIDDLEWARE_DIR:-/opt/MIS_Projects/Production/middleware}
   PM2_NAME=${PM2_NAME:-mis-p-middleware}
   PORT=${PORT:-3010}
+else
+  MIDDLEWARE_DIR=${MIDDLEWARE_DIR:-/opt/MIS_Projects/Quality/middleware}
+  PM2_NAME=${PM2_NAME:-mis-q-middleware}
+  PORT=${PORT:-3002}
 fi
 
 echo "=== Enabling on-prem scheduler for $ENV ==="
@@ -55,7 +55,11 @@ done
 if [[ "$missing" -eq 1 ]]; then
   echo ""
   echo "Add these lines to $ENV_FILE (values are server-side only):"
-  echo "  SUPABASE_URL=http://127.0.0.1:8000"
+  if [[ "$ENV" == "production" ]]; then
+    echo "  SUPABASE_URL=http://127.0.0.1:9010"
+  else
+    echo "  SUPABASE_URL=http://127.0.0.1:8000"
+  fi
   echo "  SUPABASE_SERVICE_ROLE_KEY=<your service role key>"
   echo ""
   echo "Then run this script again."
