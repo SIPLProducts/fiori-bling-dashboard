@@ -3,6 +3,11 @@
 Everything needed to run the MIS portal on your own Ubuntu server, in two fully
 isolated stacks: **Quality** and **Production**.
 
+> **Existing Production at the 24-Aug-2026 release:** use
+> [`PRODUCTION-UPGRADE.md`](./PRODUCTION-UPGRADE.md) and
+> `production-upgrade-all.sh`. It upgrades the running installation in place,
+> adds Production middleware on port 3010, and does not delete Docker volumes.
+
 This README assumes you keep the existing server layout:
 
 ```text
@@ -98,7 +103,7 @@ frontend.
 
 | Component        | Quality | Production |
 | ---------------- | ------- | ---------- |
-| Frontend         | static files served by Nginx on port 80 | same |
+| Frontend / Nginx | 8081    | 9000       |
 | Middleware       | 3002    | 3010       |
 | Backend          | 5000    | 5001       |
 | Supabase Kong    | 8000    | 9010       |
@@ -305,10 +310,10 @@ The database and its volume are untouched.
 
 ```bash
 # Backup (Production)
-docker exec mis_p_db pg_dump -U postgres postgres | gzip > mis-prod-$(date +%F).sql.gz
+docker exec mis_p_db pg_dump -U supabase_admin postgres | gzip > mis-prod-$(date +%F).sql.gz
 
 # Restore
-gunzip -c mis-prod-2026-08-23.sql.gz | docker exec -i mis_p_db psql -U postgres -d postgres
+gunzip -c mis-prod-2026-08-23.sql.gz | docker exec -i mis_p_db psql -U supabase_admin -d postgres
 ```
 
 ## 8. Supabase Studio (dashboard) credentials
@@ -351,12 +356,12 @@ There is no separate DB user/password setting — the stack uses:
 | -------- | ----------------- | ----------------- |
 | Host     | `127.0.0.1:5432`  | `127.0.0.1:5433`  |
 | Database | `postgres`        | `postgres`        |
-| User     | `postgres`        | `postgres`        |
+| User     | `supabase_admin`  | `supabase_admin`  |
 | Password | `POSTGRES_PASSWORD` from `.env` | `POSTGRES_PASSWORD` from `.env` |
 
 ```bash
-docker exec -it mis_q_db psql -U postgres -d postgres   # Quality
-docker exec -it mis_p_db psql -U postgres -d postgres   # Production
+docker exec -it mis_q_db psql -U supabase_admin -d postgres   # Quality
+docker exec -it mis_p_db psql -U supabase_admin -d postgres   # Production
 ```
 
 ## Bringing users, SAP settings and sales data to a fresh environment
