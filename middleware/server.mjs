@@ -472,19 +472,19 @@ app.post("/admin/test-login", requireSharedSecret, requirePortalUserManagement, 
     }
 
     const db = req.portalAdmin;
-    const [{ data: profile, error: profileError }, { data: assignment, error: roleError }] =
+    const [{ data: profile, error: profileError }, { data: assignments, error: roleError }] =
       await Promise.all([
         db.from("profiles").select("email, status").eq("id", userId).maybeSingle(),
         db
           .from("user_role_assignments")
           .select("role_key")
           .eq("user_id", userId)
-          .eq("role_key", "admin")
-          .maybeSingle(),
+          .order("role_key"),
       ]);
     if (profileError) throw profileError;
     if (roleError) throw roleError;
-    if (!profile || profile.status !== "active" || !profile.email || !assignment) {
+    const isAdminOnly = assignments?.length === 1 && assignments[0]?.role_key === "admin";
+    if (!profile || profile.status !== "active" || !profile.email || !isAdminOnly) {
       return res.status(400).json({ message: "Test login is available only for active Admin users" });
     }
 

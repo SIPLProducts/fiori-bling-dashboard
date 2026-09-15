@@ -17,7 +17,7 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
     const [
       { data: callerRoles, error: callerRoleError },
       { data: target, error: targetError },
-      { data: targetRole, error: targetRoleError },
+      { data: targetRoles, error: targetRoleError },
     ] =
       await Promise.all([
         context.supabase
@@ -33,8 +33,7 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
           .from("user_role_assignments")
           .select("role_key")
           .eq("user_id", data.userId)
-          .eq("role_key", "admin")
-          .maybeSingle(),
+          .order("role_key"),
       ]);
     if (callerRoleError) throw callerRoleError;
     if (targetError) throw targetError;
@@ -56,7 +55,8 @@ export const createAdminTestLoginToken = createServerFn({ method: "POST" })
     }
     if (!hasUserManagement) throw new Error("Forbidden: User Management access required");
 
-    if (!target || target.status !== "active" || !target.email || !targetRole) {
+    const isAdminOnly = targetRoles?.length === 1 && targetRoles[0]?.role_key === "admin";
+    if (!target || target.status !== "active" || !target.email || !isAdminOnly) {
       throw new Error("Test login is available only for active Admin users");
     }
 
