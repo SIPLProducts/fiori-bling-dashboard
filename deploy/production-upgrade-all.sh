@@ -113,7 +113,13 @@ TRUNCATE auth.identities, auth.users,
   public.zfisales_detail CASCADE;
 COMMIT;
 SQL
-sql_p < "$COPY_SQL"
+# The dump disables triggers but does not restore them itself when emitted as
+# plain SQL, so apply it in a replica session to avoid duplicate profile rows.
+{
+  echo "SET session_replication_role = replica;"
+  cat "$COPY_SQL"
+  echo "SET session_replication_role = origin;"
+} | sql_p
 # Keep schedules paused until the Production bridge and one manual sync pass.
 SCHEDULE_RESTORE_SQL="$BACKUP_DIR/restore-schedules.sql"
 sql_p -Atqc "select format('update public.sap_endpoints set scheduler_enabled = true where name = %L;', name) from public.sap_endpoints where scheduler_enabled" > "$SCHEDULE_RESTORE_SQL"
