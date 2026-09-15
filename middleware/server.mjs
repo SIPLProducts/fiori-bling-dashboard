@@ -11,6 +11,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import express from "express";
+import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { createScheduler } from "./scheduler.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -48,7 +50,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const STARTED_AT = Date.now();
 
 /**
@@ -133,6 +135,56 @@ function requireSharedSecret(req, res, next) {
   }
   logLine("portal -> middleware accepted");
   return next();
+}
+
+function portalAdminClient() {
+  const url = (process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!url || !key) throw new Error("Portal database credentials are not configured");
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { transport: WebSocket },
+  });
+}
+
+async function requirePortalUserManagement(req, res, next) {
+  try {
+    const authHeader = String(req.header("authorization") || "");
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!token) return res.status(401).json({ message: "Your session has expired. Please sign in again." });
+
+    const db = portalAdminClient();
+    const { data: authData, error: authError } = await db.auth.getUser(token);
+    if (authError || !authData.user) {
+      return res.status(401).json({ message: "Your session has expired. Please sign in again." });
+    }
+
+    const { data: roles, error: rolesError } = await db
+      .from("user_role_assignments")
+      .select("role_key")
+      .eq("user_id", authData.user.id);
+    if (rolesError) throw rolesError;
+    const roleKeys = (roles || []).map((row) => row.role_key);
+    let allowed = roleKeys.includes("super_admin");
+    if (!allowed && roleKeys.length) {
+      const { data: grants, error: grantsError } = await db
+        .from("role_screens")
+        .select("screen_key")
+        .in("role_key", roleKeys)
+        .eq("screen_key", "admin.users")
+        .limit(1);
+      if (grantsError) throw grantsError;
+      allowed = Boolean(grants?.length);
+    }
+    if (!allowed) return res.status(403).json({ message: "User Management access required" });
+
+    req.portalAdmin = db;
+    req.portalUserId = authData.user.id;
+    return next();
+  } catch (error) {
+    logLine(`test-login authorization failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    return res.status(500).json({ message: "Could not verify User Management access" });
+  }
 }
 
 function resolveSystem(body = {}) {
@@ -406,6 +458,47 @@ app.post("/sync/run", requireSharedSecret, async (req, res) => {
 /** What the scheduler currently believes is configured — for troubleshooting. */
 app.get("/sync/status", requireSharedSecret, async (_req, res) => {
   res.json({ ok: true, enabled: scheduler.enabled });
+});
+
+/** Create a one-use login token for an active Admin account. */
+app.post("/admin/test-login", requireSharedSecret, requirePortalUserManagement, async (req, res) => {
+  try {
+    const userId = String(req.body?.userId || "").trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+      return res.status(400).json({ message: "Invalid user" });
+    }
+    if (userId === req.portalUserId) {
+      return res.status(400).json({ message: "You are already signed in as this user" });
+    }
+
+    const db = req.portalAdmin;
+    const [{ data: profile, error: profileError }, { data: assignments, error: roleError }] =
+      await Promise.all([
+        db.from("profiles").select("email, status").eq("id", userId).maybeSingle(),
+        db
+          .from("user_role_assignments")
+          .select("role_key")
+          .eq("user_id", userId)
+          .order("role_key"),
+      ]);
+    if (profileError) throw profileError;
+    if (roleError) throw roleError;
+    const isAdminOnly = assignments?.length === 1 && assignments[0]?.role_key === "admin";
+    if (!profile || profile.status !== "active" || !profile.email || !isAdminOnly) {
+      return res.status(400).json({ message: "Test login is available only for active Admin users" });
+    }
+
+    const { data: link, error: linkError } = await db.auth.admin.generateLink({
+      type: "magiclink",
+      email: profile.email,
+    });
+    if (linkError) throw linkError;
+    logLine(`test-login token issued by ${req.portalUserId} for ${userId}`);
+    return res.json({ tokenHash: link.properties.hashed_token, email: profile.email });
+  } catch (error) {
+    logLine(`test-login failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    return res.status(500).json({ message: "Could not create the test login" });
+  }
 });
 
 app.use((_req, res) => res.status(404).json({ stage: "not-found", error: "Not found" }));

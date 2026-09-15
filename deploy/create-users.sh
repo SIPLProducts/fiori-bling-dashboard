@@ -29,7 +29,6 @@ USERS=(
   "abshankar@hbl.in|44195|Bhavani Shankar|Anupindi|9393012944||IT Application|admin"
   "koti@hbl.in|51270|Ram|Koti|9898989898|1600|Sales|user"
   "sunilkumar@sharviinfotech.com|0056|Sunil Kumar|Akula|7989328372|1600|Devloper|user"
-  "demo@nexus-portal.app|demo|Demo|User||||super_admin"
 )
 
 

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Loader2, Search, Trash2, UserPlus } from "lucide-react";
+import { LogIn, Loader2, Search, Trash2, UserPlus } from "lucide-react";
 import {
   activatePortalUser,
   createPortalUser,
@@ -15,7 +16,9 @@ import {
 } from "@/lib/admin.functions";
 
 import { listRoles, visibleRoles } from "@/lib/access";
+import { loginAsAdminForTesting } from "@/lib/admin-test-login.functions";
 import { useLaunchpad } from "@/lib/use-launchpad";
+import { supabase } from "@/integrations/supabase/client";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,18 +96,24 @@ const EMPTY_FORM: UserFormInput = {
 
 function AdminUsers() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: launchpad } = useLaunchpad();
   const isSuperAdmin = launchpad?.isSuperAdmin ?? false;
   const canOpen = isSuperAdmin || (launchpad?.screens ?? []).includes("admin.users");
 
   const [open, setOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PortalUser | null>(null);
+  const [pendingLogin, setPendingLogin] = useState<PortalUser | null>(null);
   const [editing, setEditing] = useState<PortalUser | null>(null);
   const [form, setForm] = useState<UserFormInput>(EMPTY_FORM);
   const [search, setSearch] = useState("");
 
   const usersQuery = useQuery({ queryKey: ["portal-users"], queryFn: () => listPortalUsers() });
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: () => listRoles() });
+  const currentUserQuery = useQuery({
+    queryKey: ["current-user-id"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+  });
 
   const assignableRoles = useMemo(
     () => visibleRoles(rolesQuery.data ?? [], isSuperAdmin),
@@ -169,6 +178,18 @@ function AdminUsers() {
       toast.success("User deleted");
       setPendingDelete(null);
       refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: (userId: string) => loginAsAdminForTesting(userId),
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      setPendingLogin(null);
+      toast.success("Signed in with the selected Admin account");
+      navigate({ to: "/launchpad", replace: true });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -316,6 +337,15 @@ function AdminUsers() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {user.status === "active" &&
+                          user.roles.length === 1 &&
+                          user.roles[0] === "admin" &&
+                          user.id !== currentUserQuery.data ? (
+                            <Button size="sm" variant="ghost" onClick={() => setPendingLogin(user)}>
+                              <LogIn className="mr-1 h-3.5 w-3.5" />
+                              Login
+                            </Button>
+                          ) : null}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -347,6 +377,42 @@ function AdminUsers() {
           </div>
         </Panel>
       )}
+
+      <AlertDialog
+        open={pendingLogin !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingLogin(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Login as this Admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingLogin
+                ? `Your current session will switch to ${
+                    [pendingLogin.first_name, pendingLogin.last_name].filter(Boolean).join(" ") ||
+                    pendingLogin.username ||
+                    pendingLogin.email ||
+                    "this Admin"
+                  } for testing.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loginMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loginMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (pendingLogin) loginMutation.mutate(pendingLogin.id);
+              }}
+            >
+              {loginMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Login
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={pendingDelete !== null}
