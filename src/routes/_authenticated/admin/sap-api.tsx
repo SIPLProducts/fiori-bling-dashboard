@@ -1277,7 +1277,7 @@ function SystemsTab() {
                 <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
                   Base URL, client and technical user for this SAP system. Endpoints that store a
                   relative path inherit this Base URL automatically — switching DEV → Quality is a
-                  one-field change. The password is maintained only in the middleware server’s .env file.
+                  one-field change. Saved values take priority over middleware fallback values.
                 </p>
               </div>
               <div className="flex gap-2">
