@@ -215,12 +215,12 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       const { data: systemRow } = endpoint.system_key
         ? await db
             .from("sap_systems")
-            .select("key, base_url, sap_client")
+            .select("key, base_url, sap_client, username")
             .eq("key", endpoint.system_key)
             .maybeSingle()
         : await db
             .from("sap_systems")
-            .select("key, base_url, sap_client")
+            .select("key, base_url, sap_client, username")
             .eq("is_active", true)
             .limit(1)
             .maybeSingle();
@@ -229,6 +229,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         systemKey: systemRow?.key ?? endpoint.system_key ?? "dev",
         baseUrl: systemRow?.base_url ?? undefined,
         sapClient: systemRow?.sap_client ?? undefined,
+        username: systemRow?.username ?? undefined,
       });
 
       const bodyText = withPostingDates(endpoint.body_template, endpoint.posting_range);

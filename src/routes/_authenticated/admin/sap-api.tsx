@@ -67,9 +67,6 @@ import {
   listSapSystems,
   listSyncRuns,
   listLatestRuns,
-
-
-  listStoredCredentialKeys,
   pingSapHost,
   resolveEndpointUrl,
   saveMiddlewareConfig,
@@ -1197,24 +1194,17 @@ const emptySystem = {
   base_url: "",
   sap_client: "",
   username: "",
-  password: "",
   is_active: false,
 };
 
 function SystemsTab() {
   const queryClient = useQueryClient();
   const systemsQuery = useQuery({ queryKey: ["sap-systems"], queryFn: listSapSystems });
-  const credentialsQuery = useQuery({
-    queryKey: ["sap-credential-keys"],
-    queryFn: listStoredCredentialKeys,
-  });
-  const storedKeys = credentialsQuery.data ?? [];
   const [drafts, setDrafts] = useState<Record<string, typeof emptySystem>>({});
   const [adding, setAdding] = useState<typeof emptySystem | null>(null);
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["sap-systems"] });
-    queryClient.invalidateQueries({ queryKey: ["sap-credential-keys"] });
   }
 
   const saveMutation = useMutation({
@@ -1258,7 +1248,6 @@ function SystemsTab() {
         base_url: system.base_url,
         sap_client: system.sap_client ?? "",
         username: system.username ?? "",
-        password: "",
         is_active: system.is_active,
       }
     );
@@ -1279,7 +1268,7 @@ function SystemsTab() {
                 <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
                   Base URL, client and technical user for this SAP system. Endpoints that store a
                   relative path inherit this Base URL automatically — switching DEV → Quality is a
-                  one-field change. The password is stored encrypted and never shown again.
+                  one-field change. The password is maintained only in the middleware server’s .env file.
                 </p>
               </div>
               <div className="flex gap-2">
@@ -1303,7 +1292,6 @@ function SystemsTab() {
             </div>
             <SystemFields
               value={draft}
-              hasStoredPassword={storedKeys.includes(system.key)}
               onChange={(next) => setDrafts((prev) => ({ ...prev, [system.id]: next }))}
             />
             <div className="mt-4 flex items-center justify-between">
@@ -1322,6 +1310,12 @@ function SystemsTab() {
           </section>
         );
       })}
+
+      {systems.length === 0 && !adding ? (
+        <p className="rounded-md border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          No SAP system configured. Add a system to connect relative endpoint paths to SAP.
+        </p>
+      ) : null}
 
       {adding ? (
         <section className="rounded-md border border-border bg-card p-5 shadow-tile">
@@ -1352,11 +1346,9 @@ function SystemsTab() {
 function SystemFields({
   value,
   onChange,
-  hasStoredPassword = false,
 }: {
   value: typeof emptySystem;
   onChange: (next: typeof emptySystem) => void;
-  hasStoredPassword?: boolean;
 }) {
   function set<K extends keyof typeof emptySystem>(key: K, next: (typeof emptySystem)[K]) {
     onChange({ ...value, [key]: next });
@@ -1393,17 +1385,9 @@ function SystemFields({
       <Field label="SAP username">
         <Input value={value.username} onChange={(e) => set("username", e.target.value)} />
       </Field>
-      <Field label="SAP password">
-        <Input
-          type="password"
-          autoComplete="new-password"
-          value={value.password}
-          placeholder={
-            hasStoredPassword ? "Password saved — leave blank to keep" : "Enter SAP password"
-          }
-          onChange={(e) => set("password", e.target.value)}
-        />
-      </Field>
+      <div className="flex items-center rounded-sm border border-border bg-muted/40 px-3 text-xs text-muted-foreground">
+        SAP password is maintained only in the middleware server’s .env file.
+      </div>
       <div className="flex items-center gap-3">
         <Switch checked={value.is_active} onCheckedChange={(v) => set("is_active", v)} />
         <Label>Use as active system</Label>
