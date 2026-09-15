@@ -1,6 +1,7 @@
 # MIS Portal — PRODUCTION stack (isolated network + volumes)
 # Run from /opt/MIS_Projects/Production/backend:
 #   docker compose --env-file .env -f docker-compose.production.yml up -d --build
+# Existing installations: use deploy/production-upgrade-all.sh. Never run down -v.
 name: mis-production
 
 networks:

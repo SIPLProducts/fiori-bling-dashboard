@@ -3,6 +3,11 @@
 Everything needed to run the MIS portal on your own Ubuntu server, in two fully
 isolated stacks: **Quality** and **Production**.
 
+> **Existing Production at the 24-Aug-2026 release:** use
+> [`PRODUCTION-UPGRADE.md`](./PRODUCTION-UPGRADE.md) and
+> `production-upgrade-all.sh`. It upgrades the running installation in place,
+> adds Production middleware on port 3010, and does not delete Docker volumes.
+
 This README assumes you keep the existing server layout:
 
 ```text
@@ -98,7 +103,7 @@ frontend.
 
 | Component        | Quality | Production |
 | ---------------- | ------- | ---------- |
-| Frontend         | static files served by Nginx on port 80 | same |
+| Frontend / Nginx | 8081    | 9000       |
 | Middleware       | 3002    | 3010       |
 | Backend          | 5000    | 5001       |
 | Supabase Kong    | 8000    | 9010       |
@@ -254,9 +259,9 @@ curl -I http://127.0.0.1:9010/          # Supabase Kong (Production)
 
 ## 5. Nginx
 
-The configs are **plain HTTP (port 80) only** — no `listen 443`, no
-`ssl_certificate`, no Certbot, no HTTPS redirect. TLS is terminated on your
-existing upstream load balancer / reverse proxy.
+The configs are **plain HTTP only** — Quality uses its configured listener and
+Production listens on `9000`. There is no `listen 443`, no `ssl_certificate`,
+no Certbot, and no HTTPS redirect.
 
 Nginx serves the SPA straight from `frontend/dist/` with a `try_files` fallback
 to `index.html`, so deep links such as `/launchpad` work on refresh.
@@ -284,8 +289,8 @@ Routes exposed by each server block:
 If you serve by IP instead of a hostname, swap `server_name` for the commented
 `server_name _;` line in the config.
 
-Nothing listens on 8081 / 9000 any more — if Nginx already has a
-`listen 8081;` or `listen 9000;` block from an earlier setup, remove it.
+Production intentionally listens on `9000` at `10.10.4.165`. Keep only one
+enabled Nginx server block for that address and port.
 
 ## 6. Redeploy after a code change
 
@@ -305,10 +310,10 @@ The database and its volume are untouched.
 
 ```bash
 # Backup (Production)
-docker exec mis_p_db pg_dump -U postgres postgres | gzip > mis-prod-$(date +%F).sql.gz
+docker exec mis_p_db pg_dump -U supabase_admin postgres | gzip > mis-prod-$(date +%F).sql.gz
 
 # Restore
-gunzip -c mis-prod-2026-08-23.sql.gz | docker exec -i mis_p_db psql -U postgres -d postgres
+gunzip -c mis-prod-2026-08-23.sql.gz | docker exec -i mis_p_db psql -U supabase_admin -d postgres
 ```
 
 ## 8. Supabase Studio (dashboard) credentials
@@ -351,12 +356,12 @@ There is no separate DB user/password setting — the stack uses:
 | -------- | ----------------- | ----------------- |
 | Host     | `127.0.0.1:5432`  | `127.0.0.1:5433`  |
 | Database | `postgres`        | `postgres`        |
-| User     | `postgres`        | `postgres`        |
+| User     | `supabase_admin`  | `supabase_admin`  |
 | Password | `POSTGRES_PASSWORD` from `.env` | `POSTGRES_PASSWORD` from `.env` |
 
 ```bash
-docker exec -it mis_q_db psql -U postgres -d postgres   # Quality
-docker exec -it mis_p_db psql -U postgres -d postgres   # Production
+docker exec -it mis_q_db psql -U supabase_admin -d postgres   # Quality
+docker exec -it mis_p_db psql -U supabase_admin -d postgres   # Production
 ```
 
 ## Bringing users, SAP settings and sales data to a fresh environment
