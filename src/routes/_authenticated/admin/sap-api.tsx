@@ -63,6 +63,7 @@ import {
   deleteSapSystem,
   fetchMiddlewareLogs,
   getMiddlewareConfig,
+  getMiddlewareSystemStatuses,
   listSapEndpoints,
   listSapSystems,
   listSyncRuns,
@@ -1200,11 +1201,17 @@ const emptySystem = {
 function SystemsTab() {
   const queryClient = useQueryClient();
   const systemsQuery = useQuery({ queryKey: ["sap-systems"], queryFn: listSapSystems });
+  const middlewareStatusesQuery = useQuery({
+    queryKey: ["sap-middleware-system-statuses"],
+    queryFn: getMiddlewareSystemStatuses,
+    retry: false,
+  });
   const [drafts, setDrafts] = useState<Record<string, typeof emptySystem>>({});
   const [adding, setAdding] = useState<typeof emptySystem | null>(null);
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["sap-systems"] });
+    queryClient.invalidateQueries({ queryKey: ["sap-middleware-system-statuses"] });
   }
 
   const saveMutation = useMutation({
@@ -1257,6 +1264,8 @@ function SystemsTab() {
     <div className="space-y-4">
       {systems.map((system) => {
         const draft = draftFor(system);
+        const passwordConfigured =
+          middlewareStatusesQuery.data?.find((status) => status.key === system.key)?.credentials ?? false;
         return (
           <section key={system.id} className="rounded-md border border-border bg-card p-5 shadow-tile">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -1268,7 +1277,7 @@ function SystemsTab() {
                 <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
                   Base URL, client and technical user for this SAP system. Endpoints that store a
                   relative path inherit this Base URL automatically — switching DEV → Quality is a
-                  one-field change. The password is maintained only in the middleware server’s .env file.
+                  one-field change. Saved values take priority over middleware fallback values.
                 </p>
               </div>
               <div className="flex gap-2">
@@ -1292,6 +1301,8 @@ function SystemsTab() {
             </div>
             <SystemFields
               value={draft}
+              passwordConfigured={passwordConfigured}
+              passwordStatusLoading={middlewareStatusesQuery.isLoading}
               onChange={(next) => setDrafts((prev) => ({ ...prev, [system.id]: next }))}
             />
             <div className="mt-4 flex items-center justify-between">
@@ -1320,7 +1331,7 @@ function SystemsTab() {
       {adding ? (
         <section className="rounded-md border border-border bg-card p-5 shadow-tile">
           <h3 className="mb-4 text-base font-semibold text-card-foreground">New SAP system</h3>
-          <SystemFields value={adding} onChange={setAdding} />
+          <SystemFields value={adding} passwordConfigured={false} onChange={setAdding} />
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setAdding(null)}>
               Cancel
@@ -1345,9 +1356,13 @@ function SystemsTab() {
 
 function SystemFields({
   value,
+  passwordConfigured,
+  passwordStatusLoading = false,
   onChange,
 }: {
   value: typeof emptySystem;
+  passwordConfigured: boolean;
+  passwordStatusLoading?: boolean;
   onChange: (next: typeof emptySystem) => void;
 }) {
   function set<K extends keyof typeof emptySystem>(key: K, next: (typeof emptySystem)[K]) {
@@ -1385,9 +1400,24 @@ function SystemFields({
       <Field label="SAP username">
         <Input value={value.username} onChange={(e) => set("username", e.target.value)} />
       </Field>
-      <div className="flex items-center rounded-sm border border-border bg-muted/40 px-3 text-xs text-muted-foreground">
-        SAP password is maintained only in the middleware server’s .env file.
-      </div>
+      <Field label="SAP password">
+        <div className="space-y-1">
+          <Input
+            type="password"
+            value={passwordConfigured ? "********" : ""}
+            placeholder={passwordStatusLoading ? "Checking middleware…" : "Not configured in middleware"}
+            readOnly
+            aria-label="SAP password configuration status"
+          />
+          <p className="text-xs text-muted-foreground">
+            {passwordStatusLoading
+              ? "Checking middleware configuration…"
+              : passwordConfigured
+                ? "Configured in middleware"
+                : "Not configured in middleware"}
+          </p>
+        </div>
+      </Field>
       <div className="flex items-center gap-3">
         <Switch checked={value.is_active} onCheckedChange={(v) => set("is_active", v)} />
         <Label>Use as active system</Label>
