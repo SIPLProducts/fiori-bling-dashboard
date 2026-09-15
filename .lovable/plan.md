@@ -1,60 +1,40 @@
-# Recover the incomplete Production upgrade
+# Restore Production access for masteradmin
 
-Restore the existing Production installation at `http://10.10.4.165:9000` without deleting Docker volumes or overwriting working Production data again. Production’s two Auth accounts and matching profile rows are present and accessible through port `9000`, so missing users are not causing the login problem. The “Opening HBL MIS Portal…” screen is static HTML; application startup hides it immediately before checking login. Because it remains visible, the Production JavaScript bundle is not starting. The middleware is separately healthy on port `3010`, but its database API still reports `public.sap_endpoints` as absent. Recovery therefore has two focused tracks: repair the deployed frontend bundle/assets, then repair the Production database API schema visibility.
+Production login and the launchpad now load correctly, so the frontend and authentication are no longer blocking access. The Production screenshot identifies the remaining issue: `masteradmin@sharviinfotech.com` is being evaluated as **Viewer**, while Quality evaluates the same account as **Sharvi Admin**. The application builds its menus and tiles from `public.user_role_assignments` and `public.role_screens`; a `super_admin` assignment gives every screen automatically.
 
-## Immediate recovery sequence
+## Recovery steps
 
-1. **Freeze automated activity**
-   - Stop `mis-p-middleware` temporarily so the scheduler does not repeat failed database requests.
-   - Do not rerun the Quality-to-Production data replacement and do not use `docker compose down -v`.
+1. **Back up the Production access rows**
+   - Save the current `roles`, `role_screens`, `user_role_assignments`, and legacy `user_roles` rows before changing them.
+   - Do not rerun the full Production upgrade and do not copy or truncate sales/SAP data.
 
-2. **Inspect the current Production state**
-   - Confirm all Production containers and ports `5433`, `9010`, `9012`, `3010`, and `9000`.
-   - Query Production directly for `public.sap_endpoints`, `public.profiles`, `auth.users`, `public.zfisales_detail`, and the migration ledger; confirm the two visible Auth accounts also have active profile rows and role assignments.
-   - Request `sap_endpoints` through the same port `9010`, service key, and headers used by the middleware, then compare that result with direct SQL. This distinguishes a missing table from a stale database API cache or a gateway connected to the wrong Production database.
-   - Check whether the post-24-August migration files exist under the Production repository, and compare the ledger with the files actually present.
-   - Extract every JavaScript and stylesheet path referenced by `frontend/dist/index.html`; verify each file exists, is readable by Nginx, and returns the correct content type rather than HTML or `404`.
-   - Request `/`, `/auth`, one referenced asset, `/supabase/auth/v1/health`, `/supabase/rest/v1/`, and `/healthz` locally; capture the first failing browser request responsible for the endless “Opening HBL MIS Portal…” screen.
+2. **Compare Quality and Production access data**
+   - Find `masteradmin@sharviinfotech.com` in `auth.users` and confirm its matching active `profiles` row.
+   - Compare that user’s `user_role_assignments` rows between Quality and Production.
+   - Confirm Production contains the `super_admin` role and the required access-control migrations, grants, and read policies.
+   - Check the legacy `user_roles` row separately, but treat `user_role_assignments` as authoritative because that is what the current portal reads.
 
-3. **Repair the database schema safely**
-   - Take a fresh timestamped Production database backup first.
-   - If direct SQL confirms missing objects, apply the missing migrations in filename order using `supabase_admin` and record each only after it succeeds.
-   - Do not truncate or recopy Production data during this recovery.
-   - Verify that `sap_endpoints` and its related SAP tables, grants, policies, functions, and the `posting_range` column exist.
-   - If direct SQL confirms the tables already exist, do not reapply migrations blindly; restart/reload only the Production database API and verify it points to `mis_p_db`, then reload its schema cache.
+3. **Repair only the affected Production assignment**
+   - Remove any incorrect `viewer` assignment for the Production masteradmin account.
+   - Insert `super_admin` into `public.user_role_assignments` for that account, using its Production Auth user ID.
+   - Keep `public.user_roles` synchronized with the equivalent administrator role where required by older functions.
+   - Do not recreate the Auth user or change its password/profile.
 
-4. **Restore the Production login page**
-   - Rebuild the static frontend from the latest repository with Production values: database API `http://10.10.4.165:9000/supabase`, Production anon key, and project ID `mis-production`.
-   - Validate the new build before installation: `index.html` exists, every referenced local asset exists, and the bundle contains the Production database URL rather than the hosted or Quality URL.
-   - Replace `frontend/dist` atomically while retaining the current folder as a rollback copy.
-   - Set readable directory/file permissions for Nginx, clear only the old hashed frontend assets during the atomic swap, and preserve `index.html` as `no-store`.
-   - Test Nginx before reload, then verify `/auth` renders and its JavaScript/CSS assets return `200`.
+4. **Validate database API visibility**
+   - Query `user_role_assignments` through Production’s database API using the signed-in account and confirm it can read `super_admin`.
+   - If direct SQL is correct but the API response is empty, repair the table grants/read policy and reload the Production database API schema cache.
+   - Confirm `is_super_admin(user_id)` and `has_screen(user_id, 'admin.users')` return true from an authenticated application request.
 
-5. **Correct and restart middleware**
-   - Verify the middleware uses port `3010`, Production database API `http://127.0.0.1:9010`, and the Production service key.
-   - Recheck the SAP DEV address because the current Production log shows `http://10.10.4.18:9010`, while the previously working Quality address was `http://10.10.4.18:8000`; preserve the intended Production value rather than silently guessing.
-   - Rotate the middleware shared secret because the value was pasted into chat and Nginx; update both middleware and Nginx together.
-   - Recreate `mis-p-middleware` with inherited port/database variables removed, then confirm `listening on :3010`, `scheduler started`, and a successful scheduler configuration read.
+5. **Refresh the Production session**
+   - Sign out of Production, clear only the Production site session/cache, and sign in again.
+   - Confirm the account menu shows User Management, Roles, Screen Permissions, and SAP API Settings.
+   - Confirm launchpad tiles match Quality and the role headline shows Sharvi Admin rather than Viewer.
 
-6. **Validate before enabling schedules**
-   - Confirm every Production Auth account expected from Quality has an active profile and role assignment; repair missing profile/role rows without recreating valid Auth accounts.
-   - Confirm login resolution and sign-in for a copied Production user.
-   - Compare Production user and sales-row counts with the expected copied snapshot.
-   - Test `/healthz`, database auth health, middleware health, and `/sap-mw/health`.
-   - Run one manual `Sales_Reports_KPI` sync and verify received/new/updated counts.
-   - Enable the copied schedules only after the manual sync succeeds.
-
-## Deployment package hardening
-
-- Update `production-upgrade-all.sh` so it fails before data copy or middleware startup when the migration directory is empty or required baseline tables are absent.
-- Make it verify every required post-upgrade table and column after migration, including `sap_endpoints`, before continuing.
-- Add a recovery mode that performs backup, missing migrations, frontend deployment, and validation without truncating or copying Quality data.
-- Add explicit frontend checks for `index.html`, referenced assets, `/auth`, and database-auth health.
-- Add a dedicated `deploy/production-recover.sh` that stops the scheduler, takes a fresh backup, rebuilds and atomically redeploys only the Production frontend, checks all referenced assets over port `9000`, repairs database API visibility, validates profiles/roles, and restarts middleware. It must not truncate tables or copy Quality data.
-- Add a same-credential database API probe for `sap_endpoints` and fail before starting middleware when the API cannot see the migrated schema.
-- Extend `PRODUCTION-UPGRADE.md` with this incomplete-upgrade recovery command sequence and expected results.
-- Keep the Nginx secret as a deployment placeholder in Git; never commit the real replacement value.
+6. **Prevent recurrence**
+   - Add a focused `deploy/production-fix-access.sh` utility that accepts an email, resolves the Production Auth ID, backs up the current access rows, and safely assigns the requested existing role.
+   - Add post-upgrade checks to `production-upgrade-all.sh` verifying every copied active profile has a role assignment and that the copied masteradmin account is `super_admin` before declaring success.
+   - Document the verification and rollback commands in `PRODUCTION-UPGRADE.md`.
 
 ## Expected result
 
-Production serves the login page at `http://10.10.4.165:9000/auth`, the database contains `public.sap_endpoints`, PM2 runs `mis-p-middleware` on `3010` without scheduler tick errors, and SAP schedules remain disabled until one manual Production sync passes.
+Signing in to `http://10.10.4.165:9000` as `masteradmin@sharviinfotech.com` produces the same Sharvi Admin menus, administration screens, and launchpad tiles shown in Quality, without replacing Production business data.
