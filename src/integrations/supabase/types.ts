@@ -308,13 +308,18 @@ export type Database = {
           http_status: number | null
           id: string
           records_inserted: number
+          records_invalid: number
           records_received: number
+          records_replaced: number
           records_skipped: number
+          records_stored: number
           records_updated: number
           request_snapshot: Json | null
           response_bytes: number
+          snapshot_id: string | null
           started_at: string
           status: string
+          sync_scope_key: string | null
           updated_at: string
         }
         Insert: {
@@ -326,13 +331,18 @@ export type Database = {
           http_status?: number | null
           id?: string
           records_inserted?: number
+          records_invalid?: number
           records_received?: number
+          records_replaced?: number
           records_skipped?: number
+          records_stored?: number
           records_updated?: number
           request_snapshot?: Json | null
           response_bytes?: number
+          snapshot_id?: string | null
           started_at?: string
           status?: string
+          sync_scope_key?: string | null
           updated_at?: string
         }
         Update: {
@@ -344,13 +354,18 @@ export type Database = {
           http_status?: number | null
           id?: string
           records_inserted?: number
+          records_invalid?: number
           records_received?: number
+          records_replaced?: number
           records_skipped?: number
+          records_stored?: number
           records_updated?: number
           request_snapshot?: Json | null
           response_bytes?: number
+          snapshot_id?: string | null
           started_at?: string
           status?: string
+          sync_scope_key?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -672,6 +687,7 @@ export type Database = {
           incoterms: string | null
           industry: string | null
           industry_name: string | null
+          is_active_snapshot: boolean
           main_group: string | null
           material: string | null
           material_desc: string | null
@@ -680,6 +696,7 @@ export type Database = {
           model: string | null
           month: string | null
           new_repl: string | null
+          occurrence_no: number
           pc_short_name: string | null
           pk: string | null
           plant: string | null
@@ -693,6 +710,7 @@ export type Database = {
           raw: Json | null
           record_key: string
           reference: string | null
+          row_hash: string
           sales_office: string | null
           sales_order: string | null
           sales_order_item: string | null
@@ -702,8 +720,10 @@ export type Database = {
           sales_type: string | null
           sales_zone: string | null
           segment: string | null
+          snapshot_id: string
           source_endpoint: string | null
           sub_group: string | null
+          sync_scope_key: string
           synced_at: string
           total_ah: number
           unit: string | null
@@ -744,6 +764,7 @@ export type Database = {
           incoterms?: string | null
           industry?: string | null
           industry_name?: string | null
+          is_active_snapshot?: boolean
           main_group?: string | null
           material?: string | null
           material_desc?: string | null
@@ -752,6 +773,7 @@ export type Database = {
           model?: string | null
           month?: string | null
           new_repl?: string | null
+          occurrence_no?: number
           pc_short_name?: string | null
           pk?: string | null
           plant?: string | null
@@ -765,6 +787,7 @@ export type Database = {
           raw?: Json | null
           record_key: string
           reference?: string | null
+          row_hash: string
           sales_office?: string | null
           sales_order?: string | null
           sales_order_item?: string | null
@@ -774,8 +797,10 @@ export type Database = {
           sales_type?: string | null
           sales_zone?: string | null
           segment?: string | null
+          snapshot_id: string
           source_endpoint?: string | null
           sub_group?: string | null
+          sync_scope_key: string
           synced_at?: string
           total_ah?: number
           unit?: string | null
@@ -816,6 +841,7 @@ export type Database = {
           incoterms?: string | null
           industry?: string | null
           industry_name?: string | null
+          is_active_snapshot?: boolean
           main_group?: string | null
           material?: string | null
           material_desc?: string | null
@@ -824,6 +850,7 @@ export type Database = {
           model?: string | null
           month?: string | null
           new_repl?: string | null
+          occurrence_no?: number
           pc_short_name?: string | null
           pk?: string | null
           plant?: string | null
@@ -837,6 +864,7 @@ export type Database = {
           raw?: Json | null
           record_key?: string
           reference?: string | null
+          row_hash?: string
           sales_office?: string | null
           sales_order?: string | null
           sales_order_item?: string | null
@@ -846,8 +874,10 @@ export type Database = {
           sales_type?: string | null
           sales_zone?: string | null
           segment?: string | null
+          snapshot_id?: string
           source_endpoint?: string | null
           sub_group?: string | null
+          sync_scope_key?: string
           synced_at?: string
           total_ah?: number
           unit?: string | null
@@ -861,6 +891,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_zfisales_snapshot: {
+        Args: {
+          _expected_count: number
+          _scope_key: string
+          _snapshot_id: string
+        }
+        Returns: number
+      }
       admin_confirm_user_email: {
         Args: { _user_id: string }
         Returns: undefined

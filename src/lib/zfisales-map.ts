@@ -128,6 +128,11 @@ export function extractRows(payload: unknown): Raw[] {
 
 export type ZfisalesDetailRow = {
   record_key: string;
+  sync_scope_key: string;
+  snapshot_id: string;
+  row_hash: string;
+  occurrence_no: number;
+  is_active_snapshot: boolean;
   plant: string;
   gl: string;
   gl_name: string;
@@ -211,6 +216,11 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
 
   return {
     record_key: recordKey,
+    sync_scope_key: `endpoint:${sourceEndpoint}`,
+    snapshot_id: "00000000-0000-4000-8000-000000000000",
+    row_hash: recordKey,
+    occurrence_no: 1,
+    is_active_snapshot: false,
     plant,
     gl,
     gl_name: str(pickField(raw, ["TXT50", "HKONT_TXT", "glName", "SAKNR_TXT"])),
@@ -281,11 +291,41 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
 }
 
 
-export function mapPayload(payload: unknown, sourceEndpoint: string) {
+export function buildSyncScopeKey(sourceEndpoint: string, requestSnapshot?: unknown): string {
+  const request = requestSnapshot && typeof requestSnapshot === "object" && !Array.isArray(requestSnapshot)
+    ? requestSnapshot as Record<string, unknown>
+    : {};
+  const scope = {
+    endpoint: sourceEndpoint,
+    systemKey: request["systemKey"] ?? null,
+    sapClient: request["sapClient"] ?? null,
+    path: request["path"] ?? null,
+    query: request["query"] ?? null,
+    body: request["body"] ?? null,
+  };
+  return `scope:${sha256(canonicalJson(scope))}`;
+}
+
+function snapshotUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const hex = sha256(`${Date.now()}:${Math.random()}`).slice(0, 32).split("");
+  hex[12] = "4";
+  hex[16] = ((Number.parseInt(hex[16] ?? "0", 16) & 3) | 8).toString(16);
+  return `${hex.slice(0, 8).join("")}-${hex.slice(8, 12).join("")}-${hex.slice(12, 16).join("")}-${hex.slice(16, 20).join("")}-${hex.slice(20).join("")}`;
+}
+
+export function mapPayload(
+  payload: unknown,
+  sourceEndpoint: string,
+  requestSnapshot?: unknown,
+  suppliedSnapshotId?: string,
+) {
   const syncedAt = new Date().toISOString();
   const raws = extractRows(payload);
   const rows: ZfisalesDetailRow[] = [];
-  const seen = new Set<string>();
+  const syncScopeKey = buildSyncScopeKey(sourceEndpoint, requestSnapshot);
+  const snapshotId = suppliedSnapshotId ?? snapshotUuid();
+  const occurrences = new Map<string, number>();
   let invalid = 0;
   let duplicates = 0;
   for (const r of raws) {
@@ -294,12 +334,19 @@ export function mapPayload(payload: unknown, sourceEndpoint: string) {
       invalid += 1;
       continue;
     }
-    if (seen.has(mapped.record_key)) {
-      duplicates += 1;
-      continue;
-    }
-    seen.add(mapped.record_key);
-    rows.push(mapped);
+    const rowHash = mapped.record_key;
+    const occurrenceNo = (occurrences.get(rowHash) ?? 0) + 1;
+    occurrences.set(rowHash, occurrenceNo);
+    if (occurrenceNo > 1) duplicates += 1;
+    rows.push({
+      ...mapped,
+      record_key: `snapshot:${sha256(`${syncScopeKey}:${snapshotId}:${rowHash}:${occurrenceNo}`)}`,
+      sync_scope_key: syncScopeKey,
+      snapshot_id: snapshotId,
+      row_hash: rowHash,
+      occurrence_no: occurrenceNo,
+      is_active_snapshot: false,
+    });
   }
-  return { received: raws.length, rows, skipped: invalid + duplicates, invalid, duplicates };
+  return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
 }

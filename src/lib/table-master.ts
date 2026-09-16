@@ -28,8 +28,9 @@ export type SyncRun = {
   started_at: string;
   finished_at: string | null;
   records_received: number;
-  records_inserted: number;
-  records_updated: number;
+  records_stored: number;
+  records_replaced: number;
+  records_invalid: number;
   error_message: string | null;
 };
 

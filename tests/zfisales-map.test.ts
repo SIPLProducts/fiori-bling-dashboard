@@ -15,12 +15,25 @@ test("full-row identity retains rows that collided under the old business key", 
   assert.notEqual(result.rows[0].record_key, result.rows[1].record_key);
 });
 
-test("exact duplicates collapse and reconcile with received rows", () => {
+test("exact duplicate occurrences are all preserved", () => {
   const row = { ...base, PRCTR: "LGVRD16001", DMBTR: "100" };
   const result = mapPayload([row, { ...row }], "Sales_Reports_KPI");
-  assert.equal(result.rows.length, 1);
+  assert.equal(result.rows.length, 2);
   assert.equal(result.duplicates, 1);
-  assert.equal(result.received, result.rows.length + result.invalid + result.duplicates);
+  assert.equal(result.received, result.rows.length + result.invalid);
+  assert.equal(result.rows[0].row_hash, result.rows[1].row_hash);
+  assert.equal(result.rows[0].occurrence_no, 1);
+  assert.equal(result.rows[1].occurrence_no, 2);
+  assert.notEqual(result.rows[0].record_key, result.rows[1].record_key);
+});
+
+test("request scope is stable and different filters remain isolated", () => {
+  const first = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
+  const same = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
+  const other = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260801", BUDAT_T: "20260831" } });
+  assert.equal(first.syncScopeKey, same.syncScopeKey);
+  assert.notEqual(first.syncScopeKey, other.syncScopeKey);
+  assert.notEqual(first.snapshotId, same.snapshotId);
 });
 
 test("property order does not change full-row identity", () => {

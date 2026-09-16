@@ -29,11 +29,26 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
 
         const endpoint = "ZFISALES";
         const startedAt = new Date().toISOString();
-        const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpoint);
+        const requestSnapshot = { source: "sap-push" };
+        const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+          payload,
+          endpoint,
+          requestSnapshot,
+        );
 
         const { data: run } = await supabaseAdmin
           .from("sap_sync_runs")
-          .insert({ endpoint, status: "running", started_at: startedAt, records_received: received })
+          .insert({
+            endpoint,
+            status: "running",
+            started_at: startedAt,
+            records_received: received,
+            records_invalid: invalid,
+            records_skipped: skipped,
+            request_snapshot: requestSnapshot,
+            sync_scope_key: syncScopeKey,
+            snapshot_id: snapshotId,
+          })
           .select("id")
           .single();
 
@@ -47,39 +62,51 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
         };
 
         if (!rows.length) {
-          await finish({ status: received ? "error" : "success", error_message: received ? "No mappable rows" : null });
-          return Response.json({ received, inserted: 0, updated: 0, skipped }, { status: received ? 422 : 200 });
+          let replaced = 0;
+          if (received === 0) {
+            const { data, error } = await supabaseAdmin.rpc("activate_zfisales_snapshot", {
+              _scope_key: syncScopeKey,
+              _snapshot_id: snapshotId,
+              _expected_count: 0,
+            });
+            if (error) throw error;
+            replaced = data ?? 0;
+          }
+          await finish({
+            status: received ? "error" : "success",
+            records_replaced: replaced,
+            records_invalid: invalid,
+            error_message: received ? "No mappable rows" : `${replaced} previous rows removed for this empty SAP snapshot`,
+          });
+          return Response.json({ received, stored: 0, replaced, skipped, invalid }, { status: received ? 422 : 200 });
         }
 
         try {
-          const keys = rows.map((r) => r.record_key);
-          const existing = new Set<string>();
-          for (let i = 0; i < keys.length; i += 500) {
-            const { data } = await supabaseAdmin
-              .from("zfisales_detail")
-              .select("record_key")
-              .in("record_key", keys.slice(i, i + 500));
-            for (const r of data ?? []) existing.add(r.record_key);
-          }
-
           for (let i = 0; i < rows.length; i += 500) {
             const { error } = await supabaseAdmin
               .from("zfisales_detail")
-              .upsert(rows.slice(i, i + 500) as never, { onConflict: "record_key" });
+              .insert(rows.slice(i, i + 500) as never);
             if (error) throw error;
           }
-
-          const updated = rows.filter((r) => existing.has(r.record_key)).length;
-          const inserted = rows.length - updated;
+          const { data: replaced, error: activateError } = await supabaseAdmin.rpc("activate_zfisales_snapshot", {
+            _scope_key: syncScopeKey,
+            _snapshot_id: snapshotId,
+            _expected_count: rows.length,
+          });
+          if (activateError) throw activateError;
           await finish({
             status: "success",
-            records_inserted: inserted,
-            records_updated: updated,
+            records_stored: rows.length,
+            records_replaced: replaced ?? 0,
+            records_invalid: invalid,
+            records_inserted: rows.length,
+            records_updated: 0,
             records_skipped: skipped,
-            error_message: `${rows.length} unique; ${duplicates} exact duplicates; ${invalid} invalid`,
+            error_message: `${rows.length} stored; ${replaced ?? 0} replaced; ${duplicates} repeated occurrences preserved; ${invalid} invalid`,
           });
-          return Response.json({ received, unique: rows.length, inserted, updated, skipped, invalid, duplicates });
+          return Response.json({ received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates });
         } catch (err) {
+          await supabaseAdmin.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
           const message = err instanceof Error ? err.message : "Sync failed";
           await finish({ status: "error", error_message: message });
           return Response.json({ error: message }, { status: 500 });

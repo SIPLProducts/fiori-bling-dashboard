@@ -221,10 +221,9 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                 <th className="px-3 py-2 font-semibold">Started</th>
                 <th className="px-3 py-2 font-semibold">Status</th>
                 <th className="px-3 py-2 font-semibold text-right">Received</th>
-                <th className="px-3 py-2 font-semibold text-right">Unique</th>
-                <th className="px-3 py-2 font-semibold text-right">New</th>
-                <th className="px-3 py-2 font-semibold text-right">Updated</th>
-                <th className="px-3 py-2 font-semibold text-right">Skipped</th>
+                <th className="px-3 py-2 font-semibold text-right">Stored</th>
+                <th className="px-3 py-2 font-semibold text-right">Replaced</th>
+                <th className="px-3 py-2 font-semibold text-right">Invalid</th>
                 <th className="px-3 py-2 font-semibold text-right">Size</th>
                 <th className="px-3 py-2 font-semibold text-right">Time</th>
                 <th className="px-3 py-2 font-semibold">Message</th>
@@ -252,17 +251,16 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                         {run.status}
                       </td>
                       <td className="px-3 py-2 text-right">{run.records_received}</td>
-                      <td className="px-3 py-2 text-right">{run.records_inserted + run.records_updated}</td>
-                      <td className="px-3 py-2 text-right">{run.records_inserted}</td>
-                      <td className="px-3 py-2 text-right">{run.records_updated}</td>
-                      <td className="px-3 py-2 text-right">{run.records_skipped ?? 0}</td>
+                      <td className="px-3 py-2 text-right">{run.records_stored}</td>
+                      <td className="px-3 py-2 text-right">{run.records_replaced}</td>
+                      <td className="px-3 py-2 text-right">{run.records_invalid}</td>
                       <td className="px-3 py-2 text-right">{formatBytes(run.response_bytes ?? 0)}</td>
                       <td className="px-3 py-2 text-right">{formatDuration(run.duration_ms ?? 0)}</td>
                       <td className="px-3 py-2 text-muted-foreground">{run.error_message ?? "—"}</td>
                     </tr>
                     {open ? (
                       <tr key={`${run.id}-detail`} className="border-t border-border bg-muted/30">
-                        <td colSpan={11} className="px-3 py-3">
+                        <td colSpan={10} className="px-3 py-3">
                           <div className="grid gap-1 pb-2 text-[11px] text-muted-foreground sm:grid-cols-4">
                             <span>
                               HTTP status: <strong>{run.http_status ?? "—"}</strong>
@@ -278,6 +276,9 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                               <strong>{run.finished_at ? formatDateTimeISTLabel(run.finished_at) : "—"}</strong>
                             </span>
                           </div>
+                          <p className="pb-2 text-[11px] text-muted-foreground">
+                            Request scope: <strong className="font-mono">{run.sync_scope_key ?? "—"}</strong>
+                          </p>
                           <p className="pb-1 text-[11px] font-medium text-card-foreground">Payload sent on this run</p>
                           <pre className="max-h-56 overflow-auto rounded-md bg-background p-3 font-mono text-[11px] text-muted-foreground">
                             {run.request_snapshot
@@ -517,8 +518,8 @@ function LastRunLine({
     status: string;
     started_at: string;
     records_received: number;
-    records_inserted: number;
-    records_updated: number;
+    records_stored: number;
+    records_replaced: number;
     error_message: string | null;
   };
 }) {
@@ -542,7 +543,7 @@ function LastRunLine({
       </span>
       <span className="ml-1">
         {ok
-          ? `${run.records_received} records (${run.records_inserted} new, ${run.records_updated} updated)`
+          ? `${run.records_received} received (${run.records_stored} stored, ${run.records_replaced} replaced)`
           : (run.error_message ?? "")}
       </span>
     </div>

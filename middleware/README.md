@@ -201,18 +201,18 @@ is hard-coded:
 
 SAP passwords still come only from this service's `.env`.
 
-Each run writes a `sap_sync_runs` row (received / unique / new / updated / skipped,
+Each run writes a `sap_sync_runs` row (received / stored / replaced / invalid,
 bytes, duration, HTTP status, error) and updates the endpoint's last run and
 last synced stamps, so **SAP API Settings → Scheduler** shows real history. Only
-the newest 6 runs per endpoint are kept. Rows are inserted or updated by
-`record_key`; an empty SAP response never deletes anything. Version 1.7.0 builds
-`record_key` from a canonical SHA-256 hash of the complete SAP row, so rows that
-share document fields but differ elsewhere are retained. Exact duplicate rows
-are counted separately and stored once.
+the newest 6 runs per endpoint are kept. Version 1.8.0 stages a complete snapshot
+for each endpoint and request-filter scope, validates the staged row count, then
+atomically replaces only the prior snapshot for that same scope. Every received
+occurrence is stored, including byte-for-byte duplicate SAP objects. An empty or
+failed SAP response leaves the previous completed snapshot unchanged.
 
-### One-time rebuild after upgrading to 1.7.0
+### One-time rebuild after upgrading to 1.8.0
 
-The old five-field keys and new full-row keys must not be mixed. After deploying
+The old hash-key rows and new scoped snapshots must not be mixed. After deploying
 the updated `server.mjs`, `scheduler.mjs`, and `sync-core.mjs`, clear Quality once:
 
 ```sql
@@ -220,7 +220,7 @@ TRUNCATE TABLE public.zfisales_detail;
 ```
 
 Then run every required Sales KPI payload again and verify that the database row
-count equals the sum of each run's unique count. Validate Quality totals before
+count equals the sum of each active scope's stored count. Validate Quality totals before
 repeating the same one-time process in Production.
 
 Force one run from the server:
