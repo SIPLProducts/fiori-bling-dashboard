@@ -1,60 +1,91 @@
-# Fix SAP payload persistence and complete HTTP/HTTPS setup
+# Deploy SAP HTTP and HTTPS support to Quality
 
-## Confirmed causes
+## What was changed
 
-- The payload shown contains `// LGVRD16001`. JSON does not allow comments, so the payload parser rejects the whole object.
-- When that invalid saved payload is reopened, the current date-default logic starts from an empty object and rebuilds only `BUDAT_F` and `BUDAT_T`. This is why `BUKRS`, `PRCTR`, and `WERKS` disappear from the screen.
-- The Quality middleware `.env` has no `SAP_*_CA_CERT_PATH`. HTTP needs no certificate setting, but the private/self-signed HTTPS SAP address needs its CA certificate path.
-- Middleware HTTPS support is already implemented in `middleware/server.mjs` and depends on `undici` from `middleware/package.json`.
+The HTTP/HTTPS implementation is already in these project files:
 
-## Changes
+- `middleware/server.mjs`
+  - Uses normal requests for `http://` SAP addresses.
+  - Uses the normal trusted certificate store for public `https://` addresses.
+  - Loads a system-specific PEM CA certificate for private/self-signed HTTPS.
+  - Keeps certificate validation enabled.
+  - Applies the CA to Ping, Test connection, manual sync, and scheduled sync.
+  - Reports safe CA configured/not-configured status without exposing the certificate.
+- `middleware/package.json`, `middleware/package-lock.json`, `middleware/bun.lock`
+  - Add `undici` version 6, which supports the server’s Node.js 20 runtime and allows a CA per SAP request.
+- `middleware/.env.example`
+  - Documents `SAP_DEV_CA_CERT_PATH`, `SAP_QUALITY_CA_CERT_PATH`, and `SAP_PROD_CA_CERT_PATH`.
+- `middleware/README.md` and `deploy/README.md`
+  - Document certificate installation, restart, and testing.
 
-1. **Never replace an invalid payload**
-   - Keep the complete payload text unchanged when reopening an endpoint, even if it is temporarily invalid.
-   - Do not let date-picker or posting-range changes replace an invalid payload with a dates-only object.
+No database migration is needed for HTTP/HTTPS support.
 
-2. **Validate before saving or testing**
-   - Show an inline error below Request payload when it is not a valid JSON object.
-   - Block Save and Test connection until the JSON is valid.
-   - State clearly that JSON comments such as `// ...` are not allowed.
-   - Preserve all valid fields (`BUKRS`, `PRCTR`, `WERKS`, and any future keys) while updating only `BUDAT_F` and `BUDAT_T`.
+## How selection works
 
-3. **Cover the regression**
-   - Add focused tests proving that valid payload fields survive reopen/date updates and invalid payloads are preserved rather than reduced to two fields.
+The certificate variable follows the saved SAP **system key**, not its display label:
 
-4. **Clarify and verify HTTP/HTTPS configuration**
-   - Keep SAP Base URL, client, and username in **SAP Systems**; blank values may use middleware fallbacks.
-   - Keep the SAP password and optional private CA certificate path only in `middleware/.env`.
-   - The CA variable follows the saved system key. If the endpoint selects key `dev`, use `SAP_DEV_CA_CERT_PATH` even when that row’s display environment is QUALITY.
-   - HTTP and publicly trusted HTTPS require no CA path. Private/self-signed HTTPS requires the matching `SAP_<KEY>_CA_CERT_PATH`.
-   - Surface the middleware’s safe “custom CA configured/not configured” status in SAP Systems without exposing certificate contents.
+```text
+System key dev     -> SAP_DEV_PASSWORD and SAP_DEV_CA_CERT_PATH
+System key quality -> SAP_QUALITY_PASSWORD and SAP_QUALITY_CA_CERT_PATH
+System key prod    -> SAP_PROD_PASSWORD and SAP_PROD_CA_CERT_PATH
+```
 
-## Server files to deploy
+The SAP Systems screen supplies Base URL, SAP client, and username. The middleware `.env` supplies the password and optional CA path.
 
-Copy these updated middleware files to `/opt/MIS_Projects/Quality/middleware/`:
+```text
+HTTP                              -> no CA path
+HTTPS with public certificate     -> no CA path
+HTTPS with private/self-signed CA -> matching SAP_<KEY>_CA_CERT_PATH required
+```
 
-- `middleware/server.mjs` — per-system verified HTTPS CA handling; HTTP remains unchanged.
-- `middleware/package.json`
-- `middleware/package-lock.json`
-- `middleware/bun.lock`
-- `middleware/.env.example` — documentation only; do not overwrite the real `.env`.
+## Quality server deployment
 
-Then run `npm install` in the Quality middleware folder and restart `mis-q-middleware` with updated environment values. For a self-signed HTTPS SAP endpoint whose selected key is `dev`, add:
+1. Copy these updated files into `/opt/MIS_Projects/Quality/middleware/`:
+
+```text
+server.mjs
+package.json
+package-lock.json
+bun.lock
+```
+
+Do not overwrite the real `.env` with `.env.example`.
+
+2. Obtain the PEM root/intermediate CA bundle from the SAP/Basis team and install it:
+
+```bash
+sudo install -d -m 750 /opt/MIS_Projects/Quality/middleware/certs
+sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+```
+
+3. The current selected key appears to be `dev`, so add this line to the existing Quality `.env`:
 
 ```text
 SAP_DEV_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
 ```
 
-The PEM must be supplied by the SAP/Basis team, readable by the middleware process, and match the hostname used in the SAP URL. Never disable certificate verification globally.
+Keep `SAP_DEV_BASE_URL`, `SAP_DEV_CLIENT`, and `SAP_DEV_USER` blank if those values are maintained in the SAP Systems screen. Keep `SAP_DEV_PASSWORD` in `.env`.
 
-## Security action required
+4. Install the updated dependency and restart Quality middleware:
 
-The middleware shared secret, SAP password, and database service credential were pasted into chat. Rotate all three on the Quality server before further testing, and update the matching Nginx/shared-secret configuration together.
+```bash
+cd /opt/MIS_Projects/Quality/middleware
+npm install
+pm2 restart mis-q-middleware --update-env
+pm2 logs mis-q-middleware --lines 50
+```
+
+The startup log should show middleware version `1.5.0`, port `3002`, and SAP `dev` CA configured.
 
 ## Validation
 
-- Save and reopen a valid five-field payload; all five fields remain.
-- Enter a payload containing `//`; Save/Test are blocked with an inline error and no content is discarded.
-- Change posting dates; only the two date fields change.
-- Test one HTTP SAP address without a CA path.
-- Test the private HTTPS SAP address with the matching CA path using Ping, Test connection, manual sync, and one scheduled run.
+1. In SAP Systems, save the complete HTTPS SAP Base URL, client, and username.
+2. Click **Ping SAP host**.
+3. Click **Test connection**.
+4. Run one manual sync.
+5. Confirm one scheduled run completes.
+6. If the error is `ERR_TLS_CERT_ALTNAME_INVALID`, use the DNS hostname printed on the SAP certificate instead of its IP address, or ask SAP/Basis for a certificate matching the IP.
+
+## Security action required
+
+Credentials were pasted into chat. Rotate the Quality middleware shared secret, SAP password, and database service credential. Update the matching Nginx shared-secret header when rotating the middleware secret.
