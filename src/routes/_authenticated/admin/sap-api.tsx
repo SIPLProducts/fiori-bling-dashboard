@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { formatDateTimeISTLabel } from "@/lib/format";
 import {
   Activity,
+  AlertTriangle,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
@@ -1271,6 +1272,8 @@ function SystemsTab() {
           draft.environment.toLowerCase() === "production" ? "prod" : draft.environment.toLowerCase();
         const passwordConfigured =
           middlewareStatusesQuery.data?.find((status) => status.key === environmentKey)?.credentials ?? false;
+        const insecureTls =
+          middlewareStatusesQuery.data?.find((status) => status.key === environmentKey)?.insecureTls ?? false;
         return (
           <section key={system.id} className="rounded-md border border-border bg-card p-5 shadow-tile">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -1307,6 +1310,7 @@ function SystemsTab() {
             <SystemFields
               value={draft}
               passwordConfigured={passwordConfigured}
+              insecureTls={insecureTls}
               passwordStatusLoading={middlewareStatusesQuery.isLoading}
               onChange={(next) => setDrafts((prev) => ({ ...prev, [system.id]: next }))}
             />
@@ -1362,11 +1366,13 @@ function SystemsTab() {
 function SystemFields({
   value,
   passwordConfigured,
+  insecureTls = false,
   passwordStatusLoading = false,
   onChange,
 }: {
   value: typeof emptySystem;
   passwordConfigured: boolean;
+  insecureTls?: boolean;
   passwordStatusLoading?: boolean;
   onChange: (next: typeof emptySystem) => void;
 }) {
@@ -1427,6 +1433,12 @@ function SystemFields({
         <Switch checked={value.is_active} onCheckedChange={(v) => set("is_active", v)} />
         <Label>Use as active system</Label>
       </div>
+      {insecureTls ? (
+        <div className="flex items-start gap-2 rounded-sm border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive md:col-span-2">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>HTTPS certificate verification is disabled for this environment. Use this only temporarily on a trusted internal network.</p>
+        </div>
+      ) : null}
     </div>
   );
 }

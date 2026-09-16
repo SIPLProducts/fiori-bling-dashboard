@@ -54,10 +54,14 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.5.2";
+const VERSION = "1.6.0";
 const STARTED_AT = Date.now();
 
 const SAP_DISPATCHERS = new Map();
+
+function envFlag(value) {
+  return String(value || "").trim().toLowerCase() === "true";
+}
 
 /**
  * SAP systems, keyed by the `key` column of the portal's sap_systems table.
@@ -70,6 +74,7 @@ const SYSTEMS = {
     username: process.env.SAP_DEV_USER || "",
     password: process.env.SAP_DEV_PASSWORD || "",
     caCertPath: process.env.SAP_DEV_CA_CERT_PATH || "",
+    tlsInsecure: envFlag(process.env.SAP_DEV_TLS_INSECURE),
   },
   quality: {
     baseUrl: process.env.SAP_QUALITY_BASE_URL || "",
@@ -77,6 +82,7 @@ const SYSTEMS = {
     username: process.env.SAP_QUALITY_USER || "",
     password: process.env.SAP_QUALITY_PASSWORD || "",
     caCertPath: process.env.SAP_QUALITY_CA_CERT_PATH || "",
+    tlsInsecure: envFlag(process.env.SAP_QUALITY_TLS_INSECURE),
   },
   prod: {
     baseUrl: process.env.SAP_PROD_BASE_URL || "",
@@ -84,6 +90,7 @@ const SYSTEMS = {
     username: process.env.SAP_PROD_USER || "",
     password: process.env.SAP_PROD_PASSWORD || "",
     caCertPath: process.env.SAP_PROD_CA_CERT_PATH || "",
+    tlsInsecure: envFlag(process.env.SAP_PROD_TLS_INSECURE),
   },
 };
 
@@ -222,6 +229,7 @@ function resolveSystem(body = {}) {
     username: body.username || configured.username || "",
     password: configured.password || "",
     caCertPath: configured.caCertPath || "",
+    tlsInsecure: configured.tlsInsecure === true,
   };
 }
 
@@ -230,7 +238,20 @@ function resolveSystem(body = {}) {
  * trusted HTTPS continue through the normal fetch path and default trust store.
  */
 function sapFetchOptions(system, url) {
-  if (url.protocol !== "https:" || !system.caCertPath) return {};
+  if (url.protocol !== "https:") return {};
+  if (!system.caCertPath && system.tlsInsecure) {
+    const cacheKey = `insecure:${system.credentialKey}`;
+    let dispatcher = SAP_DISPATCHERS.get(cacheKey);
+    if (!dispatcher) {
+      dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
+      SAP_DISPATCHERS.set(cacheKey, dispatcher);
+    }
+    logLine(
+      `WARNING: SAP ${system.credentialKey} HTTPS certificate verification is DISABLED for this request`,
+    );
+    return { dispatcher };
+  }
+  if (!system.caCertPath) return {};
   const certPath = path.isAbsolute(system.caCertPath)
     ? system.caCertPath
     : path.resolve(HERE, system.caCertPath);
@@ -386,6 +407,7 @@ app.get("/health", requireSharedSecret, (_req, res) => {
         baseUrl: cfg.baseUrl,
         credentials: Boolean(cfg.password),
         customCaConfigured: Boolean(cfg.caCertPath),
+        insecureTls: cfg.tlsInsecure === true,
       })),
   });
 });
@@ -610,8 +632,13 @@ app.listen(PORT, () => {
         cfg.client ? "configured" : "not set"
       } user=${cfg.username ? "configured" : "not set"} password=${cfg.password ? "configured" : "MISSING"} CA=${
         cfg.caCertPath ? "configured" : "not set"
-      }`,
+      } insecure-TLS=${cfg.tlsInsecure ? "ENABLED" : "off"}`,
     );
+    if (cfg.tlsInsecure) {
+      console.warn(
+        `[mis-sap-middleware] WARNING: SAP ${key} certificate verification is disabled. Use only temporarily on a trusted internal network.`,
+      );
+    }
   }
   if (!SHARED_SECRET) {
     console.warn("[mis-sap-middleware] WARNING: MIDDLEWARE_SHARED_SECRET is missing — all protected calls will return 401.");

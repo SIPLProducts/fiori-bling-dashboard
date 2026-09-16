@@ -168,6 +168,20 @@ Use `SAP_PROD_CA_CERT_PATH=/opt/MIS_Projects/Production/middleware/certs/sap-pro
 
 The SAP Systems screen remains the source for the SAP URL, client, and username. The middleware `.env` remains the source for the SAP password and optional CA file path. Do not set `NODE_TLS_REJECT_UNAUTHORIZED=0`; it disables HTTPS security globally.
 
+If SAP cannot provide a certificate, enable temporary insecure mode only for the required environment:
+
+```bash
+# Quality
+echo 'SAP_QUALITY_TLS_INSECURE=true' | sudo tee -a /opt/MIS_Projects/Quality/middleware/.env
+pm2 restart mis-q-middleware --update-env
+
+# Production, only if separately required
+echo 'SAP_PROD_TLS_INSECURE=true' | sudo tee -a /opt/MIS_Projects/Production/middleware/.env
+pm2 restart mis-p-middleware --update-env
+```
+
+This setting is independent for Quality and Production and applies to Ping, Test connection, manual sync, and scheduled sync. Middleware startup logs must show `insecure-TLS=ENABLED` for the selected environment. Test Quality first, then Production. To restore verification, set the matching value to `false` and restart PM2. This is less secure than installing the SAP certificate and must only be used temporarily on the trusted internal network.
+
 ## 1. Build the frontend locally
 
 
