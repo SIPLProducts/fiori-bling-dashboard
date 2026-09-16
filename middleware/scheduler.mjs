@@ -215,18 +215,19 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       const { data: systemRow } = endpoint.system_key
         ? await db
             .from("sap_systems")
-            .select("key, base_url, sap_client, username")
+            .select("key, environment, base_url, sap_client, username")
             .eq("key", endpoint.system_key)
             .maybeSingle()
         : await db
             .from("sap_systems")
-            .select("key, base_url, sap_client, username")
+            .select("key, environment, base_url, sap_client, username")
             .eq("is_active", true)
             .limit(1)
             .maybeSingle();
 
       const system = resolveSystem({
         systemKey: systemRow?.key ?? endpoint.system_key ?? "dev",
+        environment: systemRow?.environment ?? undefined,
         baseUrl: systemRow?.base_url ?? undefined,
         sapClient: systemRow?.sap_client ?? undefined,
         username: systemRow?.username ?? undefined,
@@ -236,6 +237,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       snapshot = {
         source: manual ? "middleware-manual" : "middleware-scheduler",
         systemKey: system.key,
+        environment: system.credentialKey,
         baseUrl: system.baseUrl,
         sapClient: system.client,
         path: endpoint.endpoint_path,
