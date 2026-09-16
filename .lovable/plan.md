@@ -1,48 +1,38 @@
-# Temporary self-signed HTTPS mode for SAP
+# Preserve every distinct SAP sales row
 
-## Goal
-Allow the selected SAP environment to connect over HTTPS without a CA certificate, matching the behavior of `rejectUnauthorized: false`, while keeping this insecure behavior isolated and explicitly configurable.
-
-## Confirmed Quality issue
-The Quality `.env` contains `SAP_QUALITY_TLS_INSECURE` twice: an earlier `false` under the DEV section and a later `true` under Quality. The middleware's `.env` loader preserves the first non-empty value, so startup correctly reports `SAP quality ... insecure-TLS=off` and the SAP request still fails certificate verification. The Node.js 20 deprecation warning is unrelated to this failure.
-
-## Immediate Quality correction
-1. Remove the misplaced `SAP_QUALITY_CA_CERT_PATH=` and `SAP_QUALITY_TLS_INSECURE=false` lines from the DEV section.
-2. Keep exactly one `SAP_QUALITY_TLS_INSECURE=true` line under the Quality section.
-3. Fully recreate the PM2 process so no stale Quality value overrides the file, then save the PM2 process list.
-4. Verify startup says `SAP quality ... password=configured CA=not set insecure-TLS=ENABLED` and prints the insecure-mode warning before testing SAP again.
-5. Run Test connection, one manual sync, and then confirm the next scheduled run no longer reports `DEPTH_ZERO_SELF_SIGNED_CERT`.
+## Confirmed cause
+- SAP returned 4,180 rows, but the current mapper generated only 3,987 unique database keys. Therefore 193 rows were replaced inside that response before the database write.
+- The current key is only `plant + fiscal year + document number + item + GL account`. SAP rows that differ in profit centre, customer, material, amount, or other fields can share that key.
+- The database enforces one row per `record_key`, and the sync uses that key for updates. This explains why 4,180 received rows are not necessarily 4,180 stored rows.
+- The reported combined difference, 6,367 expected versus 6,090 stored, is consistent with additional key collisions across the two SAP responses. The exact 277 collision rows should be confirmed from the response diagnostics after deployment.
 
 ## Changes
 
-1. **Add a per-environment opt-in**
-   - Add `SAP_DEV_TLS_INSECURE`, `SAP_QUALITY_TLS_INSECURE`, and `SAP_PROD_TLS_INSECURE` middleware settings.
-   - Treat only an explicit `true` value as enabled; missing, blank, or any other value remains secure.
-   - Quality and Production are supported independently: use `SAP_QUALITY_TLS_INSECURE=true` and/or `SAP_PROD_TLS_INSECURE=true` only where required.
+1. **Create identity from the full SAP row**
+   - Canonically serialize every SAP row with stable field ordering.
+   - Generate a deterministic SHA-256 key from the complete row, as selected.
+   - Keep the key stable when SAP returns the same fields in a different JSON property order.
+   - Continue merging only exact duplicate SAP rows.
 
-2. **Apply the setting consistently**
-   - Extend the shared SAP connection setup so Test, Ping, manual sync, and scheduled sync all use the same behavior.
-   - HTTPS with a configured CA continues to verify the certificate normally.
-   - HTTPS with no CA and the insecure switch enabled uses a dedicated connection agent with certificate verification disabled.
-   - HTTP remains unchanged.
-   - The setting follows the visible SAP Systems Environment, so QUALITY uses `SAP_QUALITY_*` even if the saved system key is `dev`.
+2. **Make row accounting explicit**
+   - Count exact duplicates separately instead of silently replacing them.
+   - Ensure each completed run reconciles as: `received = stored candidates + invalid rows + exact duplicates`.
+   - Show and log received, unique, exact duplicates, invalid, new, and updated counts so missing-row questions can be answered from one run.
 
-3. **Make insecure operation visible but secret-safe**
-   - Report an `insecureTls` status from middleware health without exposing credentials or certificates.
-   - Log a clear startup warning and a request warning whenever certificate verification is disabled.
-   - Update the SAP Systems status display to warn that HTTPS certificate verification is disabled for that environment.
+3. **Use the same identity everywhere**
+   - Apply the full-row key to scheduled middleware sync, manual middleware sync, and portal-triggered sync.
+   - Regenerate the middleware's shared sync bundle from the same mapper to prevent browser/server differences.
 
-4. **Document deployment and rollback**
-   - Add the new settings to the example environment files and middleware deployment instructions.
-   - Document the separate Quality and Production settings, PM2 restarts, and Ping/Test/manual/scheduled validation steps.
-   - Document rollback: remove or set the relevant environment switch to `false`, then restart middleware after a proper certificate is available.
-   - Warn against duplicate environment-variable names because this middleware intentionally keeps the first non-empty value found.
+4. **Rebuild Quality data once**
+   - Deploy the updated middleware first.
+   - Clear the Quality `zfisales_detail` rows once, then run both required profit-centre payloads again.
+   - Do not mix old five-field keys with new full-row hash keys; otherwise old rows remain alongside newly keyed rows.
+   - Verify the final table count against the sum of unique rows reported by those runs. If SAP returns no exact duplicate rows, the expected count is 6,367.
 
-## Security boundary
-This will not use a global `NODE_TLS_REJECT_UNAUTHORIZED=0`. Only requests for an explicitly enabled SAP environment will bypass certificate verification. SAP credentials and returned data could still be intercepted on that connection, so this mode is temporary and should be restricted to the trusted internal network.
+5. **Verify before Production**
+   - Add mapper tests proving two rows with the same old five-field key but different SAP fields are both retained.
+   - Add a test proving exact duplicate rows still collapse and property order does not alter identity.
+   - Validate Quality counts and totals before applying the same deployment and one-time rebuild to Production.
 
-## Validation
-- Confirm startup reports the selected environment's password configured and insecure TLS enabled.
-- Confirm Ping, Test connection, manual sync, and scheduled sync no longer fail with `DEPTH_ZERO_SELF_SIGNED_CERT` in each enabled environment.
-- Confirm every environment remains certificate-verified unless its own switch is enabled.
-- Confirm disabling the switch restores the current secure failure for an untrusted certificate.
+## Important behavior
+Because the identity uses the complete SAP row, changing any SAP field creates a new identity rather than updating the previous version. This preserves every distinct returned row as requested, but a rolling sync will not automatically remove an older version of a row whose values later change.
