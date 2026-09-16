@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
 
         const endpoint = "ZFISALES";
         const startedAt = new Date().toISOString();
-        const { received, rows, skipped } = mapPayload(payload, endpoint);
+        const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpoint);
 
         const { data: run } = await supabaseAdmin
           .from("sap_sync_runs")
@@ -71,8 +71,14 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
 
           const updated = rows.filter((r) => existing.has(r.record_key)).length;
           const inserted = rows.length - updated;
-          await finish({ status: "success", records_inserted: inserted, records_updated: updated });
-          return Response.json({ received, inserted, updated, skipped });
+          await finish({
+            status: "success",
+            records_inserted: inserted,
+            records_updated: updated,
+            records_skipped: skipped,
+            error_message: `${rows.length} unique; ${duplicates} exact duplicates; ${invalid} invalid`,
+          });
+          return Response.json({ received, unique: rows.length, inserted, updated, skipped, invalid, duplicates });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Sync failed";
           await finish({ status: "error", error_message: message });

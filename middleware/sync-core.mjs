@@ -1,7 +1,7 @@
 // <define:import.meta.env>
 var define_import_meta_env_default = {};
 
-// ../src/lib/zfisales-map.ts
+// src/lib/zfisales-map.ts
 var MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 var str = (v) => v == null ? "" : String(v).trim();
 function toIsoDate(value) {
@@ -32,6 +32,73 @@ var pickField = (row, keys) => {
   }
   return "";
 };
+function canonicalJson(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const object = value;
+  return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`).join(",")}}`;
+}
+function sha256(value) {
+  const rightRotate = (n, amount) => n >>> amount | n << 32 - amount;
+  const at = (values, index) => values[index] ?? 0;
+  const words = [];
+  const bytes = new TextEncoder().encode(value);
+  const bitLength = bytes.length * 8;
+  for (const byte of bytes) words.push(byte);
+  words.push(128);
+  while (words.length % 64 !== 56) words.push(0);
+  const high = Math.floor(bitLength / 4294967296);
+  const low = bitLength >>> 0;
+  for (let shift = 24; shift >= 0; shift -= 8) words.push(high >>> shift & 255);
+  for (let shift = 24; shift >= 0; shift -= 8) words.push(low >>> shift & 255);
+  const primes = [];
+  for (let candidate = 2; primes.length < 64; candidate += 1) {
+    if (primes.every((prime) => candidate % prime !== 0)) primes.push(candidate);
+  }
+  const h = primes.slice(0, 8).map((prime) => Math.sqrt(prime) * 4294967296 >>> 0);
+  const k = primes.map((prime) => Math.cbrt(prime) * 4294967296 >>> 0);
+  for (let offset = 0; offset < words.length; offset += 64) {
+    const w = new Array(64);
+    for (let i = 0; i < 16; i += 1) {
+      const byteAt = offset + i * 4;
+      w[i] = (at(words, byteAt) << 24 | at(words, byteAt + 1) << 16 | at(words, byteAt + 2) << 8 | at(words, byteAt + 3)) >>> 0;
+    }
+    for (let i = 16; i < 64; i += 1) {
+      const prior15 = at(w, i - 15);
+      const prior2 = at(w, i - 2);
+      const s0 = rightRotate(prior15, 7) ^ rightRotate(prior15, 18) ^ prior15 >>> 3;
+      const s1 = rightRotate(prior2, 17) ^ rightRotate(prior2, 19) ^ prior2 >>> 10;
+      w[i] = at(w, i - 16) + s0 + at(w, i - 7) + s1 >>> 0;
+    }
+    let a = at(h, 0);
+    let b = at(h, 1);
+    let c = at(h, 2);
+    let d = at(h, 3);
+    let e = at(h, 4);
+    let f = at(h, 5);
+    let g = at(h, 6);
+    let hh = at(h, 7);
+    for (let i = 0; i < 64; i += 1) {
+      const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      const ch = e & f ^ ~e & g;
+      const temp1 = hh + s1 + ch + at(k, i) + at(w, i) >>> 0;
+      const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      const maj = a & b ^ a & c ^ b & c;
+      const temp2 = s0 + maj >>> 0;
+      hh = g;
+      g = f;
+      f = e;
+      e = d + temp1 >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = temp1 + temp2 >>> 0;
+    }
+    const state = [a, b, c, d, e, f, g, hh];
+    for (let i = 0; i < 8; i += 1) h[i] = at(h, i) + at(state, i) >>> 0;
+  }
+  return h.map((part) => part.toString(16).padStart(8, "0")).join("");
+}
 function extractRows(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
@@ -50,8 +117,8 @@ function mapRow(raw, sourceEndpoint, syncedAt) {
   const docNo = str(pickField(raw, ["BELNR", "belnr", "docNo"]));
   const posnr = str(pickField(raw, ["POSNR", "BUZEI", "posnr", "item"]));
   const gl = str(pickField(raw, ["HKONT", "SAKNR", "hkont", "gl"]));
-  const recordKey = [plant, fiscalYear, docNo, posnr, gl].join("|");
   if (!docNo || !fiscalYear) return null;
+  const recordKey = `sha256:${sha256(canonicalJson(raw))}`;
   const postingDate = toIsoDate(pickField(raw, ["BUDAT", "budat", "postingDate"]));
   return {
     record_key: recordKey,
@@ -127,25 +194,25 @@ function mapPayload(payload, sourceEndpoint) {
   const raws = extractRows(payload);
   const rows = [];
   const seen = /* @__PURE__ */ new Set();
-  let skipped = 0;
+  let invalid = 0;
+  let duplicates = 0;
   for (const r of raws) {
     const mapped = mapRow(r, sourceEndpoint, syncedAt);
     if (!mapped) {
-      skipped += 1;
+      invalid += 1;
       continue;
     }
     if (seen.has(mapped.record_key)) {
-      const idx = rows.findIndex((x) => x.record_key === mapped.record_key);
-      rows[idx] = mapped;
+      duplicates += 1;
       continue;
     }
     seen.add(mapped.record_key);
     rows.push(mapped);
   }
-  return { received: raws.length, rows, skipped };
+  return { received: raws.length, rows, skipped: invalid + duplicates, invalid, duplicates };
 }
 
-// ../src/lib/sap-pull-shared.ts
+// src/lib/sap-pull-shared.ts
 function salvageTruncatedArray(text) {
   const trimmed = text.trimStart();
   if (!trimmed.startsWith("[")) return null;
@@ -252,6 +319,7 @@ function formatBytes(bytes) {
 }
 var IS_STATIC_BUILD = define_import_meta_env_default["VITE_STATIC_BUILD"] === "1";
 export {
+  canonicalJson,
   extractEmbeddedBody,
   extractRows,
   formatBytes,
@@ -259,6 +327,7 @@ export {
   mapPayload,
   mapRow,
   salvageTruncatedArray,
+  sha256,
   toIsoDate,
   withPostingDates
 };

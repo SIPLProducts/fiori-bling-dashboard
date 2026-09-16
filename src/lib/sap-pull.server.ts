@@ -16,7 +16,7 @@ const BATCH = 500;
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
 
-export type SyncCounts = { received: number; inserted: number; updated: number; skipped: number };
+export type SyncCounts = { received: number; unique: number; inserted: number; updated: number; skipped: number; invalid: number; duplicates: number };
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
@@ -36,7 +36,7 @@ export async function storeZfisalesPayload(
 ): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
-  const { received, rows, skipped } = mapPayload(payload, endpointName);
+  const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpointName);
 
   const { data: run } = await db
     .from("sap_sync_runs")
@@ -75,7 +75,7 @@ export async function storeZfisalesPayload(
           ? "No mappable rows in the SAP response — existing data left unchanged"
           : "No data returned — existing data left unchanged",
       });
-      return { received, inserted: 0, updated: 0, skipped };
+      return { received, unique: 0, inserted: 0, updated: 0, skipped, invalid, duplicates };
     }
 
 
@@ -99,8 +99,13 @@ export async function storeZfisalesPayload(
 
     const updated = rows.filter((r) => existing.has(r.record_key)).length;
     const inserted = rows.length - updated;
-    await finish({ status: "success", records_inserted: inserted, records_updated: updated });
-    return { received, inserted, updated, skipped };
+    await finish({
+      status: "success",
+      records_inserted: inserted,
+      records_updated: updated,
+      error_message: `${rows.length} unique; ${duplicates} exact duplicates; ${invalid} invalid`,
+    });
+    return { received, unique: rows.length, inserted, updated, skipped, invalid, duplicates };
   } catch (err) {
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "Upsert failed" });
     throw err;

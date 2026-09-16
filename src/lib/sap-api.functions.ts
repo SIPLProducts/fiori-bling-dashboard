@@ -747,7 +747,7 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
     payload = salvaged;
   }
 
-  const { received, rows, skipped } = mapPayload(payload, endpointName);
+  const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpointName);
   const preview = bodyText.slice(0, 4000);
   if (!rows.length) {
     let from = "";
@@ -798,7 +798,7 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
     }
     const updated = rows.filter((r) => existing.has(r.record_key)).length;
     const inserted = rows.length - updated;
-    const message = `Data synced successfully — ${received.toLocaleString()} records (${inserted.toLocaleString()} new, ${updated.toLocaleString()} updated)`;
+    const message = `Data synced successfully — ${received.toLocaleString()} received, ${rows.length.toLocaleString()} unique, ${duplicates.toLocaleString()} exact duplicates, ${invalid.toLocaleString()} invalid (${inserted.toLocaleString()} new, ${updated.toLocaleString()} updated)`;
     await finish({
       status: "success",
       received,

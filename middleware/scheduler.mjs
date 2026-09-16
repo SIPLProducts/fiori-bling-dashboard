@@ -154,8 +154,8 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint) {
-    const { received, rows, skipped } = mapPayload(payload, endpoint);
-    if (!rows.length) return { received, inserted: 0, updated: 0, skipped };
+    const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpoint);
+    if (!rows.length) return { received, unique: 0, inserted: 0, updated: 0, skipped, invalid, duplicates };
 
     const keys = rows.map((r) => r.record_key);
     const existing = new Set();
@@ -180,7 +180,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       }
     }
     const updated = rows.filter((r) => existing.has(r.record_key)).length;
-    return { received, inserted: rows.length - updated, updated, skipped };
+    return { received, unique: rows.length, inserted: rows.length - updated, updated, skipped, invalid, duplicates };
   }
 
   /**
@@ -304,7 +304,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         duration_ms: Date.now() - startedMs,
         http_status: result.status,
         error_message: counts.received
-          ? null
+          ? `${counts.unique} unique; ${counts.duplicates} exact duplicates; ${counts.invalid} invalid`
           : "No data returned — existing data left unchanged",
       });
       if (counts.inserted + counts.updated > 0) {
@@ -314,7 +314,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
           .eq("name", endpointName);
       }
       logLine(
-        `[${traceId}] sync ${endpointName}: received ${counts.received}, new ${counts.inserted}, updated ${counts.updated}`,
+        `[${traceId}] sync ${endpointName}: received ${counts.received}, unique ${counts.unique}, exact duplicates ${counts.duplicates}, invalid ${counts.invalid}, new ${counts.inserted}, updated ${counts.updated}`,
       );
       return { status: "synced", ...counts };
     } catch (err) {
