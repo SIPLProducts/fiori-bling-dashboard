@@ -79,8 +79,8 @@ export function sha256(value: string): string {
   for (let offset = 0; offset < words.length; offset += 64) {
     const w = new Array<number>(64);
     for (let i = 0; i < 16; i += 1) {
-      const at = offset + i * 4;
-      w[i] = ((at(words, at) << 24) | (at(words, at + 1) << 16) | (at(words, at + 2) << 8) | at(words, at + 3)) >>> 0;
+      const byteAt = offset + i * 4;
+      w[i] = ((at(words, byteAt) << 24) | (at(words, byteAt + 1) << 16) | (at(words, byteAt + 2) << 8) | at(words, byteAt + 3)) >>> 0;
     }
     for (let i = 16; i < 64; i += 1) {
       const prior15 = at(w, i - 15);
