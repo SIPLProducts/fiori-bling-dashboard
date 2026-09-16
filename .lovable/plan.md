@@ -1,35 +1,52 @@
-# Show exact duplicate SAP rows
+# Store every SAP row and refresh it safely
 
-## Goal
-Make every new SAP sync explain which rows were treated as exact duplicates, instead of showing only a number such as “26 exact duplicates.”
+## Confirmed limitation
+The SAP payload shown has no guaranteed permanent line identifier. Fields such as `GJAHR`, `BELNR`, `POSNR`, `HKONT`, and `PRCTR` can form a useful business reference, but they cannot guarantee uniqueness when SAP returns repeated accounting lines. A hash of the complete row preserves different rows, but it also cannot identify an existing row after any value changes.
+
+## Update model
+Treat each SAP response as the complete current snapshot for that exact saved request:
+
+1. Build a **sync scope key** from the endpoint and identifying request filters, such as company, posting-date window, profit centre, and plant.
+2. For every row received, build an **occurrence key** from:
+   - the sync scope key,
+   - the complete canonical SAP row hash,
+   - and that identical row’s occurrence number within the response (`1`, `2`, `3`, etc.).
+3. Save every occurrence. If SAP sends 4,180 array entries, all 4,180 are represented in the database, including 26 byte-for-byte duplicate rows.
+4. After the full new snapshot is stored successfully, remove the older rows belonging to that same sync scope. This makes changed or deleted SAP rows correct without guessing an unreliable unique key.
+5. If fetching or saving fails, retain the prior completed snapshot so the report never becomes partially empty.
 
 ## Changes
 
-1. **Capture duplicate groups during row mapping**
-   - Continue generating each identity as `sha256:` plus the SHA-256 hash of the complete SAP row with consistently sorted field names.
-   - When the same identity appears again in one SAP response, record its hash, total occurrences, duplicate count, and the original SAP row.
-   - Keep the existing behavior: one copy is stored in the sales table and additional exact copies are skipped.
+1. **Database identity and snapshot tracking**
+   - Add snapshot/scope fields needed to distinguish separate endpoint requests and repeated identical rows.
+   - Replace the current full-row-hash-only uniqueness rule with the scoped occurrence key.
+   - Preserve the original SAP object in `raw` and continue mapping its report fields.
 
-2. **Save diagnostics with each sync run**
-   - Add a JSON diagnostics field to the sync history.
-   - Save the duplicate groups for manual tests, scheduled middleware syncs, and direct SAP pushes.
-   - Keep diagnostics bounded: store up to 100 duplicate groups per run and record whether more groups were omitted, preventing unusually repetitive responses from making run history too large.
-   - Do not store the entire SAP response again; only rows proven to be exact duplicates are retained in diagnostics.
+2. **Atomic sync flow**
+   - Stage every received row under a new snapshot identifier in batches.
+   - Validate that the staged count equals the received count.
+   - Activate the new snapshot and remove the previous snapshot for only that request scope.
+   - Record received, stored, replaced, invalid, and failed counts in run history.
 
-3. **Show duplicates in Scheduler health**
-   - Add separate **Duplicates** and **Invalid** counts instead of combining them only as “Skipped.”
-   - In an expanded run, show a duplicate table with the row hash, occurrence count, duplicate count, and the SAP field values.
-   - Provide a copy action for each duplicate row so it can be compared with SAP output.
-   - Older runs without saved diagnostics will continue to display their existing totals and a clear “details not recorded” message.
+3. **Apply everywhere**
+   - Use the same snapshot behavior for scheduled middleware sync, manual Test sync, and direct SAP push.
+   - Rebuild the middleware’s shared sync bundle so Quality and Production use identical mapping.
 
-4. **Keep all sync paths consistent**
-   - Apply the same diagnostics shape to portal-triggered sync, middleware manual sync, scheduled sync, and the public push endpoint.
-   - Rebuild the shared middleware sync bundle and update its version/documentation so Quality and Production run identical logic.
+4. **Scheduler health details**
+   - Show **Received**, **Stored**, **Replaced**, and **Invalid** clearly.
+   - Expanded run details will show the request scope and confirm that exact repeated rows were preserved.
+   - Remove “exact duplicates skipped,” because identical occurrences will no longer be discarded.
 
-5. **Verify accounting and display**
-   - Add tests proving duplicate groups report the correct hash, occurrence count, and original row.
-   - Verify the reconciliation remains: `received = unique + exact duplicates + invalid`.
-   - Verify a new run showing 4,180 received and 26 duplicates stores 4,154 unique rows and exposes those 26 duplicate occurrences in the expanded run.
+5. **Safe transition**
+   - Deploy to Quality first.
+   - Clear the old hash-key data once, run each required SAP request, and verify that 4,180 received produces 4,180 rows for that request scope.
+   - Verify all request scopes together produce the expected total before repeating the one-time reset in Production.
+
+6. **Tests**
+   - Two identical SAP objects in one response are both stored with different occurrence keys.
+   - A later successful run replaces the prior snapshot for only the matching request scope.
+   - Different profit-centre/date request scopes do not delete each other.
+   - Failed or partial writes leave the previous snapshot active.
 
 ## Important behavior
-A duplicate means the complete SAP rows are identical after stable field ordering. If any SAP value differs, the row receives a different hash and is stored separately.
+There is no guessed SAP unique key. Updates are handled by replacing the complete snapshot for the same request scope. This is the only reliable way, with the fields currently supplied, to both preserve every received row and reflect later SAP changes or deletions.
