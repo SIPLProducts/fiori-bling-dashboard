@@ -15,3 +15,4 @@
 - [x] Support SAP over HTTP and securely trusted private-certificate HTTPS in all middleware request paths
 - [x] Make Quality middleware load SAP passwords past blank PM2 variables and report exact key-specific settings
 - [x] Make SAP password and HTTPS CA selection follow the visible SAP Systems Environment
+- [x] Add separate temporary insecure HTTPS switches for DEV, Quality, and Production SAP environments
