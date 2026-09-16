@@ -16,4 +16,4 @@
 - [x] Make Quality middleware load SAP passwords past blank PM2 variables and report exact key-specific settings
 - [x] Make SAP password and HTTPS CA selection follow the visible SAP Systems Environment
 - [x] Add separate temporary insecure HTTPS switches for DEV, Quality, and Production SAP environments
-- [x] Preserve every distinct SAP sales row with full-row identity and reconciled sync counts
+- [x] Preserve every received SAP sales occurrence with scoped snapshot replacement and reconciled sync counts
