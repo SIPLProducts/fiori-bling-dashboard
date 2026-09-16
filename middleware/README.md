@@ -25,6 +25,7 @@ server runtime, so the value is never exposed in browser code.
 | `APP_BASE_URL` | Public URL the portal uses to reach this service (ngrok / LAN / nginx path). Must match the portal's **Node.js middleware URL**. |
 | `MIDDLEWARE_SHARED_SECRET` | Strong secret that exactly matches the protected Lovable Cloud secret. |
 | `SAP_*_BASE_URL` / `_CLIENT` / `_USER` / `_PASSWORD` | Per-environment SAP connection and technical user. |
+| `SAP_*_CA_CERT_PATH` | Optional PEM CA certificate path for an HTTPS SAP system using a private/self-signed certificate. |
 
 `APP_BASE_URL` is the public ngrok/server URL of this middleware. Browser CORS
 and portal signing-key settings are not needed because calls are server-to-server.
@@ -86,6 +87,29 @@ location /sap-middleware/ {
 | `HTTP 401 Invalid or missing x-shared-secret` | The Lovable Cloud and middleware secret values do not match. |
 | Portal server could not reach middleware | The ngrok URL is wrong, offline or inaccessible. |
 | `HTTP 502 No SAP base URL configured` | The selected SAP system has no base URL. |
+| `DEPTH_ZERO_SELF_SIGNED_CERT` | SAP uses a private/self-signed HTTPS certificate. Configure its CA certificate path. |
+| `ERR_TLS_CERT_ALTNAME_INVALID` | The SAP URL hostname/IP does not match the certificate. Use the certificate's DNS name or have SAP issue a matching certificate. |
+
+### SAP HTTP and HTTPS
+
+- `http://` SAP URLs work without certificate configuration.
+- `https://` SAP URLs with a publicly trusted certificate work without extra configuration.
+- For private/self-signed HTTPS, obtain the root/intermediate CA bundle from the SAP/Basis team and store it as a PEM file on the middleware server.
+
+Quality example:
+
+```bash
+sudo install -d -m 750 /opt/MIS_Projects/Quality/middleware/certs
+sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+```
+
+```dotenv
+SAP_QUALITY_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+```
+
+Production uses the equivalent `SAP_PROD_CA_CERT_PATH`. Restart the matching PM2 process after changing `.env`. The middleware applies this CA only to that SAP system; certificate verification remains enabled for every connection.
+
+If SAP provides a self-signed leaf certificate instead of a CA chain, the PEM file may contain that exact certificate. If SAP renews it, replace the file and restart the middleware. Never use `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 
 ## Security notes
 
@@ -95,6 +119,7 @@ location /sap-middleware/ {
 - Use a long random shared secret and rotate it if it is ever disclosed.
 - Rotate any SAP password or token-verification value that has been shared
   outside the server.
+- Keep SAP CA files readable only by the middleware service account. CA files are not passwords, but they must not be editable by untrusted users.
 
 ## Did the request actually reach SAP?
 

@@ -151,6 +151,23 @@ ENV=production MIDDLEWARE_DIR=/opt/MIS_Projects/Production/middleware \
 The script installs dependencies, builds the shared sync bundle, restarts PM2,
 and prints a `curl` command you can use to force an immediate test run.
 
+### SAP over HTTP or HTTPS
+
+HTTP SAP addresses require no additional setting. Publicly trusted HTTPS also works automatically. If SAP uses a private/self-signed HTTPS certificate, obtain its PEM root/intermediate CA bundle from the SAP/Basis team and configure it only on the matching middleware server:
+
+```bash
+# Quality
+sudo install -d -m 750 /opt/MIS_Projects/Quality/middleware/certs
+sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+echo 'SAP_QUALITY_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem' \
+  | sudo tee -a /opt/MIS_Projects/Quality/middleware/.env
+pm2 restart mis-q-middleware --update-env
+```
+
+Use `SAP_PROD_CA_CERT_PATH=/opt/MIS_Projects/Production/middleware/certs/sap-prod-ca.pem` and restart `mis-p-middleware` for Production. Test Quality first using **Ping SAP host**, **Test connection**, and one manual sync; then repeat in Production.
+
+The SAP Systems screen remains the source for the SAP URL, client, and username. The middleware `.env` remains the source for the SAP password and optional CA file path. Do not set `NODE_TLS_REJECT_UNAUTHORIZED=0`; it disables HTTPS security globally.
+
 ## 1. Build the frontend locally
 
 

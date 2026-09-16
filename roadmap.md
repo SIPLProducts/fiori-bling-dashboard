@@ -12,3 +12,4 @@
 - [x] Replace public Demo access with protected Admin test login from User Management
 - [x] Prevent SAP API Settings crashes from empty/invalid systems and clarify configuration ownership
 - [x] Show middleware-only SAP password status and use UI-first connection settings with `.env` fallback
+- [x] Support SAP over HTTP and securely trusted private-certificate HTTPS in all middleware request paths
