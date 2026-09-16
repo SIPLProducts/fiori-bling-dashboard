@@ -28,3 +28,10 @@ test("property order does not change full-row identity", () => {
   const second = { PRCTR: "A", GJAHR: 2026, BELNR: "1" };
   assert.equal(sha256(canonicalJson(first)), sha256(canonicalJson(second)));
 });
+
+test("SHA-256 implementation matches the standard digest", () => {
+  assert.equal(
+    sha256("abc"),
+    "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+  );
+});

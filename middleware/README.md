@@ -201,11 +201,27 @@ is hard-coded:
 
 SAP passwords still come only from this service's `.env`.
 
-Each run writes a `sap_sync_runs` row (received / new / updated / skipped,
+Each run writes a `sap_sync_runs` row (received / unique / new / updated / skipped,
 bytes, duration, HTTP status, error) and updates the endpoint's last run and
 last synced stamps, so **SAP API Settings → Scheduler** shows real history. Only
 the newest 6 runs per endpoint are kept. Rows are inserted or updated by
-`record_key`; an empty SAP response never deletes anything.
+`record_key`; an empty SAP response never deletes anything. Version 1.7.0 builds
+`record_key` from a canonical SHA-256 hash of the complete SAP row, so rows that
+share document fields but differ elsewhere are retained. Exact duplicate rows
+are counted separately and stored once.
+
+### One-time rebuild after upgrading to 1.7.0
+
+The old five-field keys and new full-row keys must not be mixed. After deploying
+the updated `server.mjs`, `scheduler.mjs`, and `sync-core.mjs`, clear Quality once:
+
+```sql
+TRUNCATE TABLE public.zfisales_detail;
+```
+
+Then run every required Sales KPI payload again and verify that the database row
+count equals the sum of each run's unique count. Validate Quality totals before
+repeating the same one-time process in Production.
 
 Force one run from the server:
 
