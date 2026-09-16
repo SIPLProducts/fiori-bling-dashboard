@@ -355,6 +355,7 @@ export type TestResult = {
 export type MiddlewareSystemStatus = {
   key: string;
   credentials: boolean;
+  insecureTls: boolean;
 };
 
 export type OutboundRequest = {
@@ -485,7 +486,11 @@ export async function getMiddlewareSystemStatuses(): Promise<MiddlewareSystemSta
     if (!entry || typeof entry !== "object") return [];
     const row = entry as Record<string, unknown>;
     if (typeof row["key"] !== "string") return [];
-    return [{ key: row["key"], credentials: row["credentials"] === true }];
+    return [{
+      key: row["key"],
+      credentials: row["credentials"] === true,
+      insecureTls: row["insecureTls"] === true,
+    }];
   });
 }
 

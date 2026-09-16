@@ -26,6 +26,7 @@ server runtime, so the value is never exposed in browser code.
 | `MIDDLEWARE_SHARED_SECRET` | Strong secret that exactly matches the protected Lovable Cloud secret. |
 | `SAP_*_BASE_URL` / `_CLIENT` / `_USER` / `_PASSWORD` | Per-environment SAP connection and technical user. |
 | `SAP_*_CA_CERT_PATH` | Optional PEM CA certificate path for an HTTPS SAP system using a private/self-signed certificate. |
+| `SAP_*_TLS_INSECURE` | Temporary per-environment fallback. Set exactly `true` to disable certificate verification only for that SAP environment. |
 
 `APP_BASE_URL` is the public ngrok/server URL of this middleware. Browser CORS
 and portal signing-key settings are not needed because calls are server-to-server.
@@ -87,7 +88,7 @@ location /sap-middleware/ {
 | `HTTP 401 Invalid or missing x-shared-secret` | The Lovable Cloud and middleware secret values do not match. |
 | Portal server could not reach middleware | The ngrok URL is wrong, offline or inaccessible. |
 | `HTTP 502 No SAP base URL configured` | The selected SAP system has no base URL. |
-| `DEPTH_ZERO_SELF_SIGNED_CERT` | SAP uses a private/self-signed HTTPS certificate. Configure its CA certificate path. |
+| `DEPTH_ZERO_SELF_SIGNED_CERT` | SAP uses a private/self-signed HTTPS certificate. Configure its CA certificate path, or temporarily enable the matching insecure TLS switch. |
 | `ERR_TLS_CERT_ALTNAME_INVALID` | The SAP URL hostname/IP does not match the certificate. Use the certificate's DNS name or have SAP issue a matching certificate. |
 
 ### SAP HTTP and HTTPS
@@ -113,6 +114,18 @@ The variable prefix follows the selected Environment: `DEV` uses `SAP_DEV_*`, `Q
 The SAP Systems screen supplies the HTTPS URL, client, and username. Those matching `.env` values may remain blank. The password and private CA path always come from `.env`.
 
 If SAP provides a self-signed leaf certificate instead of a CA chain, the PEM file may contain that exact certificate. If SAP renews it, replace the file and restart the middleware. Never use `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
+If SAP cannot supply a certificate, temporary insecure mode can be enabled independently per environment:
+
+```dotenv
+# Quality only
+SAP_QUALITY_TLS_INSECURE=true
+
+# Production only, if separately required
+SAP_PROD_TLS_INSECURE=true
+```
+
+Only the explicit value `true` enables it. A configured CA takes priority and remains verified. Restart the matching PM2 process after changing the setting. Startup and request logs display a warning while it is active. Remove the line or set it to `false` after installing a proper certificate. This bypass exposes SAP credentials and data to interception, so restrict it to a trusted internal network.
 
 ## Security notes
 
