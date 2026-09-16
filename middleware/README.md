@@ -96,7 +96,7 @@ location /sap-middleware/ {
 - `https://` SAP URLs with a publicly trusted certificate work without extra configuration.
 - For private/self-signed HTTPS, obtain the root/intermediate CA bundle from the SAP/Basis team and store it as a PEM file on the middleware server.
 
-Quality example:
+Quality-server example when the saved **SAP system key is `dev`**:
 
 ```bash
 sudo install -d -m 750 /opt/MIS_Projects/Quality/middleware/certs
@@ -104,10 +104,13 @@ sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/cert
 ```
 
 ```dotenv
-SAP_QUALITY_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+SAP_DEV_PASSWORD=<SAP password>
+SAP_DEV_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
 ```
 
-Production uses the equivalent `SAP_PROD_CA_CERT_PATH`. Restart the matching PM2 process after changing `.env`. The middleware applies this CA only to that SAP system; certificate verification remains enabled for every connection.
+The variable prefix follows the saved SAP system key, not the name of the server hosting the portal: `dev` uses `SAP_DEV_*`, `quality` uses `SAP_QUALITY_*`, and `prod` uses `SAP_PROD_*`. Restart the matching PM2 process after changing `.env`. The middleware applies this CA only to that SAP system; certificate verification remains enabled for every connection.
+
+The SAP Systems screen supplies the HTTPS URL, client, and username. Those matching `.env` values may remain blank. The password and private CA path always come from `.env`.
 
 If SAP provides a self-signed leaf certificate instead of a CA chain, the PEM file may contain that exact certificate. If SAP renews it, replace the file and restart the middleware. Never use `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 

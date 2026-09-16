@@ -425,6 +425,9 @@ Run these after every migration in `supabase/migrations/` has been applied.
    SAP_DEV_CLIENT=243
    SAP_DEV_USER=SIPL_MOUNIKA
    SAP_DEV_PASSWORD=<SAP password>
+    # For a private/self-signed HTTPS certificate only. The DEV prefix is used
+    # because the saved SAP Systems key is dev, even on the Quality server.
+    SAP_DEV_CA_CERT_PATH=/opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
    # Automatic scheduled sync — the static portal has no app server, so the
    # middleware runs the scheduler. Both values are server-side only.
    SUPABASE_URL=http://127.0.0.1:8000                 # Production: :9010
@@ -434,10 +437,27 @@ Run these after every migration in `supabase/migrations/` has been applied.
    ```bash
    cd /opt/MIS_Projects/Quality/middleware
    npm install --omit=dev
-   pm2 restart mis-q-middleware || pm2 start server.mjs --name mis-q-middleware
+    pm2 restart mis-q-middleware --update-env || pm2 start server.mjs --name mis-q-middleware
    pm2 save
    pm2 logs mis-q-middleware --lines 20   # expect: "scheduler started"
    ```
+
+    For HTTPS with a private/self-signed certificate, first obtain the PEM root/intermediate certificate from SAP/Basis and install it:
+
+    ```bash
+    sudo install -d -m 750 /opt/MIS_Projects/Quality/middleware/certs
+    sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
+    ```
+
+    The environment-variable prefix follows the saved SAP system key: `dev` → `SAP_DEV_*`, `quality` → `SAP_QUALITY_*`, `prod` → `SAP_PROD_*`. If startup still reports a missing password after `.env` is updated, remove inherited SAP variables when recreating PM2:
+
+    ```bash
+    pm2 delete mis-q-middleware
+    env -u SAP_DEV_PASSWORD -u SAP_DEV_CA_CERT_PATH \
+      pm2 start server.mjs --name mis-q-middleware --cwd /opt/MIS_Projects/Quality/middleware
+    pm2 save
+    pm2 logs mis-q-middleware --lines 30
+    ```
 
    Force one sync to verify before waiting for the interval:
 
