@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
+import { Agent } from "undici";
 import WebSocket from "ws";
 import { createScheduler } from "./scheduler.mjs";
 
@@ -50,8 +51,10 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.4.1";
+const VERSION = "1.5.0";
 const STARTED_AT = Date.now();
+
+const SAP_DISPATCHERS = new Map();
 
 /**
  * SAP systems, keyed by the `key` column of the portal's sap_systems table.
@@ -63,18 +66,21 @@ const SYSTEMS = {
     client: process.env.SAP_DEV_CLIENT || "",
     username: process.env.SAP_DEV_USER || "",
     password: process.env.SAP_DEV_PASSWORD || "",
+    caCertPath: process.env.SAP_DEV_CA_CERT_PATH || "",
   },
   quality: {
     baseUrl: process.env.SAP_QUALITY_BASE_URL || "",
     client: process.env.SAP_QUALITY_CLIENT || "",
     username: process.env.SAP_QUALITY_USER || "",
     password: process.env.SAP_QUALITY_PASSWORD || "",
+    caCertPath: process.env.SAP_QUALITY_CA_CERT_PATH || "",
   },
   prod: {
     baseUrl: process.env.SAP_PROD_BASE_URL || "",
     client: process.env.SAP_PROD_CLIENT || "",
     username: process.env.SAP_PROD_USER || "",
     password: process.env.SAP_PROD_PASSWORD || "",
+    caCertPath: process.env.SAP_PROD_CA_CERT_PATH || "",
   },
 };
 
@@ -198,7 +204,37 @@ function resolveSystem(body = {}) {
     client: body.sapClient || configured.client || "",
     username: body.username || configured.username || "",
     password: configured.password || "",
+    caCertPath: configured.caCertPath || "",
   };
+}
+
+/**
+ * Use a private CA only for the matching SAP HTTPS system. HTTP and publicly
+ * trusted HTTPS continue through the normal fetch path and default trust store.
+ */
+function sapFetchOptions(system, url) {
+  if (url.protocol !== "https:" || !system.caCertPath) return {};
+  const certPath = path.isAbsolute(system.caCertPath)
+    ? system.caCertPath
+    : path.resolve(HERE, system.caCertPath);
+  const cached = SAP_DISPATCHERS.get(certPath);
+  if (cached) return { dispatcher: cached };
+
+  let ca;
+  try {
+    ca = fs.readFileSync(certPath, "utf8");
+  } catch (error) {
+    throw new Error(
+      `SAP CA certificate for system "${system.key}" could not be read at ${certPath}: ${error?.message ?? error}`,
+    );
+  }
+  if (!ca.includes("-----BEGIN CERTIFICATE-----")) {
+    throw new Error(`SAP CA certificate for system "${system.key}" is not a valid PEM certificate: ${certPath}`);
+  }
+
+  const dispatcher = new Agent({ connect: { ca, rejectUnauthorized: true } });
+  SAP_DISPATCHERS.set(certPath, dispatcher);
+  return { dispatcher };
 }
 
 function buildUrl(system, path, query = {}) {
@@ -228,11 +264,11 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
   if (!system.password) {
     throw new Error(`SAP password is not configured for system "${system.key}" in middleware .env`);
   }
-  const url = buildUrl(system, path, query || {});
+  const url = new URL(buildUrl(system, path, query || {}));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const started = Date.now();
-  logLine(`[${traceId}] -> SAP ${method} ${url}`);
+  logLine(`[${traceId}] -> SAP ${method} ${url.toString()}`);
   logLine(
     `[${traceId}]    system=${system.key} auth=${system.username ? "basic" : "none"} user=${
       system.username || "-"
@@ -245,6 +281,7 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
   try {
     const auth = Buffer.from(`${system.username}:${system.password}`).toString("base64");
     const res = await fetch(url, {
+      ...sapFetchOptions(system, url),
       method,
       signal: controller.signal,
       headers: {
@@ -283,7 +320,7 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
     return {
       status: res.status,
       ok: res.ok,
-      url,
+      url: url.toString(),
       durationMs,
       body: text,
       contentType: res.headers.get("content-type") ?? null,
@@ -297,9 +334,9 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
       }`,
     );
     const wrapped = new Error(
-      `${err?.message ?? "Request failed"}${cause ? ` (${cause})` : ""} — target ${url}`,
+      `${err?.message ?? "Request failed"}${cause ? ` (${cause})` : ""} — target ${url.toString()}`,
     );
-    wrapped.url = url;
+    wrapped.url = url.toString();
     wrapped.durationMs = durationMs;
     throw wrapped;
   } finally {
@@ -317,7 +354,12 @@ app.get("/health", requireSharedSecret, (_req, res) => {
     baseUrl: APP_BASE_URL || null,
     uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
     systems: Object.entries(SYSTEMS)
-      .map(([key, cfg]) => ({ key, baseUrl: cfg.baseUrl, credentials: Boolean(cfg.password) })),
+      .map(([key, cfg]) => ({
+        key,
+        baseUrl: cfg.baseUrl,
+        credentials: Boolean(cfg.password),
+        customCaConfigured: Boolean(cfg.caCertPath),
+      })),
   });
 });
 
@@ -354,7 +396,11 @@ app.get("/diag/sap", requireSharedSecret, async (req, res) => {
   const timer = setTimeout(() => controller.abort(), Math.min(REQUEST_TIMEOUT_MS, 10000));
   logLine(`[${traceId}] -> ping ${url.origin}`);
   try {
-    const probe = await fetch(url.origin, { method: "GET", signal: controller.signal });
+    const probe = await fetch(url.origin, {
+      ...sapFetchOptions(system, url),
+      method: "GET",
+      signal: controller.signal,
+    });
     const durationMs = Date.now() - started;
     logLine(`[${traceId}] <- ping ${probe.status} in ${durationMs}ms`);
     res.json({
@@ -532,6 +578,9 @@ app.listen(PORT, () => {
         cfg.username || "-"
       } password=${cfg.password ? "configured" : "MISSING"}`,
     );
+    if (cfg.caCertPath) {
+      console.log(`[mis-sap-middleware] SAP ${key.padEnd(8)} CA     : configured`);
+    }
   }
   if (!SHARED_SECRET) {
     console.warn("[mis-sap-middleware] WARNING: MIDDLEWARE_SHARED_SECRET is missing — all protected calls will return 401.");
