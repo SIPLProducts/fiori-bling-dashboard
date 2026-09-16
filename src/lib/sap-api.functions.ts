@@ -604,19 +604,18 @@ type SyncRunResult = {
   received: number;
   inserted: number;
   updated: number;
+  stored?: number;
+  replaced?: number;
   skipped: number;
   durationMs: number;
   httpStatus: number | null;
   preview: string | null;
 };
 
-const UPSERT_BATCH = 500;
-const EXISTING_KEY_BATCH = 40;
-
 /**
- * Static build only: the call -> parse -> upsert round trip runs in the
- * browser, hitting the middleware through the same-origin `/sap-mw/` bridge.
- * Mirrors the server pull, including the truncated-payload salvage.
+ * Static build only: ask the middleware to run the same complete snapshot
+ * workflow used by scheduled syncs. This keeps manual and scheduled writes
+ * identical and prevents a browser interruption from exposing partial data.
  */
 async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResult> {
   const empty = { received: 0, inserted: 0, updated: 0, skipped: 0, preview: null, httpStatus: null };
@@ -629,211 +628,43 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
     ...extra,
   });
 
-  const { data: endpoint } = await supabase
-    .from("sap_endpoints")
-    .select("name, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, is_active, posting_range")
-    .eq("name", endpointName)
-    .maybeSingle();
-  if (!endpoint) return fail(`Endpoint ${endpointName} is not configured`);
-  if (!endpoint.is_active) {
-    return { status: "skipped", message: "Endpoint is inactive", ...empty, durationMs: 0 };
-  }
-
-  const { data: system } = endpoint.system_key
-    ? await supabase.from("sap_systems").select("key, environment, base_url, sap_client, username").eq("key", endpoint.system_key).maybeSingle()
-    : await supabase.from("sap_systems").select("key, environment, base_url, sap_client, username").eq("is_active", true).limit(1).maybeSingle();
-
-  const outbound = {
-    systemKey: system?.key ?? null,
-    environment: system?.environment ?? null,
-    baseUrl: system?.base_url ?? null,
-    sapClient: system?.sap_client ?? null,
-    username: system?.username ?? null,
-    path: endpoint.endpoint_path,
-    method: endpoint.http_method,
-    authType: endpoint.auth_type,
-    query: keyValueObject(endpoint.query_params),
-    headers: keyValueObject(endpoint.headers),
-    body: withPostingDates(endpoint.body_template, endpoint.posting_range),
-  };
-
-  const startedAt = new Date(started).toISOString();
-  const { data: openedRun, error: openRunError } = await supabase.rpc(
-    "start_sync_run",
-    {
-      _endpoint: endpointName,
-      _started_at: startedAt,
-      _request_snapshot: outbound,
-    },
-  );
-  if (openRunError) return fail(`Could not record sync run: ${openRunError.message}`);
-  const runId = openedRun;
-  const finish = async (values: {
-    status: "success" | "error" | "skipped";
-    received?: number;
-    inserted?: number;
-    updated?: number;
-    skipped?: number;
-    bytes?: number;
-    durationMs?: number;
-    httpStatus?: number | null;
-    message?: string | null;
-  }) => {
-    if (!runId) return;
-    const { error } = await supabase.rpc("finish_sync_run", {
-      _run_id: runId,
-      _status: values.status,
-      _records_received: values.received ?? 0,
-      _records_inserted: values.inserted ?? 0,
-      _records_updated: values.updated ?? 0,
-      _records_skipped: values.skipped ?? 0,
-      _response_bytes: values.bytes ?? 0,
-      _duration_ms: values.durationMs ?? Date.now() - started,
-      ...(values.httpStatus == null ? {} : { _http_status: values.httpStatus }),
-      ...(values.message == null ? {} : { _message: values.message }),
-    });
-    if (error) throw new Error(`Could not finish sync run: ${error.message}`);
-  };
-
-  let response: Response;
   try {
-    response = await fetch(`${STATIC_MIDDLEWARE_BASE}/sap/call`, {
+    const response = await fetch(`${STATIC_MIDDLEWARE_BASE}/sync/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(outbound),
+      body: JSON.stringify({ endpoint: endpointName }),
       signal: AbortSignal.timeout(600000),
     });
-  } catch (err) {
-    const message = `Middleware unreachable (${err instanceof Error ? err.message : "fetch failed"}) — SAP was not contacted`;
-    await finish({ status: "error", message });
-    return fail(message);
-  }
-
-  const text = await response.text();
-  const bytes = new TextEncoder().encode(text).length;
-  const durationMs = Date.now() - started;
-  let envelope: Record<string, unknown> = {};
-  try {
-    envelope = JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    envelope = {};
-  }
-
-  if (!response.ok) {
-    const detail = typeof envelope["message"] === "string" ? (envelope["message"] as string) : "";
-    const hop = `Middleware returned HTTP ${response.status}`;
-    const message = detail ? `${hop}: ${detail}` : hop;
-    await finish({ status: "error", message, bytes, durationMs, httpStatus: response.status });
-    return fail(message, { durationMs, httpStatus: response.status });
-  }
-
-  const bodyText =
-    (typeof envelope["body"] === "string" ? (envelope["body"] as string) : extractEmbeddedBody(text)) ?? text;
-  let payload: unknown;
-  try {
-    payload = JSON.parse(bodyText);
-  } catch {
-    const salvaged = salvageTruncatedArray(bodyText);
-    if (!salvaged) {
-      const preview = bodyText.slice(0, 200).replace(/\s+/g, " ");
-      const message = `SAP returned ${formatBytes(bytes)} that could not be parsed as JSON — starts with: ${preview}`;
-      await finish({ status: "error", message, bytes, durationMs, httpStatus: response.status });
-      return fail(message, {
-        durationMs,
+    const result = await response.json() as Record<string, unknown>;
+    const status = String(result["status"] ?? (response.ok ? "synced" : "error"));
+    if (!response.ok || status === "error") {
+      return fail(String(result["message"] ?? `Middleware returned HTTP ${response.status}`), {
+        durationMs: Date.now() - started,
         httpStatus: response.status,
-        preview,
       });
     }
-    payload = salvaged;
-  }
-
-  const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpointName);
-  const preview = bodyText.slice(0, 4000);
-  if (!rows.length) {
-    let from = "";
-    let to = "";
-    try {
-      const requestBody = JSON.parse(outbound.body ?? "{}") as Record<string, unknown>;
-      from = String(requestBody["BUDAT_F"] ?? "");
-      to = String(requestBody["BUDAT_T"] ?? "");
-    } catch {
-      // Preserve a useful no-data message for non-JSON request bodies.
-    }
-    const displayDate = (value: string) =>
-      /^\d{8}$/.test(value) ? `${value.slice(6, 8)}-${value.slice(4, 6)}-${value.slice(0, 4)}` : value;
-    const range = from && to ? ` (${displayDate(from)} to ${displayDate(to)})` : "";
+    const received = Number(result["received"] ?? 0);
+    const stored = Number(result["stored"] ?? 0);
+    const replaced = Number(result["replaced"] ?? 0);
+    const invalid = Number(result["invalid"] ?? 0);
     const message = received
-      ? "No mappable rows in the SAP response — existing data left unchanged"
-      : `No data available for this selection${range}`;
-    await finish({ status: "success", received, skipped, bytes, durationMs, httpStatus: response.status, message });
+      ? `Data synced successfully — ${received.toLocaleString()} received, ${stored.toLocaleString()} stored, ${replaced.toLocaleString()} replaced, ${invalid.toLocaleString()} invalid`
+      : "No data available for this selection — existing data left unchanged";
     return {
-      status: "synced",
+      status: status === "skipped" ? "skipped" : "synced",
       message,
       received,
-      inserted: 0,
+      inserted: stored,
       updated: 0,
-      skipped,
-      durationMs,
+      stored,
+      replaced,
+      skipped: Number(result["skipped"] ?? 0),
+      durationMs: Date.now() - started,
       httpStatus: response.status,
-      preview,
-    };
-  }
-
-  try {
-    const keys = rows.map((r) => r.record_key);
-    const existing = new Set<string>();
-    for (let i = 0; i < keys.length; i += EXISTING_KEY_BATCH) {
-      const { data, error } = await supabase
-        .from("zfisales_detail")
-        .select("record_key")
-        .in("record_key", keys.slice(i, i + EXISTING_KEY_BATCH));
-      if (error) throw error;
-      for (const r of data ?? []) existing.add(r.record_key);
-    }
-    for (let i = 0; i < rows.length; i += UPSERT_BATCH) {
-      const { error } = await supabase
-        .from("zfisales_detail")
-        .upsert(rows.slice(i, i + UPSERT_BATCH) as never, { onConflict: "record_key" });
-      if (error) throw error;
-    }
-    const updated = rows.filter((r) => existing.has(r.record_key)).length;
-    const inserted = rows.length - updated;
-    const message = `Data synced successfully — ${received.toLocaleString()} received, ${rows.length.toLocaleString()} unique, ${duplicates.toLocaleString()} exact duplicates, ${invalid.toLocaleString()} invalid (${inserted.toLocaleString()} new, ${updated.toLocaleString()} updated)`;
-    await finish({
-      status: "success",
-      received,
-      inserted,
-      updated,
-      skipped,
-      bytes,
-      durationMs,
-      httpStatus: response.status,
-      message,
-    });
-    const now = new Date().toISOString();
-    await supabase
-      .from("sap_endpoints")
-      .update({
-        ...(inserted + updated > 0 ? { last_synced_at: now } : {}),
-        last_run_at: now,
-        last_run_status: "success",
-      })
-      .eq("name", endpointName);
-    return {
-      status: "synced",
-      message,
-      received,
-      inserted,
-      updated,
-      skipped,
-      durationMs,
-      httpStatus: response.status,
-      preview,
+      preview: null,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Upsert failed";
-    await finish({ status: "error", received, skipped, bytes, durationMs, httpStatus: response.status, message });
-    return fail(message, { durationMs, httpStatus: response.status, preview });
+    return fail(`Middleware unreachable (${err instanceof Error ? err.message : "fetch failed"}) — SAP was not contacted`);
   }
 }
 
@@ -908,12 +739,17 @@ export type SyncRun = {
   records_received: number;
   records_inserted: number;
   records_updated: number;
+  records_stored: number;
+  records_replaced: number;
+  records_invalid: number;
   records_skipped: number;
   response_bytes: number;
   duration_ms: number;
   http_status: number | null;
   error_message: string | null;
   request_snapshot: unknown;
+  sync_scope_key: string | null;
+  snapshot_id: string | null;
 };
 
 /** Newest run per endpoint, keyed by endpoint name — drives the card badges. */
@@ -921,7 +757,7 @@ export async function listLatestRuns(): Promise<Record<string, SyncRun>> {
   const { data, error } = await supabase
     .from("sap_sync_runs")
     .select(
-      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot",
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_stored, records_replaced, records_invalid, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot, sync_scope_key, snapshot_id",
     )
     .order("started_at", { ascending: false })
     .limit(200);
@@ -939,7 +775,7 @@ export async function listSyncRuns(endpointName: string, limit = 10): Promise<Sy
   const { data, error } = await supabase
     .from("sap_sync_runs")
     .select(
-      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot",
+      "id, endpoint, status, started_at, finished_at, records_received, records_inserted, records_updated, records_stored, records_replaced, records_invalid, records_skipped, response_bytes, duration_ms, http_status, error_message, request_snapshot, sync_scope_key, snapshot_id",
     )
     .eq("endpoint", endpointName)
     .order("started_at", { ascending: false })
@@ -969,8 +805,10 @@ const runEndpointSyncServer = createServerFn({ method: "POST" })
         status: "synced" as const,
         message: "",
         received: result.received,
-        inserted: result.inserted,
-        updated: result.updated,
+        inserted: result.stored,
+        updated: 0,
+        stored: result.stored,
+        replaced: result.replaced,
         skipped: result.skipped,
         durationMs: result.durationMs ?? 0,
         httpStatus: result.httpStatus ?? null,

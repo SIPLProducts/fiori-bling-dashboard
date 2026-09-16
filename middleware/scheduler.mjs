@@ -22,9 +22,6 @@ import {
 } from "./sync-core.mjs";
 
 const BATCH = 500;
-// The duplicate check sends record keys in the request URL; long keys make
-// large batches exceed the gateway URL limit. Keep lookups small.
-const LOOKUP_BATCH = 40;
 const PROGRESS_EVERY = 5000;
 const RUN_HISTORY_LIMIT = 6;
 /** A run older than this is treated as dead, so a crash cannot block forever. */
@@ -153,34 +150,33 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
   }
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
-  async function storeRows(payload, endpoint) {
-    const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpoint);
-    if (!rows.length) return { received, unique: 0, inserted: 0, updated: 0, skipped, invalid, duplicates };
+  async function storeRows(payload, endpoint, requestSnapshot) {
+    const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+      payload,
+      endpoint,
+      requestSnapshot,
+    );
+    if (!rows.length) return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
 
-    const keys = rows.map((r) => r.record_key);
-    const existing = new Set();
-    for (let i = 0; i < keys.length; i += LOOKUP_BATCH) {
-      const { data, error } = await db
-        .from("zfisales_detail")
-        .select("record_key")
-        .in("record_key", keys.slice(i, i + LOOKUP_BATCH));
-      if (error) throw new Error(error.message);
-      for (const r of data ?? []) existing.add(r.record_key);
-      if (keys.length > PROGRESS_EVERY && (i + LOOKUP_BATCH) % PROGRESS_EVERY < LOOKUP_BATCH) {
-        console.log(`[mis-sap-middleware] lookup progress: ${Math.min(i + LOOKUP_BATCH, keys.length)}/${keys.length}`);
-      }
-    }
     for (let i = 0; i < rows.length; i += BATCH) {
       const { error } = await db
         .from("zfisales_detail")
-        .upsert(rows.slice(i, i + BATCH), { onConflict: "record_key" });
+        .insert(rows.slice(i, i + BATCH));
       if (error) throw new Error(error.message);
       if (rows.length > PROGRESS_EVERY && (i + BATCH) % PROGRESS_EVERY < BATCH) {
-        console.log(`[mis-sap-middleware] upsert progress: ${Math.min(i + BATCH, rows.length)}/${rows.length}`);
+        console.log(`[mis-sap-middleware] staging progress: ${Math.min(i + BATCH, rows.length)}/${rows.length}`);
       }
     }
-    const updated = rows.filter((r) => existing.has(r.record_key)).length;
-    return { received, unique: rows.length, inserted: rows.length - updated, updated, skipped, invalid, duplicates };
+    const { data: replaced, error: activateError } = await db.rpc("activate_zfisales_snapshot", {
+      _scope_key: syncScopeKey,
+      _snapshot_id: snapshotId,
+      _expected_count: rows.length,
+    });
+    if (activateError) {
+      await db.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
+      throw new Error(activateError.message);
+    }
+    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
   }
 
   /**
@@ -293,28 +289,33 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         }
       }
 
-      const counts = await storeRows(payload, endpointName);
+      const counts = await storeRows(payload, endpointName, snapshot);
       await finishRun(runId, endpointName, {
         status: "success",
         records_received: counts.received,
-        records_inserted: counts.inserted,
-        records_updated: counts.updated,
+        records_stored: counts.stored,
+        records_replaced: counts.replaced,
+        records_invalid: counts.invalid,
+        records_inserted: counts.stored,
+        records_updated: 0,
         records_skipped: counts.skipped,
+        sync_scope_key: counts.syncScopeKey,
+        snapshot_id: counts.snapshotId,
         response_bytes: bytes,
         duration_ms: Date.now() - startedMs,
         http_status: result.status,
         error_message: counts.received
-          ? `${counts.unique} unique; ${counts.duplicates} exact duplicates; ${counts.invalid} invalid`
+          ? `${counts.stored} stored; ${counts.replaced} replaced; ${counts.duplicates} repeated occurrences preserved; ${counts.invalid} invalid`
           : "No data returned — existing data left unchanged",
       });
-      if (counts.inserted + counts.updated > 0) {
+      if (counts.stored > 0) {
         await db
           .from("sap_endpoints")
           .update({ last_synced_at: new Date().toISOString() })
           .eq("name", endpointName);
       }
       logLine(
-        `[${traceId}] sync ${endpointName}: received ${counts.received}, unique ${counts.unique}, exact duplicates ${counts.duplicates}, invalid ${counts.invalid}, new ${counts.inserted}, updated ${counts.updated}`,
+        `[${traceId}] sync ${endpointName}: received ${counts.received}, stored ${counts.stored}, replaced ${counts.replaced}, repeated occurrences ${counts.duplicates}, invalid ${counts.invalid}`,
       );
       return { status: "synced", ...counts };
     } catch (err) {

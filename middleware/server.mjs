@@ -54,7 +54,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.7.0";
+const VERSION = "1.8.0";
 const STARTED_AT = Date.now();
 
 const SAP_DISPATCHERS = new Map();

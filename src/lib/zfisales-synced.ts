@@ -12,6 +12,7 @@ export async function fetchSyncedSalesRows(): Promise<SalesRow[]> {
       .select(
         "gl, gl_name, profit_ctr, profit_ctr_name, grp, sales_type, company_code, company_name, customer, customer_name, fiscal_year, doc_no, doc_date, posting_date, month, reference, doc_type, pk, amount, segment",
       )
+      .eq("is_active_snapshot", true)
       .order("posting_date", { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw error;

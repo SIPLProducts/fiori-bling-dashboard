@@ -1,5 +1,5 @@
 /**
- * Server-only: pull a SAP endpoint through the Node.js middleware and upsert
+ * Server-only: pull a SAP endpoint through the Node.js middleware and replace
  * the rows into `zfisales_detail`. Shared by the manual fetch on the SAP API
  * screen and by the scheduled 10-minute job.
  */
@@ -16,7 +16,16 @@ const BATCH = 500;
 /** How many sync runs are kept per endpoint; older rows are deleted. */
 const RUN_HISTORY_LIMIT = 6;
 
-export type SyncCounts = { received: number; unique: number; inserted: number; updated: number; skipped: number; invalid: number; duplicates: number };
+export type SyncCounts = {
+  received: number;
+  stored: number;
+  replaced: number;
+  skipped: number;
+  invalid: number;
+  duplicates: number;
+  syncScopeKey: string;
+  snapshotId: string;
+};
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
@@ -27,7 +36,7 @@ async function admin(): Promise<Admin> {
 
 export type RunMetrics = { responseBytes?: number; durationMs?: number; httpStatus?: number };
 
-/** Maps a SAP payload and upserts it into zfisales_detail, logging the run. */
+/** Stages every SAP occurrence, then atomically activates this request snapshot. */
 export async function storeZfisalesPayload(
   payload: unknown,
   endpointName: string,
@@ -36,7 +45,11 @@ export async function storeZfisalesPayload(
 ): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
-  const { received, rows, skipped, invalid, duplicates } = mapPayload(payload, endpointName);
+  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+    payload,
+    endpointName,
+    requestSnapshot,
+  );
 
   const { data: run } = await db
     .from("sap_sync_runs")
@@ -46,6 +59,9 @@ export async function storeZfisalesPayload(
       started_at: startedAt,
       records_received: received,
       records_skipped: skipped,
+      records_invalid: invalid,
+      sync_scope_key: syncScopeKey,
+      snapshot_id: snapshotId,
       response_bytes: metrics.responseBytes ?? 0,
       duration_ms: metrics.durationMs ?? 0,
       ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
@@ -75,39 +91,35 @@ export async function storeZfisalesPayload(
           ? "No mappable rows in the SAP response — existing data left unchanged"
           : "No data returned — existing data left unchanged",
       });
-      return { received, unique: 0, inserted: 0, updated: 0, skipped, invalid, duplicates };
+      return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
     }
 
-
-    const keys = rows.map((r) => r.record_key);
-    const existing = new Set<string>();
-    for (let i = 0; i < keys.length; i += BATCH) {
-      const { data, error } = await db
-        .from("zfisales_detail")
-        .select("record_key")
-        .in("record_key", keys.slice(i, i + BATCH));
-      if (error) throw error;
-      for (const r of data ?? []) existing.add(r.record_key);
-    }
 
     for (let i = 0; i < rows.length; i += BATCH) {
       const { error } = await db
         .from("zfisales_detail")
-        .upsert(rows.slice(i, i + BATCH) as never, { onConflict: "record_key" });
+        .insert(rows.slice(i, i + BATCH) as never);
       if (error) throw error;
     }
-
-    const updated = rows.filter((r) => existing.has(r.record_key)).length;
-    const inserted = rows.length - updated;
+    const { data: replaced, error: activateError } = await db.rpc("activate_zfisales_snapshot", {
+      _scope_key: syncScopeKey,
+      _snapshot_id: snapshotId,
+      _expected_count: rows.length,
+    });
+    if (activateError) throw activateError;
     await finish({
       status: "success",
-      records_inserted: inserted,
-      records_updated: updated,
-      error_message: `${rows.length} unique; ${duplicates} exact duplicates; ${invalid} invalid`,
+      records_stored: rows.length,
+      records_replaced: replaced ?? 0,
+      records_invalid: invalid,
+      records_inserted: rows.length,
+      records_updated: 0,
+      error_message: `${rows.length} stored; ${replaced ?? 0} replaced; ${duplicates} repeated occurrences preserved; ${invalid} invalid`,
     });
-    return { received, unique: rows.length, inserted, updated, skipped, invalid, duplicates };
+    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
   } catch (err) {
-    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Upsert failed" });
+    await db.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
+    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Snapshot write failed" });
     throw err;
   }
 }
@@ -311,7 +323,7 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     .from("sap_endpoints")
     .update({
       // Only move the synced stamp when rows were actually written.
-      ...(counts.inserted + counts.updated > 0 ? { last_synced_at: now } : {}),
+      ...(counts.stored > 0 ? { last_synced_at: now } : {}),
       last_run_at: now,
       last_run_status: "success",
     })

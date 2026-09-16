@@ -351,8 +351,8 @@ function TableMasterPage() {
                 <TableHead>API</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Received</TableHead>
-                <TableHead className="text-right">Inserted</TableHead>
-                <TableHead className="text-right">Updated</TableHead>
+                <TableHead className="text-right">Stored</TableHead>
+                <TableHead className="text-right">Replaced</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -362,8 +362,8 @@ function TableMasterPage() {
                   <TableCell className="font-mono text-xs">{run.endpoint}</TableCell>
                   <TableCell>{run.error_message ? run.error_message : run.status}</TableCell>
                   <TableCell className="text-right">{run.records_received}</TableCell>
-                  <TableCell className="text-right">{run.records_inserted}</TableCell>
-                  <TableCell className="text-right">{run.records_updated}</TableCell>
+                  <TableCell className="text-right">{run.records_stored}</TableCell>
+                  <TableCell className="text-right">{run.records_replaced}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
