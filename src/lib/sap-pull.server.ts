@@ -84,14 +84,25 @@ export async function storeZfisalesPayload(
 
   try {
     if (!rows.length) {
-      // Nothing usable came back — existing rows are left untouched, never deleted.
+      let replaced = 0;
+      if (received === 0) {
+        const { data, error } = await db.rpc("activate_zfisales_snapshot", {
+          _scope_key: syncScopeKey,
+          _snapshot_id: snapshotId,
+          _expected_count: 0,
+        });
+        if (error) throw error;
+        replaced = data ?? 0;
+      }
       await finish({
         status: "success",
+        records_replaced: replaced,
+        records_invalid: invalid,
         error_message: received
           ? "No mappable rows in the SAP response — existing data left unchanged"
-          : "No data returned — existing data left unchanged",
+          : `${replaced} previous rows removed for this empty SAP snapshot`,
       });
-      return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+      return { received, stored: 0, replaced, skipped, invalid, duplicates, syncScopeKey, snapshotId };
     }
 
 

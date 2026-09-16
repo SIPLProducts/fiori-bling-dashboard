@@ -10,16 +10,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { accessForUser } from "./access";
 import { isValidCron, normalizeCron } from "./cron";
 import {
-  extractEmbeddedBody,
-  formatBytes,
   IS_STATIC_BUILD,
   keyValueObject,
-  salvageTruncatedArray,
   STATIC_MIDDLEWARE_BASE,
   withPostingDates,
   type PostingRange,
 } from "./sap-pull-shared";
-import { mapPayload } from "./zfisales-map";
 
 export type KeyValue = { key: string; value: string };
 

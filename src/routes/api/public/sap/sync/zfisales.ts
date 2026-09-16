@@ -62,8 +62,23 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
         };
 
         if (!rows.length) {
-          await finish({ status: received ? "error" : "success", error_message: received ? "No mappable rows" : null });
-          return Response.json({ received, stored: 0, replaced: 0, skipped, invalid }, { status: received ? 422 : 200 });
+          let replaced = 0;
+          if (received === 0) {
+            const { data, error } = await supabaseAdmin.rpc("activate_zfisales_snapshot", {
+              _scope_key: syncScopeKey,
+              _snapshot_id: snapshotId,
+              _expected_count: 0,
+            });
+            if (error) throw error;
+            replaced = data ?? 0;
+          }
+          await finish({
+            status: received ? "error" : "success",
+            records_replaced: replaced,
+            records_invalid: invalid,
+            error_message: received ? "No mappable rows" : `${replaced} previous rows removed for this empty SAP snapshot`,
+          });
+          return Response.json({ received, stored: 0, replaced, skipped, invalid }, { status: received ? 422 : 200 });
         }
 
         try {

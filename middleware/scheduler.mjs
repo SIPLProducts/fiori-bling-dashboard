@@ -156,7 +156,16 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       endpoint,
       requestSnapshot,
     );
-    if (!rows.length) return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+    if (!rows.length) {
+      if (received > 0) return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+      const { data: replaced, error } = await db.rpc("activate_zfisales_snapshot", {
+        _scope_key: syncScopeKey,
+        _snapshot_id: snapshotId,
+        _expected_count: 0,
+      });
+      if (error) throw new Error(error.message);
+      return { received, stored: 0, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+    }
 
     for (let i = 0; i < rows.length; i += BATCH) {
       const { error } = await db
@@ -306,7 +315,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         http_status: result.status,
         error_message: counts.received
           ? `${counts.stored} stored; ${counts.replaced} replaced; ${counts.duplicates} repeated occurrences preserved; ${counts.invalid} invalid`
-          : "No data returned — existing data left unchanged",
+          : `${counts.replaced} previous rows removed for this empty SAP snapshot`,
       });
       if (counts.stored > 0) {
         await db
