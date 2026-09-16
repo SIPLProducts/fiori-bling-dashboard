@@ -77,12 +77,12 @@ npm run build:sync-core
 
 echo ""
 echo "[3/4] Restarting $PM2_NAME..."
-pm2 restart "$PM2_NAME"
+pm2 restart "$PM2_NAME" --update-env
 
 echo ""
 echo "[4/4] Waiting for scheduler startup log..."
 sleep 3
-pm2 logs "$PM2_NAME" --lines 30 | grep -E "scheduler started|scheduler DISABLED|middleware listening" || true
+pm2 logs "$PM2_NAME" --lines 30 | grep -E "scheduler started|scheduler DISABLED|listening on|password=|CA=" || true
 
 echo ""
 echo "=== Scheduler enabled ==="

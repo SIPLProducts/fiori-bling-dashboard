@@ -20,7 +20,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Load `.env` sitting next to this file so `node server.mjs` behaves the same
- * as `npm start` and `docker run --env-file`. Existing process env wins.
+ * as `npm start` and `docker run --env-file`. A non-empty process env value
+ * wins, but a stale blank value inherited by PM2 must not hide `.env`.
  */
 function loadEnvFile(file = path.join(HERE, ".env")) {
   if (!fs.existsSync(file)) return false;
@@ -37,7 +38,9 @@ function loadEnvFile(file = path.join(HERE, ".env")) {
     ) {
       value = value.slice(1, -1);
     }
-    if (process.env[key] === undefined) process.env[key] = value;
+    if (process.env[key] === undefined || process.env[key]?.trim() === "") {
+      process.env[key] = value;
+    }
   }
   return true;
 }
@@ -51,7 +54,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.5.0";
+const VERSION = "1.5.1";
 const STARTED_AT = Date.now();
 
 const SAP_DISPATCHERS = new Map();
@@ -82,6 +85,12 @@ const SYSTEMS = {
     password: process.env.SAP_PROD_PASSWORD || "",
     caCertPath: process.env.SAP_PROD_CA_CERT_PATH || "",
   },
+};
+
+const SYSTEM_ENV_PREFIXES = {
+  dev: "SAP_DEV",
+  quality: "SAP_QUALITY",
+  prod: "SAP_PROD",
 };
 
 const app = express();
@@ -255,14 +264,24 @@ function buildUrl(system, path, query = {}) {
 }
 
 async function callSap({ traceId, system, path, method = "GET", query, headers = {}, body }) {
+  const envPrefix = SYSTEM_ENV_PREFIXES[system.key];
+  if (!envPrefix) {
+    throw new Error(
+      `SAP system key "${system.key}" has no middleware configuration. Use dev, quality, or prod.`,
+    );
+  }
   if (!system.baseUrl && !/^https?:\/\//i.test(String(path || ""))) {
     throw new Error("No SAP base URL configured for this system");
   }
   if (!system.username) {
-    throw new Error(`SAP username is not configured for system "${system.key}" in SAP Systems or middleware .env`);
+    throw new Error(
+      `SAP username is not configured for system "${system.key}" in SAP Systems or ${envPrefix}_USER in middleware .env`,
+    );
   }
   if (!system.password) {
-    throw new Error(`SAP password is not configured for system "${system.key}" in middleware .env`);
+    throw new Error(
+      `SAP password is not configured for system "${system.key}". Set ${envPrefix}_PASSWORD in middleware .env, then restart PM2.`,
+    );
   }
   const url = new URL(buildUrl(system, path, query || {}));
   const controller = new AbortController();
@@ -572,15 +591,13 @@ app.listen(PORT, () => {
   console.log(`[mis-sap-middleware] public base URL      : ${APP_BASE_URL || "NOT SET (set APP_BASE_URL)"}`);
   console.log(`[mis-sap-middleware] shared secret        : ${SHARED_SECRET ? "configured" : "MISSING"}`);
   for (const [key, cfg] of Object.entries(SYSTEMS)) {
-    if (!cfg.baseUrl) continue;
     console.log(
-      `[mis-sap-middleware] SAP ${key.padEnd(8)}        : ${cfg.baseUrl} client=${cfg.client || "-"} user=${
-        cfg.username || "-"
-      } password=${cfg.password ? "configured" : "MISSING"}`,
+      `[mis-sap-middleware] SAP ${key.padEnd(8)}        : fallback-url=${cfg.baseUrl ? "configured" : "not set"} client=${
+        cfg.client ? "configured" : "not set"
+      } user=${cfg.username ? "configured" : "not set"} password=${cfg.password ? "configured" : "MISSING"} CA=${
+        cfg.caCertPath ? "configured" : "not set"
+      }`,
     );
-    if (cfg.caCertPath) {
-      console.log(`[mis-sap-middleware] SAP ${key.padEnd(8)} CA     : configured`);
-    }
   }
   if (!SHARED_SECRET) {
     console.warn("[mis-sap-middleware] WARNING: MIDDLEWARE_SHARED_SECRET is missing — all protected calls will return 401.");
