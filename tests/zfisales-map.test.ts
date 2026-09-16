@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canonicalJson, mapPayload, sha256 } from "../src/lib/zfisales-map";
+import { canonicalJson, mapPayload, sha256 } from "../src/lib/zfisales-map.ts";
 
 const base = { WERKS: "", GJAHR: 2026, BELNR: "0100035244", BUZEI: "10", HKONT: "31111100" };
 
