@@ -3,7 +3,7 @@
  * uses exactly the same row mapping and payload-salvage logic as the portal.
  * Regenerate with: npm run build:sync-core
  */
-export { mapPayload, mapRow, extractRows, toIsoDate } from "../../src/lib/zfisales-map";
+export { canonicalJson, sha256, mapPayload, mapRow, extractRows, toIsoDate } from "../../src/lib/zfisales-map";
 export {
   extractEmbeddedBody,
   salvageTruncatedArray,

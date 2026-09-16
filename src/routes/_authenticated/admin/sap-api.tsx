@@ -221,6 +221,7 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                 <th className="px-3 py-2 font-semibold">Started</th>
                 <th className="px-3 py-2 font-semibold">Status</th>
                 <th className="px-3 py-2 font-semibold text-right">Received</th>
+                <th className="px-3 py-2 font-semibold text-right">Unique</th>
                 <th className="px-3 py-2 font-semibold text-right">New</th>
                 <th className="px-3 py-2 font-semibold text-right">Updated</th>
                 <th className="px-3 py-2 font-semibold text-right">Skipped</th>
@@ -251,6 +252,7 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                         {run.status}
                       </td>
                       <td className="px-3 py-2 text-right">{run.records_received}</td>
+                      <td className="px-3 py-2 text-right">{run.records_inserted + run.records_updated}</td>
                       <td className="px-3 py-2 text-right">{run.records_inserted}</td>
                       <td className="px-3 py-2 text-right">{run.records_updated}</td>
                       <td className="px-3 py-2 text-right">{run.records_skipped ?? 0}</td>
@@ -260,7 +262,7 @@ function SchedulerHealth({ endpointName }: { endpointName: string }) {
                     </tr>
                     {open ? (
                       <tr key={`${run.id}-detail`} className="border-t border-border bg-muted/30">
-                        <td colSpan={10} className="px-3 py-3">
+                        <td colSpan={11} className="px-3 py-3">
                           <div className="grid gap-1 pb-2 text-[11px] text-muted-foreground sm:grid-cols-4">
                             <span>
                               HTTP status: <strong>{run.http_status ?? "—"}</strong>

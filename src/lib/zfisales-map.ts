@@ -43,6 +43,65 @@ const pickField = (row: Raw, keys: string[]) => {
   return "";
 };
 
+/** Stable JSON representation: object property order from SAP must not affect identity. */
+export function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const object = value as Record<string, unknown>;
+  return `{${Object.keys(object)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`)
+    .join(",")}}`;
+}
+
+/** Synchronous SHA-256 for deterministic keys in browsers and the Node middleware bundle. */
+export function sha256(value: string): string {
+  const rightRotate = (n: number, amount: number) => (n >>> amount) | (n << (32 - amount));
+  const words: number[] = [];
+  const bytes = new TextEncoder().encode(value);
+  const bitLength = bytes.length * 8;
+  for (const byte of bytes) words.push(byte);
+  words.push(0x80);
+  while (words.length % 64 !== 56) words.push(0);
+  const high = Math.floor(bitLength / 0x100000000);
+  const low = bitLength >>> 0;
+  for (let shift = 24; shift >= 0; shift -= 8) words.push((high >>> shift) & 0xff);
+  for (let shift = 24; shift >= 0; shift -= 8) words.push((low >>> shift) & 0xff);
+
+  const primes: number[] = [];
+  for (let candidate = 2; primes.length < 64; candidate += 1) {
+    if (primes.every((prime) => candidate % prime !== 0)) primes.push(candidate);
+  }
+  const h = primes.slice(0, 8).map((prime) => (Math.sqrt(prime) * 0x100000000) >>> 0);
+  const k = primes.map((prime) => (Math.cbrt(prime) * 0x100000000) >>> 0);
+
+  for (let offset = 0; offset < words.length; offset += 64) {
+    const w = new Array<number>(64);
+    for (let i = 0; i < 16; i += 1) {
+      const at = offset + i * 4;
+      w[i] = ((words[at] << 24) | (words[at + 1] << 16) | (words[at + 2] << 8) | words[at + 3]) >>> 0;
+    }
+    for (let i = 16; i < 64; i += 1) {
+      const s0 = rightRotate(w[i - 15], 7) ^ rightRotate(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rightRotate(w[i - 2], 17) ^ rightRotate(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i += 1) {
+      const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (hh + s1 + ch + k[i] + w[i]) >>> 0;
+      const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (s0 + maj) >>> 0;
+      hh = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+    }
+    const state = [a, b, c, d, e, f, g, hh];
+    for (let i = 0; i < 8; i += 1) h[i] = (h[i] + state[i]) >>> 0;
+  }
+  return h.map((part) => part.toString(16).padStart(8, "0")).join("");
+}
+
 /** Unwraps arrays, `{ d: { results } }`, `{ results }`, `{ data }`, `{ rows }`. */
 export function extractRows(payload: unknown): Raw[] {
   if (Array.isArray(payload)) return payload as Raw[];
@@ -135,8 +194,8 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
   const posnr = str(pickField(raw, ["POSNR", "BUZEI", "posnr", "item"]));
   const gl = str(pickField(raw, ["HKONT", "SAKNR", "hkont", "gl"]));
 
-  const recordKey = [plant, fiscalYear, docNo, posnr, gl].join("|");
   if (!docNo || !fiscalYear) return null;
+  const recordKey = `sha256:${sha256(canonicalJson(raw))}`;
 
   const postingDate = toIsoDate(pickField(raw, ["BUDAT", "budat", "postingDate"]));
 
@@ -217,21 +276,20 @@ export function mapPayload(payload: unknown, sourceEndpoint: string) {
   const raws = extractRows(payload);
   const rows: ZfisalesDetailRow[] = [];
   const seen = new Set<string>();
-  let skipped = 0;
+  let invalid = 0;
+  let duplicates = 0;
   for (const r of raws) {
     const mapped = mapRow(r, sourceEndpoint, syncedAt);
     if (!mapped) {
-      skipped += 1;
+      invalid += 1;
       continue;
     }
     if (seen.has(mapped.record_key)) {
-      // Last one wins within a single payload.
-      const idx = rows.findIndex((x) => x.record_key === mapped.record_key);
-      rows[idx] = mapped;
+      duplicates += 1;
       continue;
     }
     seen.add(mapped.record_key);
     rows.push(mapped);
   }
-  return { received: raws.length, rows, skipped };
+  return { received: raws.length, rows, skipped: invalid + duplicates, invalid, duplicates };
 }
