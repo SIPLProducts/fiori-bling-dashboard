@@ -8,7 +8,7 @@ Allow the selected SAP environment to connect over HTTPS without a CA certificat
 1. **Add a per-environment opt-in**
    - Add `SAP_DEV_TLS_INSECURE`, `SAP_QUALITY_TLS_INSECURE`, and `SAP_PROD_TLS_INSECURE` middleware settings.
    - Treat only an explicit `true` value as enabled; missing, blank, or any other value remains secure.
-   - For the current Quality system, use `SAP_QUALITY_TLS_INSECURE=true`.
+   - Quality and Production are supported independently: use `SAP_QUALITY_TLS_INSECURE=true` and/or `SAP_PROD_TLS_INSECURE=true` only where required.
 
 2. **Apply the setting consistently**
    - Extend the shared SAP connection setup so Test, Ping, manual sync, and scheduled sync all use the same behavior.
@@ -24,14 +24,14 @@ Allow the selected SAP environment to connect over HTTPS without a CA certificat
 
 4. **Document deployment and rollback**
    - Add the new settings to the example environment files and middleware deployment instructions.
-   - Document the Quality setting, PM2 restart, and Ping/Test/manual/scheduled validation steps.
-   - Document rollback: remove or set `SAP_QUALITY_TLS_INSECURE=false`, then restart middleware after a proper certificate is available.
+   - Document the separate Quality and Production settings, PM2 restarts, and Ping/Test/manual/scheduled validation steps.
+   - Document rollback: remove or set the relevant environment switch to `false`, then restart middleware after a proper certificate is available.
 
 ## Security boundary
 This will not use a global `NODE_TLS_REJECT_UNAUTHORIZED=0`. Only requests for an explicitly enabled SAP environment will bypass certificate verification. SAP credentials and returned data could still be intercepted on that connection, so this mode is temporary and should be restricted to the trusted internal network.
 
 ## Validation
-- Confirm startup reports Quality password configured and insecure TLS enabled.
-- Confirm Ping, Test connection, manual sync, and scheduled sync no longer fail with `DEPTH_ZERO_SELF_SIGNED_CERT`.
-- Confirm DEV and Production remain certificate-verified unless separately enabled.
+- Confirm startup reports the selected environment's password configured and insecure TLS enabled.
+- Confirm Ping, Test connection, manual sync, and scheduled sync no longer fail with `DEPTH_ZERO_SELF_SIGNED_CERT` in each enabled environment.
+- Confirm every environment remains certificate-verified unless its own switch is enabled.
 - Confirm disabling the switch restores the current secure failure for an untrusted certificate.
