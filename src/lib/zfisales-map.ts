@@ -57,6 +57,7 @@ export function canonicalJson(value: unknown): string {
 /** Synchronous SHA-256 for deterministic keys in browsers and the Node middleware bundle. */
 export function sha256(value: string): string {
   const rightRotate = (n: number, amount: number) => (n >>> amount) | (n << (32 - amount));
+  const at = (values: number[], index: number) => values[index] ?? 0;
   const words: number[] = [];
   const bytes = new TextEncoder().encode(value);
   const bitLength = bytes.length * 8;
@@ -79,25 +80,34 @@ export function sha256(value: string): string {
     const w = new Array<number>(64);
     for (let i = 0; i < 16; i += 1) {
       const at = offset + i * 4;
-      w[i] = ((words[at] << 24) | (words[at + 1] << 16) | (words[at + 2] << 8) | words[at + 3]) >>> 0;
+      w[i] = ((at(words, at) << 24) | (at(words, at + 1) << 16) | (at(words, at + 2) << 8) | at(words, at + 3)) >>> 0;
     }
     for (let i = 16; i < 64; i += 1) {
-      const s0 = rightRotate(w[i - 15], 7) ^ rightRotate(w[i - 15], 18) ^ (w[i - 15] >>> 3);
-      const s1 = rightRotate(w[i - 2], 17) ^ rightRotate(w[i - 2], 19) ^ (w[i - 2] >>> 10);
-      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      const prior15 = at(w, i - 15);
+      const prior2 = at(w, i - 2);
+      const s0 = rightRotate(prior15, 7) ^ rightRotate(prior15, 18) ^ (prior15 >>> 3);
+      const s1 = rightRotate(prior2, 17) ^ rightRotate(prior2, 19) ^ (prior2 >>> 10);
+      w[i] = (at(w, i - 16) + s0 + at(w, i - 7) + s1) >>> 0;
     }
-    let [a, b, c, d, e, f, g, hh] = h;
+    let a = at(h, 0);
+    let b = at(h, 1);
+    let c = at(h, 2);
+    let d = at(h, 3);
+    let e = at(h, 4);
+    let f = at(h, 5);
+    let g = at(h, 6);
+    let hh = at(h, 7);
     for (let i = 0; i < 64; i += 1) {
       const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
       const ch = (e & f) ^ (~e & g);
-      const temp1 = (hh + s1 + ch + k[i] + w[i]) >>> 0;
+      const temp1 = (hh + s1 + ch + at(k, i) + at(w, i)) >>> 0;
       const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
       const maj = (a & b) ^ (a & c) ^ (b & c);
       const temp2 = (s0 + maj) >>> 0;
       hh = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
     }
     const state = [a, b, c, d, e, f, g, hh];
-    for (let i = 0; i < 8; i += 1) h[i] = (h[i] + state[i]) >>> 0;
+    for (let i = 0; i < 8; i += 1) h[i] = (at(h, i) + at(state, i)) >>> 0;
   }
   return h.map((part) => part.toString(16).padStart(8, "0")).join("");
 }
