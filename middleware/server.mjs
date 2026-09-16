@@ -54,7 +54,7 @@ const APP_BASE_URL = (process.env.APP_BASE_URL || "").trim().replace(/\/+$/, "")
 // Wide posting-date windows return multi-MB payloads that take minutes.
 // Large report windows (80k+ rows) can take several minutes to stream back.
 const REQUEST_TIMEOUT_MS = Number(process.env.SAP_TIMEOUT_MS || 600000);
-const VERSION = "1.5.1";
+const VERSION = "1.5.2";
 const STARTED_AT = Date.now();
 
 const SAP_DISPATCHERS = new Map();
@@ -204,9 +204,17 @@ async function requirePortalUserManagement(req, res, next) {
 
 function resolveSystem(body = {}) {
   const key = String(body.systemKey || "dev").toLowerCase();
-  const configured = SYSTEMS[key] || {};
+  const requestedEnvironment = String(body.environment || "").trim().toLowerCase();
+  const credentialKey =
+    requestedEnvironment === "production"
+      ? "prod"
+      : requestedEnvironment === "quality" || requestedEnvironment === "dev" || requestedEnvironment === "prod"
+        ? requestedEnvironment
+        : key;
+  const configured = SYSTEMS[credentialKey] || {};
   return {
     key,
+    credentialKey,
     // Base URL / client / user may be overridden by the portal config; the
     // password only ever comes from this service's environment.
     baseUrl: (body.baseUrl || configured.baseUrl || "").replace(/\/+$/, ""),
@@ -264,10 +272,10 @@ function buildUrl(system, path, query = {}) {
 }
 
 async function callSap({ traceId, system, path, method = "GET", query, headers = {}, body }) {
-  const envPrefix = SYSTEM_ENV_PREFIXES[system.key];
+  const envPrefix = SYSTEM_ENV_PREFIXES[system.credentialKey];
   if (!envPrefix) {
     throw new Error(
-      `SAP system key "${system.key}" has no middleware configuration. Use dev, quality, or prod.`,
+      `SAP environment "${system.credentialKey}" has no middleware configuration. Use DEV, QUALITY, or PRODUCTION.`,
     );
   }
   if (!system.baseUrl && !/^https?:\/\//i.test(String(path || ""))) {
@@ -289,7 +297,7 @@ async function callSap({ traceId, system, path, method = "GET", query, headers =
   const started = Date.now();
   logLine(`[${traceId}] -> SAP ${method} ${url.toString()}`);
   logLine(
-    `[${traceId}]    system=${system.key} auth=${system.username ? "basic" : "none"} user=${
+    `[${traceId}]    system=${system.key} environment=${system.credentialKey} auth=${system.username ? "basic" : "none"} user=${
       system.username || "-"
     } password=${system.password ? "set" : "MISSING"} timeout=${REQUEST_TIMEOUT_MS}ms`,
   );
@@ -391,7 +399,13 @@ app.get("/logs/recent", requireSharedSecret, (req, res) => {
 /** Bare reachability probe of the SAP host — no report call, no payload. */
 app.get("/diag/sap", requireSharedSecret, async (req, res) => {
   const traceId = newTraceId();
-  const system = resolveSystem({ systemKey: req.query.system });
+  const system = resolveSystem({
+    systemKey: req.query.system,
+    environment: req.query.environment,
+    baseUrl: req.query.baseUrl,
+    sapClient: req.query.sapClient,
+    username: req.query.username,
+  });
   if (!system.baseUrl) {
     return res.status(400).json({
       ok: false,

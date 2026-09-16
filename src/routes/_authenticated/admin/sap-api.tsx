@@ -827,10 +827,13 @@ function EndpointDetail({
   });
 
   const pingMutation = useMutation({
-    mutationFn: async () =>
-      pingSapHost(
-        form.system_key || systems.find((s) => s.is_active)?.key || null,
-      ),
+    mutationFn: async () => {
+      const selectedSystem =
+        systems.find((system) => system.key === form.system_key) ??
+        systems.find((system) => system.is_active) ??
+        null;
+      return pingSapHost(selectedSystem);
+    },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["middleware-logs"] });
       result.ok ? toast.success(result.message) : toast.error(result.message);
@@ -1264,8 +1267,10 @@ function SystemsTab() {
     <div className="space-y-4">
       {systems.map((system) => {
         const draft = draftFor(system);
+        const environmentKey =
+          draft.environment.toLowerCase() === "production" ? "prod" : draft.environment.toLowerCase();
         const passwordConfigured =
-          middlewareStatusesQuery.data?.find((status) => status.key === system.key)?.credentials ?? false;
+          middlewareStatusesQuery.data?.find((status) => status.key === environmentKey)?.credentials ?? false;
         return (
           <section key={system.id} className="rounded-md border border-border bg-card p-5 shadow-tile">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">

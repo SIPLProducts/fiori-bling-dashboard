@@ -449,11 +449,11 @@ Run these after every migration in `supabase/migrations/` has been applied.
     sudo install -m 640 sap-quality-ca.pem /opt/MIS_Projects/Quality/middleware/certs/sap-quality-ca.pem
     ```
 
-    The environment-variable prefix follows the saved SAP system key: `dev` → `SAP_DEV_*`, `quality` → `SAP_QUALITY_*`, `prod` → `SAP_PROD_*`. If startup still reports a missing password after `.env` is updated, remove inherited SAP variables when recreating PM2:
+    The environment-variable prefix follows the Environment selected in SAP Systems: `DEV` → `SAP_DEV_*`, `QUALITY` → `SAP_QUALITY_*`, `PRODUCTION` → `SAP_PROD_*`. If startup still reports a missing password after `.env` is updated, remove inherited SAP variables when recreating PM2:
 
     ```bash
     pm2 delete mis-q-middleware
-    env -u SAP_DEV_PASSWORD -u SAP_DEV_CA_CERT_PATH \
+    env -u SAP_QUALITY_PASSWORD -u SAP_QUALITY_CA_CERT_PATH \
       pm2 start server.mjs --name mis-q-middleware --cwd /opt/MIS_Projects/Quality/middleware
     pm2 save
     pm2 logs mis-q-middleware --lines 30

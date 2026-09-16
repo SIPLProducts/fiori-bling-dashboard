@@ -503,9 +503,16 @@ export async function fetchMiddlewareLogs(limit = 80): Promise<string[]> {
 }
 
 /** Bare reachability probe of the SAP host from the middleware machine. */
-export async function pingSapHost(systemKey: string | null): Promise<TestResult> {
+export async function pingSapHost(system: SapSystem | null): Promise<TestResult> {
   await requireSuperAdmin();
-  return callMiddleware(`/diag/sap?system=${encodeURIComponent(systemKey ?? "dev")}`);
+  const params = new URLSearchParams({
+    system: system?.key ?? "dev",
+    environment: system?.environment ?? "DEV",
+    baseUrl: system?.base_url ?? "",
+    sapClient: system?.sap_client ?? "",
+    username: system?.username ?? "",
+  });
+  return callMiddleware(`/diag/sap?${params.toString()}`);
 }
 
 
@@ -537,6 +544,7 @@ export async function testSapSystem(system: SapSystem): Promise<TestResult> {
   }
   const result = await callMiddleware("/sap/test", {
     systemKey: system.key,
+    environment: system.environment,
     baseUrl: system.base_url,
     sapClient: system.sap_client,
     username: system.username,
@@ -627,11 +635,12 @@ async function runEndpointSyncBrowser(endpointName: string): Promise<SyncRunResu
   }
 
   const { data: system } = endpoint.system_key
-    ? await supabase.from("sap_systems").select("key, base_url, sap_client, username").eq("key", endpoint.system_key).maybeSingle()
-    : await supabase.from("sap_systems").select("key, base_url, sap_client, username").eq("is_active", true).limit(1).maybeSingle();
+    ? await supabase.from("sap_systems").select("key, environment, base_url, sap_client, username").eq("key", endpoint.system_key).maybeSingle()
+    : await supabase.from("sap_systems").select("key, environment, base_url, sap_client, username").eq("is_active", true).limit(1).maybeSingle();
 
   const outbound = {
     systemKey: system?.key ?? null,
+    environment: system?.environment ?? null,
     baseUrl: system?.base_url ?? null,
     sapClient: system?.sap_client ?? null,
     username: system?.username ?? null,

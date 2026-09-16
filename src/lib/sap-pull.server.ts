@@ -171,12 +171,13 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
   if (!base) return { status: "error", message: "Middleware URL is not configured" };
 
   const { data: system } = endpoint.system_key
-    ? await db.from("sap_systems").select("key, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
-    : await db.from("sap_systems").select("key, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
+    ? await db.from("sap_systems").select("key, environment, base_url, sap_client").eq("key", endpoint.system_key).maybeSingle()
+    : await db.from("sap_systems").select("key, environment, base_url, sap_client").eq("is_active", true).limit(1).maybeSingle();
 
   const outbound = {
     middlewareUrl: `${base}/sap/call`,
     systemKey: system?.key ?? null,
+    environment: system?.environment ?? null,
     baseUrl: system?.base_url ?? null,
     sapClient: system?.sap_client ?? null,
     path: endpoint.endpoint_path,

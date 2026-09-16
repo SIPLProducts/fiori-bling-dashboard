@@ -14,3 +14,4 @@
 - [x] Show middleware-only SAP password status and use UI-first connection settings with `.env` fallback
 - [x] Support SAP over HTTP and securely trusted private-certificate HTTPS in all middleware request paths
 - [x] Make Quality middleware load SAP passwords past blank PM2 variables and report exact key-specific settings
+- [x] Make SAP password and HTTPS CA selection follow the visible SAP Systems Environment
