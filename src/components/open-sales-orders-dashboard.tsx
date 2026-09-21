@@ -57,7 +57,7 @@ function aggregate(rows: OpenSalesOrder[], key: keyof OpenSalesOrder) {
 
 function Panel({ title, children, className = "", unit }: { title: string; children: React.ReactNode; className?: string; unit?: string }) {
   return (
-    <section className={`rounded-md border border-border bg-card p-3 shadow-tile ${className}`}>
+    <section className={`min-w-0 rounded-md border border-border bg-card p-3 shadow-tile ${className}`}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-card-foreground">{title}</h2>
         {unit ? <span className="text-[10px] font-medium text-muted-foreground">{unit}</span> : null}
@@ -129,10 +129,14 @@ function Donut({ data, centre, sublabel }: { data: ReturnType<typeof aggregate>;
 export function OpenSalesOrdersDashboard() {
   const { data = [] } = useQuery({ queryKey: ["open-sales-orders-sample"], queryFn: getOpenSalesOrders, staleTime: Infinity });
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [dateRange, setDateRange] = useState("all");
   const [trendMode, setTrendMode] = useState<"Value" | "Quantity" | "Both">("Value");
   const [page, setPage] = useState(1);
 
-  const filtered = useMemo(() => data.filter((row) => (Object.keys(filters) as FilterKey[]).every((key) => filters[key] === "All" || row[key] === filters[key])), [data, filters]);
+  const filtered = useMemo(() => data.filter((row) => {
+    const afterStart = dateRange === "all" || row.orderDate >= (dateRange === "last3" ? "2025-02-01" : "2024-10-01");
+    return afterStart && (Object.keys(filters) as FilterKey[]).every((key) => filters[key] === "All" || row[key] === filters[key]);
+  }), [data, dateRange, filters]);
   const setFilter = (key: FilterKey, value: string) => { setFilters((current) => ({ ...current, [key]: value })); setPage(1); };
   const options = (key: FilterKey) => ["All", ...new Set(data.map((row) => row[key]))];
   const totalValue = filtered.reduce((sum, row) => sum + row.value, 0);
@@ -160,11 +164,11 @@ export function OpenSalesOrdersDashboard() {
   const highestGroup = byGroup[0]?.name ?? "—";
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <header><h1 className="text-2xl font-semibold text-foreground">Open Sales Orders</h1><p className="text-sm text-muted-foreground">Monitor and manage open sales orders across regions, customers and products</p></header>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="rounded-md border border-border bg-card px-3 py-2 shadow-tile"><span className="block text-[10px] font-medium text-muted-foreground">Date Range</span><span className="mt-1 flex items-center justify-between text-xs font-medium">01 Apr 2024 - 30 Apr 2025 <CalendarDays className="size-4 text-primary" /></span></div>
+        <label className="rounded-md border border-border bg-card px-3 py-2 shadow-tile"><span className="block text-[10px] font-medium text-muted-foreground">Date Range</span><Select value={dateRange} onValueChange={(value) => { setDateRange(value); setPage(1); }}><SelectTrigger className="mt-0.5 h-6 border-0 p-0 text-xs font-medium shadow-none focus:ring-0"><SelectValue /><CalendarDays className="mr-1 size-4 text-primary" /></SelectTrigger><SelectContent><SelectItem value="all">01 Apr 2024 - 30 Apr 2025</SelectItem><SelectItem value="last6">Oct 2024 - Apr 2025</SelectItem><SelectItem value="last3">Feb 2025 - Apr 2025</SelectItem></SelectContent></Select></label>
         <FilterSelect label="Sales Organization" value={filters.salesOrg} options={options("salesOrg")} onChange={(v) => setFilter("salesOrg", v)} />
         <FilterSelect label="Distribution Channel" value={filters.channel} options={options("channel")} onChange={(v) => setFilter("channel", v)} />
         <FilterSelect label="Sales Office" value={filters.office} options={options("office")} onChange={(v) => setFilter("office", v)} />
