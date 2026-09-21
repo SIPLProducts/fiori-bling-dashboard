@@ -1899,7 +1899,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales by Segment (Amount)" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
