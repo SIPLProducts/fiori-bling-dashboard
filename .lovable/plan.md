@@ -3,6 +3,8 @@
 ## Goal
 Bring the launchpad closer to the attached Fiori reference while preserving the existing modules, permissions, live figures, and navigation.
 
+This redesign applies to the launchpad only. Sales Dashboard cards and all other report-page cards will remain unchanged.
+
 ## Changes
 - Restyle every launchpad card as a compact raised Fiori tile with a soft cool surface, subtle border and layered shadow, consistent corner radius, and a restrained lift on interaction.
 - Strengthen card hierarchy: small category/eyebrow text, clear title or KPI value, muted supporting copy, compact status/footer area, and a softly tinted icon container.
