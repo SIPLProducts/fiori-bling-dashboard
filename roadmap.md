@@ -17,3 +17,4 @@
 - [x] Make SAP password and HTTPS CA selection follow the visible SAP Systems Environment
 - [x] Add separate temporary insecure HTTPS switches for DEV, Quality, and Production SAP environments
 - [x] Preserve every received SAP sales occurrence with scoped snapshot replacement and reconciled sync counts
+- [x] Add the reference-matched Open Sales Orders sample dashboard and link its launchpad card

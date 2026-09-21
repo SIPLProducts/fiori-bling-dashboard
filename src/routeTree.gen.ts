@@ -28,6 +28,7 @@ import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_
 import { Route as AuthenticatedReportsSdDrilldownRouteImport } from './routes/_authenticated/reports/sd/drilldown'
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
+import { Route as AuthenticatedReportsSdOpenSalesOrdersRouteImport } from './routes/_authenticated/reports/sd/open-sales-orders'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
 import { Route as ApiPublicSapPullZfisalesRouteImport } from './routes/api/public/sap/pull/zfisales'
 import { Route as ApiPublicSapSyncZfisalesRouteImport } from './routes/api/public/sap/sync/zfisales'
@@ -139,6 +140,12 @@ const AuthenticatedReportsSdKpiRoute =
     path: '/reports/sd/kpi',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSdOpenSalesOrdersRoute =
+  AuthenticatedReportsSdOpenSalesOrdersRouteImport.update({
+    id: '/reports/sd/open-sales-orders',
+    path: '/reports/sd/open-sales-orders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSdRegisterRoute =
   AuthenticatedReportsSdRegisterRouteImport.update({
     id: '/reports/sd/register',
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -225,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
+  '/_authenticated/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
+    | '/reports/sd/open-sales-orders'
     | '/reports/sd/register'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
+    | '/reports/sd/open-sales-orders'
     | '/reports/sd/register'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -297,6 +309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/drilldown'
     | '/_authenticated/reports/sd/finance-gst'
     | '/_authenticated/reports/sd/kpi'
+    | '/_authenticated/reports/sd/open-sales-orders'
     | '/_authenticated/reports/sd/register'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -445,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSdKpiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sd/open-sales-orders': {
+      id: '/_authenticated/reports/sd/open-sales-orders'
+      path: '/reports/sd/open-sales-orders'
+      fullPath: '/reports/sd/open-sales-orders'
+      preLoaderRoute: typeof AuthenticatedReportsSdOpenSalesOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/sd/register': {
       id: '/_authenticated/reports/sd/register'
       path: '/reports/sd/register'
@@ -486,6 +506,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSdDrilldownRoute: typeof AuthenticatedReportsSdDrilldownRoute
   AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
   AuthenticatedReportsSdKpiRoute: typeof AuthenticatedReportsSdKpiRoute
+  AuthenticatedReportsSdOpenSalesOrdersRoute: typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
 }
 
@@ -508,6 +529,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsSdDrilldownRoute: AuthenticatedReportsSdDrilldownRoute,
   AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
   AuthenticatedReportsSdKpiRoute: AuthenticatedReportsSdKpiRoute,
+  AuthenticatedReportsSdOpenSalesOrdersRoute:
+    AuthenticatedReportsSdOpenSalesOrdersRoute,
   AuthenticatedReportsSdRegisterRoute: AuthenticatedReportsSdRegisterRoute,
 }
 

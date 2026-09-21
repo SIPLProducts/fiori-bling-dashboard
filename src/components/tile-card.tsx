@@ -152,6 +152,16 @@ export function TileCard({
   );
 
   if (to.startsWith("/reports/module/")) {
+    if (tile.kpi_key === "sd_open_orders") {
+      return (
+        <Link
+          to="/reports/sd/open-sales-orders"
+          className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {body}
+        </Link>
+      );
+    }
     const moduleKey = to.split("/").pop()!;
     return (
       <Link
