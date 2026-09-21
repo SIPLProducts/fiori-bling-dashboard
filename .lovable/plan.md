@@ -25,8 +25,8 @@ Rebuild the authenticated launchpad to closely match the attached reference at d
 - Create a shared launchpad-only card system with pure/light cool surfaces, subtle borders, rounded corners, layered soft shadows, restrained inner highlights, and inset pill-style footer actions.
 - Match the screenshot’s typography hierarchy, compact spacing, muted labels, blue KPI values, icon badges, separators, progress bars, status indicators, and small bar charts.
 - Keep existing live Total Sales data and existing FI/PP KPI data connected where currently available.
-- Keep existing working destinations for Total Sales, Open Sales Orders, FI, PP, and ZFISALES Detail.
-- Add the screenshot’s Fulfillment Rate, Billing Cleared, KNA1, MARA, LFA1, and T001W cards as visual-only placeholders using the supplied reference values; they will not add permissions, data sources, or routes.
+- Make each card visibly interactive with pointer, keyboard focus, and a subtle lift/scale response. Keep existing working destinations for Total Sales, Open Sales Orders, FI, PP, and ZFISALES Detail; clicking anywhere on each active card uses its existing dashboard, report, or table route.
+- Add the screenshot’s Fulfillment Rate, Billing Cleared, KNA1, MARA, LFA1, and T001W cards as visual-only placeholders using the supplied reference values; clicking one opens a shared slide-over panel stating that the screen is under development, without adding permissions, data sources, or routes.
 - Add the FI and PP overview cards and the compact Tables Master presentation required by the reference.
 - Use subtle lift/shadow transitions and button feedback, while respecting reduced-motion preferences.
 
@@ -37,7 +37,7 @@ Rebuild the authenticated launchpad to closely match the attached reference at d
 
 ## Validation
 - Verify the authenticated launchpad at desktop, tablet, and mobile widths against the supplied screenshot.
-- Confirm module filtering, role-based visibility, existing card navigation, account sign-out access, keyboard focus, responsive wrapping, and reduced-motion behavior.
+- Confirm module filtering, role-based visibility, active-card navigation, placeholder slide-over behavior, account sign-out access, keyboard focus, responsive wrapping, and reduced-motion behavior.
 - Confirm the page has no browser errors, clipped content, overlap, or horizontal overflow.
 - Run the focused type check and formatting/diff validation before completion.
 
