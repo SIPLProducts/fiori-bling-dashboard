@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { IndianRupee } from "lucide-react";
+import { ArrowRight, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const KPI_TONES = [
@@ -52,7 +52,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
   const color = KPI_TONES[0];
 
   if (isLoading) {
-    return <div className="h-[152px] w-full animate-pulse rounded-lg border border-border bg-card" />;
+    return <div className="h-[192px] w-full animate-pulse rounded-md border border-border bg-launchpad-tile" />;
   }
   if (!data) return <>{fallback}</>;
 
@@ -60,13 +60,13 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
     <Link
       to="/reports/module/$module"
       params={{ module: "sd" }}
-      className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       <section
-        className="relative flex w-full cursor-pointer flex-col rounded-lg border p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg"
+        className="relative flex h-[192px] w-full cursor-pointer flex-col overflow-hidden rounded-md border p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:shadow-tile-hover motion-reduce:transform-none"
         style={{
           borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
-          background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%)`,
+          background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)`,
         }}
       >
         <div className="flex items-start justify-between gap-2">
@@ -79,10 +79,10 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             </p>
           </div>
           <span
-            className="grid size-9 shrink-0 place-items-center rounded-md"
+            className="grid size-8 shrink-0 place-items-center rounded-md"
             style={{ background: `color-mix(in oklab, ${color} 20%, transparent)`, color }}
           >
-            <IndianRupee className="size-4" />
+            <IndianRupee className="size-4" strokeWidth={1.7} />
           </span>
         </div>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -109,6 +109,10 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
+        <div className="-mx-4 -mb-4 mt-auto flex min-h-9 items-center justify-between border-t border-border/70 bg-launchpad-tile-footer px-4 text-[11px] font-semibold text-primary">
+          <span>Open details</span>
+          <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+        </div>
       </section>
     </Link>
   );

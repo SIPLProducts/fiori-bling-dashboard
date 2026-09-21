@@ -50,20 +50,22 @@ function Launchpad() {
       <ShellBar title="Home" displayName={data?.profile?.display_name} screens={data?.screens} />
 
 
-      <div className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4">
+      <div className="border-b border-primary/25 bg-shell shadow-sm">
+        <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4" role="tablist" aria-label="Launchpad modules">
           {[{ key: "all", title: "All" }, ...groups].map((group) => (
             <button
               key={group.key}
               type="button"
+              role="tab"
+              aria-selected={activeGroup === group.key}
               onClick={() => setActiveGroup(group.key)}
-              className={`shrink-0 border-b-2 px-4 py-3 text-sm transition-colors ${
+              className={`relative min-h-11 shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-shell-foreground focus-visible:ring-inset focus-visible:outline-none ${
                 activeGroup === group.key
-                  ? "border-primary font-medium text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-shell-foreground bg-shell-foreground/14 text-shell-foreground shadow-[inset_0_-1px_0_var(--color-shell-foreground)]"
+                  : "border-transparent text-shell-muted hover:bg-shell-foreground/8 hover:text-shell-foreground"
               }`}
             >
-              {group.title}
+              {group.key === "all" ? "All Modules" : group.title}
             </button>
           ))}
         </div>
@@ -89,8 +91,8 @@ function Launchpad() {
 
 
         {role ? (
-          <div className="mb-6 flex flex-wrap items-center gap-2">
-            <span className="rounded-sm bg-primary/10 px-2 py-1 text-xs font-medium tracking-wide text-primary uppercase">
+          <div className="mb-6 flex flex-wrap items-center gap-2 rounded-md border border-border/80 bg-card/70 px-4 py-3 shadow-sm">
+            <span className="rounded-sm bg-primary/10 px-2 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
               {role}
             </span>
             <span className="text-sm text-muted-foreground">{ROLE_HEADLINE[role]}</span>
@@ -111,11 +113,15 @@ function Launchpad() {
                 const groupTiles = tiles.filter((tile) => tile.group_key === group.key);
                 if (!groupTiles.length) return null;
                 return (
-                  <section key={group.key} className="mb-8">
-                    <h2 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground uppercase">
-                      {group.title}
-                    </h2>
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(212px,1fr))] gap-4">
+                  <section key={group.key} className="mb-9">
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="size-1.5 rounded-[2px] bg-primary" aria-hidden="true" />
+                      <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        {group.title}
+                      </h2>
+                      <span className="h-px flex-1 bg-border/70" aria-hidden="true" />
+                    </div>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                       {groupTiles.map((tile) => (
                         <TileCard key={tile.id} tile={tile} kpi={data?.kpis[tile.kpi_key ?? ""]} />
                       ))}
@@ -124,7 +130,7 @@ function Launchpad() {
                 );
               })
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(212px,1fr))] gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {tiles.map((tile) => (
                   <TileCard key={tile.id} tile={tile} kpi={data?.kpis[tile.kpi_key ?? ""]} />
                 ))}

@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  ArrowRight,
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
 import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
@@ -65,6 +66,22 @@ function formatValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+function actionLabel(tile: TileRecord) {
+  if (tile.kind === "chart") return "View analytics";
+  if (tile.kind === "kpi") return "View details";
+  if (tile.target_path?.startsWith("/tables/")) return "Open table";
+  return "Open report";
+}
+
+function TileAction({ label }: { label: string }) {
+  return (
+    <div className="-mx-4 -mb-4 mt-3 flex min-h-9 items-center justify-between border-t border-border/70 bg-launchpad-tile-footer px-4 text-[11px] font-semibold text-primary">
+      <span>{label}</span>
+      <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+    </div>
+  );
+}
+
 export function TileCard({
 
   tile,
@@ -83,9 +100,9 @@ export function TileCard({
       <Link
         to="/reports/module/$module"
         params={{ module: "sd" }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
-        <div className="flex h-[152px] w-full flex-col justify-between rounded-md border border-border bg-card p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-tile-hover">
+        <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
           <div>
             <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
               {tile.title}
@@ -94,9 +111,12 @@ export function TileCard({
               <div className="mt-0.5 text-xs text-muted-foreground">{tile.subtitle}</div>
             ) : null}
           </div>
-          <div className="flex justify-end">
-            <Icon className="size-6 text-primary/80" strokeWidth={1.5} />
+          <div className="mt-auto flex justify-end">
+            <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
+              <Icon className="size-4" strokeWidth={1.7} />
+            </span>
           </div>
+          <TileAction label={actionLabel(tile)} />
         </div>
       </Link>
     );
@@ -107,14 +127,19 @@ export function TileCard({
 
 
   const body = (
-    <div className="flex h-[152px] w-full flex-col justify-between rounded-md border border-border bg-card p-4 text-left shadow-tile transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-tile-hover">
-      <div>
+    <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
         <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
           {tile.title}
         </div>
         {tile.subtitle ? (
           <div className="mt-0.5 text-xs text-muted-foreground">{tile.subtitle}</div>
         ) : null}
+        </div>
+        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+          <Icon className="size-4" strokeWidth={1.7} />
+        </span>
       </div>
 
       {tile.kind === "kpi" && kpi ? (
@@ -137,10 +162,9 @@ export function TileCard({
           </div>
         </div>
       ) : (
-        <div className="flex justify-end">
-          <Icon className="size-6 text-primary/80" strokeWidth={1.5} />
-        </div>
+        <div className="flex-1" />
       )}
+      {to !== "/launchpad" ? <TileAction label={actionLabel(tile)} /> : null}
     </div>
   );
 
@@ -149,7 +173,7 @@ export function TileCard({
       return (
         <Link
           to="/reports/sd/open-sales-orders"
-          className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           {body}
         </Link>
@@ -160,7 +184,7 @@ export function TileCard({
       <Link
         to="/reports/module/$module"
         params={{ module: moduleKey }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {body}
       </Link>
@@ -172,7 +196,7 @@ export function TileCard({
       <Link
         to="/tables/$tableKey"
         params={{ tableKey: key }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {body}
       </Link>
@@ -187,7 +211,7 @@ export function TileCard({
   ) {
 
     return (
-      <Link to={to} className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+      <Link to={to} className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none">
         {body}
       </Link>
     );
