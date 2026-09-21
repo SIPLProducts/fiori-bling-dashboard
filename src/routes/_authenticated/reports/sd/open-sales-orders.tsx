@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { OpenSalesOrdersDashboard } from "@/components/open-sales-orders-dashboard";
-import { AccessDenied, ReportShell } from "@/components/report-shell";
+import { AccessDenied } from "@/components/report-shell";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
@@ -23,8 +23,8 @@ function OpenSalesOrdersPage() {
   const allowed = hasScreen(data?.screens, "sd.open-sales-orders");
 
   return (
-    <ReportShell title="" description="">
+    <main className="min-h-screen bg-background p-2 sm:p-3">
       {!isLoading && !allowed ? <AccessDenied area="Open Sales Orders" /> : <OpenSalesOrdersDashboard />}
-    </ReportShell>
+    </main>
   );
 }
