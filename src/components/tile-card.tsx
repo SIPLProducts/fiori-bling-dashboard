@@ -9,12 +9,10 @@ import {
   CalendarClock,
   ChartNoAxesCombined,
   CircleDollarSign,
-  CircleGauge,
   Clock3,
   Factory,
   Gauge,
   PackageCheck,
-  ReceiptText,
   ShoppingCart,
   TableProperties,
   TrendingUp,
@@ -39,11 +37,9 @@ const ICONS = {
   pp_output_trend: ChartNoAxesCombined,
 } as const;
 
-type PlaceholderType = "fulfillment" | "billing" | "kna1" | "mara" | "lfa1" | "t001w";
+type PlaceholderType = "kna1" | "mara" | "lfa1" | "t001w";
 
 const PLACEHOLDERS: Record<PlaceholderType, { label: string; value: string; note: string; icon: typeof Gauge }> = {
-  fulfillment: { label: "Fulfillment Rate", value: "97.4%", note: "+2.3% from last month", icon: CircleGauge },
-  billing: { label: "Billing Cleared", value: "8,412", note: "99.1% processed", icon: ReceiptText },
   kna1: { label: "KNA1", value: "12.8k", note: "Customer master", icon: UsersRound },
   mara: { label: "MARA", value: "45.2k", note: "Material master", icon: Boxes },
   lfa1: { label: "LFA1", value: "3.4k", note: "Vendor master", icon: Building2 },
@@ -114,7 +110,7 @@ export function PlaceholderTile({ type }: { type: PlaceholderType }) {
   const [open, setOpen] = useState(false);
   const item = PLACEHOLDERS[type];
   return <>
-    <CardSurface label={item.label} value={item.value} note={item.note} icon={item.icon} onOpen={() => setOpen(true)} accent={type === "billing" ? 3 : 2} status="Under development" />
+    <CardSurface label={item.label} value={item.value} note={item.note} icon={item.icon} onOpen={() => setOpen(true)} accent={2} status="Under development" />
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent className="w-[92vw] max-w-md border-border bg-background p-7">
         <SheetHeader className="mt-8 text-left">

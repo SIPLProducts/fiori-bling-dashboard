@@ -27,3 +27,4 @@
 - [x] Recreate the full authenticated launchpad pixel-consciously from the supplied enterprise dashboard reference
 - [x] Equalize Sales cards, apply HBL MIS PORTAL branding, and show the latest Sales_Reports_KPI sync time
 - [x] Remove duplicate HBL header text and limit launchpad navigation to card action buttons
+- [x] Remove Fulfillment Rate and Billing Cleared from the Sales launchpad section
