@@ -37,13 +37,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MultiSelect } from "@/components/multi-select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { downloadCsv } from "@/lib/chart-export";
 import {
   readSharedSalesFilters,
@@ -95,7 +88,6 @@ const SHOW_PLANT_FILTER = false;
 /** Plant options removed from the Plant dropdown list. */
 const PLANT_OPTIONS_EXCLUDED = ["1200"];
 const SALES_TYPE_TABS = ["All", "Domestic", "Services", "Exports"] as const;
-const ALL_PERIODS = "__all__";
 const FISCAL_QUARTERS = ["Q1", "Q2", "Q3", "Q4"] as const;
 
 const KPI_TONES = [
@@ -1355,15 +1347,15 @@ export function SdLiveDashboard() {
       label: `Posting ${filters.from || "…"} → ${filters.to || "…"}`,
       clear: () => set({ from: "", to: "" }),
     });
-  if (filters.fiscalYear)
+  if (filters.fiscalYears.length)
     activeChips.push({
-      label: `Year: ${filters.fiscalYear}`,
-      clear: () => set({ fiscalYear: "", quarter: "" }),
+      label: `Year: ${filters.fiscalYears.length === 1 ? filters.fiscalYears[0] : `${filters.fiscalYears.length} selected`}`,
+      clear: () => set({ fiscalYears: [], quarters: [] }),
     });
-  if (filters.quarter)
+  if (filters.quarters.length)
     activeChips.push({
-      label: `Quarter: ${filters.quarter}`,
-      clear: () => set({ quarter: "" }),
+      label: `Quarter: ${filters.quarters.length === 1 ? filters.quarters[0] : `${filters.quarters.length} selected`}`,
+      clear: () => set({ quarters: [] }),
     });
   const listChips: [keyof SdFilters, string][] = [
     ["plants", "Plant"],
@@ -1472,8 +1464,8 @@ export function SdLiveDashboard() {
         customer: selection.customer ?? "",
         from: filters.from,
         to: filters.to,
-        fiscalYear: filters.fiscalYear,
-        quarter: filters.quarter,
+        fiscalYears: filters.fiscalYears,
+        quarters: filters.quarters,
         salesType: salesTypeTab === "All" ? "" : salesTypeTab === "Services" ? "Service" : salesTypeTab,
         segments: filters.segments,
         profitCentres: filters.profitCentres,
@@ -1602,42 +1594,30 @@ export function SdLiveDashboard() {
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Year
-                <Select
-                  value={filters.fiscalYear || ALL_PERIODS}
-                  onValueChange={(value) =>
-                    set({ fiscalYear: value === ALL_PERIODS ? "" : value, quarter: "" })
-                  }
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="All years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_PERIODS}>All years</SelectItem>
-                    {opts.fiscalYears.map((year) => (
-                      <SelectItem key={year} value={year}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1">
+                  <MultiSelect
+                    options={toOptions(opts.fiscalYears)}
+                    selected={filters.fiscalYears}
+                    onChange={(fiscalYears) => set({ fiscalYears, quarters: fiscalYears.length ? filters.quarters : [] })}
+                    placeholder="All years"
+                    emptyText="No years available"
+                  />
+                </div>
               </label>
               <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Quarter
-                <Select
-                  value={filters.quarter || ALL_PERIODS}
-                  disabled={!filters.fiscalYear}
-                  onValueChange={(value) => set({ quarter: value === ALL_PERIODS ? "" : value })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="All quarters" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_PERIODS}>All quarters</SelectItem>
-                    {FISCAL_QUARTERS.map((quarter) => (
-                      <SelectItem key={quarter} value={quarter}>
-                        {quarter} · {quarter === "Q1" ? "Apr–Jun" : quarter === "Q2" ? "Jul–Sep" : quarter === "Q3" ? "Oct–Dec" : "Jan–Mar"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1">
+                  <MultiSelect
+                    options={FISCAL_QUARTERS.map((quarter) => ({
+                      value: quarter,
+                      label: `${quarter} · ${quarter === "Q1" ? "Apr–Jun" : quarter === "Q2" ? "Jul–Sep" : quarter === "Q3" ? "Oct–Dec" : "Jan–Mar"}`,
+                    }))}
+                    selected={filters.quarters}
+                    onChange={(quarters) => set({ quarters })}
+                    placeholder="All quarters"
+                    disabled={!filters.fiscalYears.length}
+                  />
+                </div>
               </label>
               <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Posting from

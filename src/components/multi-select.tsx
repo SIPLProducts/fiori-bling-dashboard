@@ -10,12 +10,14 @@ export function MultiSelect({
   onChange,
   placeholder = "All",
   emptyText = "No values available",
+  disabled = false,
 }: {
   options: MultiSelectOption[];
   selected: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
   emptyText?: string;
+  disabled?: boolean;
 }) {
   const toggle = (value: string) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -33,6 +35,7 @@ export function MultiSelect({
         <Button
           variant="outline"
           role="combobox"
+          disabled={disabled}
           className="h-9 w-full justify-between rounded-sm px-2 text-sm font-normal"
         >
           <span className={`truncate ${selected.length ? "" : "text-muted-foreground"}`}>{label}</span>
