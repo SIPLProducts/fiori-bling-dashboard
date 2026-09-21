@@ -151,6 +151,8 @@ export function subscribeSdLines(onChange: () => void): () => void {
 export type SdFilters = {
   from: string;
   to: string;
+  fiscalYear: string;
+  quarter: string;
   plants: string[];
   profitCentres: string[];
   segments: string[];
@@ -161,6 +163,8 @@ export type SdFilters = {
 export const emptySdFilters: SdFilters = {
   from: "",
   to: "",
+  fiscalYear: "",
+  quarter: "",
   plants: [],
   profitCentres: [],
   segments: [],
@@ -168,12 +172,23 @@ export const emptySdFilters: SdFilters = {
   search: "",
 };
 
+export function fiscalQuarter(postingDate: string): string {
+  const month = Number(postingDate.slice(5, 7));
+  if (month >= 4 && month <= 6) return "Q1";
+  if (month >= 7 && month <= 9) return "Q2";
+  if (month >= 10 && month <= 12) return "Q3";
+  if (month >= 1 && month <= 3) return "Q4";
+  return "";
+}
+
 export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
   const term = f.search.trim().toLowerCase();
   const inList = (list: string[], value: string) => !list.length || list.includes(value);
   return rows.filter((r) => {
     if (f.from && r.postingDate && r.postingDate < f.from) return false;
     if (f.to && r.postingDate && r.postingDate > f.to) return false;
+    if (f.fiscalYear && r.fiscalYear !== f.fiscalYear) return false;
+    if (f.quarter && fiscalQuarter(r.postingDate) !== f.quarter) return false;
     if (!inList(f.plants, r.plant)) return false;
     if (
       f.profitCentres.length &&

@@ -37,6 +37,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MultiSelect } from "@/components/multi-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { downloadCsv } from "@/lib/chart-export";
 import {
   readSharedSalesFilters,
@@ -88,6 +95,8 @@ const SHOW_PLANT_FILTER = false;
 /** Plant options removed from the Plant dropdown list. */
 const PLANT_OPTIONS_EXCLUDED = ["1200"];
 const SALES_TYPE_TABS = ["All", "Domestic", "Services", "Exports"] as const;
+const ALL_PERIODS = "__all__";
+const FISCAL_QUARTERS = ["Q1", "Q2", "Q3", "Q4"] as const;
 
 const KPI_TONES = [
   "var(--kpi-1)",
@@ -1317,9 +1326,10 @@ export function SdLiveDashboard() {
   const opts = useMemo(
     () => ({
       plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
-      profitCentres: uniqueValues(all, (r) => r.pcShortName || r.profitCtrName || r.profitCtr),
+      profitCentres: uniqueValues(all, (r) => r.pcShortName),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
+      fiscalYears: uniqueValues(all, (r) => r.fiscalYear).sort((a, b) => b.localeCompare(a)),
     }),
     [all],
   );
@@ -1344,6 +1354,16 @@ export function SdLiveDashboard() {
     activeChips.push({
       label: `Posting ${filters.from || "…"} → ${filters.to || "…"}`,
       clear: () => set({ from: "", to: "" }),
+    });
+  if (filters.fiscalYear)
+    activeChips.push({
+      label: `Year: ${filters.fiscalYear}`,
+      clear: () => set({ fiscalYear: "", quarter: "" }),
+    });
+  if (filters.quarter)
+    activeChips.push({
+      label: `Quarter: ${filters.quarter}`,
+      clear: () => set({ quarter: "" }),
     });
   const listChips: [keyof SdFilters, string][] = [
     ["plants", "Plant"],
@@ -1452,6 +1472,8 @@ export function SdLiveDashboard() {
         customer: selection.customer ?? "",
         from: filters.from,
         to: filters.to,
+        fiscalYear: filters.fiscalYear,
+        quarter: filters.quarter,
         salesType: salesTypeTab === "All" ? "" : salesTypeTab === "Services" ? "Service" : salesTypeTab,
         segments: filters.segments,
         profitCentres: filters.profitCentres,
@@ -1469,7 +1491,7 @@ export function SdLiveDashboard() {
       {/* executive header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground">Management Sales Dashboard</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
         <div className="flex items-center gap-2">
@@ -1578,6 +1600,45 @@ export function SdLiveDashboard() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground">
+                Year
+                <Select
+                  value={filters.fiscalYear || ALL_PERIODS}
+                  onValueChange={(value) =>
+                    set({ fiscalYear: value === ALL_PERIODS ? "" : value, quarter: "" })
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="All years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_PERIODS}>All years</SelectItem>
+                    {opts.fiscalYears.map((year) => (
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="min-w-0 text-xs font-medium text-muted-foreground">
+                Quarter
+                <Select
+                  value={filters.quarter || ALL_PERIODS}
+                  disabled={!filters.fiscalYear}
+                  onValueChange={(value) => set({ quarter: value === ALL_PERIODS ? "" : value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="All quarters" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_PERIODS}>All quarters</SelectItem>
+                    {FISCAL_QUARTERS.map((quarter) => (
+                      <SelectItem key={quarter} value={quarter}>
+                        {quarter} · {quarter === "Q1" ? "Apr–Jun" : quarter === "Q2" ? "Jul–Sep" : quarter === "Q3" ? "Oct–Dec" : "Jan–Mar"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
               <label className="min-w-0 text-xs font-medium text-muted-foreground">
                 Posting from
                 <Input
@@ -1711,7 +1772,7 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
@@ -1838,7 +1899,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Sales by Segment (Amount)" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
@@ -1909,6 +1970,34 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
+
+            <Panel title="Sales Mix by Type" accent={2} expandable>
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className={full ? "min-h-0 flex-1" : ""}>
+                    <MixBars
+                      items={analytics.mixByType}
+                      total={totalRevenue}
+                      {...(full ? { height: "100%" as const } : {})}
+                    />
+                  </div>
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {analytics.mixByType.map((m, i) => (
+                      <div key={m.name} className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                          />
+                          {m.name || "—"}
+                        </span>
+                        <span className="tabular">{INRC(m.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Panel>
           </div>
 
           <div className="grid gap-4">
@@ -1941,7 +2030,7 @@ export function SdLiveDashboard() {
           </div>
 
           {/* Additional analysis kept below the management view */}
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Top 10 Materials" accent={3} expandable>
               {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
             </Panel>
@@ -1950,33 +2039,6 @@ export function SdLiveDashboard() {
               {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
 
-            <Panel title="Sales mix by type" accent={2} expandable>
-              {(full: boolean) => (
-                <div className={full ? "flex h-full flex-col" : ""}>
-                  <div className={full ? "min-h-0 flex-1" : ""}>
-                    <MixBars
-                      items={analytics.mixByType}
-                      total={totalRevenue}
-                      {...(full ? { height: "100%" as const } : {})}
-                    />
-                  </div>
-                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    {analytics.mixByType.map((m, i) => (
-                      <div key={m.name} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="size-2 rounded-full"
-                            style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-                          />
-                          {m.name || "—"}
-                        </span>
-                        <span className="tabular">{INRC(m.value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Panel>
           </div>
 
           <LinesTable

@@ -172,7 +172,7 @@ function mapRow(raw, sourceEndpoint, syncedAt) {
     sales_rep: str(pickField(raw, ["LIFNR", "lifnr", "salesRep"])),
     sales_rep_name: str(pickField(raw, ["NAME11", "name11", "salesRepName"])),
     total_ah: num(pickField(raw, ["TOT_AH", "tot_ah"])),
-    pc_short_name: str(pickField(raw, ["PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
+    pc_short_name: str(pickField(raw, ["ABTEI", "abtei", "PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
     sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup"])),
     new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl"])),
     division_name: str(pickField(raw, ["SPART_DESP", "DIVISION_NAME", "VTEXT_SPART", "divisionName"])),
