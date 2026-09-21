@@ -71,8 +71,8 @@ function Launchpad() {
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
         return <section key={group.key} className="mb-7">
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
-          {group.key === "sales-distribution" ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {groupTiles.map((tile, index) => <div key={tile.id} className={index === 0 ? "md:col-span-2 xl:col-span-2" : ""}><TileCard tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} /></div>)}
+          {group.key === "sales-distribution" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
             <PlaceholderTile type="fulfillment" /><PlaceholderTile type="billing" />
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
