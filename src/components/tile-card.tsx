@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
 import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type KpiValue = { value: number; unit?: string; footer?: string; trend?: number[] };
@@ -65,8 +66,8 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
   label: string; value: string; note: string; icon: typeof Gauge; trend?: number[] | undefined; href?: string | undefined; onOpen?: (() => void) | undefined; accent?: number; status?: string;
 }) {
   const style = { "--tile-accent": `var(--kpi-${accent})` } as CSSProperties;
-  const content = (
-    <div className="group flex h-full min-h-[188px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-200 hover:-translate-y-1 hover:scale-[1.008] hover:shadow-tile-hover motion-reduce:transform-none" style={style}>
+  return (
+    <div className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile" style={style}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
@@ -76,14 +77,29 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       </div>
       {trend?.length ? <div className="text-primary"><Sparkline values={trend} /></div> : <div className="h-8" />}
       <p className="mt-auto truncate text-[10px] text-muted-foreground">{note}</p>
-      <div className="mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset">
-        <span className="truncate text-muted-foreground">{status ?? "View details"}</span>
-        <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
-      </div>
+      {href ? (
+        <Link
+          to={href}
+          aria-label={`${status ?? "View details"}: ${label}`}
+          className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
+        >
+          <span className="truncate text-muted-foreground">{status ?? "View details"}</span>
+          <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label={`${status ?? "View details"}: ${label}`}
+          onClick={onOpen}
+          className="group mt-3 min-h-8 w-full justify-between rounded-full bg-launchpad-tile-footer px-3 text-[10px] font-normal text-muted-foreground shadow-launchpad-inset hover:-translate-y-0.5 hover:bg-launchpad-tile-footer focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"
+        >
+          <span className="truncate">{status ?? "View details"}</span>
+          <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+        </Button>
+      )}
     </div>
   );
-  if (href) return <Link to={href} className="block h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{content}</Link>;
-  return <div role="button" tabIndex={0} aria-label={`Open ${label}`} className="h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" onClick={onOpen} onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onOpen?.(); } }}>{content}</div>;
 }
 
 export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {

@@ -46,7 +46,7 @@ export function ShellBar({
         </span>
         {launchpad ? (
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs font-semibold tracking-wide">HBL MIS PORTAL</span>
+            <span className="truncate text-xs font-semibold tracking-wide">MIS PORTAL</span>
           </span>
         ) : null}
       </Link>
