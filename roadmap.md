@@ -22,3 +22,4 @@
 - [x] Remove Billed Revenue, Net Sales, Backorders, and Sales Trend launchpad cards
 - [x] Add module-level and child-screen role permissions with filtered launchpad cards
 - [x] Rename the Total Sales dashboard, place Sales Mix beside Pareto, map Profit Centre from ABTEI, and add April–March Year/Quarter filters
+- [x] Support multi-select Year and April–March Quarter filters across the Sales Dashboard and drill-downs
