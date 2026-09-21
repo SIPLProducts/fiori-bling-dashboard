@@ -1,222 +1,113 @@
+import type { CSSProperties, KeyboardEvent } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  AlertTriangle,
-  BadgeCheck,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Grid3x3,
-  LayoutList,
-  PieChart,
-  ShoppingCart,
-  Star,
-  TrendingUp,
-  Users,
-  Wallet,
   ArrowRight,
+  Banknote,
+  Boxes,
+  Building2,
+  CalendarClock,
+  ChartNoAxesCombined,
+  CircleDollarSign,
+  CircleGauge,
+  Clock3,
+  Factory,
+  Gauge,
+  PackageCheck,
+  ReceiptText,
+  ShoppingCart,
+  TableProperties,
+  TrendingUp,
+  UsersRound,
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
 import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-const ICONS: Record<string, typeof Grid3x3> = {
-  grid: Grid3x3,
-  doc: FileText,
-  list: LayoutList,
-  users: Users,
-  cart: ShoppingCart,
-  currency: Wallet,
-  trend: TrendingUp,
-  savings: BadgeCheck,
-  star: Star,
-  clock: Clock,
-  alert: AlertTriangle,
-  check: CheckCircle2,
-  pie: PieChart,
+type KpiValue = { value: number; unit?: string; footer?: string; trend?: number[] };
+
+const ICONS = {
+  sd_open_orders: ShoppingCart,
+  fi_receivables: CircleDollarSign,
+  fi_payables: Banknote,
+  fi_dso: CalendarClock,
+  fi_cash_trend: TrendingUp,
+  pp_open_orders: Factory,
+  pp_schedule_adherence: PackageCheck,
+  pp_capacity_load: Gauge,
+  pp_output_trend: ChartNoAxesCombined,
+} as const;
+
+const PLACEHOLDERS: Record<string, { label: string; value: string; note: string; icon: typeof Gauge }> = {
+  fulfillment: { label: "Fulfillment Rate", value: "97.4%", note: "+2.3% from last month", icon: CircleGauge },
+  billing: { label: "Billing Cleared", value: "8,412", note: "99.1% processed", icon: ReceiptText },
+  kna1: { label: "KNA1", value: "12.8k", note: "Customer master", icon: UsersRound },
+  mara: { label: "MARA", value: "45.2k", note: "Material master", icon: Boxes },
+  lfa1: { label: "LFA1", value: "3.4k", note: "Vendor master", icon: Building2 },
+  t001w: { label: "T001W", value: "28 units", note: "Plant master", icon: Factory },
 };
 
-function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2) return null;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const span = max - min || 1;
-  const step = 100 / (points.length - 1);
-  const bars = points.map((p, i) => ({
-    x: i * step,
-    h: 8 + ((p - min) / span) * 26,
-  }));
-  return (
-    <svg viewBox="0 0 100 36" className="h-9 w-full" preserveAspectRatio="none" aria-hidden="true">
-      {bars.map((bar) => (
-        <rect
-          key={bar.x}
-          x={bar.x}
-          y={36 - bar.h}
-          width={step * 0.62}
-          height={bar.h}
-          rx="0.8"
-          className="fill-primary/70"
-        />
-      ))}
-    </svg>
-  );
+function compact(value: number): string {
+  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
-function formatValue(value: number) {
-  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(2)}K`;
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+function Sparkline({ values }: { values: number[] }) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values.map((v, i) => `${(i / Math.max(values.length - 1, 1)) * 100},${26 - ((v - min) / range) * 22}`).join(" ");
+  return <svg viewBox="0 0 100 30" className="mt-2 h-8 w-full" preserveAspectRatio="none" aria-hidden="true"><polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.2" vectorEffect="non-scaling-stroke" /></svg>;
 }
 
-function actionLabel(tile: TileRecord) {
-  if (tile.kind === "chart") return "View analytics";
-  if (tile.kind === "kpi") return "View details";
-  if (tile.target_path?.startsWith("/tables/")) return "Open table";
-  return "Open report";
-}
-
-function TileAction({ label }: { label: string }) {
-  return (
-    <div className="-mx-4 -mb-4 mt-3 flex min-h-9 items-center justify-between border-t border-border/70 bg-launchpad-tile-footer px-4 text-[11px] font-semibold text-primary">
-      <span>{label}</span>
-      <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
-    </div>
-  );
-}
-
-export function TileCard({
-
-  tile,
-  kpi,
-}: {
-  tile: TileRecord;
-  kpi: { value: number; unit?: string; footer?: string; trend?: number[] } | undefined;
+function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, accent = 2, status }: {
+  label: string; value: string; note: string; icon: typeof Gauge; trend?: number[]; href?: string; onOpen?: () => void; accent?: number; status?: string;
 }) {
-  const Icon = ICONS[tile.icon] ?? Grid3x3;
-  const to = tile.target_path ?? "/launchpad";
-
-  // The plain SD launch tile is replaced by the live Total Sales card,
-  // falling back to the original tile look if live data is unavailable.
-  if (tile.kind === "launch" && to === "/reports/module/sd") {
-    const fallback = (
-      <Link
-        to="/reports/module/$module"
-        params={{ module: "sd" }}
-        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-      >
-        <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
-          <div>
-            <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
-              {tile.title}
-            </div>
-            {tile.subtitle ? (
-              <div className="mt-0.5 text-xs text-muted-foreground">{tile.subtitle}</div>
-            ) : null}
-          </div>
-          <div className="mt-auto flex justify-end">
-            <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
-              <Icon className="size-4" strokeWidth={1.7} />
-            </span>
-          </div>
-          <TileAction label={actionLabel(tile)} />
-        </div>
-      </Link>
-    );
-    return <NetSalesLaunchCard fallback={fallback} />;
-  }
-
-
-
-
-  const body = (
-    <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
+  const style = { "--tile-accent": `var(--kpi-${accent})` } as CSSProperties;
+  const content = (
+    <div className="group flex h-full min-h-[188px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-200 hover:-translate-y-1 hover:scale-[1.008] hover:shadow-tile-hover motion-reduce:transform-none" style={style}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-        <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
-          {tile.title}
+          <p className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
+          <p className="mt-2 text-[26px] leading-none font-semibold text-foreground">{value}</p>
         </div>
-        {tile.subtitle ? (
-          <div className="mt-0.5 text-xs text-muted-foreground">{tile.subtitle}</div>
-        ) : null}
-        </div>
-        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-          <Icon className="size-4" strokeWidth={1.7} />
-        </span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
       </div>
-
-      {tile.kind === "kpi" && kpi ? (
-        <div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="tabular text-[32px] leading-none font-light text-primary">
-              {formatValue(kpi.value)}
-            </span>
-            {kpi.unit ? <span className="text-xs text-muted-foreground">{kpi.unit}</span> : null}
-          </div>
-          <div className="mt-2 border-t border-border pt-1.5 text-[11px] text-muted-foreground">
-            {kpi.footer ?? tile.subtitle}
-          </div>
-        </div>
-      ) : tile.kind === "chart" && kpi?.trend ? (
-        <div>
-          <Sparkline points={kpi.trend} />
-          <div className="mt-1 border-t border-border pt-1.5 text-[11px] text-muted-foreground">
-            {kpi.footer ?? tile.subtitle}
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1" />
-      )}
-      {to !== "/launchpad" ? <TileAction label={actionLabel(tile)} /> : null}
+      {trend?.length ? <div className="text-primary"><Sparkline values={trend} /></div> : <div className="h-8" />}
+      <p className="mt-auto truncate text-[10px] text-muted-foreground">{note}</p>
+      <div className="mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset">
+        <span className="truncate text-muted-foreground">{status ?? "View details"}</span>
+        <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+      </div>
     </div>
   );
+  if (href) return <Link to={href} className="block h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">{content}</Link>;
+  return <div role="button" tabIndex={0} aria-label={`Open ${label}`} className="h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" onClick={onOpen} onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onOpen?.(); } }}>{content}</div>;
+}
 
-  if (to.startsWith("/reports/module/")) {
-    if (tile.kpi_key === "sd_open_orders") {
-      return (
-        <Link
-          to="/reports/sd/open-sales-orders"
-          className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
-          {body}
-        </Link>
-      );
-    }
-    const moduleKey = to.split("/").pop()!;
-    return (
-      <Link
-        to="/reports/module/$module"
-        params={{ module: moduleKey }}
-        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-      >
-        {body}
-      </Link>
-    );
-  }
-  if (to.startsWith("/tables/")) {
-    const key = to.split("/").pop()!;
-    return (
-      <Link
-        to="/tables/$tableKey"
-        params={{ tableKey: key }}
-        className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-      >
-        {body}
-      </Link>
-    );
-  }
-  if (
-    to === "/reports/sales-analytics" ||
-    to === "/reports/sd/kpi" ||
-    to === "/reports/sd/finance-gst" ||
-    to === "/reports/sd/register" ||
-    to === "/admin/users"
-  ) {
+export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {
+  if (tile.kind === "launch" && tile.target === "/reports/module/sd") return <NetSalesLaunchCard />;
+  const Icon = ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties;
+  const href = tile.target || "/launchpad";
+  return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={tile.accent_index ?? 2} />;
+}
 
-    return (
-      <Link to={to} className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none">
-        {body}
-      </Link>
-    );
-  }
+export function PlaceholderTile({ type }: { type: keyof typeof PLACEHOLDERS }) {
+  const [open, setOpen] = useState(false);
+  const item = PLACEHOLDERS[type];
+  return <>
+    <CardSurface label={item.label} value={item.value} note={item.note} icon={item.icon} onOpen={() => setOpen(true)} accent={type === "billing" ? 3 : 2} status="Under development" />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetContent className="w-[92vw] max-w-md border-border bg-background p-7">
+        <SheetHeader className="mt-8 text-left">
+          <span className="mb-4 grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"><Clock3 className="size-5" /></span>
+          <SheetTitle>{item.label}</SheetTitle>
+          <SheetDescription>This screen is under development. It will be available in a future portal update.</SheetDescription>
+        </SheetHeader>
+      </SheetContent>
+    </Sheet>
+  </>;
+}
 
-  return <div>{body}</div>;
-
+export function TableStatusTile({ title, value, note, href }: { title: string; value: string; note: string; href?: string }) {
+  return <CardSurface label={title} value={value} note={note} icon={TableProperties} href={href} accent={6} status={href ? "Open table" : "Under development"} />;
 }
