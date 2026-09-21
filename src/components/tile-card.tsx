@@ -65,13 +65,6 @@ function formatValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-/** KPI tiles drill into the PO report pre-filtered on the matching status. */
-const PO_FOCUS: Record<string, string> = {
-  po_overdue: "Overdue",
-  pending_confirmations: "Open",
-  pending_approvals: "Blocked",
-};
-
 export function TileCard({
 
   tile,
@@ -173,18 +166,6 @@ export function TileCard({
       </Link>
     );
   }
-  if (to === "/reports/purchase-orders") {
-    const focus = PO_FOCUS[tile.kpi_key ?? ""];
-    return (
-      <Link
-        to="/reports/purchase-orders"
-        search={{ focus: focus ?? undefined }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        {body}
-      </Link>
-    );
-  }
   if (to.startsWith("/tables/")) {
     const key = to.split("/").pop()!;
     return (
@@ -198,8 +179,6 @@ export function TileCard({
     );
   }
   if (
-    to === "/reports/procurement" ||
-    to === "/reports/suppliers" ||
     to === "/reports/sales-analytics" ||
     to === "/reports/sd/kpi" ||
     to === "/reports/sd/finance-gst" ||
