@@ -1,17 +1,17 @@
 import { useMemo, useState, type ComponentType } from "react";
 import {
   AlertTriangle,
-  Bell,
   Box,
   CalendarDays,
+  ChevronDown,
   CircleDollarSign,
   Clock3,
   FileText,
+  Filter,
   Lightbulb,
   PackageOpen,
   Percent,
-  Search,
-  UserRound,
+  RotateCcw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -72,10 +72,10 @@ function Panel({ title, children, className = "", unit }: { title: string; child
 
 function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   return (
-    <label className="rounded-md border border-border bg-card px-3 py-2 shadow-tile">
-      <span className="block text-[10px] font-medium text-muted-foreground">{label}</span>
+    <label className="min-w-0 text-xs font-medium text-muted-foreground">
+      <span className="block">{label}</span>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="mt-0.5 h-6 border-0 p-0 text-xs font-medium shadow-none focus:ring-0">
+        <SelectTrigger className="mt-1 h-9 w-full bg-background text-xs font-medium">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -135,6 +135,7 @@ export function OpenSalesOrdersDashboard() {
   const [dateRange, setDateRange] = useState("all");
   const [trendMode, setTrendMode] = useState<"Value" | "Quantity" | "Both">("Value");
   const [page, setPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(true);
 
   const filtered = useMemo(() => data.filter((row) => {
     const afterStart = dateRange === "all" || row.orderDate >= (dateRange === "last3" ? "2025-02-01" : "2024-10-01");
@@ -165,26 +166,47 @@ export function OpenSalesOrdersDashboard() {
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const highestZone = byZone[0]?.name ?? "—";
   const highestGroup = byGroup[0]?.name ?? "—";
+  const hasActiveFilters = dateRange !== "all" || Object.values(filters).some((value) => value !== "All");
+
+  const resetFilters = () => {
+    setDateRange("all");
+    setFilters(EMPTY_FILTERS);
+    setPage(1);
+  };
 
   return (
     <div className="mx-auto min-w-0 max-w-[1600px] space-y-2.5">
-      <header className="flex min-h-10 items-center justify-between gap-4 px-1">
+      <header className="min-h-10 px-1">
         <div className="min-w-0"><h1 className="text-[22px] leading-tight font-semibold text-foreground">Open Sales Orders</h1><p className="truncate text-[11px] text-muted-foreground">Monitor and manage open sales orders across regions, customers and products</p></div>
-        <div className="hidden shrink-0 items-center gap-2 sm:flex">
-          <label className="flex h-8 w-48 items-center gap-2 rounded-full border border-border bg-card px-3 text-muted-foreground shadow-sm"><Search className="size-3.5" /><span className="sr-only">Search</span><input aria-label="Search" placeholder="Search..." className="min-w-0 flex-1 bg-transparent text-[10px] outline-none placeholder:text-muted-foreground" /></label>
-          <Button type="button" variant="ghost" size="icon" aria-label="Notifications" className="relative size-8 rounded-full"><Bell className="size-4" /><span className="absolute right-0 top-0 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">3</span></Button>
-          <span className="grid size-8 place-items-center rounded-full bg-primary/10 text-primary"><UserRound className="size-4" /></span>
-        </div>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-6">
-        <label className="rounded-md border border-border bg-card px-3 py-2 shadow-tile"><span className="block text-[10px] font-medium text-muted-foreground">Date Range</span><Select value={dateRange} onValueChange={(value) => { setDateRange(value); setPage(1); }}><SelectTrigger className="mt-0.5 h-6 border-0 p-0 text-xs font-medium shadow-none focus:ring-0"><SelectValue /><CalendarDays className="mr-1 size-4 text-primary" /></SelectTrigger><SelectContent><SelectItem value="all">01 Apr 2024 - 30 Apr 2025</SelectItem><SelectItem value="last6">Oct 2024 - Apr 2025</SelectItem><SelectItem value="last3">Feb 2025 - Apr 2025</SelectItem></SelectContent></Select></label>
-        <FilterSelect label="Sales Organization" value={filters.salesOrg} options={options("salesOrg")} onChange={(v) => setFilter("salesOrg", v)} />
-        <FilterSelect label="Distribution Channel" value={filters.channel} options={options("channel")} onChange={(v) => setFilter("channel", v)} />
-        <FilterSelect label="Sales Office" value={filters.office} options={options("office")} onChange={(v) => setFilter("office", v)} />
-        <FilterSelect label="Customer" value={filters.customer} options={options("customer")} onChange={(v) => setFilter("customer", v)} />
-        <FilterSelect label="Sales Group" value={filters.salesGroup} options={options("salesGroup")} onChange={(v) => setFilter("salesGroup", v)} />
-      </div>
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-card-foreground">
+            <Filter className="size-4 shrink-0 text-primary" />
+            <span className="truncate">Smart filters</span>
+            <span className="shrink-0 text-xs font-normal text-muted-foreground">{hasActiveFilters ? "Filtered" : "All data"}</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button type="button" variant="outline" size="sm" className="h-9" disabled={!hasActiveFilters} onClick={resetFilters}>
+              <RotateCcw className="mr-1 size-3.5" /> Reset
+            </Button>
+            <Button type="button" variant="outline" size="icon" className="size-9" onClick={() => setShowFilters((current) => !current)} aria-expanded={showFilters} aria-label={showFilters ? "Collapse filters" : "Expand filters"}>
+              <ChevronDown className={`size-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+            </Button>
+          </div>
+        </div>
+        {showFilters ? (
+          <div className="grid gap-3 border-t border-border bg-muted/30 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <label className="min-w-0 text-xs font-medium text-muted-foreground"><span className="block">Date Range</span><Select value={dateRange} onValueChange={(value) => { setDateRange(value); setPage(1); }}><SelectTrigger className="mt-1 h-9 w-full bg-background text-xs font-medium"><SelectValue /><CalendarDays className="mr-1 size-4 text-primary" /></SelectTrigger><SelectContent><SelectItem value="all">01 Apr 2024 - 30 Apr 2025</SelectItem><SelectItem value="last6">Oct 2024 - Apr 2025</SelectItem><SelectItem value="last3">Feb 2025 - Apr 2025</SelectItem></SelectContent></Select></label>
+            <FilterSelect label="Sales Organization" value={filters.salesOrg} options={options("salesOrg")} onChange={(v) => setFilter("salesOrg", v)} />
+            <FilterSelect label="Distribution Channel" value={filters.channel} options={options("channel")} onChange={(v) => setFilter("channel", v)} />
+            <FilterSelect label="Sales Office" value={filters.office} options={options("office")} onChange={(v) => setFilter("office", v)} />
+            <FilterSelect label="Customer" value={filters.customer} options={options("customer")} onChange={(v) => setFilter("customer", v)} />
+            <FilterSelect label="Sales Group" value={filters.salesGroup} options={options("salesGroup")} onChange={(v) => setFilter("salesGroup", v)} />
+          </div>
+        ) : null}
+      </section>
 
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-6">
         <KpiCard label="Total Open Sales Orders" value={filtered.length.toLocaleString("en-IN")} delta="▲ 12%" icon={FileText} tone={0} values={[4, 6, 5, 8, 9, 12, 8, 13, 10, 15, 12, 16]} />
