@@ -29,3 +29,4 @@
 - [x] Remove duplicate HBL header text and limit launchpad navigation to card action buttons
 - [x] Remove Fulfillment Rate and Billing Cleared from the Sales launchpad section
 - [x] Restore the compact Open Sales Orders report to the supplied reference layout
+- [x] Point the Open Sales Orders launchpad action to its dedicated screenshot-matched dashboard
