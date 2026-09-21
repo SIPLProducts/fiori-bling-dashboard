@@ -25,3 +25,4 @@
 - [x] Support multi-select Year and April–March Quarter filters across the Sales Dashboard and drill-downs
 - [x] Refresh launchpad cards and selected module tabs to match the supplied Fiori reference
 - [x] Recreate the full authenticated launchpad pixel-consciously from the supplied enterprise dashboard reference
+- [x] Equalize Sales cards, apply HBL MIS PORTAL branding, and show the latest Sales_Reports_KPI sync time

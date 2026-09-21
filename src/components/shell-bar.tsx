@@ -41,14 +41,12 @@ export function ShellBar({
   return (
     <header className={`sticky top-0 z-40 flex items-center gap-3 bg-shell px-4 text-shell-foreground ${launchpad ? "h-10" : "h-14"}`}>
       <Link to="/launchpad" className="flex min-w-0 items-center gap-2">
-        <span className={`grid shrink-0 place-items-center overflow-hidden bg-shell-foreground/14 ${launchpad ? "size-7 rounded-lg" : "h-8 rounded-sm px-2"}`}>
-          {launchpad ? <span className="text-[11px] font-bold">SAP</span> : <img src={hblLogo} alt="HBL" className="h-6 w-auto object-contain" />}
+        <span className={`grid shrink-0 place-items-center overflow-hidden bg-shell-foreground/14 ${launchpad ? "h-7 rounded-lg px-1.5" : "h-8 rounded-sm px-2"}`}>
+          <img src={hblLogo} alt="HBL" className={launchpad ? "h-4 w-auto object-contain brightness-0 invert" : "h-6 w-auto object-contain"} />
         </span>
         {launchpad ? (
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs font-semibold tracking-wide">SAP ENTERPRISE PORTAL</span>
-            <span className="hidden h-4 w-px bg-shell-foreground/25 sm:block" />
-            <span className="hidden truncate text-[10px] text-shell-muted sm:block">Connected to PRD-01 (S/4HANA)</span>
+            <span className="truncate text-xs font-semibold tracking-wide">HBL MIS PORTAL</span>
           </span>
         ) : null}
       </Link>
