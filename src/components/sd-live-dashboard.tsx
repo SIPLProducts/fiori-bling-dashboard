@@ -1712,6 +1712,32 @@ export function SdLiveDashboard() {
             />
           </div>
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
+              {(full: boolean) => (
+                <MainGroupTreemap
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
+                />
+              )}
+            </Panel>
+
+            <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
+              {(full: boolean) => (
+                <MainGroupBars
+                  items={analytics.byMainGroup}
+                  subGroups={analytics.subGroupsByMainGroup}
+                  full={full}
+                  selected={selectedMainGroup}
+                  onSelect={setSelectedMainGroup}
+                />
+              )}
+            </Panel>
+          </div>
+
 
           {focus ? (
             <FocusTable
@@ -1813,8 +1839,8 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          {/* Row 3 — customers, pareto, main group */}
-          <div className="grid gap-4 lg:grid-cols-3">
+          {/* Row 3 — customers and pareto */}
+          <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Top 10 Customers by Amount" accent={2} expandable>
               {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
             </Panel>
@@ -1886,17 +1912,6 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
-              {(full: boolean) => (
-                <MainGroupTreemap
-                  items={analytics.byMainGroup}
-                  subGroups={analytics.subGroupsByMainGroup}
-                  full={full}
-                  selected={selectedMainGroup}
-                  onSelect={setSelectedMainGroup}
-                />
-              )}
-            </Panel>
           </div>
 
           {/* Row 4 — sales vs quantity, alerts */}
@@ -2029,24 +2044,6 @@ export function SdLiveDashboard() {
               )}
             </Panel>
           </div>
-
-          <div className="grid gap-4">
-            <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
-              {(full: boolean) => (
-                <MainGroupBars
-                  items={analytics.byMainGroup}
-                  subGroups={analytics.subGroupsByMainGroup}
-                  full={full}
-                  selected={selectedMainGroup}
-                  onSelect={setSelectedMainGroup}
-                />
-              )}
-            </Panel>
-          </div>
-
-
-
-
 
           <LinesTable
             rows={filtered}
