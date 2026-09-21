@@ -52,7 +52,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
   const color = KPI_TONES[0];
 
   if (isLoading) {
-    return <div className="h-[192px] w-full animate-pulse rounded-md border border-border bg-launchpad-tile" />;
+    return <div className="h-[250px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile sm:h-[244px]" />;
   }
   if (!data) return <>{fallback}</>;
 
@@ -60,10 +60,10 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
     <Link
       to="/reports/module/$module"
       params={{ module: "sd" }}
-      className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="group block h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       <section
-        className="relative flex h-[192px] w-full cursor-pointer flex-col overflow-hidden rounded-md border p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:shadow-tile-hover motion-reduce:transform-none"
+        className="relative flex h-[250px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-[1.01] group-hover:shadow-tile-hover motion-reduce:transform-none sm:h-[244px]"
         style={{
           borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
           background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)`,
@@ -71,10 +71,10 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <p className="truncate text-[10px] font-semibold tracking-wide text-primary uppercase">
               Total Sales
             </p>
-            <p className="tabular mt-1 text-2xl font-semibold" style={{ color }}>
+            <p className="tabular mt-1 text-[28px] leading-none font-semibold" style={{ color }}>
               ₹{compact(data.total)}
             </p>
           </div>
@@ -85,18 +85,18 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             <IndianRupee className="size-4" strokeWidth={1.7} />
           </span>
         </div>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        <p className="mt-1 truncate text-[11px] text-launchpad-muted">
           Filtered postings · click for details
         </p>
         {data.total ? (
-          <div className="mt-1.5 space-y-1">
+          <div className="mt-3 space-y-2">
             {data.shares.slice(0, 3).map((item, i) => (
               <div key={item.name}>
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between text-[10px] font-medium text-card-foreground">
                   <span className="truncate">{item.name || "—"}</span>
                   <span className="tabular">{((item.value / data.total) * 100).toFixed(1)}%</span>
                 </div>
-                <div className="mt-0.5 h-1.5 rounded-full bg-muted">
+                <div className="mt-1 h-1.5 rounded-full bg-muted">
                   <div
                     className="h-1.5 rounded-full"
                     style={{
@@ -109,9 +109,12 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
-        <div className="-mx-4 -mb-4 mt-auto flex min-h-9 items-center justify-between border-t border-border/70 bg-launchpad-tile-footer px-4 text-[11px] font-semibold text-primary">
-          <span>Open details</span>
+        <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-3 text-[10px] text-launchpad-muted">
+          <span className="truncate">Updated 5 mins ago</span>
+          <span className="flex min-h-8 items-center gap-1 rounded-full border border-border/60 bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-[inset_0_1px_2px_color-mix(in_oklab,var(--color-ink)_8%,transparent)]">
+          Open Details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+          </span>
         </div>
       </section>
     </Link>
