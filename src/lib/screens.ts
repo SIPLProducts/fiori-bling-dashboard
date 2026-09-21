@@ -8,7 +8,6 @@ import { SD_REPORTS } from "./sd-reports";
 
 export type ScreenGroup =
   | "Home"
-  | "Procurement launchpad"
   | "Reports"
   | "Sales Distribution Reports"
   | "SAP modules"
@@ -20,16 +19,6 @@ export type ScreenDef = {
   label: string;
   group: ScreenGroup;
 };
-
-/** Launchpad tile groups that are not SAP modules — each is grantable per role. */
-export const PROCUREMENT_TILE_GROUPS: { groupKey: string; label: string }[] = [
-  { groupKey: "purchase-requisition", label: "Purchase Requisition Processing" },
-  { groupKey: "supplier-evaluation", label: "Supplier Evaluation" },
-  { groupKey: "procurement-overview", label: "Procurement Overview (tiles)" },
-  { groupKey: "workflow", label: "Workflow" },
-  { groupKey: "purchase-order", label: "Purchase Order Processing" },
-  { groupKey: "purchase-contract", label: "Purchase Contract Processing" },
-];
 
 export const TABLES_MASTER_GROUP_KEY = "tables-master";
 
@@ -43,14 +32,6 @@ export const SUPER_ADMIN_ROLE_KEY = "super_admin";
 
 export const SCREENS: ScreenDef[] = [
   { key: "launchpad", label: "Launchpad (Home)", group: "Home" },
-  ...PROCUREMENT_TILE_GROUPS.map((group) => ({
-    key: groupScreenKey(group.groupKey),
-    label: group.label,
-    group: "Procurement launchpad" as const,
-  })),
-  { key: "reports.procurement", label: "Procurement Overview", group: "Reports" },
-  { key: "reports.purchase-orders", label: "Purchase Orders", group: "Reports" },
-  { key: "reports.suppliers", label: "Suppliers", group: "Reports" },
   { key: "reports.sales-analytics", label: "Sales Analytics", group: "Reports" },
   ...SD_REPORTS.map((report) => ({
     key: report.screen,
@@ -76,7 +57,6 @@ export const SCREENS: ScreenDef[] = [
 
 export const SCREEN_GROUPS: ScreenGroup[] = [
   "Home",
-  "Procurement launchpad",
   "Reports",
   "Sales Distribution Reports",
   "SAP modules",

@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule, MODULES } from "./sap-modules";
 import { accessForUser } from "./access";
-import { groupScreenKey } from "./screens";
 
 import * as provider from "./sap-provider";
 
@@ -47,7 +46,7 @@ const GROUP_SCREEN: Record<string, string> = Object.fromEntries(
 );
 
 function screenForGroup(groupKey: string): string {
-  return GROUP_SCREEN[groupKey] ?? groupScreenKey(groupKey);
+  return GROUP_SCREEN[groupKey] ?? `group.${groupKey}`;
 }
 
 export async function getLaunchpad(): Promise<LaunchpadData> {
@@ -78,40 +77,6 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
     kpis,
     providerMode: provider.providerMode(),
   };
-}
-
-/** Screen permission required for each report dataset. */
-const REPORT_SCREENS = {
-  procurement: "reports.procurement",
-  purchaseOrders: "reports.purchase-orders",
-  suppliers: "reports.suppliers",
-} as const;
-
-async function assertReportAccess(report: keyof typeof REPORT_SCREENS) {
-  const screens = await screensForUser(await requireUserId());
-  if (!screens.includes(REPORT_SCREENS[report])) throw new Error("FORBIDDEN_REPORT");
-}
-
-export async function getProcurementOverview() {
-  await assertReportAccess("procurement");
-  const [trend, categories, suppliers] = await Promise.all([
-    provider.getSpendTrend(),
-    provider.getCategorySpend(),
-    provider.getTopSuppliers(8),
-  ]);
-  return { trend, categories, suppliers, providerMode: provider.providerMode() };
-}
-
-export async function getPurchaseOrderReport() {
-  await assertReportAccess("purchaseOrders");
-  const items = await provider.getPurchaseOrderItems();
-  return { items, providerMode: provider.providerMode() };
-}
-
-export async function getSupplierReport() {
-  await assertReportAccess("suppliers");
-  const suppliers = await provider.getSupplierScorecards();
-  return { suppliers, providerMode: provider.providerMode() };
 }
 
 export async function getModuleReport(input: { data: { module: string } }) {

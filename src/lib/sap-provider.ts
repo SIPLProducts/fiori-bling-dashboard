@@ -7,19 +7,6 @@ import { SALES_ROWS } from "./zfisales-data";
  * by the middleware service (never from the browser, so SAP credentials are
  * never exposed) and plug in behind the same function signatures.
  */
-import {
-  categorySpend,
-  kpiValues,
-  purchaseOrderItems,
-  spendTrend,
-  supplierScorecards,
-  topSuppliers,
-  type CategorySpend,
-  type PurchaseOrderItem,
-  type SpendPoint,
-  type SupplierScorecard,
-  type SupplierSpend,
-} from "./sap-mock";
 import { moduleKpiValues, moduleReport, type ModuleReport } from "./sap-mock-modules";
 
 export type ProviderMode = "mock" | "odata";
@@ -28,27 +15,7 @@ export function providerMode(): ProviderMode {
   return "mock";
 }
 
-export async function getSpendTrend(): Promise<SpendPoint[]> {
-  return spendTrend();
-}
-
-export async function getCategorySpend(): Promise<CategorySpend[]> {
-  return categorySpend();
-}
-
-export async function getTopSuppliers(limit = 8): Promise<SupplierSpend[]> {
-  return topSuppliers(limit);
-}
-
-export async function getPurchaseOrderItems(): Promise<PurchaseOrderItem[]> {
-  return purchaseOrderItems();
-}
-
-export async function getSupplierScorecards(): Promise<SupplierScorecard[]> {
-  return supplierScorecards();
-}
-
-/** Analytical report for one SAP module (SD, FI, CO, PP, QM, PS). */
+/** Analytical report for one supported SAP module (SD, FI, PP). */
 export async function getModuleReportData(key: string): Promise<ModuleReport | null> {
   return moduleReport(key);
 }
@@ -75,5 +42,5 @@ function salesRegisterKpis() {
 export async function getKpiValues(): Promise<
   Record<string, { value: number; unit?: string; footer?: string; trend?: number[] }>
 > {
-  return { ...kpiValues(), ...moduleKpiValues(), ...salesRegisterKpis() };
+  return { ...moduleKpiValues(), ...salesRegisterKpis() };
 }

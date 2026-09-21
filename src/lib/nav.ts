@@ -1,8 +1,5 @@
 export type NavPath =
   | "/launchpad"
-  | "/reports/procurement"
-  | "/reports/purchase-orders"
-  | "/reports/suppliers"
   | "/reports/sales-analytics"
   | "/admin/users"
   | "/admin/roles"
@@ -18,9 +15,6 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/launchpad", label: "Home", screen: "launchpad" },
-  { to: "/reports/procurement", label: "Procurement", screen: "reports.procurement" },
-  { to: "/reports/purchase-orders", label: "Purchase Orders", screen: "reports.purchase-orders" },
-  { to: "/reports/suppliers", label: "Suppliers", screen: "reports.suppliers" },
   { to: "/reports/sales-analytics", label: "Sales Analytics", screen: "reports.sales-analytics" },
 ];
 
@@ -52,26 +46,17 @@ export function canAccessPath(path: NavPath, screens: readonly string[] | undefi
 
 /** Which tile groups matter most to each role — drives launchpad ordering. */
 const ALL_GROUPS = [
-  "procurement-overview",
-  "purchase-order",
-  "purchase-requisition",
-  "supplier-evaluation",
-  "purchase-contract",
-  "workflow",
   "sales-distribution",
   "financial-accounting",
-  "controlling",
   "production-planning",
-  "quality-management",
-  "project-systems",
   "tables-master",
 ];
 
 const GROUP_PRIORITY: Record<string, string[]> = {
   super_admin: ALL_GROUPS,
   admin: ALL_GROUPS,
-  buyer: ["purchase-order", "purchase-requisition", "supplier-evaluation", "purchase-contract", ...ALL_GROUPS],
-  approver: ["workflow", "purchase-requisition", "purchase-order", ...ALL_GROUPS],
+  buyer: ALL_GROUPS,
+  approver: ALL_GROUPS,
   viewer: ALL_GROUPS,
 };
 
@@ -101,7 +86,7 @@ export function orderGroupsForRoles<T extends { key: string; sort_order: number 
 export const ROLE_HEADLINE: Record<string, string> = {
   super_admin: "Sharvi Admin — full access to every screen, module, user, role and permission.",
   admin: "Admin view — the screens granted to your role.",
-  buyer: "Buyer view — purchase orders, requisitions, suppliers and contracts first.",
-  approver: "Approver view — workflow and pending approvals first.",
-  viewer: "Read-only view — spend overview and published reports.",
+  buyer: "Buyer view — the screens granted to your role.",
+  approver: "Approver view — the screens granted to your role.",
+  viewer: "Read-only view — published reports granted to your role.",
 };
