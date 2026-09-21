@@ -1404,10 +1404,8 @@ export function SdLiveDashboard() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-28" />
-        ))}
+      <div className="grid gap-4">
+        <Skeleton className="h-28" />
       </div>
     );
   }
