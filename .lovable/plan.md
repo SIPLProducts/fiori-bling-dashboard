@@ -24,7 +24,7 @@ Rebuild the authenticated launchpad to closely match the attached reference at d
 ## Cards
 - Create a shared launchpad-only card system with pure/light cool surfaces, subtle borders, rounded corners, layered soft shadows, restrained inner highlights, and inset pill-style footer actions.
 - Match the screenshot’s typography hierarchy, compact spacing, muted labels, blue KPI values, icon badges, separators, progress bars, status indicators, and small bar charts.
-- Keep existing live Total Sales data and existing FI/PP KPI data connected where currently available.
+- Keep Total Sales, Open Sales Orders, all currently connected FI/PP KPIs, current user/role details, permission visibility, and data-source status dynamic; they refresh from the existing sources rather than using screenshot values. Only cards explicitly designated as under-development placeholders use fixed reference values.
 - Make every card visibly interactive with a pointer cursor, keyboard focus, and a restrained hover lift/scale effect.
 - Route Total Sales and its footer action directly to the existing Sales Dashboard, Open Sales Orders to its existing dashboard, FI and PP cards to their corresponding existing report views, and ZFISALES Detail to its existing table view.
 - Add the screenshot’s Fulfillment Rate, Billing Cleared, KNA1, MARA, LFA1, and T001W cards using the supplied reference values. Clicking these placeholders opens one shared accessible slide-over panel identifying the selected screen as under development; they will not add permissions, data sources, or routes.
