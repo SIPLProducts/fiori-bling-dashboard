@@ -1,6 +1,7 @@
 import { useMemo, useState, type ComponentType } from "react";
 import {
   AlertTriangle,
+  Bell,
   Box,
   CalendarDays,
   CircleDollarSign,
@@ -9,6 +10,8 @@ import {
   Lightbulb,
   PackageOpen,
   Percent,
+  Search,
+  UserRound,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -57,7 +60,7 @@ function aggregate(rows: OpenSalesOrder[], key: keyof OpenSalesOrder) {
 
 function Panel({ title, children, className = "", unit }: { title: string; children: React.ReactNode; className?: string; unit?: string }) {
   return (
-    <section className={`min-w-0 rounded-md border border-border bg-card p-3 shadow-tile ${className}`}>
+    <section className={`min-w-0 rounded-md border border-border bg-card p-2.5 shadow-tile ${className}`}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-card-foreground">{title}</h2>
         {unit ? <span className="text-[10px] font-medium text-muted-foreground">{unit}</span> : null}
@@ -164,10 +167,17 @@ export function OpenSalesOrdersDashboard() {
   const highestGroup = byGroup[0]?.name ?? "—";
 
   return (
-    <div className="min-w-0 space-y-3">
-      <header><h1 className="text-2xl font-semibold text-foreground">Open Sales Orders</h1><p className="text-sm text-muted-foreground">Monitor and manage open sales orders across regions, customers and products</p></header>
+    <div className="mx-auto min-w-0 max-w-[1600px] space-y-2.5">
+      <header className="flex min-h-10 items-center justify-between gap-4 px-1">
+        <div className="min-w-0"><h1 className="text-[22px] leading-tight font-semibold text-foreground">Open Sales Orders</h1><p className="truncate text-[11px] text-muted-foreground">Monitor and manage open sales orders across regions, customers and products</p></div>
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <label className="flex h-8 w-48 items-center gap-2 rounded-full border border-border bg-card px-3 text-muted-foreground shadow-sm"><Search className="size-3.5" /><span className="sr-only">Search</span><input aria-label="Search" placeholder="Search..." className="min-w-0 flex-1 bg-transparent text-[10px] outline-none placeholder:text-muted-foreground" /></label>
+          <Button type="button" variant="ghost" size="icon" aria-label="Notifications" className="relative size-8 rounded-full"><Bell className="size-4" /><span className="absolute right-0 top-0 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">3</span></Button>
+          <span className="grid size-8 place-items-center rounded-full bg-primary/10 text-primary"><UserRound className="size-4" /></span>
+        </div>
+      </header>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-6">
         <label className="rounded-md border border-border bg-card px-3 py-2 shadow-tile"><span className="block text-[10px] font-medium text-muted-foreground">Date Range</span><Select value={dateRange} onValueChange={(value) => { setDateRange(value); setPage(1); }}><SelectTrigger className="mt-0.5 h-6 border-0 p-0 text-xs font-medium shadow-none focus:ring-0"><SelectValue /><CalendarDays className="mr-1 size-4 text-primary" /></SelectTrigger><SelectContent><SelectItem value="all">01 Apr 2024 - 30 Apr 2025</SelectItem><SelectItem value="last6">Oct 2024 - Apr 2025</SelectItem><SelectItem value="last3">Feb 2025 - Apr 2025</SelectItem></SelectContent></Select></label>
         <FilterSelect label="Sales Organization" value={filters.salesOrg} options={options("salesOrg")} onChange={(v) => setFilter("salesOrg", v)} />
         <FilterSelect label="Distribution Channel" value={filters.channel} options={options("channel")} onChange={(v) => setFilter("channel", v)} />
@@ -176,7 +186,7 @@ export function OpenSalesOrdersDashboard() {
         <FilterSelect label="Sales Group" value={filters.salesGroup} options={options("salesGroup")} onChange={(v) => setFilter("salesGroup", v)} />
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-6">
         <KpiCard label="Total Open Sales Orders" value={filtered.length.toLocaleString("en-IN")} delta="▲ 12%" icon={FileText} tone={0} values={[4, 6, 5, 8, 9, 12, 8, 13, 10, 15, 12, 16]} />
         <KpiCard label="Open Order Value" value={formatCr(totalValue)} delta="▲ 8%" icon={CircleDollarSign} tone={1} values={[5, 8, 6, 10, 7, 12, 7, 8, 13, 15, 11, 16]} />
         <KpiCard label="Open Quantity" value={Math.round(totalQuantity).toLocaleString("en-IN")} delta="▲ 10%" icon={PackageOpen} tone={3} values={[5, 7, 6, 9, 8, 13, 8, 10, 9, 11, 10, 14]} />
@@ -185,23 +195,23 @@ export function OpenSalesOrdersDashboard() {
         <KpiCard label="OTD (On-Time Delivery)" value={`${otd.toFixed(0)}%`} delta="▲ 9%" icon={Percent} tone={0} values={[4, 8, 7, 10, 8, 12, 11, 16, 15, 13, 10, 17]} />
       </div>
 
-      <div className="grid gap-2 xl:grid-cols-12">
-        <Panel title="Open Sales Order Trend" className="xl:col-span-6">
+      <div className="grid gap-2 md:grid-cols-12">
+        <Panel title="Open Sales Order Trend" className="md:col-span-6">
           <div className="mb-1 flex justify-end gap-1">{(["Value", "Quantity", "Both"] as const).map((mode) => <Button key={mode} variant={trendMode === mode ? "default" : "ghost"} size="sm" className="h-6 px-3 text-[10px]" onClick={() => setTrendMode(mode)}>{mode}</Button>)}</div>
           <ResponsiveContainer width="100%" height={190}><ComposedChart data={trend}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="label" tick={{ fontSize: 9 }} /><YAxis yAxisId="left" tick={{ fontSize: 9 }} /><YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />{trendMode !== "Quantity" ? <Bar yAxisId="left" name="Open Order Value (₹ Cr)" dataKey="value" fill="var(--kpi-1)" radius={[2, 2, 0, 0]} /> : null}{trendMode !== "Value" ? <Line yAxisId="right" name="Open Quantity (K)" dataKey="quantity" stroke="var(--kpi-5)" strokeWidth={2} dot={{ r: 2 }} /> : null}</ComposedChart></ResponsiveContainer>
         </Panel>
-        <Panel title="Open Orders by Sales Zone" className="xl:col-span-3"><Donut data={byZone} centre={formatCr(totalValue)} sublabel="Total Value" /></Panel>
-        <Panel title="Open Orders by Sales Type" className="xl:col-span-3"><Donut data={byType} centre={totalQuantity.toLocaleString("en-IN")} sublabel="Quantity" /></Panel>
+        <Panel title="Open Orders by Sales Zone" className="md:col-span-3"><Donut data={byZone} centre={formatCr(totalValue)} sublabel="Total Value" /></Panel>
+        <Panel title="Open Orders by Sales Type" className="md:col-span-3"><Donut data={byType} centre={totalQuantity.toLocaleString("en-IN")} sublabel="Quantity" /></Panel>
       </div>
 
-      <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
         <Panel title="Open Order Value by Profit Center" unit="₹ Cr"><ResponsiveContainer width="100%" height={180}><BarChart data={byPc} layout="vertical" margin={{ left: 5, right: 20 }}><XAxis type="number" tick={{ fontSize: 9 }} /><YAxis type="category" dataKey="name" width={62} tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => formatCr(v)} /><Bar dataKey="value" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} /></BarChart></ResponsiveContainer></Panel>
         <Panel title="Open Orders by Main Group" unit="₹ Cr"><ResponsiveContainer width="100%" height={180}><BarChart data={byGroup}><XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis hide /><Tooltip formatter={(v: number) => formatCr(v)} /><Bar dataKey="value" radius={[3, 3, 0, 0]}>{byGroup.map((d, i) => <Cell key={d.name} fill={COLORS[i % COLORS.length]} />)}</Bar></BarChart></ResponsiveContainer></Panel>
         <Panel title="Open Orders by Customer (Top 5)"><table className="w-full text-[10px]"><thead className="bg-muted text-muted-foreground"><tr><th className="px-2 py-2 text-left">Customer</th><th className="px-2 text-right">Open Value (₹ Cr)</th><th className="px-2 text-right">Open Qty</th><th className="px-2 text-right">% of Total</th></tr></thead><tbody>{byCustomer.map((row) => <tr key={row.name} className="border-t border-border"><td className="px-2 py-2 font-medium">{row.name}</td><td className="px-2 text-right tabular">{row.value.toFixed(2)}</td><td className="px-2 text-right tabular">{row.quantity.toLocaleString("en-IN")}</td><td className="px-2 text-right tabular">{((row.value / Math.max(1, totalValue)) * 100).toFixed(1)}%</td></tr>)}</tbody></table></Panel>
         <Panel title="Open Orders by Product Category" unit="₹ Cr"><ResponsiveContainer width="100%" height={180}><BarChart data={byCategory} layout="vertical" margin={{ left: 5, right: 20 }}><XAxis type="number" tick={{ fontSize: 9 }} /><YAxis type="category" dataKey="name" width={62} tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => formatCr(v)} /><Bar dataKey="value" fill="var(--kpi-4)" radius={[0, 3, 3, 0]} /></BarChart></ResponsiveContainer></Panel>
       </div>
 
-      <div className="grid gap-2 xl:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2">
         <Panel title="Open Sales Orders - Detailed View">
           <div className="overflow-x-auto"><table className="min-w-[700px] w-full text-[10px]"><thead className="bg-muted text-primary"><tr>{["Sales Order", "Customer", "Material", "Description", "Open Qty", "Open Value (₹ Cr)", "Delivery Date", "Status"].map((h) => <th key={h} className="px-2 py-2 text-left font-medium">{h}</th>)}</tr></thead><tbody>{paged.map((row) => <tr key={row.order} className="border-t border-border"><td className="px-2 py-2 font-medium text-primary">{row.order}</td><td className="px-2">{row.customer}</td><td className="px-2">{row.material}</td><td className="px-2">{row.description}</td><td className="px-2 text-right tabular">{row.quantity.toLocaleString("en-IN")}</td><td className="px-2 text-right tabular">{row.value.toFixed(2)}</td><td className="px-2 whitespace-nowrap">{formatDate(row.deliveryDate)}</td><td className="px-2"><span className="rounded-full bg-destructive/10 px-2 py-1 text-destructive">Open</span></td></tr>)}</tbody></table></div>
           <div className="mt-3 flex items-center justify-between"><div className="flex gap-1"><Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>‹</Button>{Array.from({ length: Math.min(5, pages) }, (_, i) => i + 1).map((p) => <Button key={p} size="sm" variant={p === page ? "default" : "ghost"} onClick={() => setPage(p)}>{p}</Button>)}<Button size="sm" variant="outline" disabled={page === pages} onClick={() => setPage((p) => p + 1)}>›</Button></div><span className="text-[10px] text-muted-foreground">Showing {(page - 1) * PAGE_SIZE + 1} - {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span></div>
