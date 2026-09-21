@@ -151,8 +151,8 @@ export function subscribeSdLines(onChange: () => void): () => void {
 export type SdFilters = {
   from: string;
   to: string;
-  fiscalYear: string;
-  quarter: string;
+  fiscalYears: string[];
+  quarters: string[];
   plants: string[];
   profitCentres: string[];
   segments: string[];
@@ -163,8 +163,8 @@ export type SdFilters = {
 export const emptySdFilters: SdFilters = {
   from: "",
   to: "",
-  fiscalYear: "",
-  quarter: "",
+  fiscalYears: [],
+  quarters: [],
   plants: [],
   profitCentres: [],
   segments: [],
@@ -187,8 +187,8 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
   return rows.filter((r) => {
     if (f.from && r.postingDate && r.postingDate < f.from) return false;
     if (f.to && r.postingDate && r.postingDate > f.to) return false;
-    if (f.fiscalYear && r.fiscalYear !== f.fiscalYear) return false;
-    if (f.quarter && fiscalQuarter(r.postingDate) !== f.quarter) return false;
+    if (!inList(f.fiscalYears, r.fiscalYear)) return false;
+    if (!inList(f.quarters, fiscalQuarter(r.postingDate))) return false;
     if (!inList(f.plants, r.plant)) return false;
     if (
       f.profitCentres.length &&

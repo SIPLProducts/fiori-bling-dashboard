@@ -21,8 +21,8 @@ export const Route = createFileRoute("/_authenticated/reports/sd/drilldown")({
     customer: typeof search["customer"] === "string" ? search["customer"] : "",
     from: typeof search["from"] === "string" ? search["from"] : "",
     to: typeof search["to"] === "string" ? search["to"] : "",
-    fiscalYear: typeof search["fiscalYear"] === "string" ? search["fiscalYear"] : "",
-    quarter: typeof search["quarter"] === "string" ? search["quarter"] : "",
+    fiscalYears: strings(search["fiscalYears"]),
+    quarters: strings(search["quarters"]),
     salesType: typeof search["salesType"] === "string" ? search["salesType"] : "",
     segments: strings(search["segments"]),
     profitCentres: strings(search["profitCentres"]),
@@ -71,8 +71,8 @@ function NetSalesDrilldown() {
     const filters: SdFilters = {
       from: search.from,
       to: search.to,
-      fiscalYear: search.fiscalYear,
-      quarter: search.quarter,
+      fiscalYears: search.fiscalYears,
+      quarters: search.quarters,
       plants: search.plants,
       profitCentres: search.profitCentres,
       segments: search.segments,
@@ -101,7 +101,7 @@ function NetSalesDrilldown() {
   };
   const kpiLabel = kpiLabels[search.kpi] ?? "";
   const fromManagement = search.src === "management";
-  const context = [kpiLabel, search.fiscalYear, search.quarter, search.month, search.customer, ...search.segments, ...search.profitCentres].filter(Boolean);
+  const context = [kpiLabel, ...search.fiscalYears, ...search.quarters, search.month, search.customer, ...search.segments, ...search.profitCentres].filter(Boolean);
 
   const exportRows = () =>
     downloadCsv(
