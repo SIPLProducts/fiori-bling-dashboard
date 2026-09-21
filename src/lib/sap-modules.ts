@@ -46,7 +46,9 @@ export function moduleScreenKey(moduleKey: string): string {
 /** Module access is granted through screen permissions on the role. */
 export function canAccessModule(moduleKey: string, screens: readonly string[] | undefined): boolean {
   if (!MODULES.some((mod) => mod.key === moduleKey)) return false;
-  return (screens ?? []).includes(moduleScreenKey(moduleKey));
+  const prefixes: Record<string, string> = { sd: "sd.", fi: "fi.", pp: "pp." };
+  const prefix = prefixes[moduleKey];
+  return Boolean(prefix && (screens ?? []).some((screen) => screen.startsWith(prefix)));
 }
 
 export function modulesForScreens(screens: readonly string[] | undefined): ModuleDef[] {
