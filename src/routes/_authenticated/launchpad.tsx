@@ -73,7 +73,6 @@ function Launchpad() {
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
           {group.key === "sales-distribution" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
-            <PlaceholderTile type="fulfillment" /><PlaceholderTile type="billing" />
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
             {groupTiles.slice(0, 1).map((tile) => <TableStatusTile key={tile.id} title="ZFISALES_DETAIL" value="Sync Active" note="Latest SAP sales snapshot" {...(tile.target_path ? { href: tile.target_path } : {})} />)}
