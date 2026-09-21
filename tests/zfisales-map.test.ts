@@ -48,3 +48,8 @@ test("SHA-256 implementation matches the standard digest", () => {
     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
   );
 });
+
+test("ABTEI is mapped as the Profit Centre dropdown display value", () => {
+  const result = mapPayload([{ ...base, ABTEI: "VNCPP", KTEXT: "Fallback" }], "Sales_Reports_KPI");
+  assert.equal(result.rows[0]?.pc_short_name, "VNCPP");
+});

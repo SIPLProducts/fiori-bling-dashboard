@@ -121,6 +121,8 @@ export function ManagementDashboard() {
         customer: selection.customer ?? filters.customer,
         from: filters.from,
         to: filters.to,
+        fiscalYear: "",
+        quarter: "",
         salesType: filters.salesType,
         segments: filters.businessSegment ? [filters.businessSegment] : [],
         profitCentres: filters.profitCentre ? [filters.profitCentre] : [],
