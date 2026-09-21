@@ -85,13 +85,8 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
   if (!data) return <>{fallback}</>;
 
   return (
-    <Link
-      to="/reports/module/$module"
-      params={{ module: "sd" }}
-      className="group block h-full rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-    >
       <section
-        className="relative flex h-full min-h-[188px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-[1.006] group-hover:shadow-tile-hover motion-reduce:transform-none"
+        className="relative flex h-full min-h-[188px] w-full flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile"
         style={{
           borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
           background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)`,
@@ -137,12 +132,16 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
         ) : null}
         <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
           <span className="truncate" title={data.lastUpdatedAt ? new Date(data.lastUpdatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : undefined}>{relativeUpdate(data.lastUpdatedAt)}</span>
-          <span className="inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset">
-          Open Details
-          <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
-          </span>
+          <Link
+            to="/reports/module/$module"
+            params={{ module: "sd" }}
+            aria-label="Open Total Sales details"
+            className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
+          >
+            Open Details
+            <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+          </Link>
         </div>
       </section>
-    </Link>
   );
 }
