@@ -1,38 +1,66 @@
-# Fix Production sync-history schema mismatch
+# Apply the Production snapshot-sync migrations
 
 ## Confirmed issue
 
-The Production portal requests the new snapshot-sync fields from `sap_sync_runs`, but the Production database does not contain `records_stored`. The same unapplied upgrade also adds `records_replaced`, `records_invalid`, `sync_scope_key`, and `snapshot_id`, plus the snapshot fields and activation function used by sales synchronization.
+Production is running the new portal and middleware against an older database schema. The Production database container is `mis_p_db`, exposed on host port `5433`. The required upgrade consists of the five `20260916*.sql` files.
 
-This is why the history request returns HTTP 400. It is unrelated to SAP connectivity, the password, TLS, or the Node.js warning.
+Do not run `bash migrations/`; that path is a directory, not a script. Do not rerun every historical migration.
 
-## Recovery plan
+## Safe execution
 
-1. Back up the Production database before changing its structure.
-2. Apply all five `20260916*.sql` files in filename order rather than running the `migrations/` directory itself:
+1. Pause the Production middleware/scheduler so no synchronization runs during the schema upgrade.
+2. From `/opt/MIS_Projects/Production/supabase`, apply only these five files in filename order:
 
 ```bash
 cd /opt/MIS_Projects/Production/supabase
+
 for f in migrations/20260916*.sql; do
   echo "Applying $f"
   docker exec -i mis_p_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < "$f" || exit 1
 done
 ```
 
-If the Production database container has a different name, replace `mis_p_db` with its actual name. The loop stops immediately on a real error.
+Expected order:
 
-3. Ask the database API to reload its schema cache:
+```text
+20260916135931_1ccc97f5-937e-43e1-a311-e14f9fdc5c3e.sql
+20260916140003_9f06cf17-7c58-4402-96f4-ca529604aab7.sql
+20260916140109_aea96a5d-0d9d-4931-89a7-2c08313f43dc.sql
+20260916140137_5be07962-36ff-4822-b8d4-e0ecd0c1fd02.sql
+20260916140222_d3d131b0-984a-4185-9a8e-d269c744afc9.sql
+```
+
+3. Reload the Production data API schema cache:
 
 ```bash
 docker exec -i mis_p_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
   -c "NOTIFY pgrst, 'reload schema';"
 ```
 
-4. Verify all required columns exist on `sap_sync_runs` and `zfisales_detail`, and verify `activate_zfisales_snapshot` exists.
-5. Reload the portal and confirm the sync-history request returns HTTP 200.
-6. Run one manual Production sync and confirm Received, Stored, Replaced, and Invalid are recorded.
-7. Confirm the active sales-row count matches the completed snapshot before restoring the schedule.
+4. Verify the new history fields and snapshot function:
 
-## Important follow-up
+```bash
+docker exec -i mis_p_db psql -U supabase_admin -d postgres -P pager=off -c \
+"SELECT column_name FROM information_schema.columns
+ WHERE table_schema='public' AND table_name='sap_sync_runs'
+ AND column_name IN ('records_stored','records_replaced','records_invalid','sync_scope_key','snapshot_id')
+ ORDER BY column_name;
 
-The middleware shared secret, SAP password, and database service credential were pasted into chat. Rotate all three after recovery and recreate the Production middleware process with the updated values.
+SELECT to_regprocedure('public.activate_zfisales_snapshot(text,uuid,integer)') AS snapshot_function;"
+```
+
+The first query should return five rows, and `snapshot_function` must not be blank.
+
+5. Restart the Production middleware, reload the portal, and confirm the sync-history request returns HTTP 200.
+6. Before the first snapshot-based reload, clear the old hash-key sales rows once, then run every required Production Sales KPI request and verify each run reports `Received = Stored`:
+
+```bash
+docker exec -i mis_p_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+  -c "TRUNCATE TABLE public.zfisales_detail;"
+```
+
+This final command permanently removes current Production sales rows. Run it only immediately before the complete SAP reload, not merely to fix the HTTP 400.
+
+## Security follow-up
+
+Rotate the Production middleware shared secret, SAP password, and database service credential because they were exposed in chat. Recreate the middleware process with the rotated values.
