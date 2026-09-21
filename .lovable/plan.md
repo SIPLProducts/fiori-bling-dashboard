@@ -1,7 +1,7 @@
-# Exact enterprise launchpad recreation
+# Pixel-conscious enterprise launchpad recreation
 
 ## Scope
-Rebuild the authenticated launchpad to closely match the attached reference at desktop and responsive sizes. This is a presentation-only redesign of the launchpad; existing report pages, authentication, permissions, routes, and live data behavior remain unchanged.
+Rebuild the authenticated launchpad as a pixel-conscious recreation of the attached reference at desktop and responsive sizes—not a loose Fiori interpretation. Match its visible proportions, density, alignment, typography hierarchy, colors, shadows, corner treatment, and component placement as faithfully as the browser viewport allows. This is a presentation-only redesign of the launchpad; existing report pages, authentication, permissions, routes, and live data behavior remain unchanged.
 
 ## Header and navigation
 - Recompose the top blue shell with the portal identity and connection label on the left, compact visual-only Alerts and Settings controls on the right, and a user avatar/name treatment matching the reference.
@@ -18,6 +18,7 @@ Rebuild the authenticated launchpad to closely match the attached reference at d
 - Rebuild the launchpad into the four reference sections: Sales & Distribution, Financial Accounting, Production Planning, and Tables Master.
 - Add the small section icon, uppercase heading, right-aligned section subtitle, consistent vertical rhythm, and precise responsive grid behavior.
 - On large screens, reproduce the reference proportions: a double-width Total Sales card plus three standard SD cards; five equal FI cards; five equal PP cards; and five compact Tables Master cards.
+- Match the reference’s narrow outer gutters, card heights, inter-card gaps, section spacing, header heights, and full-width composition rather than retaining the current generic auto-fill grid.
 - On tablets and phones, collapse the grid cleanly without clipped text, overlapping controls, or horizontal page overflow.
 - Continue hiding modules and real child tiles the signed-in role cannot access.
 
@@ -38,6 +39,7 @@ Rebuild the authenticated launchpad to closely match the attached reference at d
 
 ## Validation
 - Verify the authenticated launchpad at desktop, tablet, and mobile widths against the supplied screenshot.
+- Capture desktop comparison screenshots during implementation and iterate on visible spacing, sizing, alignment, and hierarchy differences before completion.
 - Confirm module filtering, role-based visibility, every active card destination, placeholder slide-over behavior, account sign-out access, keyboard focus, responsive wrapping, and reduced-motion behavior.
 - Confirm the page has no browser errors, clipped content, overlap, or horizontal overflow.
 - Run the focused type check and formatting/diff validation before completion.
