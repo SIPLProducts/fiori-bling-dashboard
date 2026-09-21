@@ -51,7 +51,7 @@ function Launchpad() {
     <ShellBar launchpad title="Home" displayName={data?.profile?.display_name} screens={data?.screens} />
     <div className="border-b border-shell-foreground/10 bg-shell shadow-sm">
       <div className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto px-3 py-1.5" role="tablist" aria-label="Launchpad modules">
-        {[{ key: "all", title: "All Modules" }, ...groups].map((group) => <button key={group.key} type="button" role="tab" aria-selected={activeGroup === group.key} onClick={() => setActiveGroup(group.key)} className={`min-h-7 shrink-0 rounded-full px-4 text-[10px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-shell-foreground focus-visible:outline-none ${activeGroup === group.key ? "bg-shell-foreground text-shell shadow-sm" : "text-shell-muted hover:bg-shell-foreground/10 hover:text-shell-foreground"}`}>{group.title}</button>)}
+        {[{ key: "all", title: "All Modules" }, ...groups].map((group) => <button key={group.key} type="button" role="tab" aria-selected={activeGroup === group.key} onClick={() => setActiveGroup(group.key)} className={`min-h-7 shrink-0 border-b-2 px-4 text-[10px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-shell-foreground focus-visible:outline-none ${activeGroup === group.key ? "border-shell-foreground text-shell-foreground" : "border-transparent text-shell-muted hover:bg-shell-foreground/10 hover:text-shell-foreground"}`}>{group.title}</button>)}
       </div>
     </div>
 
