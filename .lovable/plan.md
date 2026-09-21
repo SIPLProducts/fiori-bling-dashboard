@@ -24,11 +24,11 @@
 - Add **Year** and **Quarter** dropdowns to the expanded Smart Filters area.
 - Populate Year from all distinct SAP fiscal-year values available in the loaded sales data.
 - Provide **All quarters**, **Q1**, **Q2**, **Q3**, and **Q4**; keep Quarter disabled until a Year is selected.
-- Derive quarters from the posting month while restricting rows to the selected SAP fiscal year:
-  - Q1: January–March
-  - Q2: April–June
-  - Q3: July–September
-  - Q4: October–December
+- Use an April–March financial-year quarter cycle while restricting rows to the selected SAP fiscal year:
+  - Q1: April–June
+  - Q2: July–September
+  - Q3: October–December
+  - Q4: January–March
 - Apply Year and Quarter to the complete dashboard dataset before calculating KPIs, charts, alerts, and the detailed table.
 - Combine these selections with the existing date, sales-type, Profit Centre, segment, customer, plant, and search filters.
 - Show active Year and Quarter chips, include them in Reset, and clear Quarter automatically when Year is cleared or changed.
