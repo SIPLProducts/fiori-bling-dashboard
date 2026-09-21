@@ -22,15 +22,9 @@ export async function getModuleReportData(key: string): Promise<ModuleReport | n
 
 /** Sales-register KPIs surfaced as launchpad tiles. */
 function salesRegisterKpis() {
-  const revenue = SALES_ROWS.reduce((s, r) => s + r.amount, 0);
   const months = new Map<string, number>();
   for (const row of SALES_ROWS) months.set(row.month, (months.get(row.month) ?? 0) + row.amount);
   return {
-    zfi_sales_revenue: {
-      value: Math.round((revenue / 10_000_000) * 100) / 100,
-      unit: "Cr INR",
-      footer: "Billed revenue",
-    },
     zfi_sales_trend: {
       value: new Set(SALES_ROWS.map((r) => r.docNo)).size,
       footer: "Billing documents by month",

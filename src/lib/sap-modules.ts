@@ -81,10 +81,7 @@ export const MODULES: ModuleDef[] = [
     documentPrefix: "SO-",
     statuses: ["Open", "In Delivery", "Billed", "Backorder", "Blocked"],
     kpis: [
-      { key: "sd_net_sales", label: "Net Sales", subtitle: "Rolling 12 months", unit: "M EUR", base: 58.4, decimals: 1, kind: "kpi", icon: "currency" },
       { key: "sd_open_orders", label: "Open Sales Orders", subtitle: "Not yet delivered", base: 1_284, kind: "kpi", icon: "cart" },
-      { key: "sd_backorders", label: "Backorders", subtitle: "Past requested date", base: 96, kind: "kpi", icon: "alert" },
-      { key: "sd_sales_trend", label: "Sales Trend", subtitle: "Monthly net sales", unit: "K EUR", base: 4_870, kind: "chart", icon: "trend" },
     ],
   },
   {
