@@ -24,3 +24,4 @@
 - [x] Rename the Total Sales dashboard, place Sales Mix beside Pareto, map Profit Centre from ABTEI, and add April–March Year/Quarter filters
 - [x] Support multi-select Year and April–March Quarter filters across the Sales Dashboard and drill-downs
 - [x] Refresh launchpad cards and selected module tabs to match the supplied Fiori reference
+- [x] Recreate the full authenticated launchpad pixel-consciously from the supplied enterprise dashboard reference

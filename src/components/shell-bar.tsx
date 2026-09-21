@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, Home, LogOut, Search, User } from "lucide-react";
+import { Bell, HelpCircle, Home, LogOut, Search, Settings, User } from "lucide-react";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
 import hblLogo from "@/assets/hbl-logo.png";
@@ -18,10 +18,12 @@ import {
 export function ShellBar({
   displayName,
   screens,
+  launchpad = false,
 }: {
   title: string;
   displayName?: string | null | undefined;
   screens?: string[] | undefined;
+  launchpad?: boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -37,11 +39,18 @@ export function ShellBar({
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-shell px-4 text-shell-foreground">
-      <Link to="/launchpad" className="flex items-center gap-2">
-        <span className="flex h-8 items-center rounded-sm bg-white px-2">
-          <img src={hblLogo} alt="HBL" className="h-6 w-auto object-contain" />
+    <header className={`sticky top-0 z-40 flex items-center gap-3 bg-shell px-4 text-shell-foreground ${launchpad ? "h-10" : "h-14"}`}>
+      <Link to="/launchpad" className="flex min-w-0 items-center gap-2">
+        <span className={`grid shrink-0 place-items-center overflow-hidden bg-shell-foreground/14 ${launchpad ? "size-7 rounded-lg" : "h-8 rounded-sm px-2"}`}>
+          {launchpad ? <span className="text-[11px] font-bold">SAP</span> : <img src={hblLogo} alt="HBL" className="h-6 w-auto object-contain" />}
         </span>
+        {launchpad ? (
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-xs font-semibold tracking-wide">SAP ENTERPRISE PORTAL</span>
+            <span className="hidden h-4 w-px bg-shell-foreground/25 sm:block" />
+            <span className="hidden truncate text-[10px] text-shell-muted sm:block">Connected to PRD-01 (S/4HANA)</span>
+          </span>
+        ) : null}
       </Link>
       <span className="flex-1" aria-hidden="true" />
 
@@ -51,24 +60,31 @@ export function ShellBar({
           to="/launchpad"
           aria-label="Home"
           title="Home"
-          className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
+          className={`${launchpad ? "hidden" : ""} rounded-full p-2 transition-colors hover:bg-shell-foreground/10`}
         >
           <Home className="size-[18px]" />
         </Link>
         <button
           type="button"
           aria-label="Search"
-          className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
+          className={`${launchpad ? "hidden" : ""} rounded-full p-2 transition-colors hover:bg-shell-foreground/10`}
         >
           <Search className="size-[18px]" />
         </button>
         <button
           type="button"
           aria-label="Notifications"
-          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
+          className={`rounded-full transition-colors hover:bg-shell-foreground/10 ${launchpad ? "inline-flex items-center gap-1 px-2 py-1 text-[10px]" : "hidden p-2 sm:inline-flex"}`}
         >
-          <Bell className="size-[18px]" />
+          <Bell className={launchpad ? "size-3.5" : "size-[18px]"} />
+          {launchpad ? <span className="hidden sm:inline">Alerts</span> : null}
         </button>
+        {launchpad ? (
+          <button type="button" aria-label="Settings" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] transition-colors hover:bg-shell-foreground/10">
+            <Settings className="size-3.5" />
+            <span className="hidden sm:inline">Settings</span>
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label="Help"
@@ -79,11 +95,12 @@ export function ShellBar({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account"
-            className="ml-1 flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-shell-foreground/10"
+            className="ml-1 flex min-w-0 items-center gap-2 rounded-full p-1 transition-colors hover:bg-shell-foreground/10"
           >
-            <span className="grid size-8 place-items-center rounded-full bg-shell-foreground/15">
-              <User className="size-4" />
+            <span className={`grid shrink-0 place-items-center rounded-full bg-shell-foreground/15 ${launchpad ? "size-6 text-[10px] font-semibold" : "size-8"}`}>
+              {launchpad ? "SA" : <User className="size-4" />}
             </span>
+            {launchpad ? <span className="hidden max-w-28 truncate pr-1 text-[10px] sm:block">{displayName ?? "Signed in"}</span> : null}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="truncate">{displayName ?? "Signed in"}</DropdownMenuLabel>
