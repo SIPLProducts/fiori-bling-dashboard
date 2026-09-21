@@ -1442,7 +1442,6 @@ export function SdLiveDashboard() {
 
 
   const trend = buildTrend(analytics.monthly, trendMode);
-  const salesVsQty = latestYearMonths(analytics.monthly);
   const openDrilldown = (selection: { month?: string; customer?: string }) => {
     const monthIndex = selection.month ? MONTHS.indexOf(selection.month.toUpperCase().slice(0, 3)) : -1;
     const month = monthIndex >= 0 && trend.cy ? `${trend.cy}-${String(monthIndex + 1).padStart(2, "0")}` : "";
@@ -1749,8 +1748,12 @@ export function SdLiveDashboard() {
             />
           ) : (
             <>
-          {/* Row 2 — trend, segment mix, top profit centres */}
+          {/* Row 2 — customers, sales trend, top profit centres */}
           <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title="Top 10 Customers by Amount" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
+            </Panel>
+
             <Panel
               title="Sales Trend (Amount)"
               accent={1}
@@ -1830,19 +1833,14 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel title="Sales by Segment (Amount)" accent={2} expandable>
-              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
-            </Panel>
-
             <Panel title="Top 10 Profit Centres by Amount" accent={4} expandable>
               {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
             </Panel>
           </div>
 
-          {/* Row 3 — customers and pareto */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Top 10 Customers by Amount" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
+            <Panel title="Sales by Segment (Amount)" accent={2} expandable>
+              <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
 
             <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
@@ -1911,73 +1909,9 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
-
           </div>
 
-          {/* Row 4 — sales vs quantity, alerts */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Sales vs Quantity Trend" accent={3} expandable>
-              {(full: boolean) => (
-                <div className={full ? "flex h-full flex-col" : ""}>
-                  <div className="mb-1 flex items-center gap-4 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
-                      Amount (₹)
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-2)" }} />
-                      Quantity
-                    </span>
-                  </div>
-                  <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
-                    <ResponsiveContainer width="100%" height={full ? "100%" : 280}>
-                      <ComposedChart data={salesVsQty} margin={{ top: 16, left: 0, right: 8 }}>
-                        <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
-                        <YAxis
-                          tickFormatter={axisCompact}
-                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
-                          width={60}
-                          stroke="var(--chart-axis-line)"
-                          tickLine={false}
-                        />
-                        <YAxis
-                          yAxisId="qty"
-                          orientation="right"
-                          tickFormatter={axisCompact}
-                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
-                          width={54}
-                          stroke="var(--chart-axis-line)"
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          {...tooltipStyle}
-                          formatter={(v: number, n: string) => [n === "Quantity" ? NUM(v) : INRC(v), n]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="revenue"
-                          name="Amount"
-                          stroke="var(--kpi-1)"
-                          strokeWidth={2.5}
-                          dot={{ r: 3 }}
-                        />
-                        <Line
-                          yAxisId="qty"
-                          type="monotone"
-                          dataKey="quantity"
-                          name="Quantity"
-                          stroke="var(--kpi-2)"
-                          strokeWidth={2.5}
-                          dot={{ r: 3 }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </Panel>
-
+          <div className="grid gap-4">
             <Panel title="Management Alerts" accent={5}>
               <ul className="space-y-2.5">
                 {analytics.alerts.map((a, i) => (
