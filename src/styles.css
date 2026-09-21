@@ -49,8 +49,6 @@
   --color-card-raised: var(--card-raised);
   --color-launchpad-tile: var(--launchpad-tile);
   --color-launchpad-tile-footer: var(--launchpad-tile-footer);
-  --color-launchpad-canvas: var(--launchpad-canvas);
-  --color-launchpad-muted: var(--launchpad-muted);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -105,12 +103,9 @@
   --card-raised: oklch(0.972 0.009 252);
   --launchpad-tile: oklch(0.978 0.008 250);
   --launchpad-tile-footer: oklch(0.994 0.003 250);
-  --launchpad-canvas: oklch(0.971 0.008 250);
-  --launchpad-muted: oklch(0.57 0.055 252);
   --launchpad-tile-shadow:
     0 1px 1px color-mix(in oklab, var(--ink) 7%, transparent),
-    7px 8px 18px -10px color-mix(in oklab, var(--ink) 25%, transparent),
-    -5px -5px 14px -8px oklch(1 0 0 / 90%),
+    0 8px 18px -9px color-mix(in oklab, var(--ink) 24%, transparent),
     inset 0 1px 0 color-mix(in oklab, oklch(1 0 0) 82%, transparent);
   --shadow-soft-card:
     0 34px 70px -16px color-mix(in oklab, var(--ink) 30%, transparent),
@@ -197,8 +192,6 @@
   --sidebar-ring: oklch(0.68 0.14 251);
   --launchpad-tile: oklch(0.275 0.021 253);
   --launchpad-tile-footer: oklch(0.245 0.02 253);
-  --launchpad-canvas: oklch(0.21 0.019 253);
-  --launchpad-muted: oklch(0.72 0.035 251);
   --launchpad-tile-shadow:
     0 1px 1px oklch(0.08 0.01 253 / 36%),
     0 10px 22px -10px oklch(0.08 0.01 253 / 60%),

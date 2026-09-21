@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, LogOut, Settings, User } from "lucide-react";
+import { Bell, HelpCircle, Home, LogOut, Search, User } from "lucide-react";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
 import hblLogo from "@/assets/hbl-logo.png";
@@ -37,47 +37,52 @@ export function ShellBar({
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-shell text-shell-foreground shadow-sm">
-      <div className="mx-auto grid h-12 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6">
-        <Link to="/launchpad" className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-shell-foreground/14">
-            <img src={hblLogo} alt="HBL" className="h-4 w-auto object-contain brightness-0 invert" />
-          </span>
-          <span className="truncate text-[12px] font-semibold tracking-wide uppercase sm:text-sm">SAP Enterprise Portal</span>
-          <span className="hidden h-4 w-px bg-shell-foreground/25 sm:block" aria-hidden="true" />
-          <span className="hidden truncate text-[11px] text-shell-muted md:block">Connected to PRD-01 (S/4HANA)</span>
-        </Link>
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-shell px-4 text-shell-foreground">
+      <Link to="/launchpad" className="flex items-center gap-2">
+        <span className="flex h-8 items-center rounded-sm bg-white px-2">
+          <img src={hblLogo} alt="HBL" className="h-6 w-auto object-contain" />
+        </span>
+      </Link>
+      <span className="flex-1" aria-hidden="true" />
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+
+      <div className="flex items-center gap-1">
+        <Link
+          to="/launchpad"
+          aria-label="Home"
+          title="Home"
+          className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
+        >
+          <Home className="size-[18px]" />
+        </Link>
         <button
           type="button"
-            aria-label="Alerts"
-            title="Alerts"
-            className="hidden min-w-12 flex-col items-center rounded-md px-2 py-1 text-[9px] font-medium transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
+          aria-label="Search"
+          className="rounded-full p-2 transition-colors hover:bg-shell-foreground/10"
         >
-            <Bell className="size-3.5" />
-            <span>Alerts</span>
+          <Search className="size-[18px]" />
         </button>
         <button
           type="button"
-            aria-label="Settings"
-            title="Settings"
-            className="hidden min-w-12 flex-col items-center rounded-md px-2 py-1 text-[9px] font-medium transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
+          aria-label="Notifications"
+          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
         >
-            <Settings className="size-3.5" />
-            <span>Settings</span>
+          <Bell className="size-[18px]" />
+        </button>
+        <button
+          type="button"
+          aria-label="Help"
+          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
+        >
+          <HelpCircle className="size-[18px]" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account"
-            className="ml-1 flex max-w-40 items-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-shell-foreground/10"
+            className="ml-1 flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-shell-foreground/10"
           >
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-shell-foreground/15 text-[10px] font-semibold">
-              {displayName ? displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() : <User className="size-3.5" />}
-            </span>
-            <span className="hidden min-w-0 text-left text-[10px] leading-tight sm:block">
-              <span className="block truncate font-semibold">{displayName ?? "Signed in"}</span>
-              <span className="block text-shell-muted">Account</span>
+            <span className="grid size-8 place-items-center rounded-full bg-shell-foreground/15">
+              <User className="size-4" />
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -102,7 +107,6 @@ export function ShellBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
       </div>
     </header>
   );
