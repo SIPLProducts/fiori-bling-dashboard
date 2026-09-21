@@ -19,3 +19,4 @@
 - [x] Preserve every received SAP sales occurrence with scoped snapshot replacement and reconciled sync counts
 - [x] Add the reference-matched Open Sales Orders sample dashboard and link its launchpad card
 - [x] Remove the nine retired procurement, controlling, quality, and project screens
+- [x] Remove Billed Revenue, Net Sales, Backorders, and Sales Trend launchpad cards
