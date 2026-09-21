@@ -91,7 +91,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 }
 
 function KpiCard({ label, value, delta, icon: Icon, tone, down = false, values }: { label: string; value: string; delta: string; icon: ComponentType<{ className?: string }>; tone: number; down?: boolean; values: number[] }) {
-  const color = COLORS[tone % COLORS.length];
+  const color = COLORS[tone % COLORS.length] ?? "var(--color-primary)";
   return (
     <section className="min-w-0 rounded-md border border-border bg-card p-3 shadow-tile">
       <div className="flex items-start gap-3">
