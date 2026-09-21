@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { canAccessModule, MODULES } from "./sap-modules";
+import { canAccessModule } from "./sap-modules";
 import { accessForUser } from "./access";
+import { childScreenForTile, permissionModule } from "./screens";
 
 import * as provider from "./sap-provider";
 
@@ -17,6 +18,7 @@ export type TileRecord = {
   target_path: string | null;
   allowed_roles: AppRole[];
   sort_order: number;
+  screen_key?: string | null;
 };
 
 export type LaunchpadData = {
@@ -40,15 +42,6 @@ async function screensForUser(userId: string): Promise<string[]> {
   return (await accessForUser(userId)).screens;
 }
 
-/** Tile group -> screen key. Every group is gated by Screen Permissions. */
-const GROUP_SCREEN: Record<string, string> = Object.fromEntries(
-  MODULES.map((mod) => [mod.groupKey, `module.${mod.key}`]),
-);
-
-function screenForGroup(groupKey: string): string {
-  return GROUP_SCREEN[groupKey] ?? `group.${groupKey}`;
-}
-
 export async function getLaunchpad(): Promise<LaunchpadData> {
   const userId = await requireUserId();
 
@@ -63,7 +56,9 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
   const { roleKeys, isSuperAdmin, screens } = access;
   const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) => {
     if (isSuperAdmin) return true;
-    return screens.includes(screenForGroup(tile.group_key));
+    const childScreen = childScreenForTile(tile);
+    if (childScreen) return screens.includes(childScreen);
+    return screens.includes(`group.${tile.group_key}`);
   });
 
 
@@ -80,10 +75,20 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
 }
 
 export async function getModuleReport(input: { data: { module: string } }) {
-  const roles = await screensForUser(await requireUserId());
-  if (!canAccessModule(input.data.module, roles)) {
+  const screens = await screensForUser(await requireUserId());
+  if (!canAccessModule(input.data.module, screens)) {
     throw new Error("FORBIDDEN_MODULE");
   }
   const report = await provider.getModuleReportData(input.data.module);
-  return { report, providerMode: provider.providerMode() };
+  const module = permissionModule(input.data.module);
+  const allowedTileKeys = new Set(
+    module?.children
+      .filter((child) => screens.includes(child.key))
+      .map((child) => child.tileKey)
+      .filter((key): key is string => Boolean(key)) ?? [],
+  );
+  const filteredReport = report
+    ? { ...report, kpis: report.kpis.filter((kpi) => allowedTileKeys.has(kpi.key)) }
+    : report;
+  return { report: filteredReport, providerMode: provider.providerMode() };
 }

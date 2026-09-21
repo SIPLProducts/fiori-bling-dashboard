@@ -356,3 +356,30 @@ export async function setRoleScreen(input: {
   }
   return { ok: true };
 }
+
+export async function setRoleScreens(input: {
+  data: { roleKey: string; screenKeys: string[]; enabled: boolean };
+}) {
+  await requireScreen("admin.permissions", "Screen Permissions");
+  const { roleKey, screenKeys, enabled } = input.data;
+  if (roleKey === SUPER_ADMIN_ROLE_KEY) {
+    throw new Error("Sharvi Admin always has access to every screen");
+  }
+  const keys = Array.from(new Set(screenKeys));
+  if (!keys.length) return { ok: true };
+  if (enabled) {
+    const rows = keys.map((screenKey) => ({ role_key: roleKey, screen_key: screenKey }));
+    const { error } = await supabase
+      .from("role_screens")
+      .upsert(rows, { onConflict: "role_key,screen_key" });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("role_screens")
+      .delete()
+      .eq("role_key", roleKey)
+      .in("screen_key", keys);
+    if (error) throw error;
+  }
+  return { ok: true };
+}

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { OpenSalesOrdersDashboard } from "@/components/open-sales-orders-dashboard";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
-import { canAccessModule } from "@/lib/sap-modules";
+import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
 export const Route = createFileRoute("/_authenticated/reports/sd/open-sales-orders")({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/reports/sd/open-sales-orde
 
 function OpenSalesOrdersPage() {
   const { data, isLoading } = useLaunchpad();
-  const allowed = canAccessModule("sd", data?.screens);
+  const allowed = hasScreen(data?.screens, "sd.open-sales-orders");
 
   return (
     <ReportShell title="" description="">

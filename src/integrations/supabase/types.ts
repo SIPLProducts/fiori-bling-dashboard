@@ -561,6 +561,7 @@ export type Database = {
           id: string
           kind: string
           kpi_key: string | null
+          screen_key: string | null
           sort_order: number
           subtitle: string | null
           target_path: string | null
@@ -574,6 +575,7 @@ export type Database = {
           id?: string
           kind?: string
           kpi_key?: string | null
+          screen_key?: string | null
           sort_order?: number
           subtitle?: string | null
           target_path?: string | null
@@ -587,6 +589,7 @@ export type Database = {
           id?: string
           kind?: string
           kpi_key?: string | null
+          screen_key?: string | null
           sort_order?: number
           subtitle?: string | null
           target_path?: string | null

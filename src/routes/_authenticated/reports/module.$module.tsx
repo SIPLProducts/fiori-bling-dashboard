@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getModuleReport } from "@/lib/sap.functions";
 import { findModule, canAccessModule } from "@/lib/sap-modules";
+import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { SdLiveDashboard } from "@/components/sd-live-dashboard";
 
@@ -57,7 +58,9 @@ function ModuleReportPage() {
   const def = findModule(module)!;
   const fetchReport = getModuleReport;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
-  const allowed = canAccessModule(module, launchpad?.screens);
+  const allowed = module === "sd"
+    ? hasScreen(launchpad?.screens, "sd.total-sales")
+    : canAccessModule(module, launchpad?.screens);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({

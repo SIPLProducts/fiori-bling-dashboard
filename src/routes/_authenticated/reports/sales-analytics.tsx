@@ -30,7 +30,6 @@ import { DrilldownTable } from "@/components/drilldown-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { canAccessModule } from "@/lib/sap-modules";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics, getSalesSyncStatus } from "@/lib/zfisales.functions";
@@ -392,7 +391,7 @@ function SalesAnalyticsPage() {
   const fetchAnalytics = getSalesAnalytics;
   const { data: launchpad, isLoading: rolesLoading } = useLaunchpad();
   const allowed =
-    canAccessModule("sd", launchpad?.screens) ||
+    hasScreen(launchpad?.screens, "sd.total-sales") ||
     hasScreen(launchpad?.screens, "tables.zfisales-detail");
 
   const [draft, setDraft] = useState<SalesFilters>(EMPTY);

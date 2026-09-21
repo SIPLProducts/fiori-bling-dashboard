@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { canAccessModule } from "./sap-modules";
 import { accessForUser } from "./access";
 import { buildSalesAnalytics } from "./zfisales";
 import type { SalesRow } from "./zfisales-data";
@@ -26,7 +25,9 @@ export async function getSalesAnalytics(input?: {
   if (error || !auth.user) throw new Error("NOT_AUTHENTICATED");
 
   const { screens } = await accessForUser(auth.user.id);
-  if (!canAccessModule("sd", screens)) throw new Error("FORBIDDEN_MODULE");
+  if (!screens.includes("sd.total-sales") && !screens.includes("tables.zfisales-detail")) {
+    throw new Error("FORBIDDEN_MODULE");
+  }
 
   let synced: SalesRow[] = [];
   try {
