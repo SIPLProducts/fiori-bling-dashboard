@@ -18,10 +18,7 @@ import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
 import { Route as AuthenticatedAdminSapApiRouteImport } from './routes/_authenticated/admin/sap-api'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
-import { Route as AuthenticatedReportsProcurementRouteImport } from './routes/_authenticated/reports/procurement'
-import { Route as AuthenticatedReportsPurchaseOrdersRouteImport } from './routes/_authenticated/reports/purchase-orders'
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
-import { Route as AuthenticatedReportsSuppliersRouteImport } from './routes/_authenticated/reports/suppliers'
 import { Route as AuthenticatedTablesIndexRouteImport } from './routes/_authenticated/tables/index'
 import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authenticated/tables/$tableKey'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
@@ -80,28 +77,10 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReportsProcurementRoute =
-  AuthenticatedReportsProcurementRouteImport.update({
-    id: '/reports/procurement',
-    path: '/reports/procurement',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedReportsPurchaseOrdersRoute =
-  AuthenticatedReportsPurchaseOrdersRouteImport.update({
-    id: '/reports/purchase-orders',
-    path: '/reports/purchase-orders',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedReportsSalesAnalyticsRoute =
   AuthenticatedReportsSalesAnalyticsRouteImport.update({
     id: '/reports/sales-analytics',
     path: '/reports/sales-analytics',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedReportsSuppliersRoute =
-  AuthenticatedReportsSuppliersRouteImport.update({
-    id: '/reports/suppliers',
-    path: '/reports/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTablesIndexRoute =
@@ -174,10 +153,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
-  '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
-  '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables/': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
@@ -198,10 +174,7 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/reports/procurement': typeof AuthenticatedReportsProcurementRoute
-  '/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
-  '/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables': typeof AuthenticatedTablesIndexRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
@@ -224,10 +197,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/_authenticated/reports/procurement': typeof AuthenticatedReportsProcurementRoute
-  '/_authenticated/reports/purchase-orders': typeof AuthenticatedReportsPurchaseOrdersRoute
   '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
-  '/_authenticated/reports/suppliers': typeof AuthenticatedReportsSuppliersRoute
   '/_authenticated/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/_authenticated/tables/': typeof AuthenticatedTablesIndexRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
@@ -250,10 +220,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/sap-api'
     | '/admin/users'
-    | '/reports/procurement'
-    | '/reports/purchase-orders'
     | '/reports/sales-analytics'
-    | '/reports/suppliers'
     | '/tables/$tableKey'
     | '/tables/'
     | '/reports/module/$module'
@@ -274,10 +241,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/sap-api'
     | '/admin/users'
-    | '/reports/procurement'
-    | '/reports/purchase-orders'
     | '/reports/sales-analytics'
-    | '/reports/suppliers'
     | '/tables/$tableKey'
     | '/tables'
     | '/reports/module/$module'
@@ -299,10 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/sap-api'
     | '/_authenticated/admin/users'
-    | '/_authenticated/reports/procurement'
-    | '/_authenticated/reports/purchase-orders'
     | '/_authenticated/reports/sales-analytics'
-    | '/_authenticated/reports/suppliers'
     | '/_authenticated/tables/$tableKey'
     | '/_authenticated/tables/'
     | '/_authenticated/reports/module/$module'
@@ -388,32 +349,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reports/procurement': {
-      id: '/_authenticated/reports/procurement'
-      path: '/reports/procurement'
-      fullPath: '/reports/procurement'
-      preLoaderRoute: typeof AuthenticatedReportsProcurementRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports/purchase-orders': {
-      id: '/_authenticated/reports/purchase-orders'
-      path: '/reports/purchase-orders'
-      fullPath: '/reports/purchase-orders'
-      preLoaderRoute: typeof AuthenticatedReportsPurchaseOrdersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/reports/sales-analytics': {
       id: '/_authenticated/reports/sales-analytics'
       path: '/reports/sales-analytics'
       fullPath: '/reports/sales-analytics'
       preLoaderRoute: typeof AuthenticatedReportsSalesAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports/suppliers': {
-      id: '/_authenticated/reports/suppliers'
-      path: '/reports/suppliers'
-      fullPath: '/reports/suppliers'
-      preLoaderRoute: typeof AuthenticatedReportsSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tables/': {
@@ -496,10 +436,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSapApiRoute: typeof AuthenticatedAdminSapApiRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
-  AuthenticatedReportsProcurementRoute: typeof AuthenticatedReportsProcurementRoute
-  AuthenticatedReportsPurchaseOrdersRoute: typeof AuthenticatedReportsPurchaseOrdersRoute
   AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
-  AuthenticatedReportsSuppliersRoute: typeof AuthenticatedReportsSuppliersRoute
   AuthenticatedTablesTableKeyRoute: typeof AuthenticatedTablesTableKeyRoute
   AuthenticatedTablesIndexRoute: typeof AuthenticatedTablesIndexRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
@@ -517,12 +454,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSapApiRoute: AuthenticatedAdminSapApiRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
-  AuthenticatedReportsProcurementRoute: AuthenticatedReportsProcurementRoute,
-  AuthenticatedReportsPurchaseOrdersRoute:
-    AuthenticatedReportsPurchaseOrdersRoute,
   AuthenticatedReportsSalesAnalyticsRoute:
     AuthenticatedReportsSalesAnalyticsRoute,
-  AuthenticatedReportsSuppliersRoute: AuthenticatedReportsSuppliersRoute,
   AuthenticatedTablesTableKeyRoute: AuthenticatedTablesTableKeyRoute,
   AuthenticatedTablesIndexRoute: AuthenticatedTablesIndexRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
