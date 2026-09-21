@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule } from "./sap-modules";
 import { accessForUser } from "./access";
-import { childScreenForTile } from "./screens";
+import { childScreenForTile, permissionModule } from "./screens";
 
 import * as provider from "./sap-provider";
 
@@ -75,10 +75,20 @@ export async function getLaunchpad(): Promise<LaunchpadData> {
 }
 
 export async function getModuleReport(input: { data: { module: string } }) {
-  const roles = await screensForUser(await requireUserId());
-  if (!canAccessModule(input.data.module, roles)) {
+  const screens = await screensForUser(await requireUserId());
+  if (!canAccessModule(input.data.module, screens)) {
     throw new Error("FORBIDDEN_MODULE");
   }
   const report = await provider.getModuleReportData(input.data.module);
-  return { report, providerMode: provider.providerMode() };
+  const module = permissionModule(input.data.module);
+  const allowedTileKeys = new Set(
+    module?.children
+      .filter((child) => screens.includes(child.key))
+      .map((child) => child.tileKey)
+      .filter((key): key is string => Boolean(key)) ?? [],
+  );
+  const filteredReport = report
+    ? { ...report, kpis: report.kpis.filter((kpi) => allowedTileKeys.has(kpi.key)) }
+    : report;
+  return { report: filteredReport, providerMode: provider.providerMode() };
 }

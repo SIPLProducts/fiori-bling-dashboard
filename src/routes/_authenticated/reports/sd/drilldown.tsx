@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
-import { ReportShell, Panel } from "@/components/report-shell";
+import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv } from "@/lib/chart-export";
 import { applySdFilters, fetchSdLines, type SdFilters, type SdLine } from "@/lib/sd-live";
+import { hasScreen } from "@/lib/screens";
+import { useLaunchpad } from "@/lib/use-launchpad";
 
 const PAGE_SIZE = 50;
 const strings = (value: unknown) =>
@@ -55,7 +57,13 @@ function monthMatches(row: SdLine, month: string) {
 function NetSalesDrilldown() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { data, isLoading } = useQuery({ queryKey: ["sd-live-lines"], queryFn: fetchSdLines });
+  const { data: launchpad, isLoading: accessLoading } = useLaunchpad();
+  const allowed = hasScreen(launchpad?.screens, "sd.total-sales");
+  const { data, isLoading } = useQuery({
+    queryKey: ["sd-live-lines"],
+    queryFn: fetchSdLines,
+    enabled: allowed,
+  });
 
   const rows = useMemo(() => {
     const filters: SdFilters = {
@@ -112,6 +120,14 @@ function NetSalesDrilldown() {
       })),
       "net-sales-posting-lines.csv",
     );
+
+  if (!accessLoading && !allowed) {
+    return (
+      <ReportShell title="Net Sales Drill-down" description="Detailed SAP posting lines">
+        <AccessDenied area="Net Sales Drill-down" />
+      </ReportShell>
+    );
+  }
 
   return (
     <ReportShell

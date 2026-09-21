@@ -94,6 +94,7 @@ export function childScreenForTile(tile: {
   if (tile.screen_key) return tile.screen_key;
   const module = PERMISSION_MODULES.find((item) => item.groupKey === tile.group_key);
   if (!module) return null;
+  if (module.children.length === 1) return module.children[0]?.key ?? null;
   if (tile.group_key === "sales-distribution" && !tile.kpi_key) return "sd.total-sales";
   return module.children.find((child) => child.tileKey === tile.kpi_key)?.key ?? null;
 }
