@@ -26,6 +26,13 @@ const SECTION_META: Record<string, { subtitle: string; icon: typeof Factory }> =
   "tables-master": { subtitle: "SAP Schema & Dictionary Tables", icon: Boxes },
 };
 
+const SECTION_TITLES: Record<string, string> = {
+  "sales-distribution": "Sales & Distribution",
+  "financial-accounting": "Financial Accounting",
+  "production-planning": "Production Planning",
+  "tables-master": "Tables Master",
+};
+
 function SectionHeading({ title, subtitle, icon: Icon }: { title: string; subtitle: string; icon: typeof Factory }) {
   return <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
     <div className="flex min-w-0 items-center gap-2"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span><h2 className="truncate text-[11px] font-bold tracking-wide text-foreground uppercase">{title}</h2></div>
@@ -63,16 +70,16 @@ function Launchpad() {
         if (!groupTiles.length) return null;
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
         return <section key={group.key} className="mb-7">
-          <SectionHeading title={group.title} subtitle={meta.subtitle} icon={meta.icon} />
+          <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
           {group.key === "sales-distribution" ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {groupTiles.map((tile, index) => <div key={tile.id} className={index === 0 ? "md:col-span-2 xl:col-span-2" : ""}><TileCard tile={tile} kpi={data?.kpis[tile.kpi_key ?? ""]} /></div>)}
+            {groupTiles.map((tile, index) => <div key={tile.id} className={index === 0 ? "md:col-span-2 xl:col-span-2" : ""}><TileCard tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} /></div>)}
             <PlaceholderTile type="fulfillment" /><PlaceholderTile type="billing" />
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
-            {groupTiles.map((tile) => <TableStatusTile key={tile.id} title="ZFISALES_DETAIL" value="Sync Active" note="Latest SAP sales snapshot" href={tile.target} />)}
+            {groupTiles.map((tile) => <TableStatusTile key={tile.id} title="ZFISALES_DETAIL" value="Sync Active" note="Latest SAP sales snapshot" {...(tile.target_path ? { href: tile.target_path } : {})} />)}
           </div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <TableStatusTile title={group.key === "financial-accounting" ? "FI Overview" : "PP Overview"} value="Live" note={group.key === "financial-accounting" ? "Financial overview" : "Production overview"} href={group.key === "financial-accounting" ? "/reports/module/fi" : "/reports/module/pp"} />
-            {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} kpi={data?.kpis[tile.kpi_key ?? ""]} />)}
+            {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div>}
         </section>;
       })}

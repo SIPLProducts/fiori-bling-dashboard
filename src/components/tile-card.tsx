@@ -38,7 +38,9 @@ const ICONS = {
   pp_output_trend: ChartNoAxesCombined,
 } as const;
 
-const PLACEHOLDERS: Record<string, { label: string; value: string; note: string; icon: typeof Gauge }> = {
+type PlaceholderType = "fulfillment" | "billing" | "kna1" | "mara" | "lfa1" | "t001w";
+
+const PLACEHOLDERS: Record<PlaceholderType, { label: string; value: string; note: string; icon: typeof Gauge }> = {
   fulfillment: { label: "Fulfillment Rate", value: "97.4%", note: "+2.3% from last month", icon: CircleGauge },
   billing: { label: "Billing Cleared", value: "8,412", note: "99.1% processed", icon: ReceiptText },
   kna1: { label: "KNA1", value: "12.8k", note: "Customer master", icon: UsersRound },
@@ -60,7 +62,7 @@ function Sparkline({ values }: { values: number[] }) {
 }
 
 function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, accent = 2, status }: {
-  label: string; value: string; note: string; icon: typeof Gauge; trend?: number[]; href?: string; onOpen?: () => void; accent?: number; status?: string;
+  label: string; value: string; note: string; icon: typeof Gauge; trend?: number[] | undefined; href?: string | undefined; onOpen?: (() => void) | undefined; accent?: number; status?: string;
 }) {
   const style = { "--tile-accent": `var(--kpi-${accent})` } as CSSProperties;
   const content = (
@@ -85,13 +87,14 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
 }
 
 export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {
-  if (tile.kind === "launch" && tile.target === "/reports/module/sd") return <NetSalesLaunchCard />;
+  const fallback = <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties} trend={kpi?.trend} href={tile.target_path ?? "/launchpad"} accent={(tile.sort_order % 6) + 1} />;
+  if (tile.kind === "launch" && tile.target_path === "/reports/module/sd") return <NetSalesLaunchCard fallback={fallback} />;
   const Icon = ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties;
-  const href = tile.target || "/launchpad";
-  return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={tile.accent_index ?? 2} />;
+  const href = tile.target_path || "/launchpad";
+  return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={(tile.sort_order % 6) + 1} />;
 }
 
-export function PlaceholderTile({ type }: { type: keyof typeof PLACEHOLDERS }) {
+export function PlaceholderTile({ type }: { type: PlaceholderType }) {
   const [open, setOpen] = useState(false);
   const item = PLACEHOLDERS[type];
   return <>
