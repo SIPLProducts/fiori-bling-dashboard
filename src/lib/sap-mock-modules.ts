@@ -1,6 +1,6 @@
 /**
  * Deterministic mock datasets for the non-procurement SAP modules
- * (SD, FI, CO, PP, QM, PS). Same shape the OData provider will return.
+ * (SD, FI, PP). Same shape the OData provider will return.
  */
 import { MODULES, findModule, type ModuleDef } from "./sap-modules";
 
