@@ -102,7 +102,7 @@ export function TileCard({
         params={{ module: "sd" }}
         className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
-        <div className="flex h-[176px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
+        <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
           <div>
             <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">
               {tile.title}
@@ -127,7 +127,7 @@ export function TileCard({
 
 
   const body = (
-    <div className="flex h-[176px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
+    <div className="flex h-[192px] w-full flex-col overflow-hidden rounded-md border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-tile-hover motion-reduce:transform-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
         <div className="line-clamp-2 text-[15px] leading-snug font-medium text-card-foreground">

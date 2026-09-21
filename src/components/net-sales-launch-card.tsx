@@ -52,7 +52,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
   const color = KPI_TONES[0];
 
   if (isLoading) {
-    return <div className="h-[176px] w-full animate-pulse rounded-md border border-border bg-launchpad-tile" />;
+    return <div className="h-[192px] w-full animate-pulse rounded-md border border-border bg-launchpad-tile" />;
   }
   if (!data) return <>{fallback}</>;
 
@@ -63,7 +63,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
       className="group block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       <section
-        className="relative flex h-[176px] w-full cursor-pointer flex-col overflow-hidden rounded-md border p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:shadow-tile-hover motion-reduce:transform-none"
+        className="relative flex h-[192px] w-full cursor-pointer flex-col overflow-hidden rounded-md border p-4 text-left shadow-launchpad-tile transition-all duration-150 group-hover:-translate-y-0.5 group-hover:shadow-tile-hover motion-reduce:transform-none"
         style={{
           borderColor: `color-mix(in oklab, ${color} 28%, var(--color-border))`,
           background: `linear-gradient(160deg, color-mix(in oklab, ${color} var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)`,
