@@ -111,6 +111,6 @@ export function PlaceholderTile({ type }: { type: PlaceholderType }) {
   </>;
 }
 
-export function TableStatusTile({ title, value, note, href }: { title: string; value: string; note: string; href?: string }) {
-  return <CardSurface label={title} value={value} note={note} icon={TableProperties} href={href} accent={6} status={href ? "Open table" : "Under development"} />;
+export function TableStatusTile({ title, value, note, href, action = "Open table", icon = TableProperties }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge }) {
+  return <CardSurface label={title} value={value} note={note} icon={icon} href={href} accent={6} status={href ? action : "Under development"} />;
 }
