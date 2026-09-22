@@ -2018,7 +2018,7 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Sales by BSARK" accent={3} expandable>
+            <Panel title="Sales by New_Repl" accent={3} expandable>
               <BsarkBars items={analytics.byNewRepl} unassigned={analytics.unassignedNewReplCount} />
             </Panel>
 
