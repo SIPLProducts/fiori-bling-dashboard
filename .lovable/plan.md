@@ -6,6 +6,7 @@
 - Quality middleware starts as version `1.8.0`, loads its `.env`, sees the Quality password, and applies the Quality-only insecure TLS setting.
 - The request now reaches the intended Quality HTTPS SAP service and SAP responds in about 65 ms with **HTTP 500 Application Server Error** and an HTML page instead of JSON.
 - Because SAP produced this response, the portal, middleware password loading, database connection, and certificate bypass are not the current failure.
+- The browser reports HTTP 502 because `POST /sync/run` deliberately converts every failed synchronization into a gateway error. Its JSON correctly preserves `httpStatus: 500`, which is SAP's actual response. The 502 is therefore a wrapper status, not a second failure.
 - The direct `curl` test was cancelled with `Ctrl+C`, so it did not produce an independent result.
 
 ## Most likely failure area
