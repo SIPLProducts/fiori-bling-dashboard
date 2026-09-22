@@ -257,6 +257,8 @@ export type SdAnalytics = {
   pareto: { bucket: string; value: number; cumulativePct: number }[];
   alerts: { tone: "up" | "down" | "warn"; text: string }[];
   mixByType: NamedTotal[];
+  byNewRepl: NamedTotal[];
+  unassignedNewReplCount: number;
   bySegment: NamedTotal[];
   topProfitCentres: NamedTotal[];
   monthly: {
@@ -287,6 +289,7 @@ function monthSortKey(label: string): string {
 
 export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byType = new Map<string, NamedTotal>();
+  const byNewRepl = new Map<string, NamedTotal>();
   const byPc = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
   const byMat = new Map<string, NamedTotal>();
@@ -313,6 +316,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   let revenue = 0;
   let quantity = 0;
   let totalAh = 0;
+  let unassignedNewReplCount = 0;
 
   for (const r of rows) {
     revenue += r.amount;
@@ -321,6 +325,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
+    if (r.newRepl.trim()) add(byNewRepl, r.newRepl.trim(), r.amount);
+    else unassignedNewReplCount += 1;
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
@@ -474,6 +480,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     alerts,
 
     mixByType: rank(byType),
+    byNewRepl: rank(byNewRepl),
+    unassignedNewReplCount,
     bySegment: rank(bySeg),
     topProfitCentres: pcList.slice(0, 10),
     monthly,

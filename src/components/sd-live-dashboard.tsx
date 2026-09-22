@@ -579,6 +579,43 @@ function MixBars({
   );
 }
 
+function BsarkBars({ items, unassigned }: { items: NamedTotal[]; unassigned: number }) {
+  if (!items.length)
+    return <p className="py-10 text-center text-sm text-muted-foreground">No BSARK data</p>;
+  return (
+    <div>
+      <div className="cxo-chart-surface h-[230px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={items} margin={{ top: 20, right: 12, left: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
+            <YAxis width={58} tickFormatter={axisCompact} tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
+            <Tooltip
+              {...tooltipStyle}
+              formatter={(value: number, _name: string, item: { payload?: NamedTotal }) => [
+                `${INRC(value)} · ${(item.payload?.count ?? 0).toLocaleString("en-IN")} rows`,
+                item.payload?.name ?? "BSARK",
+              ]}
+            />
+            <Bar dataKey="value" name="Sales amount" radius={[4, 4, 0, 0]}>
+              {items.map((item, index) => (
+                <Cell key={item.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+              ))}
+              <LabelList dataKey="value" position="top" formatter={(value: number) => compact(value)} fontSize={10} fill="var(--chart-label-strong)" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+        {items.map((item) => (
+          <span key={item.name}><strong className="text-foreground">{item.name}</strong> · {item.count.toLocaleString("en-IN")} rows</span>
+        ))}
+        {unassigned > 0 ? <span>Unassigned · {unassigned.toLocaleString("en-IN")} rows</span> : null}
+      </div>
+    </div>
+  );
+}
+
 const SEGMENT_PAGE = 6;
 
 /** X/Y bar chart of main groups; clicking a bar drills into that group's sub groups. */
@@ -1980,7 +2017,11 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel title="Sales by BSARK" accent={3} expandable>
+              <BsarkBars items={analytics.byNewRepl} unassigned={analytics.unassignedNewReplCount} />
+            </Panel>
+
             <Panel title="Management Alerts" accent={5}>
               <ul className="space-y-2.5">
                 {analytics.alerts.map((a, i) => (
