@@ -30,3 +30,4 @@
 - [x] Remove Fulfillment Rate and Billing Cleared from the Sales launchpad section
 - [x] Restore the compact Open Sales Orders report to the supplied reference layout
 - [x] Point the Open Sales Orders launchpad action to its dedicated screenshot-matched dashboard
+- [x] Map BSARK into NEW/REPL, add its dynamic Sales Dashboard chart, and remove the Management Dashboard shortcut

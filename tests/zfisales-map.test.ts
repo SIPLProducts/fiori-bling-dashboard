@@ -53,3 +53,12 @@ test("ABTEI is mapped as the Profit Centre dropdown display value", () => {
   const result = mapPayload([{ ...base, ABTEI: "VNCPP", KTEXT: "Fallback" }], "Sales_Reports_KPI");
   assert.equal(result.rows[0]?.pc_short_name, "VNCPP");
 });
+
+test("BSARK fills new_repl while explicit NEW_REPL remains authoritative", () => {
+  const fromBsark = mapPayload([{ ...base, BSARK: "REPL", XBLNR: "900221960", BSCHL: "40" }], "Sales_Reports_KPI");
+  const explicit = mapPayload([{ ...base, NEW_REPL: "NEW", BSARK: "REPL" }], "Sales_Reports_KPI");
+  assert.equal(fromBsark.rows[0]?.new_repl, "REPL");
+  assert.equal(fromBsark.rows[0]?.reference, "900221960");
+  assert.equal(fromBsark.rows[0]?.pk, "40");
+  assert.equal(explicit.rows[0]?.new_repl, "NEW");
+});
