@@ -278,6 +278,23 @@ Database migrations run automatically: the one-shot `migrate` service applies
 every file in `supabase/migrations/*.sql` in filename order once Postgres is
 healthy. There are no edge functions in this project.
 
+Launchpad catalogue cleanup is data maintenance rather than schema migration.
+After updating the repository, apply it separately in each existing environment:
+
+```bash
+# Quality
+cd /opt/MIS_Projects/Quality/deploy
+docker exec -i mis_q_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < align-launchpad.sql
+
+# Production
+cd /opt/MIS_Projects/Production/deploy
+docker exec -i mis_p_db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < align-launchpad.sql
+```
+
+The script is safe to run repeatedly. It removes all retired module/card rows,
+including Billing Documents by Month and Sales Analytics, and corrects the Open
+Sales Orders destination.
+
 Check status and logs:
 
 ```bash
