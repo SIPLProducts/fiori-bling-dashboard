@@ -6,6 +6,7 @@
 - The launchpad does not build its module tabs and cards from that permission list. It separately reads `tile_groups` and `tiles` from the Quality database.
 - Quality still contains legacy rows in those tables, which is why retired module tabs and Sales & Distribution cards appear even though Screen Permissions is correct.
 - The cleanup changes exist only as standalone deployment SQL (`remove-retired-screens.sql`, `remove-sd-summary-cards.sql`, and `fix-open-sales-orders-route.sql`). The Quality migration service applies files under `supabase/migrations`, so these scripts were missed.
+- Running those existing scripts still leaves two rows because their identifiers were omitted: Billing Documents by Month uses `kpi_key = 'zfi_sales_trend'`, while Sales Analytics has no KPI key and is identified by its `/reports/sales-analytics` destination.
 
 ## Correction
 
@@ -13,6 +14,7 @@
    - remove the nine retired modules and their old permissions;
    - remove Billed Revenue, Net Sales, Backorders, Sales Trend, Billing Documents by Month, and the old Sales Analytics launch card;
    - point Open Sales Orders to its dedicated report.
+   The revised card cleanup will explicitly delete `zfi_sales_trend` and the legacy Sales Analytics launch row targeting `/reports/sales-analytics`.
 2. Move these data corrections into an idempotent migration so future Quality and Production upgrades apply them automatically.
 3. Reload the database API schema, sign out/in or hard-refresh, and verify the module tabs, Sales & Distribution cards, and Open Sales Orders destination.
 
