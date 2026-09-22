@@ -6,7 +6,7 @@
 #   1. Create the 5 portal users (profiles + roles, temp password Welcome@2026)
 #   2. Seed the SAP settings (systems, Sales_Reports_KPI endpoint, payload)
 #   3. Import all 33,174 sales lines into zfisales_detail
-#   4. Verify and print a summary
+#   4. Align launchpad cards/modules and verify the result
 #
 # Usage on the server:
 #   cd /opt/MIS_Projects/Quality/deploy
@@ -70,7 +70,8 @@ zcat "$SCRIPT_DIR/zfisales_detail.csv.gz" | psql_exec \
 
 # --- Step 4: verify ----------------------------------------------------------
 echo
-echo "[4/4] Verification"
+echo "[4/4] Aligning launchpad and verifying"
+psql_exec < "$SCRIPT_DIR/align-launchpad.sql"
 echo "----- Users -----"
 psql_exec -c "select p.username, p.email, p.status, ura.role_key
               from public.profiles p
@@ -81,6 +82,8 @@ psql_exec -c "select count(*) as zfisales_rows, round(sum(amount)/10000000,2) as
 echo "----- SAP settings -----"
 psql_exec -c "select key, label, base_url, sap_client, is_active from public.sap_systems order by sort_order;"
 psql_exec -c "select name, endpoint_path, scheduler_enabled, schedule_expression from public.sap_endpoints;"
+echo "----- Sales & Distribution launchpad cards (expect Total Sales and Open Sales Orders only) -----"
+psql_exec -c "select title, kpi_key, target_path from public.tiles where group_key = 'sales-distribution' order by sort_order, title;"
 
 # --- Middleware reminder -----------------------------------------------------
 cat <<'EOF'
