@@ -1,34 +1,39 @@
-# Resolve Quality SAP 401 authentication failure
+# Restore Quality SAP configuration after deployment overwrite
 
-## Confirmed diagnosis
+## Confirmed issue
 
-- Quality successfully reaches SAP at `http://10.10.4.18:8000`; this is not a network, timeout, certificate, portal-to-middleware, or JSON-mapping failure.
-- SAP returns HTTP `401` with `Anmeldung fehlgeschlagen` (login failed), then the middleware correctly reports that the HTML error page is not JSON.
-- The request resolves as `system=dev environment=quality`. The saved SAP username is `SIPL_MOUNIKA`, while the password is selected from `SAP_QUALITY_PASSWORD` because the saved Environment is Quality.
-- `password=set` confirms only that a non-empty value was loaded; it does not prove that the password matches `SIPL_MOUNIKA` or that SAP accepts the account.
+- The middleware `.env` is loaded correctly. Because the saved SAP System Environment is `QUALITY`, the request uses `SAP_QUALITY_PASSWORD` from that file.
+- The username, Base URL, and client do **not** come from the blank `SAP_QUALITY_USER`, `SAP_QUALITY_BASE_URL`, and `SAP_QUALITY_CLIENT` fallback fields when values are saved in SAP Systems. The portal’s saved values take priority.
+- The latest Quality deployment ran `deploy/quality-setup-all.sh`. Its SAP-settings step executes `deploy/quality-sap-seed.sql`, which deletes all `sap_endpoints` and `sap_systems` rows, then recreates the old DEV system:
+  - key `dev`
+  - environment `DEV`
+  - Base URL `http://10.10.4.18:8000`
+  - user `SIPL_MOUNIKA`
+- That explains why the log targets `10.10.4.18:8000` even though the screenshot previously showed Quality at `https://10.10.47.144:44300`.
+- The current request logs `system=dev environment=quality` because the system was later partly changed to Quality, while retaining the seeded key/connection values. SAP rejects that mixed credential pair with HTTP 401.
 
-## Resolution
+## Changes
 
-1. **Confirm the intended credential pair**
-   - Verify that `SIPL_MOUNIKA` is the correct SAP user for client `234` on `10.10.4.18:8000`.
-   - Ensure `SAP_QUALITY_PASSWORD` contains that exact user’s current password—not the DEV user’s password and not an expired/locked credential.
-   - Keep the SAP Systems Environment as Quality if `SAP_QUALITY_PASSWORD` is the intended source. Otherwise, correct the saved Environment rather than duplicating passwords under unrelated prefixes.
+1. **Make deployment non-destructive**
+   - Stop the normal Quality setup/deployment from deleting and reseeding existing SAP Systems and APIs.
+   - Make SAP seed execution explicit and first-install-only.
+   - Replace destructive deletes with safe insert-if-missing behavior where initial seeding is still required.
 
-2. **Remove stale Quality process values**
-   - Check the Quality middleware environment for duplicate `SAP_QUALITY_PASSWORD` entries or a stale PM2-level override.
-   - Keep exactly one non-empty value in the middleware environment.
-   - Recreate/restart only `mis-q-middleware` with refreshed environment values so PM2 cannot continue using an older password.
+2. **Restore the intended Quality connection**
+   - Restore the Quality SAP System values in the portal: Environment `QUALITY`, Base URL `https://10.10.47.144:44300`, client `234`, and the correct SAP username.
+   - Keep `SAP_QUALITY_PASSWORD` as the matching password source.
+   - Keep temporary insecure TLS only if the Quality SAP certificate still cannot be verified.
+   - Ensure `Sales_Reports_KPI` remains attached to that restored system and resolves to `/fisales_detail/report?sap-client=234`.
 
-3. **Prove authentication independently**
-   - From the Quality server, call the same SAP URL with Basic authentication and a minimal valid request, without printing the password.
-   - If SAP still returns `401`, ask SAP/Basis to verify the `SIPL_MOUNIKA` account is unlocked, its password is current, Basic authentication is enabled, and it is authorized for client `234` and this service.
-   - Do not troubleshoot payload dates or row mapping until the response is no longer `401`.
+3. **Prevent mixed system/environment records**
+   - Add deployment verification that prints the saved system key, environment, URL, client, username, and endpoint association without printing secrets.
+   - Fail or warn when a system such as key `dev` is assigned Environment `QUALITY`, because that makes troubleshooting and credential selection ambiguous.
 
-4. **Verify the portal flow**
-   - Run Test Connection, then one manual `Sales_Reports_KPI` sync.
-   - Confirm the response is JSON and the run reaches parsing/storage.
-   - Leave Production unchanged.
+4. **Restart and verify**
+   - Recreate/restart `mis-q-middleware` with refreshed environment values.
+   - Confirm logs target the restored HTTPS Quality URL and show `environment=quality`.
+   - Run Test Connection, then one manual `Sales_Reports_KPI` sync; verify SAP returns JSON rather than the login-failed HTML page.
 
-## Expected result
+## Security requirement
 
-The Quality request uses one verified pair—`SIPL_MOUNIKA` plus its matching Quality password—and SAP returns an application response instead of the German login-failed page.
+The middleware shared secret, SAP password, and database service credential were exposed in chat. Rotate all three after recovery, update their matching Quality configuration, and do not paste the replacement values into chat or logs.
