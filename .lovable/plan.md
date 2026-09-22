@@ -1,54 +1,35 @@
-# Diagnose the Quality SAP HTTP 500
+# Remove duplicate launchpad cards in Production
 
-## Confirmed current state
+## Confirmed cause
 
-- The earlier authentication problem is resolved: SAP no longer returns HTTP 401.
-- Quality middleware starts as version `1.8.0`, loads its `.env`, sees the Quality password, and applies the Quality-only insecure TLS setting.
-- The request now reaches the intended Quality HTTPS SAP service and SAP responds in about 65 ms with **HTTP 500 Application Server Error** and an HTML page instead of JSON.
-- Because SAP produced this response, the portal, middleware password loading, database connection, and certificate bypass are not the current failure.
-- The browser reports HTTP 502 because `POST /sync/run` deliberately converts every failed synchronization into a gateway error. Its JSON correctly preserves `httpStatus: 500`, which is SAP's actual response. The 502 is therefore a wrapper status, not a second failure.
-- The direct `curl` test was cancelled with `Ctrl+C`, so it did not produce an independent result.
+- The Production screenshot shows duplicate database-backed cards: Total Sales, Open Sales Orders, Open Receivables, and Open Payables.
+- The launchpad fetches every row from `public.tiles` and renders each row using its unique database ID. It does not create a second copy of these cards in the page code.
+- `public.tiles` has no uniqueness rule for a card's stable identity. Older migrations inserted the same logical cards more than once with different IDs, so Production can retain duplicates after repeated/manual imports.
+- The FI/PP overview card is intentionally created once by the page. It is not the source of the duplicated KPI cards.
 
-## Most likely failure area
+## Changes
 
-SAP accepted the connection far enough to run the application endpoint, but the `/fisales_detail/report` handler failed while processing this request or payload. The exact SAP-side cause cannot be determined from the first 300 HTML characters currently logged.
+1. **Clean Production safely**
+   - Inspect duplicate groups by module and stable card identity before deleting anything.
+   - Keep one canonical row per logical card, preferring the current route, screen permission, and sort order.
+   - Remove only extra rows; preserve roles, permissions, KPI data, and report routes.
+   - Reapply the existing retired-card cleanup and the corrected Open Sales Orders route.
 
-The latest middleware payload includes:
+2. **Prevent recurrence**
+   - Add a database uniqueness rule for non-empty `kpi_key` within each module.
+   - Add a safe identity rule for launch cards without a KPI key, using module plus destination/title as appropriate.
+   - Make launchpad seed/upgrade SQL use upsert or insert-if-missing behavior rather than creating new IDs on every run.
 
-```json
-{"BUKRS":"1000","BUDAT_F":"20260101","BUDAT_T":"20260901","PRCTR":"PGNLB12001","WERKS":""}
-```
+3. **Add a self-hosted repair script**
+   - Provide one idempotent SQL file for Quality and Production that deduplicates current rows, aligns the expected SD/FI/PP/Tables cards, and reloads the API schema.
+   - Do not touch SAP settings, synchronized sales data, users, or screen permissions.
 
-This is different from the cancelled direct test, where both `PRCTR` and `WERKS` were blank. That difference should be tested before changing application code.
+4. **Verify Production**
+   - Confirm each expected card appears exactly once.
+   - Confirm Total Sales and Open Sales Orders buttons still open their current reports.
+   - Confirm FI and PP overview cards remain once, permissions still hide ungranted screens, and no retired cards return.
+   - Hard-refresh the published page after applying the repair.
 
-## Checks
+## Immediate operational note
 
-1. **Capture SAP's full error reference safely**
-   - Repeat the direct request without piping to `head` and save only the returned HTML to a temporary server file.
-   - Extract the SAP error/trace/reference ID and timestamp; do not print credentials.
-   - Give that reference to the SAP/Basis team so they can inspect the matching application-server log and ABAP exception.
-
-2. **Isolate the payload field causing the failure**
-   - Run the request once with `PRCTR` and `WERKS` blank.
-   - If that succeeds, retry with only `PRCTR=PGNLB12001` added.
-   - If it fails only after adding `PRCTR`, verify that this profit-centre value is valid for company `1000` and the selected date range.
-   - If the blank request also returns 500, SAP must fix the endpoint independently of the portal payload.
-
-3. **Check the requested date window**
-   - Test a small known-good period first, then expand it.
-   - The current request spans January through September 2026; a short successful request would distinguish SAP processing/data-volume failure from authentication or transport failure.
-
-4. **Verify through the portal after SAP succeeds**
-   - Run Test on `Sales_Reports_KPI`.
-   - Confirm the response is JSON and rows are parsed.
-   - Run one manual sync and verify received/stored counts before relying on the scheduler.
-
-## No code/configuration change yet
-
-Do not change the Quality password, TLS setting, middleware URL, or database settings now. They are working. Do not repeatedly restart both Quality and Production; restart only `mis-q-middleware` when its files or environment actually change.
-
-The Node.js 20 deprecation warning is unrelated to this HTTP 500. Plan a Node.js 22 upgrade separately; it is not the immediate fix.
-
-## Security requirement
-
-Rotate the SAP password, middleware shared secret, and database service credential already exposed in chat. Update their matching Quality locations without posting the replacement values.
+Do not rerun broad setup scripts to fix this; some older setup steps can reseed unrelated SAP settings. Apply only the dedicated launchpad repair SQL to `mis_p_db`.
