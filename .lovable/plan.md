@@ -2,20 +2,19 @@
 
 ## Confirmed issue
 
-- Quality is serving an older static frontend. The screenshot still shows the previous header, filled module selection, retired module tabs, and retired Sales & Distribution cards that no longer exist in the current source.
-- Quality also has older launchpad records in its own database. Module tabs and cards are loaded from `tile_groups` and `tiles`, so replacing only the frontend files cannot remove those records.
-- The cleanup changes exist as standalone deployment SQL (`remove-retired-screens.sql`, `remove-sd-summary-cards.sql`, and `fix-open-sales-orders-route.sql`) rather than normal migration files. Therefore the Quality migration container does not apply them automatically.
+- The Screen Permissions screenshot confirms Quality is running the current hierarchical permission code: Sales & Distribution, Financial Accounting, Production Planning, and Tables Master are structured correctly there.
+- The launchpad does not build its module tabs and cards from that permission list. It separately reads `tile_groups` and `tiles` from the Quality database.
+- Quality still contains legacy rows in those tables, which is why retired module tabs and Sales & Distribution cards appear even though Screen Permissions is correct.
+- The cleanup changes exist only as standalone deployment SQL (`remove-retired-screens.sql`, `remove-sd-summary-cards.sql`, and `fix-open-sales-orders-route.sql`). The Quality migration service applies files under `supabase/migrations`, so these scripts were missed.
 
 ## Correction
 
-1. Build a fresh Quality static package from the current source using the Quality browser configuration.
-2. Replace the complete contents of `/opt/MIS_Projects/Quality/frontend/dist/` with the new package, deleting obsolete hashed assets instead of copying over the old folder.
-3. Apply the three pending launchpad SQL updates to the Quality database:
+1. Apply the three pending launchpad SQL updates to the Quality database:
    - remove the nine retired modules and their old permissions;
    - remove Billed Revenue, Net Sales, Backorders, and Sales Trend;
    - point Open Sales Orders to its dedicated report.
-4. Move these data corrections into an idempotent migration so future Quality and Production upgrades apply them automatically.
-5. Reload the database API schema, hard-refresh the browser, and verify the header, module tabs, Sales & Distribution cards, and Open Sales Orders destination.
+2. Move these data corrections into an idempotent migration so future Quality and Production upgrades apply them automatically.
+3. Reload the database API schema, sign out/in or hard-refresh, and verify the module tabs, Sales & Distribution cards, and Open Sales Orders destination.
 
 ## Validation
 
