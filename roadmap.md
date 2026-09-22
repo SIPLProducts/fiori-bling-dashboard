@@ -33,3 +33,4 @@
 - [x] Map BSARK into NEW/REPL, add its dynamic Sales Dashboard chart, and remove the Management Dashboard shortcut
 - [ ] Store Open_Sales_Orders in its own table, sync `fkdat` as today, and connect the live dashboard
 - [x] Align Quality launchpad data with local by removing all retired modules and Sales cards
+- [x] Map SAP PCGRP1 into ZFISALES sub_group and backfill existing blank subgroup values
