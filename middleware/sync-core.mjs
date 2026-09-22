@@ -173,7 +173,7 @@ function mapRow(raw, sourceEndpoint, syncedAt) {
     sales_rep_name: str(pickField(raw, ["NAME11", "name11", "salesRepName"])),
     total_ah: num(pickField(raw, ["TOT_AH", "tot_ah"])),
     pc_short_name: str(pickField(raw, ["ABTEI", "abtei", "PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
-    sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup"])),
+    sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup", "PCGRP1", "pcgrp1"])),
     new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl", "BSARK", "bsark"])),
     division_name: str(pickField(raw, ["SPART_DESP", "DIVISION_NAME", "VTEXT_SPART", "divisionName"])),
     industry_name: str(pickField(raw, ["BRSCH_DESP", "INDUSTRY_NAME", "BRTXT_IND", "industryName"])),
@@ -242,6 +242,95 @@ function mapPayload(payload, sourceEndpoint, requestSnapshot, suppliedSnapshotId
       is_active_snapshot: false
     });
   }
+  return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
+}
+
+// ../src/lib/open-sales-orders-map.ts
+var str2 = (value) => value == null ? "" : String(value).trim();
+var num2 = (value) => {
+  const s = str2(value).replace(/,/g, "");
+  const n = Number(s.endsWith("-") ? `-${s.slice(0, -1)}` : s);
+  return s && Number.isFinite(n) ? n : 0;
+};
+var pick = (row, keys) => {
+  for (const key of keys) if (row[key] != null && str2(row[key])) return row[key];
+  return "";
+};
+var snapshotUuid2 = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const hex = sha256(`${Date.now()}:${Math.random()}`).slice(0, 32).split("");
+  hex[12] = "4";
+  hex[16] = (Number.parseInt(hex[16] ?? "0", 16) & 3 | 8).toString(16);
+  return `${hex.slice(0, 8).join("")}-${hex.slice(8, 12).join("")}-${hex.slice(12, 16).join("")}-${hex.slice(16, 20).join("")}-${hex.slice(20).join("")}`;
+};
+function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
+  const salesOrder = str2(pick(raw, ["VBELN", "vbeln", "salesOrder"]));
+  if (!salesOrder) return null;
+  const rowHash = `sha256:${sha256(canonicalJson(raw))}`;
+  const quantity = num2(pick(raw, ["KWMENG", "KWMENG_C", "quantity"]));
+  const openQuantity = pick(raw, ["KWMENG_P", "KWMENG_PC", "OPEN_QTY", "openQuantity"]);
+  return {
+    record_key: rowHash,
+    sync_scope_key: `endpoint:${sourceEndpoint}`,
+    snapshot_id: "00000000-0000-4000-8000-000000000000",
+    row_hash: rowHash,
+    occurrence_no: 1,
+    is_active_snapshot: false,
+    sales_order: salesOrder,
+    sales_order_item: str2(pick(raw, ["POSNR", "posnr"])),
+    preceding_document: str2(pick(raw, ["VGBEL", "VBELN_P"])),
+    purchase_order: str2(pick(raw, ["BSTNK", "bstnk"])),
+    order_type: str2(pick(raw, ["AUART", "auart"])),
+    order_date: toIsoDate(pick(raw, ["ERDAT", "erdat"])),
+    purchase_order_date: toIsoDate(pick(raw, ["BSTDK", "bstdk"])),
+    delivery_date: toIsoDate(pick(raw, ["DELV_DAT", "VDATU"])),
+    sales_org: str2(pick(raw, ["VKORG", "vkorg"])),
+    distribution_channel: str2(pick(raw, ["VTWEG", "vtweg"])),
+    division: str2(pick(raw, ["SPART", "spart"])),
+    plant: str2(pick(raw, ["WERKS", "werks"])),
+    sales_office: str2(pick(raw, ["VKBUR", "vkbur"])),
+    sales_group: str2(pick(raw, ["VKGRP", "vkgrp"])),
+    profit_center: str2(pick(raw, ["PRCTR", "prctr"])),
+    customer_sold_to: str2(pick(raw, ["KUNNR_SP", "KUNNR"])),
+    customer_sold_to_name: str2(pick(raw, ["NAME1_SP", "NAME1"])),
+    customer_bill_to: str2(pick(raw, ["KUNNR_BP"])),
+    customer_bill_to_name: str2(pick(raw, ["NAME1_BP"])),
+    customer_ship_to: str2(pick(raw, ["KUNNR_SH"])),
+    customer_ship_to_name: str2(pick(raw, ["NAME1_SH"])),
+    material: str2(pick(raw, ["MATNR", "matnr"])),
+    material_description: str2(pick(raw, ["MAKTX", "maktx"])),
+    material_type: str2(pick(raw, ["MTART", "mtart"])),
+    product_category: str2(pick(raw, ["BEZEI1", "TYPE"])),
+    region: str2(pick(raw, ["REGION", "BEZEI"])),
+    country: str2(pick(raw, ["LANDX_SP", "LANDX_BP"])),
+    sales_type: str2(pick(raw, ["VTEXT_DC", "SALE"])),
+    quantity,
+    open_quantity: openQuantity === "" ? quantity : num2(openQuantity),
+    unit: str2(pick(raw, ["VRKME", "MEINS"])),
+    currency: str2(pick(raw, ["WAERK"])),
+    open_value: num2(pick(raw, ["P_VALUE", "NETWR", "KWERT_INR"])),
+    days_open: Math.round(num2(pick(raw, ["DAYS"]))),
+    delivery_status: str2(pick(raw, ["ABSTA"])),
+    overall_status: str2(pick(raw, ["GBSTA"])),
+    raw,
+    source_endpoint: sourceEndpoint,
+    synced_at: syncedAt
+  };
+}
+function mapOpenSalesOrdersPayload(payload, sourceEndpoint, requestSnapshot) {
+  const syncedAt = (/* @__PURE__ */ new Date()).toISOString(), raws = extractRows(payload), syncScopeKey = buildSyncScopeKey(sourceEndpoint, requestSnapshot), snapshotId = snapshotUuid2(), occurrences = /* @__PURE__ */ new Map();
+  let invalid = 0, duplicates = 0;
+  const rows = raws.flatMap((raw) => {
+    const mapped = mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt);
+    if (!mapped) {
+      invalid += 1;
+      return [];
+    }
+    const occurrenceNo = (occurrences.get(mapped.row_hash) ?? 0) + 1;
+    occurrences.set(mapped.row_hash, occurrenceNo);
+    if (occurrenceNo > 1) duplicates += 1;
+    return [{ ...mapped, record_key: `snapshot:${sha256(`${syncScopeKey}:${snapshotId}:${mapped.row_hash}:${occurrenceNo}`)}`, sync_scope_key: syncScopeKey, snapshot_id: snapshotId, occurrence_no: occurrenceNo }];
+  });
   return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
 }
 
@@ -342,6 +431,19 @@ function withPostingDates(raw, range) {
   if ("BUDAT_T" in obj && !valid(obj["BUDAT_T"])) obj["BUDAT_T"] = sapDate(0);
   return JSON.stringify(obj);
 }
+function withOpenSalesOrdersDate(raw, now = /* @__PURE__ */ new Date()) {
+  if (!raw || !raw.trim()) return raw ?? void 0;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    return JSON.stringify({ ...parsed, fkdat: sapDateOf(now) });
+  } catch {
+    return raw;
+  }
+}
+function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date()) {
+  return endpointName === "Open_Sales_Orders" ? withOpenSalesOrdersDate(raw, now) : withPostingDates(raw, range);
+}
 function keyValueObject(raw) {
   return Array.isArray(raw) ? Object.fromEntries(
     raw.filter((r) => r && typeof r === "object" && String(r.key ?? "").trim()).map((r) => [String(r.key), String(r.value ?? "")])
@@ -357,10 +459,13 @@ export {
   extractRows,
   formatBytes,
   keyValueObject,
+  mapOpenSalesOrderRow,
+  mapOpenSalesOrdersPayload,
   mapPayload,
   mapRow,
   salvageTruncatedArray,
   sha256,
   toIsoDate,
+  withEndpointDates,
   withPostingDates
 };
