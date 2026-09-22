@@ -1,7 +1,7 @@
 // <define:import.meta.env>
 var define_import_meta_env_default = {};
 
-// src/lib/zfisales-map.ts
+// ../src/lib/zfisales-map.ts
 var MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 var str = (v) => v == null ? "" : String(v).trim();
 function toIsoDate(value) {
@@ -174,7 +174,7 @@ function mapRow(raw, sourceEndpoint, syncedAt) {
     total_ah: num(pickField(raw, ["TOT_AH", "tot_ah"])),
     pc_short_name: str(pickField(raw, ["ABTEI", "abtei", "PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
     sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup"])),
-    new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl"])),
+    new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl", "BSARK", "bsark"])),
     division_name: str(pickField(raw, ["SPART_DESP", "DIVISION_NAME", "VTEXT_SPART", "divisionName"])),
     industry_name: str(pickField(raw, ["BRSCH_DESP", "INDUSTRY_NAME", "BRTXT_IND", "industryName"])),
     doc_item: posnr,
@@ -245,7 +245,7 @@ function mapPayload(payload, sourceEndpoint, requestSnapshot, suppliedSnapshotId
   return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
 }
 
-// src/lib/sap-pull-shared.ts
+// ../src/lib/sap-pull-shared.ts
 function salvageTruncatedArray(text) {
   const trimmed = text.trimStart();
   if (!trimmed.startsWith("[")) return null;
