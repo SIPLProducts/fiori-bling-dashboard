@@ -62,3 +62,21 @@ test("BSARK fills new_repl while explicit NEW_REPL remains authoritative", () =>
   assert.equal(fromBsark.rows[0]?.pk, "40");
   assert.equal(explicit.rows[0]?.new_repl, "NEW");
 });
+
+test("MNGRP1 and PCGRP1 map to main group and sub group", () => {
+  const result = mapPayload([
+    { ...base, MNGRP1: "INDL.BATTERY", PCGRP1: "BATTERY" },
+  ], "Sales_Reports_KPI");
+
+  assert.equal(result.rows[0]?.main_group, "INDL.BATTERY");
+  assert.equal(result.rows[0]?.sub_group, "BATTERY");
+  assert.equal(result.rows[0]?.product_group, "BATTERY");
+});
+
+test("explicit subgroup remains authoritative over PCGRP1", () => {
+  const result = mapPayload([
+    { ...base, SUBGRP1: "EXPLICIT", PCGRP1: "BATTERY" },
+  ], "Sales_Reports_KPI");
+
+  assert.equal(result.rows[0]?.sub_group, "EXPLICIT");
+});

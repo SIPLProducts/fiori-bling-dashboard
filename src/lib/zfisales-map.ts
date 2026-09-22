@@ -267,7 +267,7 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
     sales_rep_name: str(pickField(raw, ["NAME11", "name11", "salesRepName"])),
     total_ah: num(pickField(raw, ["TOT_AH", "tot_ah"])),
     pc_short_name: str(pickField(raw, ["ABTEI", "abtei", "PC_SHORT", "PRCTR_SHORT", "KTEXT", "pcShortName"])),
-    sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup"])),
+    sub_group: str(pickField(raw, ["SUBGRP1", "SUB_GROUP", "SUBGRP", "subGroup", "PCGRP1", "pcgrp1"])),
     new_repl: str(pickField(raw, ["NEW_REPL", "NEWREPL", "newRepl", "BSARK", "bsark"])),
     division_name: str(pickField(raw, ["SPART_DESP", "DIVISION_NAME", "VTEXT_SPART", "divisionName"])),
     industry_name: str(pickField(raw, ["BRSCH_DESP", "INDUSTRY_NAME", "BRTXT_IND", "industryName"])),
