@@ -29,6 +29,159 @@ export type Database = {
         }
         Relationships: []
       }
+      open_sales_orders: {
+        Row: {
+          country: string | null
+          created_at: string
+          currency: string | null
+          customer_bill_to: string | null
+          customer_bill_to_name: string | null
+          customer_ship_to: string | null
+          customer_ship_to_name: string | null
+          customer_sold_to: string | null
+          customer_sold_to_name: string | null
+          days_open: number
+          delivery_date: string | null
+          delivery_status: string | null
+          distribution_channel: string | null
+          division: string | null
+          id: string
+          is_active_snapshot: boolean
+          material: string | null
+          material_description: string | null
+          material_type: string | null
+          occurrence_no: number
+          open_quantity: number
+          open_value: number
+          order_date: string | null
+          order_type: string | null
+          overall_status: string | null
+          plant: string | null
+          preceding_document: string | null
+          product_category: string | null
+          profit_center: string | null
+          purchase_order: string | null
+          purchase_order_date: string | null
+          quantity: number
+          raw: Json
+          record_key: string
+          region: string | null
+          row_hash: string
+          sales_group: string | null
+          sales_office: string | null
+          sales_order: string
+          sales_order_item: string | null
+          sales_org: string | null
+          sales_type: string | null
+          snapshot_id: string
+          source_endpoint: string
+          sync_scope_key: string
+          synced_at: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_bill_to?: string | null
+          customer_bill_to_name?: string | null
+          customer_ship_to?: string | null
+          customer_ship_to_name?: string | null
+          customer_sold_to?: string | null
+          customer_sold_to_name?: string | null
+          days_open?: number
+          delivery_date?: string | null
+          delivery_status?: string | null
+          distribution_channel?: string | null
+          division?: string | null
+          id?: string
+          is_active_snapshot?: boolean
+          material?: string | null
+          material_description?: string | null
+          material_type?: string | null
+          occurrence_no?: number
+          open_quantity?: number
+          open_value?: number
+          order_date?: string | null
+          order_type?: string | null
+          overall_status?: string | null
+          plant?: string | null
+          preceding_document?: string | null
+          product_category?: string | null
+          profit_center?: string | null
+          purchase_order?: string | null
+          purchase_order_date?: string | null
+          quantity?: number
+          raw?: Json
+          record_key: string
+          region?: string | null
+          row_hash: string
+          sales_group?: string | null
+          sales_office?: string | null
+          sales_order: string
+          sales_order_item?: string | null
+          sales_org?: string | null
+          sales_type?: string | null
+          snapshot_id: string
+          source_endpoint: string
+          sync_scope_key: string
+          synced_at?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_bill_to?: string | null
+          customer_bill_to_name?: string | null
+          customer_ship_to?: string | null
+          customer_ship_to_name?: string | null
+          customer_sold_to?: string | null
+          customer_sold_to_name?: string | null
+          days_open?: number
+          delivery_date?: string | null
+          delivery_status?: string | null
+          distribution_channel?: string | null
+          division?: string | null
+          id?: string
+          is_active_snapshot?: boolean
+          material?: string | null
+          material_description?: string | null
+          material_type?: string | null
+          occurrence_no?: number
+          open_quantity?: number
+          open_value?: number
+          order_date?: string | null
+          order_type?: string | null
+          overall_status?: string | null
+          plant?: string | null
+          preceding_document?: string | null
+          product_category?: string | null
+          profit_center?: string | null
+          purchase_order?: string | null
+          purchase_order_date?: string | null
+          quantity?: number
+          raw?: Json
+          record_key?: string
+          region?: string | null
+          row_hash?: string
+          sales_group?: string | null
+          sales_office?: string | null
+          sales_order?: string
+          sales_order_item?: string | null
+          sales_org?: string | null
+          sales_type?: string | null
+          snapshot_id?: string
+          source_endpoint?: string
+          sync_scope_key?: string
+          synced_at?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -894,6 +1047,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_open_sales_orders_snapshot: {
+        Args: {
+          _expected_count: number
+          _scope_key: string
+          _snapshot_id: string
+        }
+        Returns: number
+      }
       activate_zfisales_snapshot: {
         Args: {
           _expected_count: number

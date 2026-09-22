@@ -4,10 +4,12 @@
  * Regenerate with: npm run build:sync-core
  */
 export { canonicalJson, sha256, mapPayload, mapRow, extractRows, toIsoDate } from "../../src/lib/zfisales-map";
+export { mapOpenSalesOrdersPayload, mapOpenSalesOrderRow } from "../../src/lib/open-sales-orders-map";
 export {
   extractEmbeddedBody,
   salvageTruncatedArray,
   withPostingDates,
+  withEndpointDates,
   keyValueObject,
   formatBytes,
 } from "../../src/lib/sap-pull-shared";
