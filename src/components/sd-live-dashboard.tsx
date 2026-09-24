@@ -126,6 +126,8 @@ type ExactHoverBarShapeProps = {
   dataKey?: string;
 };
 
+const RECORDED_SEGMENT_MIN_PX = 3;
+
 /**
  * Preserve the measured segment while giving very small slices a usable
  * pointer target. Events bubble to Recharts' segment wrapper, so its tooltip
@@ -150,16 +152,18 @@ function ExactHoverBarShape(rawProps: unknown) {
   const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
   const zeroTargetWidth = isRecordedZero ? width / zeroDivisions.length : width;
   const targetX = isRecordedZero ? x + zeroTargetWidth * zeroIndex : x;
-  const hitHeight = height > 0 || isRecordedZero ? Math.max(height, 14) : 0;
-  const hitY = y - (hitHeight - height) / 2;
+  const visibleHeight = count > 0 ? Math.max(height, RECORDED_SEGMENT_MIN_PX) : 0;
+  const visibleY = y - (visibleHeight - height);
+  const hitHeight = visibleHeight > 0 ? Math.max(visibleHeight, 14) : 0;
+  const hitY = visibleY - (hitHeight - visibleHeight) / 2;
 
   return (
     <g>
       <rect
         x={x}
-        y={y}
+        y={visibleY}
         width={width}
-        height={height}
+        height={visibleHeight}
         fill={count > 0 ? props.fill : "transparent"}
         pointerEvents="none"
         data-chart-visible-segment="true"
@@ -181,8 +185,8 @@ function ExactHoverBarShape(rawProps: unknown) {
           data-value={value}
           data-count={count}
           data-total={Number(payload?.["total"] ?? 0)}
-          data-actual-y={y}
-          data-actual-height={height}
+          data-actual-y={visibleY}
+          data-actual-height={visibleHeight}
         />
       ) : null}
     </g>
@@ -776,7 +780,6 @@ function MainGroupBars({
       }),
     [categories, divisionRows, selected],
   );
-  const chartTotal = categories.reduce((sum, item) => sum + item.value, 0);
   // Use the full panel before scrolling, then add only the compact width needed
   // for each extra sub group. This keeps every group visible without the large
   // empty gaps created by a fixed 66px allocation per category.
@@ -964,8 +967,7 @@ function MainGroupBars({
                 labelFormatter={(label) => `Main Group: ${label}`}
                 formatter={(v: number, _series: string, item: { payload?: Record<string, unknown> }) => {
                   const count = Number(item.payload?.["count"] ?? 0);
-                  const share = chartTotal ? (v / chartTotal) * 100 : 0;
-                  return [`${INRC(v)} · ${count.toLocaleString("en-IN")} records · ${share.toFixed(1)}%`, "Amount"];
+                  return [`${INRC(v)} · ${count.toLocaleString("en-IN")} records`, "Amount"];
                 }}
               />
             ) : null}
@@ -995,14 +997,7 @@ function MainGroupBars({
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
                   shape={ExactHoverBarShape}
                   maxBarSize={42}
-                  minPointSize={(
-                    value: number | null | undefined,
-                    rowIndex: number,
-                  ) => {
-                    const row = data[rowIndex];
-                    const counts = row?.["counts"] as Record<string, number> | undefined;
-                    return Number(counts?.[division] ?? 0) > 0 && Number(value ?? 0) >= 0 ? 3 : 0;
-                  }}
+                  minPointSize={0}
                   isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
@@ -1054,7 +1049,7 @@ function MainGroupBars({
                 <p className="font-semibold">Sub Group: {exactHover.subgroup}</p>
                 <p className="mt-1 text-muted-foreground">PC Short Name: {exactHover.division}</p>
                 <p className="text-muted-foreground">
-                  {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records · {exactHover.total ? ((exactHover.value / exactHover.total) * 100).toFixed(1) : "0.0"}%
+                  {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records
                 </p>
               </div>,
               document.body,
