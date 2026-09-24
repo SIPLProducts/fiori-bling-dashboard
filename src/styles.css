@@ -147,6 +147,7 @@
   --chart-axis-label: oklch(0.45 0.02 252);
   --chart-axis-line: oklch(0.72 0.025 252 / 55%);
   --chart-grid-line: oklch(0.78 0.02 252 / 40%);
+  --chart-hover-fill: color-mix(in oklab, var(--foreground) 5%, transparent);
   --chart-label-strong: var(--foreground);
   --chart-tooltip-border: var(--border);
   --chart-emphasis: oklch(0.62 0.16 55);
@@ -217,6 +218,7 @@
   --chart-axis-label: oklch(0.87 0.016 250);
   --chart-axis-line: oklch(0.58 0.025 252 / 58%);
   --chart-grid-line: oklch(0.72 0.02 252 / 18%);
+  --chart-hover-fill: color-mix(in oklab, var(--foreground) 7%, transparent);
   --chart-label-strong: oklch(0.98 0.004 247);
   --chart-tooltip-border: oklch(0.72 0.06 252 / 48%);
   --chart-emphasis: oklch(0.8 0.14 68);
