@@ -848,7 +848,7 @@ function MainGroupBars({
       </text>
     );
   };
-  const trackExactSegment = (event: React.MouseEvent<HTMLDivElement>) => {
+  const trackExactSegment = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!selected) return;
     const pointerX = event.clientX;
     const pointerY = event.clientY;
@@ -912,7 +912,7 @@ function MainGroupBars({
       </div>
       <div
         className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}
-        onMouseMove={trackExactSegment}
+        onPointerMoveCapture={trackExactSegment}
         onMouseLeave={() => setExactHover(null)}
         onScroll={() => setExactHover(null)}
       >
