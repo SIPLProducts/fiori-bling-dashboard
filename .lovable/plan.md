@@ -16,8 +16,9 @@
   - `AUPOS` → Sales Order Item
   - `POSNR` (with `BUZEI` fallback) → Document Item
 - The original SAP object is also retained, so these source values remain available for audit.
-- This combination must **not** become the unique database key: all 33,909 active rows have a stored Document Item, but the current data supplies `0` for it. Adding POSNR therefore leaves only 31,808 distinct six-field combinations. Enforcing uniqueness would incorrectly discard 2,101 valid rows.
-- Keep the existing full-row identity plus occurrence number, which preserves distinct rows and exact repeated occurrences. Add an explicit mapper test covering all five requested fields rather than changing the proven identity strategy.
+- The uploaded Production response contains 115 rows. BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR are present on every row; all 115 are unique by the first five fields and there are no exact duplicate rows.
+- That Production sample can be stored safely. However, the complete active history has 33,909 rows but only 31,808 distinct six-field combinations, because older/imported rows commonly contain `0` for POSNR and AUPOS. Enforcing this combination as a database-wide unique key would incorrectly discard 2,101 valid historical rows.
+- Keep the existing full-row identity plus occurrence number, which preserves distinct rows and exact repeated occurrences. Add an explicit mapper test covering all six requested fields rather than changing the proven identity strategy.
 
 ## Fix
 1. Explicitly request only `is_active_snapshot = true` records for this dashboard, including administrator sessions.
@@ -44,7 +45,7 @@
 ## Files expected to change
 - `src/lib/sd-live.ts` — active-only, deterministic, consistency-checked dashboard loading.
 - `tests/sd-live-filters.test.ts` — stable paging and dashboard-rowset regression coverage.
-- `tests/zfisales-map.test.ts` — explicit five-field mapping and duplicate-preservation coverage.
+- `tests/zfisales-map.test.ts` — explicit six-field mapping and duplicate-preservation coverage.
 - `roadmap.md` — track completion.
 
-No database schema or SAP mapper change is required for BELNR, GJAHR, HKONT, AUBEL, or AUPOS because all five are already stored. The generated on-prem middleware bundle only needs rebuilding if mapper code changes during implementation.
+No database schema or SAP mapper change is required for BELNR, GJAHR, HKONT, AUBEL, AUPOS, or POSNR because all six are already stored. The generated on-prem middleware bundle only needs rebuilding if mapper code changes during implementation.
