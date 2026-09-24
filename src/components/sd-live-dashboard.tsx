@@ -139,9 +139,18 @@ function ExactHoverBarShape(rawProps: unknown) {
   const height = Math.max(0, Number(props.height ?? 0));
   const division = props.dataKey ?? "";
   const payload = props.payload as (Record<string, unknown> & { name?: string }) | undefined;
-  const value = Number(payload?.[division] ?? 0);
+  const actualValues = payload?.["actualValues"] as Record<string, number> | undefined;
+  const value = Number(actualValues?.[division] ?? payload?.[division] ?? 0);
   const counts = payload?.["counts"] as Record<string, number> | undefined;
-  const hitHeight = height > 0 && value !== 0 ? Math.max(height, 14) : 0;
+  const count = counts?.[division] ?? 0;
+  const zeroDivisions = Object.keys(counts ?? {}).filter(
+    (name) => Number(payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
+  );
+  const zeroIndex = zeroDivisions.indexOf(division);
+  const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
+  const zeroTargetWidth = isRecordedZero ? width / zeroDivisions.length : width;
+  const targetX = isRecordedZero ? x + zeroTargetWidth * zeroIndex : x;
+  const hitHeight = height > 0 || isRecordedZero ? Math.max(height, 14) : 0;
   const hitY = y - (hitHeight - height) / 2;
 
   return (
@@ -156,9 +165,9 @@ function ExactHoverBarShape(rawProps: unknown) {
       />
       {hitHeight > 0 ? (
         <rect
-          x={x}
+          x={targetX}
           y={hitY}
-          width={width}
+          width={zeroTargetWidth}
           height={hitHeight}
           fill="transparent"
           pointerEvents="all"
@@ -166,7 +175,7 @@ function ExactHoverBarShape(rawProps: unknown) {
           data-sub-group={props.payload?.name ?? ""}
           data-division={division}
           data-value={value}
-          data-count={counts?.[division] ?? 0}
+          data-count={count}
           data-total={Number(payload?.["total"] ?? 0)}
           data-actual-y={y}
           data-actual-height={height}
@@ -743,12 +752,20 @@ function MainGroupBars({
           value: category.value,
           count: category.count,
           counts: {},
+          actualValues: {},
         };
         if (selected) {
           for (const division of divisionRows[category.name] ?? []) {
-            row[division.name] = division.value;
+            // Recharts does not render a shape for a true zero. A negligible
+            // display value lets it create the invisible hover target while
+            // actualValues keeps the tooltip and totals exactly at ₹0.
+            row[division.name] = division.value === 0 && division.count > 0
+              ? Math.max(Math.abs(category.value) * 1e-12, Number.EPSILON)
+              : division.value;
             const counts = row["counts"] as Record<string, number>;
             counts[division.name] = division.count;
+            const actualValues = row["actualValues"] as Record<string, number>;
+            actualValues[division.name] = division.value;
           }
         }
         return row;
@@ -843,6 +860,9 @@ function MainGroupBars({
     if (!selected) return;
     const pointerX = event.clientX;
     const pointerY = event.clientY;
+    const directTarget = event.target instanceof Element
+      ? event.target.closest<SVGRectElement>('[data-chart-hit-target="true"]')
+      : null;
     const targets = [...event.currentTarget.querySelectorAll<SVGRectElement>('[data-chart-hit-target="true"]')];
     const candidates = targets
       .map((target) => {
@@ -864,8 +884,8 @@ function MainGroupBars({
       })
       .filter((candidate) => candidate.insideX)
       .sort((a, b) => a.distance - b.distance);
-    const nearest = candidates[0]?.target;
-    const nearestDistance = candidates[0]?.distance;
+    const nearest = directTarget ?? candidates[0]?.target;
+    const nearestDistance = directTarget ? 0 : candidates[0]?.distance;
     if (!nearest || nearestDistance === undefined || nearestDistance > 8) {
       setExactHover(null);
       return;

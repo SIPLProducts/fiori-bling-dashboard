@@ -164,5 +164,6 @@ describe("sales dashboard group division analytics", () => {
     expect(analytics.divisionsBySubGroup["INDL.BATTERY"]?.["PEU"]).toEqual([
       { name: "PEU", value: 0, count: 1 },
     ]);
+    expect(analytics.divisionsBySubGroup["INDL.BATTERY"]?.["PEU"]?.[0]?.count).toBeGreaterThan(0);
   });
 });

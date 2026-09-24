@@ -42,3 +42,4 @@
 - [x] Add overflow-based horizontal scrolling for complete Main Group and Sub Group lists
 - [x] Add enlarged exact-segment pointer targets for tiny stacked chart slices
 - [x] Keep exact-segment tooltips inside the visible browser area
+- [x] Show exact tooltips for recorded zero-value PC Short Name divisions
