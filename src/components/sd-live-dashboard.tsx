@@ -994,7 +994,7 @@ function MainGroupBars({
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
                   shape={ExactHoverBarShape}
                   maxBarSize={42}
-                  minPointSize={(value: number) => value > 0 ? 3 : 0}
+                  minPointSize={(value: number | null | undefined) => Number(value ?? 0) > 0 ? 3 : 0}
                   isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
