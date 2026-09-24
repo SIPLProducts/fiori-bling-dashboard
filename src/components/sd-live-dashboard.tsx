@@ -820,8 +820,8 @@ function MainGroupBars({
     const candidates = targets
       .map((target) => {
         const box = target.getBoundingClientRect();
-        const actualY = Number(target.dataset.actualY ?? 0);
-        const actualHeight = Number(target.dataset.actualHeight ?? 0);
+        const actualY = Number(target.dataset["actualY"] ?? 0);
+        const actualHeight = Number(target.dataset["actualHeight"] ?? 0);
         const svg = target.ownerSVGElement;
         const viewBoxHeight = svg?.viewBox.baseVal.height || svg?.getBoundingClientRect().height || 1;
         const renderedHeight = svg?.getBoundingClientRect().height || 1;
@@ -838,16 +838,17 @@ function MainGroupBars({
       .filter((candidate) => candidate.insideX)
       .sort((a, b) => a.distance - b.distance);
     const nearest = candidates[0]?.target;
-    if (!nearest || candidates[0].distance > 8) {
+    const nearestDistance = candidates[0]?.distance;
+    if (!nearest || nearestDistance === undefined || nearestDistance > 8) {
       setExactHover(null);
       return;
     }
     setExactHover({
-      subgroup: nearest.dataset.subGroup ?? "Unassigned",
-      division: nearest.dataset.division ?? "Unassigned",
-      value: Number(nearest.dataset.value ?? 0),
-      count: Number(nearest.dataset.count ?? 0),
-      total: Number(nearest.dataset.total ?? 0),
+      subgroup: nearest.dataset["subGroup"] ?? "Unassigned",
+      division: nearest.dataset["division"] ?? "Unassigned",
+      value: Number(nearest.dataset["value"] ?? 0),
+      count: Number(nearest.dataset["count"] ?? 0),
+      total: Number(nearest.dataset["total"] ?? 0),
       clientX: pointerX,
       clientY: pointerY,
     });
