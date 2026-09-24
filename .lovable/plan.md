@@ -8,14 +8,15 @@
 - A page load occurring while SAP data is being activated can combine pages from two dataset versions.
 
 ## SAP field-key confirmation
-- The five requested fields are already saved on every mapped SAP row:
+- The six requested fields are already saved on every mapped SAP row:
   - `BELNR` → Document No
   - `GJAHR` → Fiscal Year
   - `HKONT` → G/L
   - `AUBEL` → Sales Order
   - `AUPOS` → Sales Order Item
+  - `POSNR` (with `BUZEI` fallback) → Document Item
 - The original SAP object is also retained, so these source values remain available for audit.
-- This combination must **not** become the unique database key: the current 33,909 active rows contain only 31,808 distinct five-field combinations. Enforcing uniqueness would incorrectly discard 2,101 valid rows.
+- This combination must **not** become the unique database key: all 33,909 active rows have a stored Document Item, but the current data supplies `0` for it. Adding POSNR therefore leaves only 31,808 distinct six-field combinations. Enforcing uniqueness would incorrectly discard 2,101 valid rows.
 - Keep the existing full-row identity plus occurrence number, which preserves distinct rows and exact repeated occurrences. Add an explicit mapper test covering all five requested fields rather than changing the proven identity strategy.
 
 ## Fix
@@ -35,8 +36,8 @@
 - Test that records sharing the same posting date are returned once, with no gaps or duplicates.
 - Test that inactive/staging rows never enter dashboard calculations for administrators.
 - Test that a snapshot change during pagination triggers a clean retry rather than a mixed total.
-- Test that BELNR, GJAHR, HKONT, AUBEL, and AUPOS are all persisted to their mapped columns during snapshot insertion.
-- Test that two valid rows sharing the five-field combination are both preserved when other SAP values differ.
+- Test that BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR are all persisted to their mapped columns during snapshot insertion.
+- Test that two valid rows sharing the six-field combination are both preserved when other SAP values differ.
 - Compare the dashboard row count and Total Sales with one direct active-data database total across repeated reloads.
 - Confirm repeated refreshes show an identical Total Sales value when no new completed SAP sync has changed the source data.
 
