@@ -52,14 +52,13 @@ export function Panel({
   children,
   className = "",
   actions,
-  accent,
   expandable = false,
 }: {
   title: string;
   children: ReactNode | ((fullscreen: boolean) => ReactNode);
   className?: string;
   actions?: ReactNode;
-  /** 1-6 maps to the --kpi-* palette; adds a coloured left edge. */
+  /** Retained for existing dashboard callers; cards now use a neutral border. */
   accent?: 1 | 2 | 3 | 4 | 5 | 6;
   /** Shows a full-screen toggle in the header. */
   expandable?: boolean;
@@ -69,10 +68,7 @@ export function Panel({
     typeof children === "function" ? (children as (f: boolean) => ReactNode)(fullscreen) : children;
 
   return (
-    <section
-      className={`rounded-md border border-border bg-card p-4 shadow-tile ${accent ? "border-l-[3px]" : ""} ${className}`}
-      style={accent ? { borderLeftColor: `var(--kpi-${accent})` } : undefined}
-    >
+    <section className={`rounded-md border border-border bg-card p-4 shadow-tile ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-2">
         <h2 className="text-sm font-medium text-card-foreground">{title}</h2>
         <div className="flex shrink-0 items-center gap-1">
