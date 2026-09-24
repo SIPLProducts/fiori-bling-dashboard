@@ -126,8 +126,6 @@ type ExactHoverBarShapeProps = {
   dataKey?: string;
 };
 
-const RECORDED_SEGMENT_MIN_PX = 3;
-
 /**
  * Preserve the measured segment while giving very small slices a usable
  * pointer target. Events bubble to Recharts' segment wrapper, so its tooltip
@@ -145,25 +143,16 @@ function ExactHoverBarShape(rawProps: unknown) {
   const value = Number(actualValues?.[division] ?? payload?.[division] ?? 0);
   const counts = payload?.["counts"] as Record<string, number> | undefined;
   const count = counts?.[division] ?? 0;
-  const zeroDivisions = Object.keys(counts ?? {}).filter(
-    (name) => Number(actualValues?.[name] ?? payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
-  );
-  const zeroIndex = zeroDivisions.indexOf(division);
-  const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
-  const zeroTargetWidth = isRecordedZero ? width / zeroDivisions.length : width;
-  const targetX = isRecordedZero ? x + zeroTargetWidth * zeroIndex : x;
-  const visibleHeight = count > 0 ? Math.max(height, RECORDED_SEGMENT_MIN_PX) : 0;
-  const visibleY = y - (visibleHeight - height);
-  const hitHeight = visibleHeight > 0 ? Math.max(visibleHeight, 14) : 0;
-  const hitY = visibleY - (hitHeight - visibleHeight) / 2;
+  const hitHeight = count > 0 && height > 0 ? Math.max(height, 14) : 0;
+  const hitY = y - (hitHeight - height) / 2;
 
   return (
     <g>
       <rect
         x={x}
-        y={visibleY}
+        y={y}
         width={width}
-        height={visibleHeight}
+        height={height}
         fill={count > 0 ? props.fill : "transparent"}
         pointerEvents="none"
         data-chart-visible-segment="true"
@@ -173,9 +162,9 @@ function ExactHoverBarShape(rawProps: unknown) {
       />
       {hitHeight > 0 ? (
         <rect
-          x={targetX}
+          x={x}
           y={hitY}
-          width={zeroTargetWidth}
+          width={width}
           height={hitHeight}
           fill="transparent"
           pointerEvents="all"
@@ -185,8 +174,8 @@ function ExactHoverBarShape(rawProps: unknown) {
           data-value={value}
           data-count={count}
           data-total={Number(payload?.["total"] ?? 0)}
-          data-actual-y={visibleY}
-          data-actual-height={visibleHeight}
+          data-actual-y={y}
+          data-actual-height={height}
         />
       ) : null}
     </g>
@@ -751,6 +740,13 @@ function MainGroupBars({
     }
     return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
   }, [categories, divisionRows, selected]);
+  const minimumVisibleValue = useMemo(() => {
+    if (!selected) return 0;
+    const largestTotal = Math.max(...categories.map((category) => Math.abs(category.value)), 0);
+    // Reserve roughly four plot pixels for each recorded tiny or zero slice.
+    // Real amounts remain in actualValues and continue to drive totals/tooltips.
+    return largestTotal > 0 ? largestTotal / 50 : 1;
+  }, [categories, selected]);
   const data = useMemo(
     () =>
       categories.map((category) => {
@@ -764,12 +760,12 @@ function MainGroupBars({
         };
         if (selected) {
           for (const division of divisionRows[category.name] ?? []) {
-            // Recharts does not render a shape for a true zero. A negligible
-            // display value lets it create the invisible hover target while
-            // actualValues keeps the tooltip and totals exactly at ₹0.
-            row[division.name] = division.value === 0 && division.count > 0
-              ? Math.max(Math.abs(category.value) * 1e-12, Number.EPSILON)
-              : division.value;
+            // Give every recorded pair its own visible stacked slice. The real
+            // amount stays separate so labels, totals, filters, and tooltips
+            // remain exact even when a tiny or zero value receives a visual floor.
+            row[division.name] = division.value < 0
+              ? -Math.max(Math.abs(division.value), minimumVisibleValue)
+              : Math.max(division.value, minimumVisibleValue);
             const counts = row["counts"] as Record<string, number>;
             counts[division.name] = division.count;
             const actualValues = row["actualValues"] as Record<string, number>;
@@ -778,7 +774,7 @@ function MainGroupBars({
         }
         return row;
       }),
-    [categories, divisionRows, selected],
+    [categories, divisionRows, minimumVisibleValue, selected],
   );
   // Use the full panel before scrolling, then add only the compact width needed
   // for each extra sub group. This keeps every group visible without the large
