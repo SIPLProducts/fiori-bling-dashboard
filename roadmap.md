@@ -43,3 +43,4 @@
 - [x] Add enlarged exact-segment pointer targets for tiny stacked chart slices
 - [x] Keep exact-segment tooltips inside the visible browser area
 - [x] Show exact tooltips for recorded zero-value PC Short Name divisions
+- [x] Remove false Sub Group colors, compact bars, label both axes, and restore amount-axis visibility

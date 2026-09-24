@@ -160,8 +160,11 @@ function ExactHoverBarShape(rawProps: unknown) {
         y={y}
         width={width}
         height={height}
-        fill={props.fill}
+        fill={value === 0 ? "transparent" : props.fill}
         data-chart-visible-segment="true"
+        data-sub-group={props.payload?.name ?? ""}
+        data-division={division}
+        data-value={value}
       />
       {hitHeight > 0 ? (
         <rect
@@ -776,7 +779,7 @@ function MainGroupBars({
   // Use the full panel before scrolling, then add only the compact width needed
   // for each extra sub group. This keeps every group visible without the large
   // empty gaps created by a fixed 66px allocation per category.
-  const minimumChartWidth = Math.max(560, categories.length * (selected ? 42 : 72));
+  const minimumChartWidth = Math.max(560, categories.length * (selected ? 48 : 72));
   const chartWidth = `max(100%, ${minimumChartWidth}px)`;
   const legendHeight = selected ? Math.max(48, Math.ceil(divisions.length / 6) * 24 + 16) : 0;
   useEffect(() => {
@@ -929,7 +932,7 @@ function MainGroupBars({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ left: -12, right: 0, top: 16, bottom: 0 }}
+            margin={{ left: 8, right: 4, top: 16, bottom: 0 }}
             barCategoryGap={selected ? "6%" : "10%"}
             barGap={0}
           >
@@ -946,7 +949,7 @@ function MainGroupBars({
             />
             <YAxis
               type="number"
-              width={56}
+              width={68}
               tickFormatter={axisCompact}
               tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
               stroke="var(--chart-axis-line)"
@@ -990,8 +993,8 @@ function MainGroupBars({
                   stackId="division"
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
                   shape={ExactHoverBarShape}
-                  maxBarSize={60}
-                  minPointSize={3}
+                  maxBarSize={42}
+                  minPointSize={(value: number | null | undefined) => Number(value ?? 0) > 0 ? 3 : 0}
                   isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
@@ -1008,16 +1011,19 @@ function MainGroupBars({
                 height={legendHeight}
                 wrapperStyle={{ paddingTop: "16px" }}
                 content={() => (
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
-                    {divisions.map((division, index) => (
-                      <span key={division} className="inline-flex items-center gap-1.5">
-                        <span
-                          className="size-2.5 shrink-0 rounded-sm"
-                          style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }}
-                        />
-                        {division}
-                      </span>
-                    ))}
+                  <div className="flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap px-2 pb-1 text-[11px] text-muted-foreground">
+                    <span className="shrink-0 font-semibold text-foreground">PC Short Name</span>
+                    <div className="flex shrink-0 items-center gap-4">
+                      {divisions.map((division, index) => (
+                        <span key={division} className="inline-flex shrink-0 items-center gap-1.5">
+                          <span
+                            className="size-2.5 shrink-0 rounded-sm"
+                            style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }}
+                          />
+                          {division}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               />
