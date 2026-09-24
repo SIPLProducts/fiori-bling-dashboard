@@ -2398,14 +2398,14 @@ export function SdLiveDashboard() {
               value={LAKHS(analytics.kpis.positiveAhTotal)}
               tone={4}
               icon={Building2}
-              caption="AH greater than zero"
+              caption="Total AH greater than zero"
             />
             <KpiCard
               label="AH Sales"
               value={CRORES(analytics.kpis.positiveAhSales)}
               tone={1}
               icon={IndianRupee}
-              caption="Local currency amount where AH is greater than zero"
+              caption="Local currency amount where Total AH is greater than zero"
             />
           </div>
 

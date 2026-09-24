@@ -337,8 +337,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     revenue += r.amount;
     quantity += r.quantity;
     totalAh += r.totalAh;
-    if (r.ah > 0) {
-      positiveAhTotal += r.ah;
+    if (r.totalAh > 0) {
+      positiveAhTotal += r.totalAh;
       positiveAhSales += r.amount;
     }
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
