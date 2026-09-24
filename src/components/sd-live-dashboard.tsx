@@ -141,7 +141,15 @@ function ExactHoverBarShape(rawProps: unknown) {
   const payload = props.payload as (Record<string, unknown> & { name?: string }) | undefined;
   const value = Number(payload?.[division] ?? 0);
   const counts = payload?.["counts"] as Record<string, number> | undefined;
-  const hitHeight = height > 0 && value !== 0 ? Math.max(height, 14) : 0;
+  const count = counts?.[division] ?? 0;
+  const zeroDivisions = Object.keys(counts ?? {}).filter(
+    (name) => Number(payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
+  );
+  const zeroIndex = zeroDivisions.indexOf(division);
+  const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
+  const zeroTargetWidth = isRecordedZero ? width / zeroDivisions.length : width;
+  const targetX = isRecordedZero ? x + zeroTargetWidth * zeroIndex : x;
+  const hitHeight = height > 0 || isRecordedZero ? Math.max(height, 14) : 0;
   const hitY = y - (hitHeight - height) / 2;
 
   return (
@@ -156,9 +164,9 @@ function ExactHoverBarShape(rawProps: unknown) {
       />
       {hitHeight > 0 ? (
         <rect
-          x={x}
+          x={targetX}
           y={hitY}
-          width={width}
+          width={zeroTargetWidth}
           height={hitHeight}
           fill="transparent"
           pointerEvents="all"
@@ -166,7 +174,7 @@ function ExactHoverBarShape(rawProps: unknown) {
           data-sub-group={props.payload?.name ?? ""}
           data-division={division}
           data-value={value}
-          data-count={counts?.[division] ?? 0}
+          data-count={count}
           data-total={Number(payload?.["total"] ?? 0)}
           data-actual-y={y}
           data-actual-height={height}
