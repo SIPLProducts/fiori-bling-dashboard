@@ -1,26 +1,19 @@
 # Align Total AH and AH Sales with the Net Sales List
 
-## Result
+## Confirmed baseline
+- The live dataset contains **33,909 rows**.
+- **13,460 rows** have `total_ah > 0`.
+- Those rows total **642,371,668.96 Total AH** and **₹15,153,736,916 local amount**, which format to **6,423.72 L** and **₹1,515.37 Cr**.
+- The row mapper already reads the database `total_ah` column into `totalAh`, and the Net Sales List export uses the same mapped rows.
 
-Make both summary tiles reconcile exactly with the rows exported from the Net Sales List:
-
-- Start with the same currently filtered rows shown in the Net Sales List.
-- Keep only rows where **Total AH is greater than 0**.
-- **Total AH**: sum the `Total AH` column from those rows and display it in Lakhs (`L`).
-- **AH Sales**: sum `Amount in local cur.` from those exact same rows and display it in Crores (`Cr`).
-- Count every stored/exported row once, including negative amounts when its Total AH is greater than 0.
-
-With the current 33,909 stored rows, the verified values are approximately:
-
-- Total AH: `642,371,668.96` = `6,423.72 L`
-- AH Sales: `15,153,736,916` = `₹1,515.37 Cr`
-
-These values will continue to update with the dashboard’s active filters.
-
-## Technical details
-
-- Replace the tile condition from the separate `AH > 0` field to `totalAh > 0`.
-- Sum `totalAh` for Total AH and `amount` for AH Sales within that single shared row set.
-- Update the tile captions so they explicitly reference `Total AH > 0`.
-- Update the analytics tests to cover positive, zero, and negative Total AH values and verify that both totals use identical qualifying rows.
-- Verify the displayed units and totals against the Net Sales List export calculation.
+## Changes
+1. Build one explicit `qualifyingRows` collection from the currently filtered Net Sales List rows using parsed `totalAh > 0`.
+2. Calculate both summary values from that same collection:
+   - Total AH: sum `totalAh`, divide by 100,000.
+   - AH Sales: sum `amount` without excluding negative amounts, divide by 10,000,000.
+3. Format both values with exactly two decimal places using Indian number formatting and update the captions exactly to:
+   - `Total AH > 0`
+   - `Local currency amount where Total AH > 0`
+4. Keep the CSV export and both tiles tied to the same active filtered rowset; no independent filter pass or use of the separate `ah` field.
+5. Strengthen tests to verify the shared qualifying subset, inclusion of negative amounts, exclusion of zero/negative Total AH, and the full-data benchmark totals.
+6. Verify the running Sales Dashboard with all filters cleared shows 33,909 table rows, 6,423.72 L, and ₹1,515.37 Cr.

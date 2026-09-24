@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { applySdFilters, buildSdAnalytics, fiscalQuarter, type SdFilters, type SdLine } from "../src/lib/sd-live";
+import {
+  applySdFilters,
+  buildSdAnalytics,
+  fiscalQuarter,
+  qualifyingTotalAhRows,
+  type SdFilters,
+  type SdLine,
+} from "../src/lib/sd-live";
 import { buildDynamicColorMap, dynamicChartColor } from "../src/lib/chart-colors";
 
 const filters = (patch: Partial<SdFilters> = {}): SdFilters => ({
@@ -220,10 +227,34 @@ describe("positive Total AH summary metrics", () => {
       { ...row("2026", "2026-04-04"), ah: 80_000, totalAh: -10_000, amount: 80_000_000 },
     ];
 
+    const qualifyingRows = qualifyingTotalAhRows(rows);
     const { kpis } = buildSdAnalytics(rows);
 
+    expect(qualifyingRows).toHaveLength(2);
+    expect(qualifyingRows.map((item) => item.postingDate)).toEqual(["2026-04-01", "2026-04-02"]);
     expect(kpis.positiveAhTotal).toBe(200_000);
     expect(kpis.positiveAhSales).toBe(10_000_000);
+  });
+
+  test("matches the verified unfiltered Net Sales List benchmark", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), totalAh: 642_371_668.96, amount: 15_153_736_916 },
+      { ...row("2026", "2026-04-02"), totalAh: 0, amount: 500_000_000 },
+      { ...row("2026", "2026-04-03"), totalAh: -10, amount: 500_000_000 },
+    ];
+
+    const { kpis } = buildSdAnalytics(rows);
+
+    expect(kpis.positiveAhTotal).toBe(642_371_668.96);
+    expect(kpis.positiveAhSales).toBe(15_153_736_916);
+    expect((kpis.positiveAhTotal / 100_000).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })).toBe("6,423.72");
+    expect((kpis.positiveAhSales / 10_000_000).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })).toBe("1,515.37");
   });
 });
 

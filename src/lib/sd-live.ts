@@ -55,6 +55,17 @@ type Row = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "" : String(v));
 const n = (v: unknown) => Number(v ?? 0);
 
+/** Parse numeric SAP/database values consistently, including CSV-style commas. */
+export const salesNumber = (value: unknown): number => {
+  const parsed = Number(String(value ?? 0).replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/** The one shared rowset used by both AH summary tiles. */
+export function qualifyingTotalAhRows(rows: SdLine[]): SdLine[] {
+  return rows.filter((row) => salesNumber(row.totalAh) > 0);
+}
+
 async function fetchPage(from: number): Promise<Row[]> {
   const { data, error } = await supabase
     .from("zfisales_detail")
@@ -333,14 +344,17 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   let positiveAhSales = 0;
   let unassignedNewReplCount = 0;
 
+  const qualifyingRows = qualifyingTotalAhRows(rows);
+  for (const row of qualifyingRows) {
+    positiveAhTotal += salesNumber(row.totalAh);
+    // Negative local-currency amounts remain included when Total AH is positive.
+    positiveAhSales += salesNumber(row.amount);
+  }
+
   for (const r of rows) {
     revenue += r.amount;
     quantity += r.quantity;
     totalAh += r.totalAh;
-    if (r.totalAh > 0) {
-      positiveAhTotal += r.totalAh;
-      positiveAhSales += r.amount;
-    }
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
