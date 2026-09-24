@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
+  Legend,
   Line,
   Pie,
   PieChart,
@@ -686,7 +687,8 @@ function MainGroupBars({
   // Use the full panel before scrolling, then add only the compact width needed
   // for each extra sub group. This keeps every group visible without the large
   // empty gaps created by a fixed 66px allocation per category.
-  const chartWidth = selected ? `max(100%, ${Math.max(560, categories.length * 48)}px)` : "100%";
+  const chartWidth = selected ? `max(100%, ${Math.max(560, categories.length * 42)}px)` : "100%";
+  const legendHeight = selected ? Math.max(48, Math.ceil(divisions.length / 6) * 24 + 16) : 0;
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -760,12 +762,12 @@ function MainGroupBars({
         <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
       <div className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}>
-        <div style={{ width: chartWidth, height: full ? "100%" : 290 }}>
+        <div style={{ width: chartWidth, height: full ? "100%" : 290 + legendHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
             margin={{ left: -12, right: 0, top: 16, bottom: 0 }}
-            barCategoryGap={selected ? "8%" : "18%"}
+            barCategoryGap={selected ? "6%" : "10%"}
             barGap={0}
           >
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
@@ -790,6 +792,7 @@ function MainGroupBars({
             <Tooltip
               {...tooltipStyle}
               shared={false}
+              cursor={{ fill: "var(--chart-hover-fill)" }}
               labelFormatter={(label) => `${selected ? "Sub Group" : "Main Group"}: ${label}`}
               formatter={(v: number, series: string, item: { payload?: Record<string, unknown> }) => {
                 const total = Number(item.payload?.["total"] ?? 0);
@@ -829,8 +832,8 @@ function MainGroupBars({
                   name={division}
                   stackId="division"
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
-                  maxBarSize={28}
-                  minPointSize={10}
+                  maxBarSize={60}
+                  minPointSize={3}
                   isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
@@ -841,20 +844,30 @@ function MainGroupBars({
                 </Bar>
               ))
             )}
+            {selected ? (
+              <Legend
+                verticalAlign="bottom"
+                height={legendHeight}
+                wrapperStyle={{ paddingTop: "16px" }}
+                content={() => (
+                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+                    {divisions.map((division, index) => (
+                      <span key={division} className="inline-flex items-center gap-1.5">
+                        <span
+                          className="size-2.5 shrink-0 rounded-sm"
+                          style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }}
+                        />
+                        {division}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              />
+            ) : null}
           </BarChart>
         </ResponsiveContainer>
         </div>
       </div>
-      {selected ? (
-        <div className="mt-3 flex max-h-16 flex-wrap justify-center gap-x-4 gap-y-1.5 overflow-y-auto text-[11px] text-muted-foreground">
-          {divisions.map((division, index) => (
-            <span key={division} className="inline-flex items-center gap-1.5">
-              <span className="size-2.5 shrink-0 rounded-sm" style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }} />
-              {division}
-            </span>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

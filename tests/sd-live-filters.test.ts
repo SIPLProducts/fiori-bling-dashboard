@@ -146,4 +146,23 @@ describe("sales dashboard group division analytics", () => {
     expect(subGroups.map((item) => item.name)).toEqual(rows.map((item) => item.subGroup));
     expect(subGroups.some((item) => item.name === "Others")).toBe(false);
   });
+
+  test("keeps zero and low-value sub groups and their division legend values", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), mainGroup: "INDL.BATTERY", subGroup: "BATTERY", pcShortName: "VZNM", amount: 1_000 },
+      { ...row("2026", "2026-04-02"), mainGroup: "INDL.BATTERY", subGroup: "SMS", pcShortName: "SMS", amount: 1 },
+      { ...row("2026", "2026-04-03"), mainGroup: "INDL.BATTERY", subGroup: "PEU", pcShortName: "PEU", amount: 0 },
+    ];
+
+    const analytics = buildSdAnalytics(rows);
+
+    expect(analytics.subGroupsByMainGroup["INDL.BATTERY"]).toEqual([
+      { name: "BATTERY", value: 1_000, count: 1 },
+      { name: "SMS", value: 1, count: 1 },
+      { name: "PEU", value: 0, count: 1 },
+    ]);
+    expect(analytics.divisionsBySubGroup["INDL.BATTERY"]?.["PEU"]).toEqual([
+      { name: "PEU", value: 0, count: 1 },
+    ]);
+  });
 });
