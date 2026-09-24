@@ -53,6 +53,7 @@ import {
   fetchSdLines,
   uniqueValues,
   type NamedTotal,
+  type ModelPerformance,
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
@@ -86,6 +87,9 @@ const LAKHS = (value: number) =>
   `${(value / 1e5).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0L`;
 const CRORES = (value: number) =>
   `${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0Cr`;
+const INR_CRORES = (value: number) => `₹${CRORES(value)}`;
+const PER_AH = (value: number) =>
+  `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/AH`;
 
 /* ---- UI visibility flags: hidden elements keep their code intact; flip ----
  * ---- a flag back to true to show the element again. ---------------------- */
@@ -492,6 +496,100 @@ function HBar({
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    </div>
+  );
+}
+
+type ModelLimit = 10 | 20 | "all";
+
+function SalesByModelChart({
+  items,
+  limit,
+  full,
+}: {
+  items: ModelPerformance[];
+  limit: ModelLimit;
+  full: boolean;
+}) {
+  const data = limit === "all" ? items : items.slice(0, limit);
+  if (!data.length)
+    return <p className="py-10 text-center text-sm text-muted-foreground">No models match the current filters.</p>;
+
+  const chartHeight = Math.max(full ? 520 : 320, data.length * 42);
+  const rateByModel = new Map(data.map((item) => [item.model, item.perAhRate]));
+  const axisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => {
+    const model = payload?.value ?? "Unassigned";
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={-8} y={-3} textAnchor="end" fill="var(--chart-axis-label)" fontSize={11}>
+          {model.length > 22 ? `${model.slice(0, 21)}…` : model}
+        </text>
+        <text x={-8} y={11} textAnchor="end" fill="var(--color-muted-foreground)" fontSize={9}>
+          {PER_AH(rateByModel.get(model) ?? 0)}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <div className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}>
+      <div style={{ height: chartHeight, minWidth: 720 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart layout="vertical" data={data} margin={{ top: 8, right: 104, bottom: 18, left: 16 }}>
+            <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={(value: number) => `${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`}
+              tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+              stroke="var(--chart-axis-line)"
+              tickLine={false}
+              label={{ value: "Amount in local cur. (₹ Cr)", position: "insideBottom", offset: -12, fill: "var(--chart-axis-label)", fontSize: 10 }}
+            />
+            <YAxis
+              type="category"
+              dataKey="model"
+              width={180}
+              interval={0}
+              tick={axisTick}
+              stroke="var(--chart-axis-line)"
+              tickLine={false}
+            />
+            <Tooltip
+              cursor={{ fill: "var(--chart-hover-fill)" }}
+              content={({ active, payload }) => {
+                const point = payload?.[0]?.payload as ModelPerformance | undefined;
+                if (!active || !point) return null;
+                return (
+                  <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
+                    <p className="mb-1.5 font-semibold">{point.model}</p>
+                    <div className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
+                      <span className="text-muted-foreground">Sales Amount</span>
+                      <span className="text-right font-medium tabular-nums">{INR_CRORES(point.totalAmount)}</span>
+                      <span className="text-muted-foreground">Total Volume</span>
+                      <span className="text-right font-medium tabular-nums">{LAKHS(point.totalAh)} AH</span>
+                      <span className="text-muted-foreground">Realization Rate</span>
+                      <span className="text-right font-medium tabular-nums">{PER_AH(point.perAhRate).replace("/AH", " / AH")}</span>
+                      <span className="text-muted-foreground">Records</span>
+                      <span className="text-right font-medium tabular-nums">{NUM(point.recordCount)}</span>
+                      <span className="text-muted-foreground">Share of Total AH Sales</span>
+                      <span className="text-right font-medium tabular-nums">{point.salesSharePct.toFixed(2)}%</span>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Bar dataKey="totalAmount" name="Sales Amount" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} maxBarSize={28}>
+              <LabelList
+                dataKey="totalAmount"
+                position="right"
+                formatter={(value: number) => INR_CRORES(value)}
+                fontSize={10}
+                fill="var(--chart-label-strong)"
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -1629,6 +1727,7 @@ export function SdLiveDashboard() {
   const [salesTypeTab, setSalesTypeTab] = useState<(typeof SALES_TYPE_TABS)[number]>("All");
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
+  const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -2408,6 +2507,31 @@ export function SdLiveDashboard() {
               caption="Local currency amount where Total AH > 0"
             />
           </div>
+
+          <Panel
+            title="Sales by Model (Amount & Per AH)"
+            expandable
+            actions={
+              <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                {([10, 20, "all"] as const).map((value) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={modelLimit === value ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => setModelLimit(value)}
+                  >
+                    {value === "all" ? "All Models" : `Top ${value} Models`}
+                  </Button>
+                ))}
+              </div>
+            }
+          >
+            {(full: boolean) => (
+              <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
+            )}
+          </Panel>
 
           <LinesTable
             rows={filtered}

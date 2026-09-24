@@ -226,6 +226,15 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
 
 export type NamedTotal = { name: string; value: number; count: number };
 
+export type ModelPerformance = {
+  model: string;
+  totalAmount: number;
+  totalAh: number;
+  perAhRate: number;
+  recordCount: number;
+  salesSharePct: number;
+};
+
 function rank(map: Map<string, NamedTotal>, limit?: number): NamedTotal[] {
   const list = [...map.values()].sort((a, b) => b.value - a.value);
   return limit ? list.slice(0, limit) : list;
@@ -291,6 +300,7 @@ export type SdAnalytics = {
   topCustomers: NamedTotal[];
   topMaterials: NamedTotal[];
   topSalesEmployees: NamedTotal[];
+  modelPerformance: ModelPerformance[];
   byMainGroup: NamedTotal[];
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
   divisionsByMainGroup: Record<string, NamedTotal[]>;
@@ -345,11 +355,26 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   let unassignedNewReplCount = 0;
 
   const qualifyingRows = qualifyingTotalAhRows(rows);
+  const byModel = new Map<string, Omit<ModelPerformance, "perAhRate" | "salesSharePct">>();
   for (const row of qualifyingRows) {
     positiveAhTotal += salesNumber(row.totalAh);
     // Negative local-currency amounts remain included when Total AH is positive.
     positiveAhSales += salesNumber(row.amount);
+    const model = row.model.trim() || "Unassigned";
+    const current = byModel.get(model) ?? { model, totalAmount: 0, totalAh: 0, recordCount: 0 };
+    current.totalAmount += salesNumber(row.amount);
+    current.totalAh += salesNumber(row.totalAh);
+    current.recordCount += 1;
+    byModel.set(model, current);
   }
+
+  const modelPerformance = [...byModel.values()]
+    .map((item) => ({
+      ...item,
+      perAhRate: item.totalAh > 0 ? item.totalAmount / item.totalAh : 0,
+      salesSharePct: positiveAhSales !== 0 ? (item.totalAmount / positiveAhSales) * 100 : 0,
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount || a.model.localeCompare(b.model));
 
   for (const r of rows) {
     revenue += r.amount;
@@ -543,6 +568,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     topCustomers: rank(byCust, 10),
     topMaterials: rank(byMat, 10),
     topSalesEmployees: rank(byEmp, 10),
+    modelPerformance,
     byMainGroup: rank(byMain),
     subGroupsByMainGroup: Object.fromEntries(
       [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),

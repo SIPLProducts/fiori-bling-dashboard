@@ -258,6 +258,39 @@ describe("positive Total AH summary metrics", () => {
   });
 });
 
+describe("Sales by Model amount and per-AH analytics", () => {
+  test("groups the shared positive Total AH rows, keeps negatives, and ranks by sales", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), model: "KBL", totalAh: 100_000, amount: 20_000_000 },
+      { ...row("2026", "2026-04-02"), model: "KBL", totalAh: 50_000, amount: -5_000_000 },
+      { ...row("2026", "2026-04-03"), model: "HVM", totalAh: 100_000, amount: 25_000_000 },
+      { ...row("2026", "2026-04-04"), model: "KPH", totalAh: 0, amount: 90_000_000 },
+      { ...row("2026", "2026-04-05"), model: "", totalAh: 10_000, amount: 1_000_000 },
+    ];
+
+    const analytics = buildSdAnalytics(rows);
+
+    expect(analytics.modelPerformance.map((item) => item.model)).toEqual(["HVM", "KBL", "Unassigned"]);
+    expect(analytics.modelPerformance[0]).toEqual({
+      model: "HVM",
+      totalAmount: 25_000_000,
+      totalAh: 100_000,
+      perAhRate: 250,
+      recordCount: 1,
+      salesSharePct: 62.5,
+    });
+    expect(analytics.modelPerformance[1]).toEqual({
+      model: "KBL",
+      totalAmount: 15_000_000,
+      totalAh: 150_000,
+      perAhRate: 100,
+      recordCount: 2,
+      salesSharePct: 37.5,
+    });
+    expect(analytics.modelPerformance[2]?.salesSharePct).toBe(2.5);
+  });
+});
+
 describe("dynamic PC Short Name colors", () => {
   test("keeps colors stable and distinct beyond the former ten-color limit", () => {
     const names = Array.from({ length: 24 }, (_, index) => `DIVISION-${index + 1}`);
