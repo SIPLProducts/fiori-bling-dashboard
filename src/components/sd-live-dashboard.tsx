@@ -745,7 +745,7 @@ function MainGroupBars({
             "Click a bar to see its sub groups"
           )}
         </span>
-        <span className="tabular shrink-0">₹{compact(data.reduce((s, d) => s + d.value, 0))}</span>
+        <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
       <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
         <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
@@ -791,7 +791,7 @@ function MainGroupBars({
                 fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
                 minPointSize={2}
                 cursor={selected ? "default" : "pointer"}
-                radius={index === divisions.length - 1 ? [3, 3, 0, 0] : undefined}
+                {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
                 onClick={(entry: { name?: unknown }) => {
                   if (!selected && entry?.name) onSelect(String(entry.name));
                 }}
