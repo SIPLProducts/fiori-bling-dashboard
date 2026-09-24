@@ -273,6 +273,8 @@ export type SdAnalytics = {
   topSalesEmployees: NamedTotal[];
   byMainGroup: NamedTotal[];
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
+  divisionsByMainGroup: Record<string, NamedTotal[]>;
+  divisionsBySubGroup: Record<string, Record<string, NamedTotal[]>>;
   rows: SdLine[];
 };
 
@@ -297,6 +299,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const bySeg = new Map<string, NamedTotal>();
   const byMain = new Map<string, NamedTotal>();
   const bySub = new Map<string, Map<string, NamedTotal>>();
+  const byMainDivision = new Map<string, Map<string, NamedTotal>>();
+  const bySubDivision = new Map<string, Map<string, Map<string, NamedTotal>>>();
   const byMonth = new Map<
     string,
     {
@@ -341,6 +345,27 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       bySub.set(main, subs);
     }
     add(subs, r.subGroup || "Unassigned", r.amount);
+
+    const sub = r.subGroup || "Unassigned";
+    const division = r.pcShortName || "Unassigned";
+    let mainDivisions = byMainDivision.get(main);
+    if (!mainDivisions) {
+      mainDivisions = new Map<string, NamedTotal>();
+      byMainDivision.set(main, mainDivisions);
+    }
+    add(mainDivisions, division, r.amount);
+
+    let subGroups = bySubDivision.get(main);
+    if (!subGroups) {
+      subGroups = new Map<string, Map<string, NamedTotal>>();
+      bySubDivision.set(main, subGroups);
+    }
+    let subDivisions = subGroups.get(sub);
+    if (!subDivisions) {
+      subDivisions = new Map<string, NamedTotal>();
+      subGroups.set(sub, subDivisions);
+    }
+    add(subDivisions, division, r.amount);
 
 
     const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
@@ -491,6 +516,17 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     byMainGroup: rank(byMain),
     subGroupsByMainGroup: Object.fromEntries(
       [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),
+    ),
+    divisionsByMainGroup: Object.fromEntries(
+      [...byMainDivision.entries()].map(([main, divisions]) => [main, rank(divisions)]),
+    ),
+    divisionsBySubGroup: Object.fromEntries(
+      [...bySubDivision.entries()].map(([main, subGroups]) => [
+        main,
+        Object.fromEntries(
+          [...subGroups.entries()].map(([sub, divisions]) => [sub, rank(divisions)]),
+        ),
+      ]),
     ),
 
     rows,

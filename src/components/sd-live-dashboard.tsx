@@ -101,6 +101,19 @@ const KPI_TONES = [
 
 const CHART_COLORS = KPI_TONES;
 
+const DIVISION_COLORS = [
+  "var(--kpi-4)",
+  "var(--kpi-2)",
+  "var(--kpi-6)",
+  "var(--kpi-5)",
+  "var(--kpi-3)",
+  "var(--kpi-1)",
+  "color-mix(in oklab, var(--kpi-2) 72%, var(--kpi-5))",
+  "color-mix(in oklab, var(--kpi-3) 68%, var(--kpi-6))",
+  "color-mix(in oklab, var(--kpi-1) 72%, var(--kpi-4))",
+  "color-mix(in oklab, var(--kpi-5) 72%, var(--kpi-3))",
+];
+
 /** Stable colour per profit centre so the same centre reads the same everywhere. */
 const PC_PALETTE = [
   "var(--kpi-1)",
@@ -622,17 +635,46 @@ const SEGMENT_PAGE = 6;
 function MainGroupBars({
   items,
   subGroups,
+  divisionsByMainGroup,
+  divisionsBySubGroup,
   full = false,
   selected,
   onSelect,
 }: {
   items: NamedTotal[];
   subGroups: Record<string, NamedTotal[]>;
+  divisionsByMainGroup: Record<string, NamedTotal[]>;
+  divisionsBySubGroup: Record<string, Record<string, NamedTotal[]>>;
   full?: boolean;
   selected: string | null;
   onSelect: (name: string | null) => void;
 }) {
-  const data = selected ? (subGroups[selected] ?? []) : items;
+  const categories = selected ? (subGroups[selected] ?? []) : items;
+  const divisionRows = selected
+    ? (divisionsBySubGroup[selected] ?? {})
+    : divisionsByMainGroup;
+  const divisions = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const category of categories) {
+      for (const division of divisionRows[category.name] ?? []) {
+        totals.set(division.name, (totals.get(division.name) ?? 0) + division.value);
+      }
+    }
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+  }, [categories, divisionRows]);
+  const data = useMemo(
+    () =>
+      categories.map((category) => {
+        const row: Record<string, unknown> = {
+          name: category.name,
+          total: category.value,
+          counts: Object.fromEntries((divisionRows[category.name] ?? []).map((d) => [d.name, d.count])),
+        };
+        for (const division of divisionRows[category.name] ?? []) row[division.name] = division.value;
+        return row;
+      }),
+    [categories, divisionRows],
+  );
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -671,7 +713,7 @@ function MainGroupBars({
     const y = Number(props.y ?? 0);
     const width = Number(props.width ?? 0);
     const { value, index = 0 } = props;
-    const item = data[index];
+    const item = categories[index];
     return (
       <text
         x={x + width / 2}
@@ -706,7 +748,7 @@ function MainGroupBars({
         <span className="tabular shrink-0">₹{compact(data.reduce((s, d) => s + d.value, 0))}</span>
       </div>
       <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
-        <ResponsiveContainer width="100%" height={full ? "100%" : 260}>
+        <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
           <BarChart data={data} margin={{ left: 0, right: 8, top: 16, bottom: 0 }}>
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
             <XAxis
@@ -729,25 +771,46 @@ function MainGroupBars({
             />
             <Tooltip
               {...tooltipStyle}
-              formatter={(v: number, _name: unknown, item: { payload?: NamedTotal }) => [
-                `${INRC(v)} · ${item?.payload?.count ?? 0} records`,
-                selected ? "Sub group" : "Main group",
-              ]}
-            />
-            <Bar
-              dataKey="value"
-              radius={[3, 3, 3, 3]}
-              fill={KPI_TONES[3]}
-              minPointSize={4}
-              cursor={selected ? "default" : "pointer"}
-              onClick={(entry: { name?: unknown }) => {
-                if (!selected && entry?.name) onSelect(String(entry.name));
+              labelFormatter={(label) => `${selected ? "Sub Group" : "Main Group"}: ${label}`}
+              formatter={(v: number, division: string, item: { payload?: Record<string, unknown> }) => {
+                const total = Number(item.payload?.["total"] ?? 0);
+                const counts = item.payload?.["counts"] as Record<string, number> | undefined;
+                const share = total ? (v / total) * 100 : 0;
+                return [
+                  `${INRC(v)} · ${(counts?.[division] ?? 0).toLocaleString("en-IN")} records · ${share.toFixed(1)}%`,
+                  `PC Short Name: ${division}`,
+                ];
               }}
-            >
-              <LabelList dataKey="value" position="top" content={renderBarLabel} />
-            </Bar>
+            />
+            {divisions.map((division, index) => (
+              <Bar
+                key={division}
+                dataKey={division}
+                name={division}
+                stackId="division"
+                fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
+                minPointSize={2}
+                cursor={selected ? "default" : "pointer"}
+                radius={index === divisions.length - 1 ? [3, 3, 0, 0] : undefined}
+                onClick={(entry: { name?: unknown }) => {
+                  if (!selected && entry?.name) onSelect(String(entry.name));
+                }}
+              >
+                {index === divisions.length - 1 ? (
+                  <LabelList dataKey="total" position="top" content={renderBarLabel} />
+                ) : null}
+              </Bar>
+            ))}
           </BarChart>
         </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex max-h-16 flex-wrap justify-center gap-x-4 gap-y-1.5 overflow-y-auto text-[11px] text-muted-foreground">
+        {divisions.map((division, index) => (
+          <span key={division} className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 shrink-0 rounded-sm" style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }} />
+            {division}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -1024,11 +1087,9 @@ const COLUMNS: Column[] = [
 
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
-  {
-    key: "group",
-    label: "Main / Sub group",
-    render: (r) => [r.mainGroup, r.subGroup].filter(Boolean).join(" / ") || "—",
-  },
+  { key: "mainGroup", label: "Main Group", render: (r) => r.mainGroup || "—" },
+  { key: "subGroup", label: "Sub Group", render: (r) => r.subGroup || "—" },
+  { key: "pcShortName", label: "PC Short Name (Division)", render: (r) => r.pcShortName || "—" },
   { key: "material", label: "Material", render: (r) => r.material || "—" },
   { key: "materialDesc", label: "Material description", render: (r) => r.materialDesc || "—" },
   {
@@ -1789,7 +1850,8 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="min-w-0 lg:col-span-6">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
@@ -1801,18 +1863,23 @@ export function SdLiveDashboard() {
                 />
               )}
             </Panel>
+            </div>
 
+            <div className="min-w-0 lg:col-span-6">
             <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
                   items={analytics.byMainGroup}
                   subGroups={analytics.subGroupsByMainGroup}
+                  divisionsByMainGroup={analytics.divisionsByMainGroup}
+                  divisionsBySubGroup={analytics.divisionsBySubGroup}
                   full={full}
                   selected={selectedMainGroup}
                   onSelect={setSelectedMainGroup}
                 />
               )}
             </Panel>
+            </div>
           </div>
 
 
