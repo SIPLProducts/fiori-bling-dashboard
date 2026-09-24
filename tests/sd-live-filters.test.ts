@@ -211,6 +211,22 @@ describe("customer contribution Pareto", () => {
   });
 });
 
+describe("positive AH summary metrics", () => {
+  test("sums AH and local currency only for records where AH is greater than zero", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), ah: 150_000, amount: 20_000_000 },
+      { ...row("2026", "2026-04-02"), ah: 50_000, amount: 10_000_000 },
+      { ...row("2026", "2026-04-03"), ah: 0, amount: 90_000_000 },
+      { ...row("2026", "2026-04-04"), ah: -10_000, amount: 80_000_000 },
+    ];
+
+    const { kpis } = buildSdAnalytics(rows);
+
+    expect(kpis.positiveAhTotal).toBe(200_000);
+    expect(kpis.positiveAhSales).toBe(30_000_000);
+  });
+});
+
 describe("dynamic PC Short Name colors", () => {
   test("keeps colors stable and distinct beyond the former ten-color limit", () => {
     const names = Array.from({ length: 24 }, (_, index) => `DIVISION-${index + 1}`);

@@ -39,12 +39,13 @@ export type SdLine = {
   usageDesc: string;
   unit: string;
   quantity: number;
+  ah: number;
   totalAh: number;
   amount: number;
 };
 
 const COLUMNS =
-  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, total_ah, amount, business_segment";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, ah, total_ah, amount, business_segment";
 
 const PAGE = 1000;
 /** How many page requests run at once; keeps the first paint fast on 30k+ lines. */
@@ -122,6 +123,7 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         usageDesc: s(r["usage_desc"]),
         unit: s(r["unit"]),
         quantity: n(r["quantity"]),
+        ah: n(r["ah"]),
         totalAh: n(r["total_ah"]),
         amount: n(r["amount"]),
       });
@@ -238,6 +240,8 @@ export type SdAnalytics = {
     linesPerDoc: number;
     quantity: number;
     totalAh: number;
+    positiveAhTotal: number;
+    positiveAhSales: number;
     avgRealization: number;
     revenuePerAh: number;
     revenuePerCustomer: number;
@@ -325,12 +329,18 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   let revenue = 0;
   let quantity = 0;
   let totalAh = 0;
+  let positiveAhTotal = 0;
+  let positiveAhSales = 0;
   let unassignedNewReplCount = 0;
 
   for (const r of rows) {
     revenue += r.amount;
     quantity += r.quantity;
     totalAh += r.totalAh;
+    if (r.ah > 0) {
+      positiveAhTotal += r.ah;
+      positiveAhSales += r.amount;
+    }
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
@@ -496,6 +506,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       linesPerDoc: docs.size ? rows.length / docs.size : 0,
       quantity,
       totalAh,
+      positiveAhTotal,
+      positiveAhSales,
       avgRealization: quantity ? revenue / quantity : 0,
       revenuePerAh,
       revenuePerCustomer,

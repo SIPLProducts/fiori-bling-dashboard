@@ -82,6 +82,9 @@ function axisCompact(value: number) {
 /** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
 const INRC = (value: number) => `₹${compact(value)}`;
 
+const LAKHS = (value: number) => `${(value / 1e5).toLocaleString("en-IN", { maximumFractionDigits: 2 })}\u00A0L`;
+const CRORES = (value: number) => `${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })}\u00A0Cr`;
+
 /* ---- UI visibility flags: hidden elements keep their code intact; flip ----
  * ---- a flag back to true to show the element again. ---------------------- */
 const SHOW_QUANTITY_TILE = false;
@@ -2387,6 +2390,23 @@ export function SdLiveDashboard() {
               {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
             </Panel>
 
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <KpiCard
+              label="Total AH"
+              value={LAKHS(analytics.kpis.positiveAhTotal)}
+              tone={4}
+              icon={Building2}
+              caption="AH greater than zero"
+            />
+            <KpiCard
+              label="AH Sales"
+              value={CRORES(analytics.kpis.positiveAhSales)}
+              tone={1}
+              icon={IndianRupee}
+              caption="Local currency amount where AH is greater than zero"
+            />
           </div>
 
           <LinesTable
