@@ -113,6 +113,8 @@ const DIVISION_COLORS = [
   "color-mix(in oklab, var(--kpi-1) 72%, var(--kpi-4))",
   "color-mix(in oklab, var(--kpi-5) 72%, var(--kpi-3))",
 ];
+const MAX_VISIBLE_DIVISIONS = 6;
+const OTHER_DIVISION = "Other Division";
 
 /** Stable colour per profit centre so the same centre reads the same everywhere. */
 const PC_PALETTE = [
@@ -660,7 +662,10 @@ function MainGroupBars({
         totals.set(division.name, (totals.get(division.name) ?? 0) + division.value);
       }
     }
-    return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+    const ranked = [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+    return ranked.length > MAX_VISIBLE_DIVISIONS
+      ? [...ranked.slice(0, MAX_VISIBLE_DIVISIONS), OTHER_DIVISION]
+      : ranked;
   }, [categories, divisionRows]);
   const data = useMemo(
     () =>
@@ -670,10 +675,15 @@ function MainGroupBars({
           total: category.value,
           counts: Object.fromEntries((divisionRows[category.name] ?? []).map((d) => [d.name, d.count])),
         };
-        for (const division of divisionRows[category.name] ?? []) row[division.name] = division.value;
+        for (const division of divisionRows[category.name] ?? []) {
+          const key = divisions.includes(division.name) ? division.name : OTHER_DIVISION;
+          row[key] = Number(row[key] ?? 0) + division.value;
+          const counts = row["counts"] as Record<string, number>;
+          counts[key] = (counts[key] ?? 0) + division.count;
+        }
         return row;
       }),
-    [categories, divisionRows],
+    [categories, divisionRows, divisions],
   );
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
