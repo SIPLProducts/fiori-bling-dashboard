@@ -136,12 +136,12 @@ function ExactHoverBarShape(rawProps: unknown) {
   const y = Number(props.y ?? 0);
   const width = Math.max(0, Number(props.width ?? 0));
   const height = Math.max(0, Number(props.height ?? 0));
-  const hitHeight = height > 0 ? Math.max(height, 14) : 0;
-  const hitY = y - (hitHeight - height) / 2;
   const division = props.dataKey ?? "";
   const payload = props.payload as (Record<string, unknown> & { name?: string }) | undefined;
   const value = Number(payload?.[division] ?? 0);
   const counts = payload?.["counts"] as Record<string, number> | undefined;
+  const hitHeight = height > 0 && value !== 0 ? Math.max(height, 14) : 0;
+  const hitY = y - (hitHeight - height) / 2;
 
   return (
     <g>
