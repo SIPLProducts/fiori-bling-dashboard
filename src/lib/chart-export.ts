@@ -121,6 +121,14 @@ export async function exportDashboardPdf(
   if (!container) throw new Error("Dashboard is not available yet");
 
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
+  const rootRect = container.getBoundingClientRect();
+  const includedChildren = Array.from(container.children).filter(
+    (child) => !(child instanceof HTMLElement && child.matches(excludeSelector)),
+  );
+  const exportHeight = Math.max(
+    1,
+    ...includedChildren.map((child) => Math.ceil(child.getBoundingClientRect().bottom - rootRect.top)),
+  );
   const backgroundColor = window.getComputedStyle(container).backgroundColor;
   const canvas = await toCanvas(container, {
     backgroundColor:
@@ -128,6 +136,7 @@ export async function exportDashboardPdf(
         ? backgroundColor
         : "#ffffff",
     cacheBust: true,
+    height: exportHeight,
     pixelRatio: 1.5,
     filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
   });
@@ -138,10 +147,8 @@ export async function exportDashboardPdf(
   const printableHeight = pdf.internal.pageSize.getHeight() - margin * 2;
   const pixelsPerMm = canvas.width / printableWidth;
   const maxSliceHeight = Math.floor(printableHeight * pixelsPerMm);
-  const rootRect = container.getBoundingClientRect();
   const pixelScale = canvas.width / Math.max(rootRect.width, 1);
-  const sectionBreaks = Array.from(container.children)
-    .filter((child) => !(child instanceof HTMLElement && child.matches(excludeSelector)))
+  const sectionBreaks = includedChildren
     .map((child) => Math.round((child.getBoundingClientRect().bottom - rootRect.top) * pixelScale))
     .filter((point) => point > 0 && point < canvas.height)
     .sort((a, b) => a - b);
