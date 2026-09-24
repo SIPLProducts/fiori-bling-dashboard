@@ -566,7 +566,7 @@ function SalesByModelChart({
                     <div className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
                       <span className="text-muted-foreground">Sales Amount</span>
                       <span className="text-right font-medium tabular-nums">{INR_CRORES(point.totalAmount)}</span>
-                      <span className="text-muted-foreground">Total Volume</span>
+                      <span className="text-muted-foreground">Total AH</span>
                       <span className="text-right font-medium tabular-nums">{LAKHS(point.totalAh)} AH</span>
                       <span className="text-muted-foreground">Realization Rate</span>
                       <span className="text-right font-medium tabular-nums">{PER_AH(point.perAhRate).replace("/AH", " / AH")}</span>
