@@ -856,16 +856,17 @@ function MainGroupBars({
     const candidates = targets
       .map((target) => {
         const box = target.getBoundingClientRect();
-        const actualY = Number(target.dataset["actualY"] ?? 0);
-        const actualHeight = Number(target.dataset["actualHeight"] ?? 0);
-        const svg = target.ownerSVGElement;
-        const viewBoxHeight = svg?.viewBox.baseVal.height || svg?.getBoundingClientRect().height || 1;
-        const renderedHeight = svg?.getBoundingClientRect().height || 1;
-        const scaleY = renderedHeight / viewBoxHeight;
-        const actualTop = box.top + (actualY - Number(target.getAttribute("y") ?? actualY)) * scaleY;
-        const actualBottom = actualTop + actualHeight * scaleY;
+        const visibleSegment = target.previousElementSibling;
+        const visibleBox = visibleSegment instanceof SVGGraphicsElement
+          ? visibleSegment.getBoundingClientRect()
+          : box;
+        const actualTop = visibleBox.top;
+        const actualBottom = visibleBox.bottom;
         const insideX = pointerX >= box.left && pointerX <= box.right;
-        const insideActual = pointerY >= actualTop && pointerY <= actualBottom;
+        const insideActual = pointerX >= visibleBox.left
+          && pointerX <= visibleBox.right
+          && pointerY >= actualTop
+          && pointerY <= actualBottom;
         const distance = insideActual
           ? 0
           : Math.min(Math.abs(pointerY - actualTop), Math.abs(pointerY - actualBottom));
