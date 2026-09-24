@@ -673,7 +673,7 @@ function MainGroupBars({
         const row: Record<string, unknown> = {
           name: category.name,
           total: category.value,
-          counts: Object.fromEntries((divisionRows[category.name] ?? []).map((d) => [d.name, d.count])),
+          counts: {},
         };
         for (const division of divisionRows[category.name] ?? []) {
           const key = divisions.includes(division.name) ? division.name : OTHER_DIVISION;
