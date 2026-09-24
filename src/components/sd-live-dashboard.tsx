@@ -138,10 +138,21 @@ function ExactHoverBarShape(rawProps: unknown) {
   const height = Math.max(0, Number(props.height ?? 0));
   const hitHeight = height > 0 ? Math.max(height, 14) : 0;
   const hitY = y - (hitHeight - height) / 2;
+  const division = props.dataKey ?? "";
+  const payload = props.payload as (Record<string, unknown> & { name?: string }) | undefined;
+  const value = Number(payload?.[division] ?? 0);
+  const counts = payload?.["counts"] as Record<string, number> | undefined;
 
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} fill={props.fill} />
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={props.fill}
+        data-chart-visible-segment="true"
+      />
       {hitHeight > 0 ? (
         <rect
           x={x}
@@ -152,7 +163,12 @@ function ExactHoverBarShape(rawProps: unknown) {
           pointerEvents="all"
           data-chart-hit-target="true"
           data-sub-group={props.payload?.name ?? ""}
-          data-division={props.dataKey ?? ""}
+          data-division={division}
+          data-value={value}
+          data-count={counts?.[division] ?? 0}
+          data-total={Number(payload?.["total"] ?? 0)}
+          data-actual-y={y}
+          data-actual-height={height}
         />
       ) : null}
     </g>
@@ -694,6 +710,15 @@ function MainGroupBars({
   selected: string | null;
   onSelect: (name: string | null) => void;
 }) {
+  const [exactHover, setExactHover] = useState<{
+    subgroup: string;
+    division: string;
+    value: number;
+    count: number;
+    total: number;
+    clientX: number;
+    clientY: number;
+  } | null>(null);
   const categories = selected ? (subGroups[selected] ?? []) : items;
   const divisionRows = selected ? (divisionsBySubGroup[selected] ?? {}) : divisionsByMainGroup;
   const divisions = useMemo(() => {
@@ -787,6 +812,46 @@ function MainGroupBars({
       </text>
     );
   };
+  const trackExactSegment = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!selected) return;
+    const pointerX = event.clientX;
+    const pointerY = event.clientY;
+    const targets = [...event.currentTarget.querySelectorAll<SVGRectElement>('[data-chart-hit-target="true"]')];
+    const candidates = targets
+      .map((target) => {
+        const box = target.getBoundingClientRect();
+        const actualY = Number(target.dataset.actualY ?? 0);
+        const actualHeight = Number(target.dataset.actualHeight ?? 0);
+        const svg = target.ownerSVGElement;
+        const viewBoxHeight = svg?.viewBox.baseVal.height || svg?.getBoundingClientRect().height || 1;
+        const renderedHeight = svg?.getBoundingClientRect().height || 1;
+        const scaleY = renderedHeight / viewBoxHeight;
+        const actualTop = box.top + (actualY - Number(target.getAttribute("y") ?? actualY)) * scaleY;
+        const actualBottom = actualTop + actualHeight * scaleY;
+        const insideX = pointerX >= box.left && pointerX <= box.right;
+        const insideActual = pointerY >= actualTop && pointerY <= actualBottom;
+        const distance = insideActual
+          ? 0
+          : Math.min(Math.abs(pointerY - actualTop), Math.abs(pointerY - actualBottom));
+        return { target, insideX, distance };
+      })
+      .filter((candidate) => candidate.insideX)
+      .sort((a, b) => a.distance - b.distance);
+    const nearest = candidates[0]?.target;
+    if (!nearest || candidates[0].distance > 8) {
+      setExactHover(null);
+      return;
+    }
+    setExactHover({
+      subgroup: nearest.dataset.subGroup ?? "Unassigned",
+      division: nearest.dataset.division ?? "Unassigned",
+      value: Number(nearest.dataset.value ?? 0),
+      count: Number(nearest.dataset.count ?? 0),
+      total: Number(nearest.dataset.total ?? 0),
+      clientX: pointerX,
+      clientY: pointerY,
+    });
+  };
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
@@ -806,7 +871,11 @@ function MainGroupBars({
         </span>
         <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
-      <div className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}>
+      <div
+        className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}
+        onMouseMove={trackExactSegment}
+        onMouseLeave={() => setExactHover(null)}
+      >
         <div style={{ width: chartWidth, height: full ? "100%" : 290 + legendHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -834,25 +903,19 @@ function MainGroupBars({
               stroke="var(--chart-axis-line)"
               tickLine={false}
             />
-            <Tooltip
-              {...tooltipStyle}
-              shared={false}
-              cursor={{ fill: "var(--chart-hover-fill)" }}
-              labelFormatter={(label) => `${selected ? "Sub Group" : "Main Group"}: ${label}`}
-              formatter={(v: number, series: string, item: { payload?: Record<string, unknown> }) => {
-                const total = Number(item.payload?.["total"] ?? 0);
-                const counts = item.payload?.["counts"] as Record<string, number> | undefined;
-                const count = selected
-                  ? (counts?.[series] ?? 0)
-                  : Number(item.payload?.["count"] ?? 0);
-                const shareBase = selected ? total : chartTotal;
-                const share = shareBase ? (v / shareBase) * 100 : 0;
-                return [
-                  `${INRC(v)} · ${count.toLocaleString("en-IN")} records · ${share.toFixed(1)}%`,
-                  selected ? `PC Short Name: ${series}` : "Amount",
-                ];
-              }}
-            />
+            {!selected ? (
+              <Tooltip
+                {...tooltipStyle}
+                shared={false}
+                cursor={{ fill: "var(--chart-hover-fill)" }}
+                labelFormatter={(label) => `Main Group: ${label}`}
+                formatter={(v: number, _series: string, item: { payload?: Record<string, unknown> }) => {
+                  const count = Number(item.payload?.["count"] ?? 0);
+                  const share = chartTotal ? (v / chartTotal) * 100 : 0;
+                  return [`${INRC(v)} · ${count.toLocaleString("en-IN")} records · ${share.toFixed(1)}%`, "Amount"];
+                }}
+              />
+            ) : null}
             {!selected ? (
               <Bar
                 dataKey="value"
@@ -913,6 +976,19 @@ function MainGroupBars({
           </BarChart>
         </ResponsiveContainer>
         </div>
+        {exactHover ? (
+          <div
+            className="pointer-events-none fixed z-50 min-w-52 rounded-md border border-border bg-card px-3 py-2 text-xs text-card-foreground shadow-lg"
+            style={{ left: exactHover.clientX + 12, top: exactHover.clientY + 12 }}
+            role="tooltip"
+          >
+            <p className="font-semibold">Sub Group: {exactHover.subgroup}</p>
+            <p className="mt-1 text-muted-foreground">PC Short Name: {exactHover.division}</p>
+            <p className="text-muted-foreground">
+              {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records · {exactHover.total ? ((exactHover.value / exactHover.total) * 100).toFixed(1) : "0.0"}%
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
