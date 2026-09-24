@@ -41,3 +41,4 @@
 - [x] Refine stacked chart spacing, tiny-slice tooltips, and complete wrapped division legend
 - [x] Add overflow-based horizontal scrolling for complete Main Group and Sub Group lists
 - [x] Add enlarged exact-segment pointer targets for tiny stacked chart slices
+- [x] Keep exact-segment tooltips inside the visible browser area

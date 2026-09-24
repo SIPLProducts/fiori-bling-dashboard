@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -710,6 +711,7 @@ function MainGroupBars({
   selected: string | null;
   onSelect: (name: string | null) => void;
 }) {
+  const exactTooltipRef = useRef<HTMLDivElement>(null);
   const [exactHover, setExactHover] = useState<{
     subgroup: string;
     division: string;
@@ -719,6 +721,7 @@ function MainGroupBars({
     clientX: number;
     clientY: number;
   } | null>(null);
+  const [exactTooltipPosition, setExactTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const categories = selected ? (subGroups[selected] ?? []) : items;
   const divisionRows = selected ? (divisionsBySubGroup[selected] ?? {}) : divisionsByMainGroup;
   const divisions = useMemo(() => {
@@ -759,6 +762,30 @@ function MainGroupBars({
   const minimumChartWidth = Math.max(560, categories.length * (selected ? 42 : 72));
   const chartWidth = `max(100%, ${minimumChartWidth}px)`;
   const legendHeight = selected ? Math.max(48, Math.ceil(divisions.length / 6) * 24 + 16) : 0;
+  useEffect(() => {
+    const tooltip = exactTooltipRef.current;
+    if (!exactHover || !tooltip) {
+      setExactTooltipPosition(null);
+      return;
+    }
+
+    const margin = 8;
+    const gap = 12;
+    const { width, height } = tooltip.getBoundingClientRect();
+    const preferredLeft = exactHover.clientX + gap;
+    const preferredTop = exactHover.clientY + gap;
+    const left = preferredLeft + width <= window.innerWidth - margin
+      ? preferredLeft
+      : exactHover.clientX - width - gap;
+    const top = preferredTop + height <= window.innerHeight - margin
+      ? preferredTop
+      : exactHover.clientY - height - gap;
+
+    setExactTooltipPosition({
+      left: Math.max(margin, Math.min(left, window.innerWidth - width - margin)),
+      top: Math.max(margin, Math.min(top, window.innerHeight - height - margin)),
+    });
+  }, [exactHover]);
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -876,6 +903,7 @@ function MainGroupBars({
         className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}
         onMouseMove={trackExactSegment}
         onMouseLeave={() => setExactHover(null)}
+        onScroll={() => setExactHover(null)}
       >
         <div style={{ width: chartWidth, height: full ? "100%" : 290 + legendHeight }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -977,19 +1005,27 @@ function MainGroupBars({
           </BarChart>
         </ResponsiveContainer>
         </div>
-        {exactHover ? (
-          <div
-            className="pointer-events-none fixed z-50 min-w-52 rounded-md border border-border bg-card px-3 py-2 text-xs text-card-foreground shadow-lg"
-            style={{ left: exactHover.clientX + 12, top: exactHover.clientY + 12 }}
-            role="tooltip"
-          >
-            <p className="font-semibold">Sub Group: {exactHover.subgroup}</p>
-            <p className="mt-1 text-muted-foreground">PC Short Name: {exactHover.division}</p>
-            <p className="text-muted-foreground">
-              {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records · {exactHover.total ? ((exactHover.value / exactHover.total) * 100).toFixed(1) : "0.0"}%
-            </p>
-          </div>
-        ) : null}
+        {exactHover && typeof document !== "undefined"
+          ? createPortal(
+              <div
+                ref={exactTooltipRef}
+                className="pointer-events-none fixed z-50 min-w-52 max-w-[min(20rem,calc(100vw-1rem))] whitespace-normal break-words rounded-md border border-border bg-card px-3 py-2 text-xs text-card-foreground shadow-lg"
+                style={{
+                  left: exactTooltipPosition?.left ?? 0,
+                  top: exactTooltipPosition?.top ?? 0,
+                  visibility: exactTooltipPosition ? "visible" : "hidden",
+                }}
+                role="tooltip"
+              >
+                <p className="font-semibold">Sub Group: {exactHover.subgroup}</p>
+                <p className="mt-1 text-muted-foreground">PC Short Name: {exactHover.division}</p>
+                <p className="text-muted-foreground">
+                  {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records · {exactHover.total ? ((exactHover.value / exactHover.total) * 100).toFixed(1) : "0.0"}%
+                </p>
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
     </div>
   );
