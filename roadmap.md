@@ -52,3 +52,4 @@
 - [x] Align Total AH and AH Sales through one shared exported-row subset where Total AH is greater than zero
 - [x] Add Sales by Model amount and per-AH chart with Top 10/20/All controls and record-count tooltip
 - [x] Resize Total Sales to four columns and add an A4 landscape dashboard PDF excluding the Net Sales List
+- [x] Export every filtered Sales by Model row in the dashboard PDF regardless of the on-screen Top 10/20 limit

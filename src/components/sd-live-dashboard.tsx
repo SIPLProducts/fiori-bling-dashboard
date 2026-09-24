@@ -1724,6 +1724,7 @@ export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfExportAllModels, setPdfExportAllModels] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
@@ -1938,12 +1939,17 @@ export function SdLiveDashboard() {
             disabled={pdfBusy || !all.length}
             onClick={async () => {
               setPdfBusy(true);
+              setPdfExportAllModels(true);
               try {
+                await new Promise<void>((resolve) => {
+                  requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+                });
                 await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
                 toast.success("Dashboard PDF downloaded");
               } catch (error) {
                 toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
               } finally {
+                setPdfExportAllModels(false);
                 setPdfBusy(false);
               }
             }}
@@ -2542,7 +2548,7 @@ export function SdLiveDashboard() {
                   <Button
                     key={value}
                     type="button"
-                    variant={modelLimit === value ? "default" : "ghost"}
+                    variant={(pdfExportAllModels ? "all" : modelLimit) === value ? "default" : "ghost"}
                     size="sm"
                     className="h-7 px-2 text-[11px]"
                     onClick={() => setModelLimit(value)}
@@ -2554,7 +2560,11 @@ export function SdLiveDashboard() {
             }
           >
             {(full: boolean) => (
-              <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
+              <SalesByModelChart
+                items={analytics.modelPerformance}
+                limit={pdfExportAllModels ? "all" : modelLimit}
+                full={full || pdfExportAllModels}
+              />
             )}
           </Panel>
 
