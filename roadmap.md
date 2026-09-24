@@ -53,3 +53,5 @@
 - [x] Add Sales by Model amount and per-AH chart with Top 10/20/All controls and record-count tooltip
 - [x] Resize Total Sales to four columns and add an A4 landscape dashboard PDF excluding the Net Sales List
 - [x] Export every filtered Sales by Model row in the dashboard PDF regardless of the on-screen Top 10/20 limit
+- [x] Stabilize Sales Dashboard totals with active-only deterministic paging and completed-snapshot consistency checks
+- [x] Verify BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR persistence without dropping valid repeated SAP rows
