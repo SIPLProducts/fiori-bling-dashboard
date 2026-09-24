@@ -683,7 +683,10 @@ function MainGroupBars({
     [categories, divisionRows, selected],
   );
   const chartTotal = categories.reduce((sum, item) => sum + item.value, 0);
-  const chartWidth = selected ? Math.max(620, categories.length * 66) : 680;
+  // Use the full panel before scrolling, then add only the compact width needed
+  // for each extra sub group. This keeps every group visible without the large
+  // empty gaps created by a fixed 66px allocation per category.
+  const chartWidth = selected ? `max(100%, ${Math.max(560, categories.length * 48)}px)` : "100%";
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -757,12 +760,13 @@ function MainGroupBars({
         <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
       <div className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}>
-        <div style={{ width: selected ? chartWidth : "100%", height: full ? "100%" : 290 }}>
+        <div style={{ width: chartWidth, height: full ? "100%" : 290 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ left: -8, right: 4, top: 16, bottom: 0 }}
-            barCategoryGap={selected ? "24%" : "30%"}
+            margin={{ left: -12, right: 0, top: 16, bottom: 0 }}
+            barCategoryGap={selected ? "8%" : "18%"}
+            barGap={0}
           >
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
             <XAxis
@@ -825,8 +829,9 @@ function MainGroupBars({
                   name={division}
                   stackId="division"
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
-                  maxBarSize={36}
-                  minPointSize={6}
+                  maxBarSize={28}
+                  minPointSize={10}
+                  isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
                 >
