@@ -50,6 +50,7 @@ const COLUMNS =
 const PAGE = 1000;
 /** How many page requests run at once; keeps the first paint fast on 30k+ lines. */
 const CONCURRENCY = 8;
+const CONSISTENCY_ATTEMPTS = 3;
 
 type Row = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "" : String(v));
@@ -66,11 +67,86 @@ export function qualifyingTotalAhRows(rows: SdLine[]): SdLine[] {
   return rows.filter((row) => salesNumber(row.totalAh) > 0);
 }
 
+export type SdDatasetMarker = {
+  count: number;
+  latestUpdatedAt: string;
+};
+
+const sameMarker = (left: SdDatasetMarker, right: SdDatasetMarker) =>
+  left.count === right.count && left.latestUpdatedAt === right.latestUpdatedAt;
+
+type ConsistentPageOptions<T> = {
+  readMarker: () => Promise<SdDatasetMarker>;
+  readPage: (from: number) => Promise<T[]>;
+  rowKey: (row: T) => string;
+  pageSize?: number;
+  concurrency?: number;
+  maxAttempts?: number;
+};
+
+/**
+ * Loads one complete dataset version. If rows change while offset pages are in
+ * flight, the mixed result is discarded and the now-complete version is read.
+ */
+export async function loadConsistentPagedRows<T>({
+  readMarker,
+  readPage,
+  rowKey,
+  pageSize = PAGE,
+  concurrency = CONCURRENCY,
+  maxAttempts = CONSISTENCY_ATTEMPTS,
+}: ConsistentPageOptions<T>): Promise<T[]> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const before = await readMarker();
+    const offsets = Array.from(
+      { length: Math.ceil(before.count / pageSize) },
+      (_, index) => index * pageSize,
+    );
+    const pages: T[][] = [];
+    for (let i = 0; i < offsets.length; i += concurrency) {
+      const batch = offsets.slice(i, i + concurrency);
+      pages.push(...(await Promise.all(batch.map((from) => readPage(from)))));
+    }
+
+    const after = await readMarker();
+    const rows = pages.flat();
+    const uniqueKeys = new Set(rows.map(rowKey));
+    if (sameMarker(before, after) && rows.length === before.count && uniqueKeys.size === rows.length) {
+      return rows;
+    }
+  }
+  throw new Error("Sales data changed while loading. Please retry after the current sync completes.");
+}
+
+async function readActiveMarker(): Promise<SdDatasetMarker> {
+  const [countResult, latestResult] = await Promise.all([
+    supabase
+      .from("zfisales_detail")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active_snapshot", true),
+    supabase
+      .from("zfisales_detail")
+      .select("updated_at")
+      .eq("is_active_snapshot", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  if (countResult.error) throw countResult.error;
+  if (latestResult.error) throw latestResult.error;
+  return {
+    count: countResult.count ?? 0,
+    latestUpdatedAt: latestResult.data?.updated_at ?? "",
+  };
+}
+
 async function fetchPage(from: number): Promise<Row[]> {
   const { data, error } = await supabase
     .from("zfisales_detail")
-    .select(COLUMNS)
+    .select(`id, ${COLUMNS}`)
+    .eq("is_active_snapshot", true)
     .order("posting_date", { ascending: true })
+    .order("id", { ascending: true })
     .range(from, from + PAGE - 1);
   if (error) throw error;
   return (data ?? []) as unknown as Row[];
@@ -79,23 +155,13 @@ async function fetchPage(from: number): Promise<Row[]> {
 /** Live posting lines straight from the sales table, paged in parallel. */
 export async function fetchSdLines(): Promise<SdLine[]> {
   const rows: SdLine[] = [];
-  const { count, error: countError } = await supabase
-    .from("zfisales_detail")
-    .select("id", { count: "exact", head: true });
-  if (countError) throw countError;
+  const loadedRows = await loadConsistentPagedRows({
+    readMarker: readActiveMarker,
+    readPage: fetchPage,
+    rowKey: (row) => s(row["id"]),
+  });
 
-  const total = count ?? 0;
-  const offsets: number[] = [];
-  for (let from = 0; from < total; from += PAGE) offsets.push(from);
-
-  const pages: Row[][] = [];
-  for (let i = 0; i < offsets.length; i += CONCURRENCY) {
-    const batch = offsets.slice(i, i + CONCURRENCY);
-    pages.push(...(await Promise.all(batch.map((from) => fetchPage(from)))));
-  }
-
-  for (const page of pages) {
-    for (const r of page) {
+  for (const r of loadedRows) {
       rows.push({
         docNo: s(r["doc_no"]),
         docItem: s(r["doc_item"]),
@@ -138,7 +204,6 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         totalAh: n(r["total_ah"]),
         amount: n(r["amount"]),
       });
-    }
   }
   return rows;
 }

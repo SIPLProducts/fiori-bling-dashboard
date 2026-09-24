@@ -4,6 +4,7 @@ import {
   buildSdAnalytics,
   fiscalQuarter,
   limitModelPerformance,
+  loadConsistentPagedRows,
   qualifyingTotalAhRows,
   type SdFilters,
   type SdLine,
@@ -114,6 +115,63 @@ describe("sales dashboard fiscal multi-select filters", () => {
   test("empty fiscal selections include every row", () => {
     const rows = [row("2025", "2025-01-01"), row("2026", "2026-09-01")];
     expect(applySdFilters(rows, filters())).toEqual(rows);
+  });
+});
+
+describe("stable active snapshot paging", () => {
+  test("returns every same-date row once when page order is deterministic", async () => {
+    const source = Array.from({ length: 7 }, (_, index) => ({
+      id: `id-${String(index).padStart(2, "0")}`,
+      postingDate: "2026-09-15",
+    }));
+
+    const result = await loadConsistentPagedRows({
+      readMarker: async () => ({ count: source.length, latestUpdatedAt: "snapshot-a" }),
+      readPage: async (from) => source.slice(from, from + 3),
+      rowKey: (item) => item.id,
+      pageSize: 3,
+      concurrency: 2,
+    });
+
+    expect(result.map((item) => item.id)).toEqual(source.map((item) => item.id));
+    expect(new Set(result.map((item) => item.id)).size).toBe(source.length);
+  });
+
+  test("discards mixed pages and retries after a snapshot changes", async () => {
+    const oldRows = [{ id: "old-1" }, { id: "old-2" }, { id: "old-3" }];
+    const newRows = [{ id: "new-1" }, { id: "new-2" }, { id: "new-3" }];
+    let markerReads = 0;
+    let pageReads = 0;
+
+    const result = await loadConsistentPagedRows({
+      readMarker: async () => {
+        markerReads += 1;
+        return markerReads === 1
+          ? { count: 3, latestUpdatedAt: "snapshot-a" }
+          : { count: 3, latestUpdatedAt: "snapshot-b" };
+      },
+      readPage: async (from) => {
+        pageReads += 1;
+        const source = pageReads === 1 ? oldRows : newRows;
+        return source.slice(from, from + 2);
+      },
+      rowKey: (item) => item.id,
+      pageSize: 2,
+      concurrency: 1,
+    });
+
+    expect(result).toEqual(newRows);
+    expect(markerReads).toBe(4);
+  });
+
+  test("rejects duplicate page rows instead of calculating a mixed dashboard", async () => {
+    await expect(loadConsistentPagedRows({
+      readMarker: async () => ({ count: 2, latestUpdatedAt: "snapshot-a" }),
+      readPage: async () => [{ id: "same" }, { id: "same" }],
+      rowKey: (item) => item.id,
+      pageSize: 2,
+      maxAttempts: 1,
+    })).rejects.toThrow("Sales data changed while loading");
   });
 });
 

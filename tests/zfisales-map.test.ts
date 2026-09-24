@@ -27,6 +27,44 @@ test("exact duplicate occurrences are all preserved", () => {
   assert.notEqual(result.rows[0].record_key, result.rows[1].record_key);
 });
 
+test("persists BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR in their mapped columns", () => {
+  const result = mapPayload([{
+    ...base,
+    BELNR: "0100025169",
+    GJAHR: 2026,
+    HKONT: "31111100",
+    AUBEL: "0001176212",
+    AUPOS: "20",
+    POSNR: "30",
+  }], "Sales_Reports_KPI");
+
+  expect(result.rows[0]).toMatchObject({
+    doc_no: "0100025169",
+    fiscal_year: "2026",
+    gl: "31111100",
+    sales_order: "0001176212",
+    sales_order_item: "20",
+    doc_item: "30",
+  });
+});
+
+test("preserves distinct rows that share all six requested SAP key fields", () => {
+  const sharedKeys = {
+    ...base,
+    AUBEL: "0001176212",
+    AUPOS: "20",
+    POSNR: "30",
+  };
+  const result = mapPayload([
+    { ...sharedKeys, PRCTR: "PGNLB12001", DMBTR: 100 },
+    { ...sharedKeys, PRCTR: "PGNLB12002", DMBTR: 200 },
+  ], "Sales_Reports_KPI");
+
+  expect(result.rows).toHaveLength(2);
+  expect(result.rows[0]?.row_hash).not.toBe(result.rows[1]?.row_hash);
+  expect(result.rows[0]?.record_key).not.toBe(result.rows[1]?.record_key);
+});
+
 test("request scope is stable and different filters remain isolated", () => {
   const first = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
   const same = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
