@@ -38,14 +38,12 @@ test("persists BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR in their mapped colu
     POSNR: "30",
   }], "Sales_Reports_KPI");
 
-  expect(result.rows[0]).toMatchObject({
-    doc_no: "0100025169",
-    fiscal_year: "2026",
-    gl: "31111100",
-    sales_order: "0001176212",
-    sales_order_item: "20",
-    doc_item: "30",
-  });
+  assert.equal(result.rows[0]?.doc_no, "0100025169");
+  assert.equal(result.rows[0]?.fiscal_year, "2026");
+  assert.equal(result.rows[0]?.gl, "31111100");
+  assert.equal(result.rows[0]?.sales_order, "0001176212");
+  assert.equal(result.rows[0]?.sales_order_item, "20");
+  assert.equal(result.rows[0]?.doc_item, "30");
 });
 
 test("preserves distinct rows that share all six requested SAP key fields", () => {
@@ -60,9 +58,9 @@ test("preserves distinct rows that share all six requested SAP key fields", () =
     { ...sharedKeys, PRCTR: "PGNLB12002", DMBTR: 200 },
   ], "Sales_Reports_KPI");
 
-  expect(result.rows).toHaveLength(2);
-  expect(result.rows[0]?.row_hash).not.toBe(result.rows[1]?.row_hash);
-  expect(result.rows[0]?.record_key).not.toBe(result.rows[1]?.record_key);
+  assert.equal(result.rows.length, 2);
+  assert.notEqual(result.rows[0]?.row_hash, result.rows[1]?.row_hash);
+  assert.notEqual(result.rows[0]?.record_key, result.rows[1]?.record_key);
 });
 
 test("request scope is stable and different filters remain isolated", () => {
