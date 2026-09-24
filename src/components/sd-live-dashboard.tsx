@@ -82,8 +82,10 @@ function axisCompact(value: number) {
 /** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
 const INRC = (value: number) => `₹${compact(value)}`;
 
-const LAKHS = (value: number) => `${(value / 1e5).toLocaleString("en-IN", { maximumFractionDigits: 2 })}\u00A0L`;
-const CRORES = (value: number) => `${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })}\u00A0Cr`;
+const LAKHS = (value: number) =>
+  `${(value / 1e5).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0L`;
+const CRORES = (value: number) =>
+  `${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0Cr`;
 
 /* ---- UI visibility flags: hidden elements keep their code intact; flip ----
  * ---- a flag back to true to show the element again. ---------------------- */
@@ -2398,14 +2400,14 @@ export function SdLiveDashboard() {
               value={LAKHS(analytics.kpis.positiveAhTotal)}
               tone={4}
               icon={Building2}
-              caption="Total AH greater than zero"
+              caption="Total AH > 0"
             />
             <KpiCard
               label="AH Sales"
               value={CRORES(analytics.kpis.positiveAhSales)}
               tone={1}
               icon={IndianRupee}
-              caption="Local currency amount where Total AH is greater than zero"
+              caption="Local currency amount where Total AH > 0"
             />
           </div>
 
