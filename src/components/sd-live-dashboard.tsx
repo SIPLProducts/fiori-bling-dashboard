@@ -139,7 +139,8 @@ function ExactHoverBarShape(rawProps: unknown) {
   const height = Math.max(0, Number(props.height ?? 0));
   const division = props.dataKey ?? "";
   const payload = props.payload as (Record<string, unknown> & { name?: string }) | undefined;
-  const value = Number(payload?.[division] ?? 0);
+  const actualValues = payload?.["actualValues"] as Record<string, number> | undefined;
+  const value = Number(actualValues?.[division] ?? payload?.[division] ?? 0);
   const counts = payload?.["counts"] as Record<string, number> | undefined;
   const count = counts?.[division] ?? 0;
   const zeroDivisions = Object.keys(counts ?? {}).filter(
@@ -751,12 +752,20 @@ function MainGroupBars({
           value: category.value,
           count: category.count,
           counts: {},
+          actualValues: {},
         };
         if (selected) {
           for (const division of divisionRows[category.name] ?? []) {
-            row[division.name] = division.value;
+            // Recharts does not render a shape for a true zero. A negligible
+            // display value lets it create the invisible hover target while
+            // actualValues keeps the tooltip and totals exactly at ₹0.
+            row[division.name] = division.value === 0 && division.count > 0
+              ? Math.max(Math.abs(category.value) * 1e-12, Number.EPSILON)
+              : division.value;
             const counts = row["counts"] as Record<string, number>;
             counts[division.name] = division.count;
+            const actualValues = row["actualValues"] as Record<string, number>;
+            actualValues[division.name] = division.value;
           }
         }
         return row;
