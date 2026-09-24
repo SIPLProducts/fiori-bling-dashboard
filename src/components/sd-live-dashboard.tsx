@@ -874,8 +874,9 @@ function MainGroupBars({
       })
       .filter((candidate) => candidate.insideX)
       .sort((a, b) => Number(b.insideActual) - Number(a.insideActual) || a.distance - b.distance);
-    const nearest = candidates[0]?.target;
-    const nearestDistance = candidates[0]?.distance;
+    const exactCandidate = candidates.find((candidate) => candidate.insideActual);
+    const nearest = exactCandidate?.target ?? candidates[0]?.target;
+    const nearestDistance = exactCandidate ? 0 : candidates[0]?.distance;
     if (!nearest || nearestDistance === undefined || nearestDistance > 8) {
       setExactHover(null);
       return;
