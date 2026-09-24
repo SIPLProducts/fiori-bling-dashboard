@@ -687,7 +687,8 @@ function MainGroupBars({
   // Use the full panel before scrolling, then add only the compact width needed
   // for each extra sub group. This keeps every group visible without the large
   // empty gaps created by a fixed 66px allocation per category.
-  const chartWidth = selected ? `max(100%, ${Math.max(560, categories.length * 42)}px)` : "100%";
+  const minimumChartWidth = Math.max(560, categories.length * (selected ? 42 : 72));
+  const chartWidth = `max(100%, ${minimumChartWidth}px)`;
   const legendHeight = selected ? Math.max(48, Math.ceil(divisions.length / 6) * 24 + 16) : 0;
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
