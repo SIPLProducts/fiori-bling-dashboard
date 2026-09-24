@@ -254,7 +254,12 @@ export type SdAnalytics = {
     revenuePerAh: Delta;
     revenuePerCustomer: Delta;
   };
-  pareto: { bucket: string; value: number; cumulativePct: number }[];
+  pareto: {
+    customer: string;
+    value: number;
+    contributionPct: number;
+    cumulativePct: number;
+  }[];
   alerts: { tone: "up" | "down" | "warn"; text: string }[];
   mixByType: NamedTotal[];
   byNewRepl: NamedTotal[];
@@ -438,19 +443,18 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     revenuePerCustomer: d(perCust(lastB), perCust(prevB)),
   };
 
-  // Customer concentration (Pareto) over the whole filtered selection.
+  // Customer concentration (Pareto) over the whole filtered selection. The
+  // bars show only the ten largest customers, while percentages retain the
+  // complete filtered customer total as their denominator.
   const custList = rank(byCust);
   const custTotal = custList.reduce((sum, c) => sum + c.value, 0);
   const cut = (n: number) => custList.slice(0, n).reduce((sum, c) => sum + c.value, 0);
-  const buckets = [10, 20, 30, 50, 100].filter((n) => n <= Math.max(custList.length, 10));
-  const pareto = buckets.map((n) => ({
-    bucket: `Top ${n}`,
-    value: cut(n) - cut(buckets[buckets.indexOf(n) - 1] ?? 0),
-    cumulativePct: custTotal ? (cut(n) / custTotal) * 100 : 0,
+  const pareto = custList.slice(0, 10).map((customer, index) => ({
+    customer: customer.name,
+    value: customer.value,
+    contributionPct: custTotal ? (customer.value / custTotal) * 100 : 0,
+    cumulativePct: custTotal ? (cut(index + 1) / custTotal) * 100 : 0,
   }));
-  const covered = buckets.length ? cut(buckets[buckets.length - 1]!) : 0;
-  if (custTotal - covered > 0)
-    pareto.push({ bucket: "Others", value: custTotal - covered, cumulativePct: 100 });
 
   // Management alerts derived from the current selection.
   const segList = rank(bySeg);

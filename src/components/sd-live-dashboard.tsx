@@ -2221,13 +2221,24 @@ export function SdLiveDashboard() {
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Customer Contribution (Pareto)" accent={1} expandable>
+            <Panel title="Customer Contribution Pareto (Top Sales up to 10)" accent={1} expandable>
               {(full: boolean) => (
                 <div className={`cxo-chart-surface ${full ? "h-full" : ""}`}>
                 <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
-                  <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8 }}>
+                  <ComposedChart data={analytics.pareto} margin={{ top: 24, left: 4, right: 8, bottom: 42 }}>
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
-                    <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
+                    <XAxis
+                      dataKey="customer"
+                      height={64}
+                      interval={0}
+                      angle={-28}
+                      textAnchor="end"
+                      tick={{ fontSize: 9, fill: "var(--chart-axis-label)" }}
+                      tickFormatter={(value: string) => value.length > 15 ? `${value.slice(0, 14)}…` : value}
+                      stroke="var(--chart-axis-line)"
+                      tickLine={false}
+                      tickMargin={8}
+                    />
                     <YAxis
                       yAxisId="left"
                       width={58}
@@ -2247,10 +2258,26 @@ export function SdLiveDashboard() {
                       tickLine={false}
                     />
                     <Tooltip
-                      {...tooltipStyle}
-                      formatter={(value: number, name: string) =>
-                        name === "Cumulative %" ? `${value.toFixed(1)}%` : INRC(value)
-                      }
+                      cursor={{ fill: "var(--chart-hover-fill)" }}
+                      content={({ active, payload }) => {
+                        const point = payload?.[0]?.payload as
+                          | { customer: string; value: number; contributionPct: number; cumulativePct: number }
+                          | undefined;
+                        if (!active || !point) return null;
+                        return (
+                          <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
+                            <p className="mb-1 max-w-56 font-semibold">{point.customer}</p>
+                            <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
+                              <span className="text-muted-foreground">Sales amount</span>
+                              <span className="text-right font-medium tabular-nums">{INRC(point.value)}</span>
+                              <span className="text-muted-foreground">Contribution</span>
+                              <span className="text-right font-medium tabular-nums">{point.contributionPct.toFixed(1)}%</span>
+                              <span className="text-muted-foreground">Cumulative</span>
+                              <span className="text-right font-medium tabular-nums">{point.cumulativePct.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        );
+                      }}
                     />
                     <Bar
                       yAxisId="left"

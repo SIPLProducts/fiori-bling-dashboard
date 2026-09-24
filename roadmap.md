@@ -48,3 +48,4 @@
 - [x] Keep every recorded division visible and hoverable, including ₹0, and remove chart tooltip percentages
 - [x] Give every recorded Sub Group division a separate visible stacked slice without changing actual values
 - [x] Assign dynamic unique PC Short Name colors and correct exact segment tooltip matching
+- [x] Show the top 10 individual customers with contribution and cumulative percentages in the Pareto card

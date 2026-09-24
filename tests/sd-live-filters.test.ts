@@ -169,6 +169,48 @@ describe("sales dashboard group division analytics", () => {
   });
 });
 
+describe("customer contribution Pareto", () => {
+  test("returns only the ten highest customers with individual and cumulative shares", () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      ...row("2026", `2026-04-${String(index + 1).padStart(2, "0")}`),
+      customer: `C-${String(index + 1).padStart(2, "0")}`,
+      customerName: `Customer ${String(index + 1).padStart(2, "0")}`,
+      amount: (index + 1) * 10,
+    }));
+
+    const pareto = buildSdAnalytics(rows).pareto;
+
+    expect(pareto).toHaveLength(10);
+    expect(pareto.map((item) => item.customer)).toEqual([
+      "Customer 12",
+      "Customer 11",
+      "Customer 10",
+      "Customer 09",
+      "Customer 08",
+      "Customer 07",
+      "Customer 06",
+      "Customer 05",
+      "Customer 04",
+      "Customer 03",
+    ]);
+    expect(pareto[0]?.value).toBe(120);
+    expect(pareto[0]?.contributionPct).toBeCloseTo((120 / 780) * 100);
+    expect(pareto[9]?.cumulativePct).toBeCloseTo((750 / 780) * 100);
+  });
+
+  test("handles fewer than ten customers without synthetic buckets", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), customerName: "Alpha", amount: 60 },
+      { ...row("2026", "2026-04-02"), customerName: "Beta", amount: 40 },
+    ];
+
+    expect(buildSdAnalytics(rows).pareto).toEqual([
+      { customer: "Alpha", value: 60, contributionPct: 60, cumulativePct: 60 },
+      { customer: "Beta", value: 40, contributionPct: 40, cumulativePct: 100 },
+    ]);
+  });
+});
+
 describe("dynamic PC Short Name colors", () => {
   test("keeps colors stable and distinct beyond the former ten-color limit", () => {
     const names = Array.from({ length: 24 }, (_, index) => `DIVISION-${index + 1}`);
