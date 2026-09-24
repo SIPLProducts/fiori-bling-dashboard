@@ -8,8 +8,9 @@
 
 ## Changes
 
-- Replace the repeating division palette with a larger set of distinct, light, accessible chart colors so every active PC Short Name has a unique color.
-- Build one stable PC Short Name-to-color map and use it consistently for stacked slices, the PC Short Name legend, hover highlighting, and tooltip swatches.
+- Replace modulo-based palette reuse with a dynamic, deterministic color assignment keyed by PC Short Name. Newly arriving Main Groups, Sub Groups, and PC Short Names will be included automatically without maintaining a static name list.
+- Generate distinct light, accessible colors for the complete active PC Short Name set, expanding with the filtered live data instead of cycling after ten entries.
+- Build one stable PC Short Name-to-color map and use it consistently for stacked slices, the PC Short Name legend, hover highlighting, and tooltip swatches; the same name keeps the same color while filters change.
 - Correct hover resolution in each Sub Group bar:
   - consider every segment target under the same bar,
   - select a segment containing the pointer in its real displayed slice first,
@@ -27,4 +28,5 @@
 - Hover every segment in PE, LIB-ESS, IPS, INDUSTRIAL BATTERIES, SMS, PEU, and OTHERS and confirm the PC Short Name, amount, and record count match that segment.
 - Confirm tiny adjacent slices no longer return a neighboring segment’s details.
 - Confirm every legend swatch matches its corresponding stacked slice in light and dark themes.
+- Add a test with more PC Short Names than the current dataset to confirm colors and tooltip mappings continue to expand dynamically.
 - Run the focused Sales Dashboard analytics tests and inspect the drilled chart at desktop and narrow widths.
