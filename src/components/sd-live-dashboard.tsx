@@ -155,7 +155,7 @@ function ExactHoverBarShape(rawProps: unknown) {
           width={width}
           height={hitHeight}
           fill="transparent"
-          pointerEvents="all"
+           pointerEvents="none"
           data-chart-hit-target="true"
           data-sub-group={props.payload?.name ?? ""}
           data-division={division}
