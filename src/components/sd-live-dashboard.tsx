@@ -113,8 +113,6 @@ const DIVISION_COLORS = [
   "color-mix(in oklab, var(--kpi-1) 72%, var(--kpi-4))",
   "color-mix(in oklab, var(--kpi-5) 72%, var(--kpi-3))",
 ];
-const MAX_VISIBLE_DIVISIONS = 6;
-const OTHER_DIVISION = "Other Division";
 
 /** Stable colour per profit centre so the same centre reads the same everywhere. */
 const PC_PALETTE = [
@@ -652,39 +650,40 @@ function MainGroupBars({
   onSelect: (name: string | null) => void;
 }) {
   const categories = selected ? (subGroups[selected] ?? []) : items;
-  const divisionRows = selected
-    ? (divisionsBySubGroup[selected] ?? {})
-    : divisionsByMainGroup;
+  const divisionRows = selected ? (divisionsBySubGroup[selected] ?? {}) : divisionsByMainGroup;
   const divisions = useMemo(() => {
+    if (!selected) return [];
     const totals = new Map<string, number>();
     for (const category of categories) {
       for (const division of divisionRows[category.name] ?? []) {
         totals.set(division.name, (totals.get(division.name) ?? 0) + division.value);
       }
     }
-    const ranked = [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
-    return ranked.length > MAX_VISIBLE_DIVISIONS
-      ? [...ranked.slice(0, MAX_VISIBLE_DIVISIONS), OTHER_DIVISION]
-      : ranked;
-  }, [categories, divisionRows]);
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+  }, [categories, divisionRows, selected]);
   const data = useMemo(
     () =>
       categories.map((category) => {
         const row: Record<string, unknown> = {
           name: category.name,
           total: category.value,
+          value: category.value,
+          count: category.count,
           counts: {},
         };
-        for (const division of divisionRows[category.name] ?? []) {
-          const key = divisions.includes(division.name) ? division.name : OTHER_DIVISION;
-          row[key] = Number(row[key] ?? 0) + division.value;
-          const counts = row["counts"] as Record<string, number>;
-          counts[key] = (counts[key] ?? 0) + division.count;
+        if (selected) {
+          for (const division of divisionRows[category.name] ?? []) {
+            row[division.name] = division.value;
+            const counts = row["counts"] as Record<string, number>;
+            counts[division.name] = division.count;
+          }
         }
         return row;
       }),
-    [categories, divisionRows, divisions],
+    [categories, divisionRows, selected],
   );
+  const chartTotal = categories.reduce((sum, item) => sum + item.value, 0);
+  const chartWidth = selected ? Math.max(720, categories.length * 82) : 720;
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -757,8 +756,9 @@ function MainGroupBars({
         </span>
         <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
-      <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
-        <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
+      <div className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}>
+        <div style={{ width: selected ? chartWidth : "100%", height: full ? "100%" : 290 }}>
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ left: 0, right: 8, top: 16, bottom: 0 }}>
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
             <XAxis
@@ -781,47 +781,68 @@ function MainGroupBars({
             />
             <Tooltip
               {...tooltipStyle}
+              shared={false}
               labelFormatter={(label) => `${selected ? "Sub Group" : "Main Group"}: ${label}`}
-              formatter={(v: number, division: string, item: { payload?: Record<string, unknown> }) => {
+              formatter={(v: number, series: string, item: { payload?: Record<string, unknown> }) => {
                 const total = Number(item.payload?.["total"] ?? 0);
                 const counts = item.payload?.["counts"] as Record<string, number> | undefined;
-                const share = total ? (v / total) * 100 : 0;
+                const count = selected
+                  ? (counts?.[series] ?? 0)
+                  : Number(item.payload?.["count"] ?? 0);
+                const shareBase = selected ? total : chartTotal;
+                const share = shareBase ? (v / shareBase) * 100 : 0;
                 return [
-                  `${INRC(v)} · ${(counts?.[division] ?? 0).toLocaleString("en-IN")} records · ${share.toFixed(1)}%`,
-                  `PC Short Name: ${division}`,
+                  `${INRC(v)} · ${count.toLocaleString("en-IN")} records · ${share.toFixed(1)}%`,
+                  selected ? `PC Short Name: ${series}` : "Amount",
                 ];
               }}
             />
-            {divisions.map((division, index) => (
+            {!selected ? (
               <Bar
-                key={division}
-                dataKey={division}
-                name={division}
-                stackId="division"
-                fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
-                minPointSize={2}
-                cursor={selected ? "default" : "pointer"}
-                {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
+                dataKey="value"
+                name="Amount"
+                radius={[3, 3, 0, 0]}
+                cursor="pointer"
                 onClick={(entry: { name?: unknown }) => {
-                  if (!selected && entry?.name) onSelect(String(entry.name));
+                  if (entry?.name) onSelect(String(entry.name));
                 }}
               >
-                {index === divisions.length - 1 ? (
-                  <LabelList dataKey="total" position="top" content={renderBarLabel} />
-                ) : null}
+                {categories.map((category, index) => (
+                  <Cell key={category.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+                <LabelList dataKey="total" position="top" content={renderBarLabel} />
               </Bar>
-            ))}
+            ) : (
+              divisions.map((division, index) => (
+                <Bar
+                  key={division}
+                  dataKey={division}
+                  name={division}
+                  stackId="division"
+                  fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
+                  minPointSize={2}
+                  {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
+                >
+                  {index === divisions.length - 1 ? (
+                    <LabelList dataKey="total" position="top" content={renderBarLabel} />
+                  ) : null}
+                </Bar>
+              ))
+            )}
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
-      <div className="mt-3 flex max-h-16 flex-wrap justify-center gap-x-4 gap-y-1.5 overflow-y-auto text-[11px] text-muted-foreground">
-        {divisions.map((division, index) => (
-          <span key={division} className="inline-flex items-center gap-1.5">
-            <span className="size-2.5 shrink-0 rounded-sm" style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }} />
-            {division}
-          </span>
-        ))}
-      </div>
+      {selected ? (
+        <div className="mt-3 flex max-h-16 flex-wrap justify-center gap-x-4 gap-y-1.5 overflow-y-auto text-[11px] text-muted-foreground">
+          {divisions.map((division, index) => (
+            <span key={division} className="inline-flex items-center gap-1.5">
+              <span className="size-2.5 shrink-0 rounded-sm" style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }} />
+              {division}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1876,7 +1897,7 @@ export function SdLiveDashboard() {
             </div>
 
             <div className="min-w-0 lg:col-span-8">
-            <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
+            <Panel title={selectedMainGroup ? "Main Group → Sub Group (Amount)" : "Main Group vs Sub Group (Amount)"} accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
                   items={analytics.byMainGroup}
