@@ -50,4 +50,4 @@
 - [x] Assign dynamic unique PC Short Name colors and correct exact segment tooltip matching
 - [x] Show the top 10 individual customers with contribution and cumulative percentages in the Pareto card
 - [x] Align Total AH and AH Sales through one shared exported-row subset where Total AH is greater than zero
-- [ ] Add Sales by Model amount and per-AH chart with Top 10/20/All controls and record-count tooltip
+- [x] Add Sales by Model amount and per-AH chart with Top 10/20/All controls and record-count tooltip

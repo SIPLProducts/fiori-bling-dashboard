@@ -235,6 +235,10 @@ export type ModelPerformance = {
   salesSharePct: number;
 };
 
+export function limitModelPerformance(items: ModelPerformance[], limit: 10 | 20 | "all") {
+  return limit === "all" ? items : items.slice(0, limit);
+}
+
 function rank(map: Map<string, NamedTotal>, limit?: number): NamedTotal[] {
   const list = [...map.values()].sort((a, b) => b.value - a.value);
   return limit ? list.slice(0, limit) : list;

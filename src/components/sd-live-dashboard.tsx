@@ -51,6 +51,7 @@ import {
   buildSdAnalytics,
   emptySdFilters,
   fetchSdLines,
+  limitModelPerformance,
   uniqueValues,
   type NamedTotal,
   type ModelPerformance,
@@ -511,7 +512,7 @@ function SalesByModelChart({
   limit: ModelLimit;
   full: boolean;
 }) {
-  const data = limit === "all" ? items : items.slice(0, limit);
+  const data = limitModelPerformance(items, limit);
   if (!data.length)
     return <p className="py-10 text-center text-sm text-muted-foreground">No models match the current filters.</p>;
 
@@ -569,7 +570,7 @@ function SalesByModelChart({
                       <span className="text-right font-medium tabular-nums">{LAKHS(point.totalAh)} AH</span>
                       <span className="text-muted-foreground">Realization Rate</span>
                       <span className="text-right font-medium tabular-nums">{PER_AH(point.perAhRate).replace("/AH", " / AH")}</span>
-                      <span className="text-muted-foreground">Records</span>
+                      <span className="text-muted-foreground">Total Orders / Records</span>
                       <span className="text-right font-medium tabular-nums">{NUM(point.recordCount)}</span>
                       <span className="text-muted-foreground">Share of Total AH Sales</span>
                       <span className="text-right font-medium tabular-nums">{point.salesSharePct.toFixed(2)}%</span>

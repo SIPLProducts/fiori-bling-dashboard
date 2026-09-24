@@ -3,6 +3,7 @@ import {
   applySdFilters,
   buildSdAnalytics,
   fiscalQuarter,
+  limitModelPerformance,
   qualifyingTotalAhRows,
   type SdFilters,
   type SdLine,
@@ -277,7 +278,7 @@ describe("Sales by Model amount and per-AH analytics", () => {
       totalAh: 100_000,
       perAhRate: 250,
       recordCount: 1,
-      salesSharePct: 62.5,
+      salesSharePct: (25_000_000 / 41_000_000) * 100,
     });
     expect(analytics.modelPerformance[1]).toEqual({
       model: "KBL",
@@ -285,9 +286,12 @@ describe("Sales by Model amount and per-AH analytics", () => {
       totalAh: 150_000,
       perAhRate: 100,
       recordCount: 2,
-      salesSharePct: 37.5,
+      salesSharePct: (15_000_000 / 41_000_000) * 100,
     });
-    expect(analytics.modelPerformance[2]?.salesSharePct).toBe(2.5);
+    expect(analytics.modelPerformance[2]?.salesSharePct).toBeCloseTo((1_000_000 / 41_000_000) * 100);
+    expect(limitModelPerformance(analytics.modelPerformance, 10)).toHaveLength(3);
+    expect(limitModelPerformance(analytics.modelPerformance, 20)).toHaveLength(3);
+    expect(limitModelPerformance(analytics.modelPerformance, "all")).toEqual(analytics.modelPerformance);
   });
 });
 
