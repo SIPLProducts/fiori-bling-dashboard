@@ -3,6 +3,7 @@ import {
   applySdFilters,
   buildSdAnalytics,
   fiscalQuarter,
+  limitModelPerformance,
   qualifyingTotalAhRows,
   type SdFilters,
   type SdLine,
@@ -255,6 +256,42 @@ describe("positive Total AH summary metrics", () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })).toBe("1,515.37");
+  });
+});
+
+describe("Sales by Model amount and per-AH analytics", () => {
+  test("groups the shared positive Total AH rows, keeps negatives, and ranks by sales", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), model: "KBL", totalAh: 100_000, amount: 20_000_000 },
+      { ...row("2026", "2026-04-02"), model: "KBL", totalAh: 50_000, amount: -5_000_000 },
+      { ...row("2026", "2026-04-03"), model: "HVM", totalAh: 100_000, amount: 25_000_000 },
+      { ...row("2026", "2026-04-04"), model: "KPH", totalAh: 0, amount: 90_000_000 },
+      { ...row("2026", "2026-04-05"), model: "", totalAh: 10_000, amount: 1_000_000 },
+    ];
+
+    const analytics = buildSdAnalytics(rows);
+
+    expect(analytics.modelPerformance.map((item) => item.model)).toEqual(["HVM", "KBL", "Unassigned"]);
+    expect(analytics.modelPerformance[0]).toEqual({
+      model: "HVM",
+      totalAmount: 25_000_000,
+      totalAh: 100_000,
+      perAhRate: 250,
+      recordCount: 1,
+      salesSharePct: (25_000_000 / 41_000_000) * 100,
+    });
+    expect(analytics.modelPerformance[1]).toEqual({
+      model: "KBL",
+      totalAmount: 15_000_000,
+      totalAh: 150_000,
+      perAhRate: 100,
+      recordCount: 2,
+      salesSharePct: (15_000_000 / 41_000_000) * 100,
+    });
+    expect(analytics.modelPerformance[2]?.salesSharePct).toBeCloseTo((1_000_000 / 41_000_000) * 100);
+    expect(limitModelPerformance(analytics.modelPerformance, 10)).toHaveLength(3);
+    expect(limitModelPerformance(analytics.modelPerformance, 20)).toHaveLength(3);
+    expect(limitModelPerformance(analytics.modelPerformance, "all")).toEqual(analytics.modelPerformance);
   });
 });
 
