@@ -111,3 +111,71 @@ export async function exportChartPng(container: HTMLElement | null, filename: st
   const dataUrl = canvas.toDataURL("image/png");
   triggerDownload(dataUrl, filename.endsWith(".png") ? filename : `${filename}.png`);
 }
+
+/** Download a dashboard section as a paginated A4 landscape PDF. */
+export async function exportDashboardPdf(
+  container: HTMLElement | null,
+  filename: string,
+  excludeSelector = "[data-pdf-exclude]",
+) {
+  if (!container) throw new Error("Dashboard is not available yet");
+
+  const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
+  const rootRect = container.getBoundingClientRect();
+  const includedChildren = Array.from(container.children).filter(
+    (child) => !(child instanceof HTMLElement && child.matches(excludeSelector)),
+  );
+  const exportHeight = Math.max(
+    1,
+    ...includedChildren.map((child) => Math.ceil(child.getBoundingClientRect().bottom - rootRect.top)),
+  );
+  const backgroundColor = window.getComputedStyle(container).backgroundColor;
+  const canvas = await toCanvas(container, {
+    backgroundColor:
+      backgroundColor && backgroundColor !== "rgba(0, 0, 0, 0)" && backgroundColor !== "transparent"
+        ? backgroundColor
+        : "#ffffff",
+    cacheBust: true,
+    height: exportHeight,
+    pixelRatio: 1.5,
+    filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
+  });
+
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+  const margin = 8;
+  const printableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+  const printableHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+  const pixelsPerMm = canvas.width / printableWidth;
+  const maxSliceHeight = Math.floor(printableHeight * pixelsPerMm);
+  const pixelScale = canvas.width / Math.max(rootRect.width, 1);
+  const sectionBreaks = includedChildren
+    .map((child) => Math.round((child.getBoundingClientRect().bottom - rootRect.top) * pixelScale))
+    .filter((point) => point > 0 && point < canvas.height)
+    .sort((a, b) => a - b);
+
+  let sourceY = 0;
+  let pageIndex = 0;
+  while (sourceY < canvas.height) {
+    const idealEnd = Math.min(canvas.height, sourceY + maxSliceHeight);
+    const minimumEnd = sourceY + Math.floor(maxSliceHeight * 0.45);
+    const safeEnd = [...sectionBreaks]
+      .reverse()
+      .find((point) => point <= idealEnd && point >= minimumEnd);
+    const sourceEnd = idealEnd === canvas.height ? canvas.height : (safeEnd ?? idealEnd);
+    const sourceHeight = Math.max(1, sourceEnd - sourceY);
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = sourceHeight;
+    const context = pageCanvas.getContext("2d");
+    if (!context) throw new Error("PDF canvas is not supported");
+    context.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+
+    if (pageIndex > 0) pdf.addPage("a4", "landscape");
+    const imageHeight = sourceHeight / pixelsPerMm;
+    pdf.addImage(pageCanvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, printableWidth, imageHeight);
+    sourceY = sourceEnd;
+    pageIndex += 1;
+  }
+
+  pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+}

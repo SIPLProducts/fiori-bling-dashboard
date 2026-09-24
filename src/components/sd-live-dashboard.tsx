@@ -38,9 +38,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
-import { downloadCsv } from "@/lib/chart-export";
+import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
 import {
   readSharedSalesFilters,
   subscribeSharedSalesFilters,
@@ -1719,8 +1720,10 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const navigate = useNavigate();
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
@@ -1913,7 +1916,7 @@ export function SdLiveDashboard() {
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={dashboardRef} className="space-y-4">
       {/* executive header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -1927,6 +1930,25 @@ export function SdLiveDashboard() {
           </span>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            disabled={pdfBusy || !all.length}
+            onClick={async () => {
+              setPdfBusy(true);
+              try {
+                await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
+                toast.success("Dashboard PDF downloaded");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
+              } finally {
+                setPdfBusy(false);
+              }
+            }}
+          >
+            <Download className="mr-1 size-4" /> {pdfBusy ? "Preparing…" : "PDF"}
           </Button>
         </div>
       </div>
@@ -2173,7 +2195,8 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="min-w-0 lg:col-span-4">
             <KpiCard
               label="Total Sales (Amount)"
               value={INRC(totalRevenue)}
@@ -2184,6 +2207,7 @@ export function SdLiveDashboard() {
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
             />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -2534,12 +2558,14 @@ export function SdLiveDashboard() {
             )}
           </Panel>
 
-          <LinesTable
-            rows={filtered}
-            onExport={exportRows}
-            pcColors={pcColors.map}
-            pcLegend={pcLegend}
-          />
+          <div data-pdf-exclude>
+            <LinesTable
+              rows={filtered}
+              onExport={exportRows}
+              pcColors={pcColors.map}
+              pcLegend={pcLegend}
+            />
+          </div>
             </>
           )}
         </>
