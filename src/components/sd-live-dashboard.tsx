@@ -144,7 +144,7 @@ function ExactHoverBarShape(rawProps: unknown) {
   const counts = payload?.["counts"] as Record<string, number> | undefined;
   const count = counts?.[division] ?? 0;
   const zeroDivisions = Object.keys(counts ?? {}).filter(
-    (name) => Number(payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
+    (name) => Number(actualValues?.[name] ?? payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
   );
   const zeroIndex = zeroDivisions.indexOf(division);
   const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
@@ -160,7 +160,8 @@ function ExactHoverBarShape(rawProps: unknown) {
         y={y}
         width={width}
         height={height}
-        fill={value === 0 ? "transparent" : props.fill}
+        fill={count > 0 ? props.fill : "transparent"}
+        pointerEvents="none"
         data-chart-visible-segment="true"
         data-sub-group={props.payload?.name ?? ""}
         data-division={division}
@@ -994,7 +995,14 @@ function MainGroupBars({
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
                   shape={ExactHoverBarShape}
                   maxBarSize={42}
-                  minPointSize={(value: number | null | undefined) => Number(value ?? 0) > 0 ? 3 : 0}
+                  minPointSize={(
+                    value: number | null | undefined,
+                    rowIndex: number,
+                  ) => {
+                    const row = data[rowIndex];
+                    const counts = row?.["counts"] as Record<string, number> | undefined;
+                    return Number(counts?.[division] ?? 0) > 0 && Number(value ?? 0) >= 0 ? 3 : 0;
+                  }}
                   isAnimationActive={false}
                   activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
