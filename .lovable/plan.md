@@ -25,6 +25,12 @@
 4. Keep one completed rowset as the source for Total Sales, every chart, AH metrics, filters, PDF export, CSV export, and the Net Sales List.
 5. Preserve the current dashboard design and calculations; only data-read consistency changes.
 
+## Expected behavior after the fix
+- While a sync is inserting or validating records, users continue seeing the previous complete snapshot with unchanged values.
+- Only after the entire new snapshot is successfully stored and activated may dashboard values change.
+- A failed or incomplete sync never replaces the previous completed data.
+- Every valid SAP row and every repeated occurrence remains stored; the fix does not deduplicate using the five requested fields.
+
 ## Verification
 - Test that records sharing the same posting date are returned once, with no gaps or duplicates.
 - Test that inactive/staging rows never enter dashboard calculations for administrators.
