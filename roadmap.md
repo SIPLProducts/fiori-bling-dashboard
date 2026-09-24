@@ -47,4 +47,4 @@
 - [x] Dynamically show every recorded Sub Group and PC Short Name pairing, including tiny and zero-value entries
 - [x] Keep every recorded division visible and hoverable, including ₹0, and remove chart tooltip percentages
 - [x] Give every recorded Sub Group division a separate visible stacked slice without changing actual values
-- [ ] Assign dynamic unique PC Short Name colors and correct exact segment tooltip matching
+- [x] Assign dynamic unique PC Short Name colors and correct exact segment tooltip matching
