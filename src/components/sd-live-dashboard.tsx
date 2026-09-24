@@ -1861,7 +1861,7 @@ export function SdLiveDashboard() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div className="min-w-0 lg:col-span-6">
+            <div className="min-w-0 lg:col-span-4">
             <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
@@ -1875,7 +1875,7 @@ export function SdLiveDashboard() {
             </Panel>
             </div>
 
-            <div className="min-w-0 lg:col-span-6">
+            <div className="min-w-0 lg:col-span-8">
             <Panel title="Main Group vs Sub Group (Amount)" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
