@@ -683,7 +683,7 @@ function MainGroupBars({
     [categories, divisionRows, selected],
   );
   const chartTotal = categories.reduce((sum, item) => sum + item.value, 0);
-  const chartWidth = selected ? Math.max(720, categories.length * 82) : 720;
+  const chartWidth = selected ? Math.max(620, categories.length * 66) : 680;
   const drill = (name: string) => {
     if (!selected && name) onSelect(name);
   };
@@ -759,7 +759,11 @@ function MainGroupBars({
       <div className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}>
         <div style={{ width: selected ? chartWidth : "100%", height: full ? "100%" : 290 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ left: 0, right: 8, top: 16, bottom: 0 }}>
+          <BarChart
+            data={data}
+            margin={{ left: -8, right: 4, top: 16, bottom: 0 }}
+            barCategoryGap={selected ? "24%" : "30%"}
+          >
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
             <XAxis
               type="category"
@@ -802,6 +806,7 @@ function MainGroupBars({
                 dataKey="value"
                 name="Amount"
                 radius={[3, 3, 0, 0]}
+                maxBarSize={42}
                 cursor="pointer"
                 onClick={(entry: { name?: unknown }) => {
                   if (entry?.name) onSelect(String(entry.name));
@@ -820,7 +825,9 @@ function MainGroupBars({
                   name={division}
                   stackId="division"
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
-                  minPointSize={2}
+                  maxBarSize={36}
+                  minPointSize={6}
+                  activeBar={{ stroke: "var(--ring)", strokeWidth: 1 }}
                   {...(index === divisions.length - 1 ? { radius: [3, 3, 0, 0] as [number, number, number, number] } : {})}
                 >
                   {index === divisions.length - 1 ? (

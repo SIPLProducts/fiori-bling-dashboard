@@ -36,4 +36,4 @@
 - [x] Map SAP PCGRP1 into ZFISALES sub_group and backfill existing blank subgroup values
 - [x] Remove colored left borders from Sales Dashboard cards
 
-- [ ] Make Main Group charts 6+6, add PC Short Name stacked drill-down, and split detail-table group columns
+- [x] Build the 4+8 Main Group charts with complete PC Short Name drill-down, focused tooltips, Others paging, and separate table columns
