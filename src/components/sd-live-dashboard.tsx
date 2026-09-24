@@ -115,6 +115,50 @@ const DIVISION_COLORS = [
   "color-mix(in oklab, var(--kpi-5) 72%, var(--kpi-3))",
 ];
 
+type ExactHoverBarShapeProps = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  payload?: { name?: string };
+  dataKey?: string;
+};
+
+/**
+ * Preserve the measured segment while giving very small slices a usable
+ * pointer target. Events bubble to Recharts' segment wrapper, so its tooltip
+ * still receives the exact subgroup/division payload.
+ */
+function ExactHoverBarShape(rawProps: unknown) {
+  const props = rawProps as ExactHoverBarShapeProps;
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const width = Math.max(0, Number(props.width ?? 0));
+  const height = Math.max(0, Number(props.height ?? 0));
+  const hitHeight = height > 0 ? Math.max(height, 14) : 0;
+  const hitY = y - (hitHeight - height) / 2;
+
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height} fill={props.fill} />
+      {hitHeight > 0 ? (
+        <rect
+          x={x}
+          y={hitY}
+          width={width}
+          height={hitHeight}
+          fill="transparent"
+          pointerEvents="all"
+          data-chart-hit-target="true"
+          data-sub-group={props.payload?.name ?? ""}
+          data-division={props.dataKey ?? ""}
+        />
+      ) : null}
+    </g>
+  );
+}
+
 /** Stable colour per profit centre so the same centre reads the same everywhere. */
 const PC_PALETTE = [
   "var(--kpi-1)",
@@ -833,6 +877,7 @@ function MainGroupBars({
                   name={division}
                   stackId="division"
                   fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
+                  shape={ExactHoverBarShape}
                   maxBarSize={60}
                   minPointSize={3}
                   isAnimationActive={false}

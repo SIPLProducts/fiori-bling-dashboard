@@ -40,3 +40,4 @@
 - [x] Tighten Sub Group spacing, retain every Sub Group, and enlarge tiny division hover targets
 - [x] Refine stacked chart spacing, tiny-slice tooltips, and complete wrapped division legend
 - [x] Add overflow-based horizontal scrolling for complete Main Group and Sub Group lists
+- [x] Add enlarged exact-segment pointer targets for tiny stacked chart slices
