@@ -129,4 +129,21 @@ describe("sales dashboard group division analytics", () => {
       { name: "SPEC_DEF", value: 80, count: 1 },
     ]);
   });
+
+  test("keeps every sub group and sorts them by amount without an Others bucket", () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      ...row("2026", `2026-04-${String(index + 1).padStart(2, "0")}`),
+      mainGroup: "INDL.BATTERY",
+      subGroup: `SUB-${String(index + 1).padStart(2, "0")}`,
+      pcShortName: index % 2 ? "VNCPP" : "NCPP",
+      amount: 120 - index,
+    }));
+
+    const analytics = buildSdAnalytics(rows);
+    const subGroups = analytics.subGroupsByMainGroup["INDL.BATTERY"] ?? [];
+
+    expect(subGroups).toHaveLength(12);
+    expect(subGroups.map((item) => item.name)).toEqual(rows.map((item) => item.subGroup));
+    expect(subGroups.some((item) => item.name === "Others")).toBe(false);
+  });
 });
