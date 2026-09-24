@@ -35,3 +35,5 @@
 - [x] Align Quality launchpad data with local by removing all retired modules and Sales cards
 - [x] Map SAP PCGRP1 into ZFISALES sub_group and backfill existing blank subgroup values
 - [x] Remove colored left borders from Sales Dashboard cards
+
+- [ ] Make Main Group charts 6+6, add PC Short Name stacked drill-down, and split detail-table group columns
