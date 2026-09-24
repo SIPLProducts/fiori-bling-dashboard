@@ -38,3 +38,4 @@
 
 - [x] Build the 4+8 Main Group charts with complete PC Short Name drill-down, focused tooltips, Others paging, and separate table columns
 - [x] Tighten Sub Group spacing, retain every Sub Group, and enlarge tiny division hover targets
+- [x] Refine stacked chart spacing, tiny-slice tooltips, and complete wrapped division legend
