@@ -144,7 +144,7 @@ function ExactHoverBarShape(rawProps: unknown) {
   const counts = payload?.["counts"] as Record<string, number> | undefined;
   const count = counts?.[division] ?? 0;
   const zeroDivisions = Object.keys(counts ?? {}).filter(
-    (name) => Number(payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
+    (name) => Number(actualValues?.[name] ?? payload?.[name] ?? 0) === 0 && Number(counts?.[name] ?? 0) > 0,
   );
   const zeroIndex = zeroDivisions.indexOf(division);
   const isRecordedZero = value === 0 && count > 0 && zeroIndex >= 0;
@@ -161,6 +161,7 @@ function ExactHoverBarShape(rawProps: unknown) {
         width={width}
         height={height}
         fill={count > 0 ? props.fill : "transparent"}
+        pointerEvents="none"
         data-chart-visible-segment="true"
         data-sub-group={props.payload?.name ?? ""}
         data-division={division}
