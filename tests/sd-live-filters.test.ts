@@ -65,6 +65,7 @@ const row = (fiscalYear: string, postingDate: string): SdLine => ({
   totalAh: 0,
   ah: 0,
   pcShortName: "",
+  newRepl: "",
   newReplacement: "",
   divisionName: "",
   industryName: "",
