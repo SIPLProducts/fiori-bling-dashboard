@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { applySdFilters, fiscalQuarter, type SdFilters, type SdLine } from "../src/lib/sd-live";
+import { applySdFilters, buildSdAnalytics, fiscalQuarter, type SdFilters, type SdLine } from "../src/lib/sd-live";
 
 const filters = (patch: Partial<SdFilters> = {}): SdFilters => ({
   from: "",
@@ -104,5 +104,28 @@ describe("sales dashboard fiscal multi-select filters", () => {
   test("empty fiscal selections include every row", () => {
     const rows = [row("2025", "2025-01-01"), row("2026", "2026-09-01")];
     expect(applySdFilters(rows, filters())).toEqual(rows);
+  });
+});
+
+describe("sales dashboard group division analytics", () => {
+  test("aggregates PC Short Name within main and sub groups", () => {
+    const rows = [
+      { ...row("2026", "2026-04-01"), mainGroup: "BATTERY", subGroup: "OEM", pcShortName: "OEM_LIB", amount: 120 },
+      { ...row("2026", "2026-04-02"), mainGroup: "BATTERY", subGroup: "OEM", pcShortName: "SPEC_DEF", amount: 80 },
+      { ...row("2026", "2026-04-03"), mainGroup: "BATTERY", subGroup: "OEM", pcShortName: "OEM_LIB", amount: 30 },
+      { ...row("2026", "2026-04-04"), mainGroup: "BATTERY", subGroup: "RETAIL", pcShortName: "REG_PE", amount: 50 },
+    ];
+
+    const analytics = buildSdAnalytics(rows);
+
+    expect(analytics.divisionsByMainGroup["BATTERY"]).toEqual([
+      { name: "OEM_LIB", value: 150, count: 2 },
+      { name: "SPEC_DEF", value: 80, count: 1 },
+      { name: "REG_PE", value: 50, count: 1 },
+    ]);
+    expect(analytics.divisionsBySubGroup["BATTERY"]?.["OEM"]).toEqual([
+      { name: "OEM_LIB", value: 150, count: 2 },
+      { name: "SPEC_DEF", value: 80, count: 1 },
+    ]);
   });
 });
