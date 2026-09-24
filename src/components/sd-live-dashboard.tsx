@@ -860,6 +860,9 @@ function MainGroupBars({
     if (!selected) return;
     const pointerX = event.clientX;
     const pointerY = event.clientY;
+    const directTarget = event.target instanceof Element
+      ? event.target.closest<SVGRectElement>('[data-chart-hit-target="true"]')
+      : null;
     const targets = [...event.currentTarget.querySelectorAll<SVGRectElement>('[data-chart-hit-target="true"]')];
     const candidates = targets
       .map((target) => {
@@ -881,8 +884,8 @@ function MainGroupBars({
       })
       .filter((candidate) => candidate.insideX)
       .sort((a, b) => a.distance - b.distance);
-    const nearest = candidates[0]?.target;
-    const nearestDistance = candidates[0]?.distance;
+    const nearest = directTarget ?? candidates[0]?.target;
+    const nearestDistance = directTarget ? 0 : candidates[0]?.distance;
     if (!nearest || nearestDistance === undefined || nearestDistance > 8) {
       setExactHover(null);
       return;
