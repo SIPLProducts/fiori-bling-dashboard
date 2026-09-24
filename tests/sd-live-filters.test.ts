@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { applySdFilters, buildSdAnalytics, fiscalQuarter, type SdFilters, type SdLine } from "../src/lib/sd-live";
+import { buildDynamicColorMap, dynamicChartColor } from "../src/lib/chart-colors";
 
 const filters = (patch: Partial<SdFilters> = {}): SdFilters => ({
   from: "",
@@ -165,5 +166,16 @@ describe("sales dashboard group division analytics", () => {
       { name: "PEU", value: 0, count: 1 },
     ]);
     expect(analytics.divisionsBySubGroup["INDL.BATTERY"]?.["PEU"]?.[0]?.count).toBeGreaterThan(0);
+  });
+});
+
+describe("dynamic PC Short Name colors", () => {
+  test("keeps colors stable and distinct beyond the former ten-color limit", () => {
+    const names = Array.from({ length: 24 }, (_, index) => `DIVISION-${index + 1}`);
+    const colors = buildDynamicColorMap(names);
+
+    expect(new Set(colors.values()).size).toBe(names.length);
+    expect(colors.get("DIVISION-17")).toBe(dynamicChartColor("DIVISION-17"));
+    expect(buildDynamicColorMap(["DIVISION-17"]).get("DIVISION-17")).toBe(colors.get("DIVISION-17"));
   });
 });

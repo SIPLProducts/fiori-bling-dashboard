@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
 import { downloadCsv } from "@/lib/chart-export";
 import {
@@ -103,19 +104,6 @@ const KPI_TONES = [
 
 const CHART_COLORS = KPI_TONES;
 
-const DIVISION_COLORS = [
-  "var(--kpi-4)",
-  "var(--kpi-2)",
-  "var(--kpi-6)",
-  "var(--kpi-5)",
-  "var(--kpi-3)",
-  "var(--kpi-1)",
-  "color-mix(in oklab, var(--kpi-2) 72%, var(--kpi-5))",
-  "color-mix(in oklab, var(--kpi-3) 68%, var(--kpi-6))",
-  "color-mix(in oklab, var(--kpi-1) 72%, var(--kpi-4))",
-  "color-mix(in oklab, var(--kpi-5) 72%, var(--kpi-3))",
-];
-
 type ExactHoverBarShapeProps = {
   x?: number;
   y?: number;
@@ -167,7 +155,7 @@ function ExactHoverBarShape(rawProps: unknown) {
           width={width}
           height={hitHeight}
           fill="transparent"
-          pointerEvents="all"
+           pointerEvents="all"
           data-chart-hit-target="true"
           data-sub-group={props.payload?.name ?? ""}
           data-division={division}
@@ -740,6 +728,7 @@ function MainGroupBars({
     }
     return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
   }, [categories, divisionRows, selected]);
+  const divisionColors = useMemo(() => buildDynamicColorMap(divisions), [divisions]);
   const minimumVisibleValue = useMemo(() => {
     if (!selected) return 0;
     const largestTotal = Math.max(...categories.map((category) => Math.abs(category.value)), 0);
@@ -859,36 +848,35 @@ function MainGroupBars({
       </text>
     );
   };
-  const trackExactSegment = (event: React.MouseEvent<HTMLDivElement>) => {
+  const trackExactSegment = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!selected) return;
     const pointerX = event.clientX;
     const pointerY = event.clientY;
-    const directTarget = event.target instanceof Element
-      ? event.target.closest<SVGRectElement>('[data-chart-hit-target="true"]')
-      : null;
     const targets = [...event.currentTarget.querySelectorAll<SVGRectElement>('[data-chart-hit-target="true"]')];
     const candidates = targets
       .map((target) => {
         const box = target.getBoundingClientRect();
-        const actualY = Number(target.dataset["actualY"] ?? 0);
-        const actualHeight = Number(target.dataset["actualHeight"] ?? 0);
-        const svg = target.ownerSVGElement;
-        const viewBoxHeight = svg?.viewBox.baseVal.height || svg?.getBoundingClientRect().height || 1;
-        const renderedHeight = svg?.getBoundingClientRect().height || 1;
-        const scaleY = renderedHeight / viewBoxHeight;
-        const actualTop = box.top + (actualY - Number(target.getAttribute("y") ?? actualY)) * scaleY;
-        const actualBottom = actualTop + actualHeight * scaleY;
+        const visibleSegment = target.previousElementSibling;
+        const visibleBox = visibleSegment instanceof SVGGraphicsElement
+          ? visibleSegment.getBoundingClientRect()
+          : box;
+        const actualTop = visibleBox.top;
+        const actualBottom = visibleBox.bottom;
         const insideX = pointerX >= box.left && pointerX <= box.right;
-        const insideActual = pointerY >= actualTop && pointerY <= actualBottom;
+        const insideActual = pointerX >= visibleBox.left
+          && pointerX <= visibleBox.right
+          && pointerY >= actualTop
+          && pointerY <= actualBottom;
         const distance = insideActual
           ? 0
           : Math.min(Math.abs(pointerY - actualTop), Math.abs(pointerY - actualBottom));
-        return { target, insideX, distance };
+        return { target, insideX, insideActual, distance };
       })
       .filter((candidate) => candidate.insideX)
-      .sort((a, b) => a.distance - b.distance);
-    const nearest = directTarget ?? candidates[0]?.target;
-    const nearestDistance = directTarget ? 0 : candidates[0]?.distance;
+      .sort((a, b) => Number(b.insideActual) - Number(a.insideActual) || a.distance - b.distance);
+    const exactCandidate = candidates.find((candidate) => candidate.insideActual);
+    const nearest = exactCandidate?.target ?? candidates[0]?.target;
+    const nearestDistance = exactCandidate ? 0 : candidates[0]?.distance;
     if (!nearest || nearestDistance === undefined || nearestDistance > 8) {
       setExactHover(null);
       return;
@@ -924,7 +912,7 @@ function MainGroupBars({
       </div>
       <div
         className={`cxo-chart-surface overflow-x-auto ${full ? "min-h-0 flex-1" : ""}`}
-        onMouseMove={trackExactSegment}
+        onPointerMoveCapture={trackExactSegment}
         onMouseLeave={() => setExactHover(null)}
         onScroll={() => setExactHover(null)}
       >
@@ -990,7 +978,7 @@ function MainGroupBars({
                   dataKey={division}
                   name={division}
                   stackId="division"
-                  fill={DIVISION_COLORS[index % DIVISION_COLORS.length]}
+                  fill={divisionColors.get(division) ?? "var(--chart-1)"}
                   shape={ExactHoverBarShape}
                   maxBarSize={42}
                   minPointSize={0}
@@ -1017,7 +1005,7 @@ function MainGroupBars({
                         <span key={division} className="inline-flex shrink-0 items-center gap-1.5">
                           <span
                             className="size-2.5 shrink-0 rounded-sm"
-                            style={{ background: DIVISION_COLORS[index % DIVISION_COLORS.length] }}
+                            style={{ background: divisionColors.get(division) ?? "var(--chart-1)" }}
                           />
                           {division}
                         </span>
@@ -1043,10 +1031,15 @@ function MainGroupBars({
                 role="tooltip"
               >
                 <p className="font-semibold">Sub Group: {exactHover.subgroup}</p>
-                <p className="mt-1 text-muted-foreground">PC Short Name: {exactHover.division}</p>
-                <p className="text-muted-foreground">
-                  {INRC(exactHover.value)} · {exactHover.count.toLocaleString("en-IN")} records
+                <p className="mt-1 flex items-center gap-1.5 text-muted-foreground">
+                  <span
+                    className="size-2.5 shrink-0 rounded-sm"
+                    style={{ background: divisionColors.get(exactHover.division) ?? "var(--chart-1)" }}
+                  />
+                  PC Short Name: {exactHover.division}
                 </p>
+                <p className="text-muted-foreground">Amount: {INRC(exactHover.value)}</p>
+                <p className="text-muted-foreground">Records: {exactHover.count.toLocaleString("en-IN")}</p>
               </div>,
               document.body,
             )
