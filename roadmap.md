@@ -56,3 +56,4 @@
 - [x] Stabilize Sales Dashboard totals with active-only deterministic paging and completed-snapshot consistency checks
 - [x] Verify BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR persistence without dropping valid repeated SAP rows
 - [x] Refine Sales Dashboard titles and units, add filter-aware fiscal quarter comparison tiles, and clarify Main Group drill-down navigation
+- [x] Add date-aware QoQ/YoY quarter comparisons, sparklines, variance analysis, and live executive insights

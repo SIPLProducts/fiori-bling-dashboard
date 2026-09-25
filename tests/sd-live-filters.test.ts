@@ -201,7 +201,7 @@ describe("fiscal quarter summary tiles", () => {
     })[0];
 
     expect(summary).toMatchObject({ amount: 40, baselineAmount: 100, changePct: -60, varianceAmount: -60 });
-    expect(summary?.trend.map((point) => point.value)).toEqual([40, 0, 0]);
+    expect(summary?.trend.map((point) => point.value)).toEqual([50, -10, 0]);
   });
 
   test("quarter amounts use the same actively filtered rows as Total Sales", () => {
