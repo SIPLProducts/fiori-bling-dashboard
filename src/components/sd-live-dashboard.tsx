@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -30,11 +30,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  CalendarDays,
   Zap,
   BarChart3,
-  Target,
-  Trash2,
   BellRing,
   TrendingUp,
   TrendingDown,
@@ -82,12 +79,8 @@ import {
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
-import { useLaunchpad } from "@/lib/use-launchpad";
 import {
   listSalesRevenueTargets,
-  removeSalesRevenueTarget,
-  saveSalesRevenueTarget,
-  type SalesRevenueTarget,
 } from "@/lib/sales-targets.functions";
 
 const INR = (value: number) =>
@@ -319,22 +312,18 @@ function latestYearMonths(monthly: MonthRow[]) {
     .map((r) => ({ label: shortMonth(r.p.idx), revenue: r.revenue, quantity: r.quantity }));
 }
 
-/** Human label for the active posting-date range shown next to the title. */
-function periodLabel(monthly: MonthRow[], from: string, to: string) {
+/** Human label for the complete posting-date range loaded from ZFISALES. */
+function availableDataLabel(rows: SdLine[]) {
   const fmt = (iso: string) => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime())
       ? ""
       : `${shortMonth(d.getMonth())} ${d.getFullYear()}`;
   };
-  if (from || to) return `${fmt(from) || "…"} - ${fmt(to) || "…"}`;
-  const first = monthly[0]?.month;
-  const last = monthly[monthly.length - 1]?.month;
-  const pretty = (label?: string) => {
-    const p = label ? parseMonth(label) : null;
-    return p ? `${shortMonth(p.idx)} ${p.year}` : "";
-  };
-  return first && last ? `${pretty(first)} - ${pretty(last)}` : "All postings";
+  const dates = rows.map((row) => row.postingDate).filter(Boolean).sort();
+  const first = dates[0];
+  const last = dates.at(-1);
+  return first && last ? `Data available: ${fmt(first)} - ${fmt(last)}` : "Data available: —";
 }
 
 
@@ -591,73 +580,6 @@ function TotalSalesCard({
       </div> : null}
       <p className="mt-2 text-[10px] text-muted-foreground">Filtered postings <span className="tabular float-right font-semibold text-primary">{NUM(postingCount)} lines</span></p>
     </section>
-  );
-}
-
-function RevenueTargetDialog({
-  open,
-  onOpenChange,
-  fiscalYears,
-  targets,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  fiscalYears: string[];
-  targets: SalesRevenueTarget[];
-}) {
-  const queryClient = useQueryClient();
-  const saveTarget = useServerFn(saveSalesRevenueTarget);
-  const removeTarget = useServerFn(removeSalesRevenueTarget);
-  const [fiscalYear, setFiscalYear] = useState(fiscalYears[0] ?? currentFiscalYear());
-  const existing = targets.find((target) => target.fiscalYear === fiscalYear);
-  const [amountCrores, setAmountCrores] = useState("");
-
-  useEffect(() => {
-    setAmountCrores(existing ? String(existing.targetAmount / 1e7) : "");
-  }, [existing, fiscalYear]);
-
-  const save = useMutation({
-    mutationFn: () => saveTarget({ data: { fiscalYear, targetAmount: Number(amountCrores) * 1e7 } }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["sales-revenue-targets"] });
-      toast.success("Revenue target saved");
-      onOpenChange(false);
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to save target"),
-  });
-  const remove = useMutation({
-    mutationFn: () => removeTarget({ data: { fiscalYear } }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["sales-revenue-targets"] });
-      toast.success("Revenue target removed");
-      onOpenChange(false);
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to remove target"),
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Revenue Targets</DialogTitle>
-          <DialogDescription>Set the annual sales target for an April–March fiscal year.</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="text-xs font-medium text-muted-foreground">Fiscal year
-            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground" value={fiscalYear} onChange={(event) => setFiscalYear(event.target.value)}>
-              {[...new Set([currentFiscalYear(), ...fiscalYears])].sort((a, b) => b.localeCompare(a)).map((year) => <option key={year} value={year}>{fiscalYearLabel(year)}</option>)}
-            </select>
-          </label>
-          <label className="text-xs font-medium text-muted-foreground">Annual target (Crores)
-            <Input className="mt-1" type="number" min="0.01" step="0.01" value={amountCrores} onChange={(event) => setAmountCrores(event.target.value)} placeholder="e.g. 3500" />
-          </label>
-        </div>
-        <DialogFooter>
-          {existing ? <Button variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}><Trash2 className="mr-1 size-4" />Remove</Button> : null}
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !(Number(amountCrores) > 0)}>{save.isPending ? "Saving…" : "Save target"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -2061,9 +1983,6 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
-  const [targetDialogOpen, setTargetDialogOpen] = useState(false);
-
-  const { data: launchpad } = useLaunchpad();
   const { data: revenueTargets = [] } = useQuery({
     queryKey: ["sales-revenue-targets"],
     queryFn: () => fetchTargets(),
@@ -2304,18 +2223,12 @@ export function SdLiveDashboard() {
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
         <div className="flex max-w-full flex-wrap items-center gap-2">
-          <span className="hidden h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile sm:inline-flex">
-            <CalendarDays className="size-4 text-muted-foreground" />
-            {periodLabel(analytics.monthly, filters.from, filters.to)}
+          <span className="hidden h-9 items-center rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile sm:inline-flex">
+            {availableDataLabel(all)}
           </span>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
           </Button>
-          {launchpad?.isSuperAdmin ? (
-            <Button variant="outline" size="sm" className="h-9" onClick={() => setTargetDialogOpen(true)}>
-              <Target className="size-4 sm:mr-1" /> <span className="hidden sm:inline">Revenue Targets</span>
-            </Button>
-          ) : null}
           <Button
             variant="outline"
             size="sm"
@@ -2327,15 +2240,6 @@ export function SdLiveDashboard() {
           </Button>
         </div>
       </div>
-
-      {launchpad?.isSuperAdmin ? (
-        <RevenueTargetDialog
-          open={targetDialogOpen}
-          onOpenChange={setTargetDialogOpen}
-          fiscalYears={opts.fiscalYears}
-          targets={revenueTargets}
-        />
-      ) : null}
 
       {/* smart filter bar */}
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">

@@ -61,3 +61,4 @@
 - [x] Correct future and partial quarter states across tiles, trajectory analysis, and executive insights
 - [x] Cap the default Sales Dashboard at today so future postings cannot drive totals, Active quarters, or comparisons
 - [x] Restyle Management Alerts like Executive Insights and explain each live, filter-driven alert basis
+- [x] Simplify the Sales Dashboard header and show the full ZFISALES available-data range
