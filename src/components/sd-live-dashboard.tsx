@@ -555,7 +555,7 @@ function TotalSalesCard({
         <p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Sales · {fiscalYearLabel(fiscalYear)}</p>
         <span className="grid size-7 place-items-center rounded-md bg-primary/10 text-primary"><IndianRupee className="size-3.5" /></span>
       </div>
-      <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{INRC(amount)}</p>
+      <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{INR_CRORES(amount)}</p>
       <div className="mt-3 border-t border-border pt-3">
         <div className="grid grid-cols-3 gap-2">
           {breakdown.named.map((item) => (
@@ -2281,8 +2281,8 @@ export function SdLiveDashboard() {
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
+          <span className="hidden h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile sm:inline-flex">
             <CalendarDays className="size-4 text-muted-foreground" />
             {periodLabel(analytics.monthly, filters.from, filters.to)}
           </span>
@@ -2291,7 +2291,7 @@ export function SdLiveDashboard() {
           </Button>
           {launchpad?.isSuperAdmin ? (
             <Button variant="outline" size="sm" className="h-9" onClick={() => setTargetDialogOpen(true)}>
-              <Target className="mr-1 size-4" /> Revenue Targets
+              <Target className="size-4 sm:mr-1" /> <span className="hidden sm:inline">Revenue Targets</span>
             </Button>
           ) : null}
           <Button
@@ -2301,7 +2301,7 @@ export function SdLiveDashboard() {
             disabled={pdfBusy || !all.length}
             onClick={downloadDashboardPdf}
           >
-            <Download className="mr-1 size-4" /> {pdfBusy ? "Preparing…" : "PDF"}
+            <Download className="size-4 sm:mr-1" /> <span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span>
           </Button>
         </div>
       </div>
