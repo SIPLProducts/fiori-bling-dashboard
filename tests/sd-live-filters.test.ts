@@ -136,7 +136,7 @@ describe("fiscal quarter summary tiles", () => {
     const summaries = buildQuarterSummaries(active, all, ["2026"], ["Q1", "Q3"]);
 
     expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3"]);
-    expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25, comparisonLabel: "vs Q4" });
+    expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25, comparisonLabel: "vs Prior FY Q4" });
     expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 120, changePct: 25, comparisonLabel: "vs Q2" });
   });
 
@@ -206,6 +206,29 @@ describe("fiscal quarter summary tiles", () => {
 
     expect(summary).toMatchObject({ amount: 40, baselineAmount: 100, changePct: -60, varianceAmount: -60 });
     expect(summary?.trend.map((point) => point.value)).toEqual([50, -10, 0]);
+  });
+
+  test("marks future quarters outside range and compares a partial quarter by elapsed days", () => {
+    const history = [
+      sale("2026", "2026-04-10", 40),
+      sale("2026", "2026-06-30", 60),
+      sale("2026", "2026-07-10", 75),
+      sale("2026", "2026-09-25", 25),
+    ];
+    const active = applySdFilters(history, filters({ from: "2026-04-01", to: "2026-09-25" }));
+    const summaries = buildQuarterSummaries(active, history, [], [], { from: "2026-04-01", to: "2026-09-25" });
+
+    expect(summaries[0]).toMatchObject({ quarter: "Q1", status: "complete" });
+    expect(summaries[1]).toMatchObject({
+      quarter: "Q2",
+      status: "partial",
+      statusLabel: "Partial (Through 25 Sept)",
+      baselineAmount: 40,
+      changePct: 150,
+      comparisonLabel: "vs Q1 · same elapsed days",
+    });
+    expect(summaries[2]).toMatchObject({ quarter: "Q3", status: "outside", changePct: null, varianceAmount: null });
+    expect(summaries[3]).toMatchObject({ quarter: "Q4", status: "outside", changePct: null, varianceAmount: null });
   });
 
   test("quarter amounts use the same actively filtered rows as Total Sales", () => {

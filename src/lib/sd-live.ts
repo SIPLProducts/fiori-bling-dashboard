@@ -275,6 +275,8 @@ export function currentFiscalYear(date = new Date()): string {
 export type QuarterSummary = {
   quarter: "Q1" | "Q2" | "Q3" | "Q4";
   fiscalYear: string;
+  status: "complete" | "partial" | "outside";
+  statusLabel: string;
   recordCount: number;
   amount: number;
   baselineAmount: number | null;
@@ -296,6 +298,83 @@ function quarterRows(rows: SdLine[], fiscalYear: string, quarter: string): SdLin
 
 function quarterAmount(rows: SdLine[], fiscalYear: string, quarter: string): number | null {
   const matching = quarterRows(rows, fiscalYear, quarter);
+  return matching.length ? matching.reduce((sum, row) => sum + row.amount, 0) : null;
+}
+
+function utcDate(value: string): Date | null {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isoDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+function fiscalQuarterBounds(fiscalYear: string, quarter: (typeof FISCAL_QUARTER_ORDER)[number]) {
+  const year = Number(fiscalYear);
+  const starts = {
+    Q1: [year, 3, 1],
+    Q2: [year, 6, 1],
+    Q3: [year, 9, 1],
+    Q4: [year + 1, 0, 1],
+  } as const;
+  const [startYear, startMonth, startDay] = starts[quarter];
+  const start = new Date(Date.UTC(startYear, startMonth, startDay));
+  const end = new Date(Date.UTC(startYear, startMonth + 3, 0));
+  return { start, end };
+}
+
+function formatDayMonth(value: Date): string {
+  return value.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+}
+
+function quarterSelectionStatus(
+  fiscalYear: string,
+  quarter: (typeof FISCAL_QUARTER_ORDER)[number],
+  from = "",
+  to = "",
+) {
+  const bounds = fiscalQuarterBounds(fiscalYear, quarter);
+  const selectedFrom = utcDate(from);
+  const selectedTo = utcDate(to);
+  const intersectionStart = selectedFrom && selectedFrom > bounds.start ? selectedFrom : bounds.start;
+  const intersectionEnd = selectedTo && selectedTo < bounds.end ? selectedTo : bounds.end;
+  if (intersectionStart > intersectionEnd) {
+    return { status: "outside" as const, statusLabel: "Outside selected range", intersectionStart, intersectionEnd };
+  }
+  const partial = intersectionStart > bounds.start || intersectionEnd < bounds.end;
+  const statusLabel = partial
+    ? intersectionStart.getTime() === bounds.start.getTime()
+      ? `Partial (Through ${formatDayMonth(intersectionEnd)})`
+      : `Partial (${formatDayMonth(intersectionStart)}–${formatDayMonth(intersectionEnd)})`
+    : "";
+  return { status: partial ? "partial" as const : "complete" as const, statusLabel, intersectionStart, intersectionEnd };
+}
+
+function elapsedBaselineAmount(
+  rows: SdLine[],
+  fiscalYear: string,
+  quarter: (typeof FISCAL_QUARTER_ORDER)[number],
+  start: Date,
+  end: Date,
+): number | null {
+  const sourceBounds = fiscalQuarterBounds(fiscalYear, quarter);
+  const startOffset = Math.floor((start.getTime() - sourceBounds.start.getTime()) / 86_400_000);
+  const endOffset = Math.floor((end.getTime() - sourceBounds.start.getTime()) / 86_400_000);
+  const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
+  const baselineQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
+  if (!baselineQuarter) return null;
+  const baselineYear = quarter === "Q1" ? String(Number(fiscalYear) - 1) : fiscalYear;
+  const baselineBounds = fiscalQuarterBounds(baselineYear, baselineQuarter);
+  const baselineStart = new Date(baselineBounds.start.getTime() + startOffset * 86_400_000);
+  const baselineEnd = new Date(Math.min(
+    baselineBounds.end.getTime(),
+    baselineBounds.start.getTime() + endOffset * 86_400_000,
+  ));
+  const matching = quarterRows(rows, baselineYear, baselineQuarter).filter((row) => {
+    const date = utcDate(row.postingDate);
+    return date != null && date >= baselineStart && date <= baselineEnd;
+  });
   return matching.length ? matching.reduce((sum, row) => sum + row.amount, 0) : null;
 }
 
@@ -354,18 +433,34 @@ export function buildQuarterSummaries(
   return visible.map((quarter) => {
     const currentRows = currentYear ? quarterRows(activeRows, currentYear, quarter) : [];
     const amount = currentRows.reduce((sum, row) => sum + row.amount, 0);
+    const selection = currentYear
+      ? quarterSelectionStatus(currentYear, quarter, dateRange.from, dateRange.to)
+      : { status: "outside" as const, statusLabel: "Outside selected range", intersectionStart: new Date(0), intersectionEnd: new Date(0) };
     let baselineAmount: number | null = null;
     let comparisonLabel = "No comparison";
 
-    if (currentYear && comparisonMode === "yoy" && baselineYear) {
-      baselineAmount = quarterAmount(comparisonRows, baselineYear, quarter);
+    if (selection.status === "outside") {
+      comparisonLabel = "Outside selected range";
+    } else if (currentYear && comparisonMode === "yoy" && baselineYear) {
+      baselineAmount = selection.status === "partial"
+        ? elapsedBaselineAmount(comparisonRows, baselineYear, quarter, selection.intersectionStart, selection.intersectionEnd)
+        : quarterAmount(comparisonRows, baselineYear, quarter);
       comparisonLabel = `vs FY ${baselineYear}–${String(Number(baselineYear) + 1).slice(-2)} ${quarter}`;
     } else if (currentYear) {
       const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
       const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
       const previousYear = quarter === "Q1" ? String(Number(currentYear) - 1) : currentYear;
-      baselineAmount = previousQuarter ? quarterAmount(comparisonRows, previousYear, previousQuarter) : null;
-      comparisonLabel = baselineAmount == null || !previousQuarter ? "Starting baseline" : `vs ${previousQuarter}`;
+      baselineAmount = previousQuarter
+        ? selection.status === "partial"
+          ? elapsedBaselineAmount(comparisonRows, currentYear, quarter, selection.intersectionStart, selection.intersectionEnd)
+          : quarterAmount(comparisonRows, previousYear, previousQuarter)
+        : null;
+      comparisonLabel = baselineAmount == null || !previousQuarter
+        ? "Starting baseline"
+        : quarter === "Q1" ? "vs Prior FY Q4" : `vs ${previousQuarter}`;
+      if (selection.status === "partial" && baselineAmount != null && previousQuarter) {
+        comparisonLabel = `${comparisonLabel} · same elapsed days`;
+      }
     }
 
     const validBaselineAmount = baselineAmount != null && baselineAmount !== 0 ? baselineAmount : null;
@@ -373,6 +468,8 @@ export function buildQuarterSummaries(
     return {
       quarter,
       fiscalYear: currentYear,
+      status: selection.status,
+      statusLabel: selection.statusLabel,
       recordCount: currentRows.length,
       amount,
       baselineAmount,
