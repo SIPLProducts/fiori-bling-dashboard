@@ -347,7 +347,7 @@ export function buildQuarterSummaries(
   const years = [...new Set(fiscalYears.length ? fiscalYears : inferredYears)].sort((a, b) => a.localeCompare(b));
   const currentYear = years.at(-1) ?? "";
   const baselineYear = years.length > 1 ? years.at(-2) ?? "" : "";
-  const comparisonMode: "qoq" | "yoy" = years.length > 1 || (!fiscalYears.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
+  const comparisonMode: "qoq" | "yoy" = fiscalYears.length > 1 || (!fiscalYears.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
     ? "yoy"
     : "qoq";
 

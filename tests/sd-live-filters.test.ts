@@ -136,7 +136,7 @@ describe("fiscal quarter summary tiles", () => {
 
     expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3"]);
     expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25, comparisonLabel: "vs Q4" });
-    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 0, changePct: null, comparisonLabel: "vs Q2" });
+    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: null, changePct: null, comparisonLabel: "Starting baseline" });
   });
 
   test("compares matching quarters between the two latest selected fiscal years", () => {
@@ -159,7 +159,7 @@ describe("fiscal quarter summary tiles", () => {
     const zeroBaseline = buildQuarterSummaries(active, active, ["2026"], ["Q1"]);
 
     expect(noYear[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null, comparisonMode: "qoq" });
-    expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: 0, changePct: null });
+    expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null });
   });
 
   test("infers QoQ comparisons for This year when no fiscal year is selected", () => {
