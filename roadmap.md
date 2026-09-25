@@ -55,3 +55,4 @@
 - [x] Export every filtered Sales by Model row in the dashboard PDF regardless of the on-screen Top 10/20 limit
 - [x] Stabilize Sales Dashboard totals with active-only deterministic paging and completed-snapshot consistency checks
 - [x] Verify BELNR, GJAHR, HKONT, AUBEL, AUPOS, and POSNR persistence without dropping valid repeated SAP rows
+- [x] Refine Sales Dashboard titles and units, add filter-aware fiscal quarter comparison tiles, and clarify Main Group drill-down navigation

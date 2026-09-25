@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   applySdFilters,
   buildSdAnalytics,
+  buildQuarterSummaries,
   fiscalQuarter,
   limitModelPerformance,
   loadConsistentPagedRows,
@@ -115,6 +116,53 @@ describe("sales dashboard fiscal multi-select filters", () => {
   test("empty fiscal selections include every row", () => {
     const rows = [row("2025", "2025-01-01"), row("2026", "2026-09-01")];
     expect(applySdFilters(rows, filters())).toEqual(rows);
+  });
+});
+
+describe("fiscal quarter summary tiles", () => {
+  const sale = (year: string, date: string, amount: number) => ({ ...row(year, date), amount });
+
+  test("shows selected quarters only and compares sequential selections within one year", () => {
+    const all = [
+      sale("2025", "2025-01-10", 80),
+      sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-10-10", 150),
+    ];
+    const active = applySdFilters(all, filters({ fiscalYears: ["2026"], quarters: ["Q1", "Q3"] }));
+    const summaries = buildQuarterSummaries(active, all, ["2026"], ["Q1", "Q3"]);
+
+    expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3"]);
+    expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25 });
+    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 100, changePct: 50 });
+  });
+
+  test("compares matching quarters between the two latest selected fiscal years", () => {
+    const all = [
+      sale("2025", "2025-04-10", 100),
+      sale("2025", "2025-07-10", 200),
+      sale("2026", "2026-04-10", 120),
+      sale("2026", "2026-07-10", 150),
+    ];
+    const active = applySdFilters(all, filters({ fiscalYears: ["2025", "2026"], quarters: ["Q1", "Q2"] }));
+    const summaries = buildQuarterSummaries(active, all, ["2025", "2026"], ["Q1", "Q2"]);
+
+    expect(summaries[0]).toMatchObject({ quarter: "Q1", amount: 120, baselineAmount: 100, changePct: 20 });
+    expect(summaries[1]).toMatchObject({ quarter: "Q2", amount: 150, baselineAmount: 200, changePct: -25 });
+  });
+
+  test("uses neutral comparison without a year or a usable baseline", () => {
+    const active = [sale("2026", "2026-04-10", 100)];
+    const noYear = buildQuarterSummaries(active, active, [], ["Q1"]);
+    const zeroBaseline = buildQuarterSummaries(active, active, ["2026"], ["Q1"]);
+
+    expect(noYear[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null });
+    expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: 0, changePct: null });
+  });
+
+  test("quarter amounts use the same actively filtered rows as Total Sales", () => {
+    const active = [sale("2026", "2026-04-10", 25), sale("2026", "2026-07-10", -5)];
+    const summaries = buildQuarterSummaries(active, active, ["2026"], []);
+    expect(summaries.reduce((sum, item) => sum + item.amount, 0)).toBe(buildSdAnalytics(active).kpis.revenue);
   });
 });
 
