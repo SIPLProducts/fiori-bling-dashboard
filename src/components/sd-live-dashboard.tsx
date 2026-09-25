@@ -2875,18 +2875,20 @@ export function SdLiveDashboard() {
               <BsarkBars items={analytics.byNewRepl} unassigned={analytics.unassignedNewReplCount} />
             </Panel>
 
-            <section className="flex flex-col rounded-lg border border-border bg-card p-4 shadow-tile">
-              <div className="flex items-center gap-2 border-b border-border pb-3">
-                <BellRing className="size-4 text-primary" />
-                <h2 className="text-sm font-semibold text-card-foreground">Management Alerts</h2>
-                <Badge variant="secondary" className="ml-auto gap-1 text-[10px]">
+            <section className="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card p-4 shadow-tile">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-2.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <BellRing className="size-4 shrink-0 text-primary" />
+                  <h2 className="truncate text-sm font-semibold text-card-foreground">Management Alerts</h2>
+                </div>
+                <Badge variant="secondary" className="shrink-0 gap-1 text-[10px]">
                   <Radio className="size-3" /> Live filters
                 </Badge>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-[10.5px] text-muted-foreground">
                 Automatically recalculated from the sales records matching your current filters.
               </p>
-              <ul className="mt-3 grid gap-2.5">
+              <ul className="mt-2.5 grid flex-1 content-start gap-2 md:grid-cols-2">
                 {analytics.alerts.map((alert, index) => {
                   const AlertIcon = alert.tone === "down" ? TrendingDown : alert.tone === "warn" ? TriangleAlert : TrendingUp;
                   const toneClass = alert.tone === "down"
@@ -2895,15 +2897,18 @@ export function SdLiveDashboard() {
                       ? "border-warning/30 bg-warning/5 text-warning"
                       : "border-success/30 bg-success/5 text-success";
                   return (
-                    <li key={`${alert.title}-${index}`} className={`rounded-md border p-3 ${toneClass}`}>
-                      <div className="flex items-start gap-2.5">
-                        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-card/80 ring-1 ring-current/15">
-                          <AlertIcon className="size-4" />
+                    <li
+                      key={`${alert.title}-${index}`}
+                      className={`rounded-md border p-2.5 ${index === 4 ? "md:col-span-2" : ""} ${toneClass}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-md bg-card/80 ring-1 ring-current/15">
+                          <AlertIcon className="size-3.5" />
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-card-foreground">{alert.title}</p>
-                          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{alert.text}</p>
-                          <p className="mt-2 border-t border-current/10 pt-2 text-[10px] text-muted-foreground">
+                          <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">{alert.text}</p>
+                          <p className="mt-1.5 border-t border-current/10 pt-1.5 text-[9.5px] leading-snug text-muted-foreground">
                             Based on: <span className="font-medium text-card-foreground">{alert.basis}</span>
                           </p>
                         </div>
@@ -2912,7 +2917,7 @@ export function SdLiveDashboard() {
                   );
                 })}
                 {analytics.alerts.length === 0 ? (
-                  <li className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground">
+                  <li className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground md:col-span-2">
                     No comparable alert points are available for this selection.
                   </li>
                 ) : null}
