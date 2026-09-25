@@ -304,6 +304,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_revenue_targets: {
+        Row: {
+          created_at: string
+          fiscal_year: string
+          target_amount: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          fiscal_year: string
+          target_amount: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          fiscal_year?: string
+          target_amount?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       sap_credentials: {
         Row: {
           cred_key: string

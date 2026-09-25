@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Area,
   Bar,
@@ -32,6 +33,8 @@ import {
   CalendarDays,
   Zap,
   BarChart3,
+  Target,
+  Trash2,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -39,6 +42,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
@@ -52,8 +63,10 @@ import {
   applySdFilters,
   buildSdAnalytics,
   buildQuarterSummaries,
+  currentFiscalYear,
   emptySdFilters,
   fetchSdLines,
+  fiscalYearForDate,
   limitModelPerformance,
   uniqueValues,
   type NamedTotal,
@@ -62,6 +75,13 @@ import {
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
+import { useLaunchpad } from "@/lib/use-launchpad";
+import {
+  listSalesRevenueTargets,
+  removeSalesRevenueTarget,
+  saveSalesRevenueTarget,
+  type SalesRevenueTarget,
+} from "@/lib/sales-targets.functions";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -324,7 +344,10 @@ const QUICK_RANGES: { label: string; range: () => { from: string; to: string } }
   },
   {
     label: "This year",
-    range: () => ({ from: `${new Date().getFullYear()}-01-01`, to: isoDaysAgo(0) }),
+    range: () => {
+      const fiscalYear = currentFiscalYear();
+      return { from: `${fiscalYear}-04-01`, to: isoDaysAgo(0) };
+    },
   },
 ];
 
@@ -422,19 +445,27 @@ function KpiCard({
   );
 }
 
-function QuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number }) {
+function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
   const chartData = summary.trend.map((point) => ({ ...point, value: point.value / 1e7 }));
   return (
     <section
-      className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 shadow-tile"
+      className="relative min-w-0 overflow-hidden rounded-lg border bg-card p-3 shadow-tile"
+      style={{
+        borderColor: active ? color : "var(--color-border)",
+        background: active
+          ? `linear-gradient(145deg, color-mix(in oklab, ${color} 7%, var(--color-card)), var(--color-card))`
+          : "var(--color-card)",
+        boxShadow: active ? `0 0 0 2px color-mix(in oklab, ${color} 18%, transparent), var(--shadow-tile)` : undefined,
+      }}
     >
       <span aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5" style={{ background: color }} />
       <div className="flex items-center gap-2 pt-1">
         <span className="size-2 shrink-0 rounded-full" style={{ background: color }} />
         <p className="truncate text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Quarter {summary.quarter.slice(1)}</p>
-        <BarChart3 className="ml-auto size-4 shrink-0" style={{ color }} />
+        {active ? <Badge className="ml-auto px-1.5 py-0 text-[9px]">Active</Badge> : null}
+        <BarChart3 className={`${active ? "" : "ml-auto"} size-4 shrink-0`} style={{ color }} />
       </div>
       <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{INRC(summary.amount)}</p>
       <p className="mt-1.5 flex min-w-0 items-center gap-1 text-[11px]">
@@ -462,6 +493,164 @@ function QuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number 
         </ResponsiveContainer>
       </div>
     </section>
+  );
+}
+
+type SalesBreakdown = { label: string; value: number; color: string };
+
+function fiscalYearLabel(fiscalYear: string) {
+  return fiscalYear ? `FY ${fiscalYear}–${String(Number(fiscalYear) + 1).slice(-2)}` : "Filtered period";
+}
+
+function buildSalesBreakdown(items: NamedTotal[]): { named: SalesBreakdown[]; other: number } {
+  const buckets = { domestic: 0, service: 0, exports: 0, other: 0 };
+  for (const item of items) {
+    const key = item.name.trim().toLowerCase();
+    if (key === "domestic") buckets.domestic += item.value;
+    else if (key === "service" || key === "services") buckets.service += item.value;
+    else if (key === "export" || key === "exports") buckets.exports += item.value;
+    else buckets.other += item.value;
+  }
+  return {
+    named: [
+      { label: "Domestic", value: buckets.domestic, color: "var(--kpi-1)" },
+      { label: "Service", value: buckets.service, color: "var(--kpi-2)" },
+      { label: "Exports", value: buckets.exports, color: "var(--kpi-3)" },
+    ],
+    other: buckets.other,
+  };
+}
+
+function TotalSalesCard({
+  amount,
+  postingCount,
+  fiscalYear,
+  breakdown,
+  target,
+  onClick,
+  active,
+}: {
+  amount: number;
+  postingCount: number;
+  fiscalYear: string;
+  breakdown: { named: SalesBreakdown[]; other: number };
+  target: number | null;
+  onClick: () => void;
+  active: boolean;
+}) {
+  const total = breakdown.named.reduce((sum, item) => sum + item.value, 0) + breakdown.other;
+  const share = (value: number) => total === 0 ? 0 : (value / total) * 100;
+  const achievement = target && target > 0 ? (amount / target) * 100 : null;
+  return (
+    <section
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onClick(); }}
+      className="relative h-full min-w-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-card p-4 shadow-tile transition-shadow hover:shadow-tile-hover"
+      aria-pressed={active}
+    >
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-primary" />
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Sales · {fiscalYearLabel(fiscalYear)}</p>
+        <span className="grid size-7 place-items-center rounded-md bg-primary/10 text-primary"><IndianRupee className="size-3.5" /></span>
+      </div>
+      <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{INR_CRORES(amount)}</p>
+      <div className="mt-3 border-t border-border pt-3">
+        <div className="grid grid-cols-3 gap-2">
+          {breakdown.named.map((item) => (
+            <div key={item.label} className="min-w-0">
+              <p className="truncate text-[10px] text-muted-foreground">{item.label} · {share(item.value).toFixed(1)}%</p>
+              <p className="tabular truncate text-[10px] font-semibold text-card-foreground">{CRORES(item.value)}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted">
+          {breakdown.named.map((item) => (
+            <span key={item.label} style={{ width: `${Math.max(0, share(item.value))}%`, background: item.color }} />
+          ))}
+          {breakdown.other !== 0 ? <span style={{ width: `${Math.max(0, share(breakdown.other))}%`, background: "var(--color-muted-foreground)" }} /> : null}
+        </div>
+        {breakdown.other !== 0 ? <p className="mt-1 text-[10px] text-muted-foreground">Other sales types: {CRORES(breakdown.other)} ({share(breakdown.other).toFixed(1)}%)</p> : null}
+      </div>
+      <div className="mt-3 border-t border-border pt-2.5">
+        <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+          <span>{target ? `Revenue target: ${INRC(target)}` : "Target not configured"}</span>
+          {achievement != null ? <strong className="tabular text-foreground">{achievement.toFixed(1)}%</strong> : null}
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+          <span className="block h-full rounded-full bg-success" style={{ width: `${Math.min(100, Math.max(0, achievement ?? 0))}%` }} />
+        </div>
+      </div>
+      <p className="mt-2 text-[10px] text-muted-foreground">Filtered postings <span className="tabular float-right font-semibold text-primary">{NUM(postingCount)} lines</span></p>
+    </section>
+  );
+}
+
+function RevenueTargetDialog({
+  open,
+  onOpenChange,
+  fiscalYears,
+  targets,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  fiscalYears: string[];
+  targets: SalesRevenueTarget[];
+}) {
+  const queryClient = useQueryClient();
+  const saveTarget = useServerFn(saveSalesRevenueTarget);
+  const removeTarget = useServerFn(removeSalesRevenueTarget);
+  const [fiscalYear, setFiscalYear] = useState(fiscalYears[0] ?? currentFiscalYear());
+  const existing = targets.find((target) => target.fiscalYear === fiscalYear);
+  const [amountCrores, setAmountCrores] = useState("");
+
+  useEffect(() => {
+    setAmountCrores(existing ? String(existing.targetAmount / 1e7) : "");
+  }, [existing, fiscalYear]);
+
+  const save = useMutation({
+    mutationFn: () => saveTarget({ data: { fiscalYear, targetAmount: Number(amountCrores) * 1e7 } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales-revenue-targets"] });
+      toast.success("Revenue target saved");
+      onOpenChange(false);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to save target"),
+  });
+  const remove = useMutation({
+    mutationFn: () => removeTarget({ data: { fiscalYear } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales-revenue-targets"] });
+      toast.success("Revenue target removed");
+      onOpenChange(false);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to remove target"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Revenue Targets</DialogTitle>
+          <DialogDescription>Set the annual sales target for an April–March fiscal year.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-xs font-medium text-muted-foreground">Fiscal year
+            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground" value={fiscalYear} onChange={(event) => setFiscalYear(event.target.value)}>
+              {[...new Set([currentFiscalYear(), ...fiscalYears])].sort((a, b) => b.localeCompare(a)).map((year) => <option key={year} value={year}>{fiscalYearLabel(year)}</option>)}
+            </select>
+          </label>
+          <label className="text-xs font-medium text-muted-foreground">Annual target (Crores)
+            <Input className="mt-1" type="number" min="0.01" step="0.01" value={amountCrores} onChange={(event) => setAmountCrores(event.target.value)} placeholder="e.g. 3500" />
+          </label>
+        </div>
+        <DialogFooter>
+          {existing ? <Button variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}><Trash2 className="mr-1 size-4" />Remove</Button> : null}
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !(Number(amountCrores) > 0)}>{save.isPending ? "Saving…" : "Save target"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1849,6 +2038,7 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const navigate = useNavigate();
+  const fetchTargets = useServerFn(listSalesRevenueTargets);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -1862,6 +2052,13 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
+  const [targetDialogOpen, setTargetDialogOpen] = useState(false);
+
+  const { data: launchpad } = useLaunchpad();
+  const { data: revenueTargets = [] } = useQuery({
+    queryKey: ["sales-revenue-targets"],
+    queryFn: () => fetchTargets(),
+  });
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -1896,7 +2093,7 @@ export function SdLiveDashboard() {
       profitCentres: uniqueValues(all, (r) => r.pcShortName),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
-      fiscalYears: uniqueValues(all, (r) => r.fiscalYear).sort((a, b) => b.localeCompare(a)),
+      fiscalYears: uniqueValues(all, (r) => fiscalYearForDate(r.postingDate)).sort((a, b) => b.localeCompare(a)),
     }),
     [all],
   );
@@ -2015,6 +2212,12 @@ export function SdLiveDashboard() {
   }
 
   const totalRevenue = analytics.kpis.revenue;
+  const selectedFiscalYear = filters.fiscalYears.length === 1
+    ? filters.fiscalYears[0] ?? ""
+    : quarterSummaries[0]?.fiscalYear ?? "";
+  const revenueTarget = revenueTargets.find((target) => target.fiscalYear === selectedFiscalYear)?.targetAmount ?? null;
+  const salesBreakdown = buildSalesBreakdown(analytics.mixByType);
+  const latestQuarterWithSales = [...quarterSummaries].reverse().find((summary) => summary.recordCount > 0)?.quarter ?? null;
 
   const pcColors = buildPcColors(filtered);
   const pcLabel = (key: string) => {
@@ -2078,14 +2281,19 @@ export function SdLiveDashboard() {
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
+          <span className="hidden h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile sm:inline-flex">
             <CalendarDays className="size-4 text-muted-foreground" />
             {periodLabel(analytics.monthly, filters.from, filters.to)}
           </span>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
           </Button>
+          {launchpad?.isSuperAdmin ? (
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setTargetDialogOpen(true)}>
+              <Target className="size-4 sm:mr-1" /> <span className="hidden sm:inline">Revenue Targets</span>
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="sm"
@@ -2093,10 +2301,19 @@ export function SdLiveDashboard() {
             disabled={pdfBusy || !all.length}
             onClick={downloadDashboardPdf}
           >
-            <Download className="mr-1 size-4" /> {pdfBusy ? "Preparing…" : "PDF"}
+            <Download className="size-4 sm:mr-1" /> <span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span>
           </Button>
         </div>
       </div>
+
+      {launchpad?.isSuperAdmin ? (
+        <RevenueTargetDialog
+          open={targetDialogOpen}
+          onOpenChange={setTargetDialogOpen}
+          fiscalYears={opts.fiscalYears}
+          targets={revenueTargets}
+        />
+      ) : null}
 
       {/* smart filter bar */}
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">
@@ -2342,13 +2559,12 @@ export function SdLiveDashboard() {
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
-            <KpiCard
-              label="Total Sales"
-              value={INRC(totalRevenue)}
-              tone={0}
-              icon={IndianRupee}
-              delta={analytics.deltas.revenue}
-              caption="Filtered postings · click for details"
+            <TotalSalesCard
+              amount={totalRevenue}
+              postingCount={filtered.length}
+              fiscalYear={selectedFiscalYear}
+              breakdown={salesBreakdown}
+              target={revenueTarget}
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
             />
@@ -2365,7 +2581,7 @@ export function SdLiveDashboard() {
               }`}
             >
               {quarterSummaries.map((summary, index) => (
-                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} />
+                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === latestQuarterWithSales} />
               ))}
             </div>
           </div>

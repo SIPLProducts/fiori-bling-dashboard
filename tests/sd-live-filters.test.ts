@@ -3,6 +3,7 @@ import {
   applySdFilters,
   buildSdAnalytics,
   buildQuarterSummaries,
+  fiscalYearForDate,
   fiscalQuarter,
   limitModelPerformance,
   loadConsistentPagedRows,
@@ -99,6 +100,8 @@ describe("sales dashboard fiscal multi-select filters", () => {
     expect(fiscalQuarter("2026-07-01")).toBe("Q2");
     expect(fiscalQuarter("2026-10-01")).toBe("Q3");
     expect(fiscalQuarter("2026-03-31")).toBe("Q4");
+    expect(fiscalYearForDate("2026-03-31")).toBe("2025");
+    expect(fiscalYearForDate("2026-04-01")).toBe("2026");
   });
 
   test("uses OR within years and quarters and AND between filters", () => {
@@ -124,16 +127,17 @@ describe("fiscal quarter summary tiles", () => {
 
   test("shows selected quarters only and compares sequential selections within one year", () => {
     const all = [
-      sale("2025", "2025-01-10", 80),
+      sale("2025", "2026-01-10", 80),
       sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-07-10", 120),
       sale("2026", "2026-10-10", 150),
     ];
     const active = applySdFilters(all, filters({ fiscalYears: ["2026"], quarters: ["Q1", "Q3"] }));
     const summaries = buildQuarterSummaries(active, all, ["2026"], ["Q1", "Q3"]);
 
     expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3"]);
-    expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25 });
-    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 100, changePct: 50 });
+    expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25, comparisonLabel: "vs Q4" });
+    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 120, changePct: 25, comparisonLabel: "vs Q2" });
   });
 
   test("compares matching quarters between the two latest selected fiscal years", () => {
@@ -156,7 +160,7 @@ describe("fiscal quarter summary tiles", () => {
     const zeroBaseline = buildQuarterSummaries(active, active, ["2026"], ["Q1"]);
 
     expect(noYear[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null, comparisonMode: "qoq" });
-    expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: 0, changePct: null });
+    expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null });
   });
 
   test("infers QoQ comparisons for This year when no fiscal year is selected", () => {
