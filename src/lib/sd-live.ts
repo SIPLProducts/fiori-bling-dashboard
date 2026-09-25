@@ -265,6 +265,10 @@ export type QuarterSummary = {
   baselineAmount: number | null;
   changePct: number | null;
   comparisonLabel: string;
+  varianceAmount: number | null;
+  periodLabel: string;
+  comparisonMode: "qoq" | "yoy";
+  trend: { label: string; value: number }[];
 };
 
 const FISCAL_QUARTER_ORDER = ["Q1", "Q2", "Q3", "Q4"] as const;
@@ -279,12 +283,64 @@ function quarterAmount(rows: SdLine[], fiscalYear: string | null, quarter: strin
   );
 }
 
+const QUARTER_MONTHS: Record<(typeof FISCAL_QUARTER_ORDER)[number], number[]> = {
+  Q1: [4, 5, 6],
+  Q2: [7, 8, 9],
+  Q3: [10, 11, 12],
+  Q4: [1, 2, 3],
+};
+
+const QUARTER_PERIODS: Record<(typeof FISCAL_QUARTER_ORDER)[number], string> = {
+  Q1: "Apr–Jun",
+  Q2: "Jul–Sep",
+  Q3: "Oct–Dec",
+  Q4: "Jan–Mar",
+};
+
+function dateYear(postingDate: string): number | null {
+  const year = Number(postingDate.slice(0, 4));
+  return Number.isFinite(year) && year > 0 ? year : null;
+}
+
+function dateRangeMonths(rows: SdLine[], from = "", to = ""): number {
+  const dates = rows.map((row) => row.postingDate).filter(Boolean).sort();
+  const start = new Date(from || dates[0] || "");
+  const end = new Date(to || dates.at(-1) || "");
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  return (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + end.getUTCMonth() - start.getUTCMonth() + 1;
+}
+
+function calendarQuarterAmount(rows: SdLine[], year: number, quarter: string): number | null {
+  const matching = rows.filter(
+    (row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter,
+  );
+  if (!matching.length) return null;
+  return matching.reduce(
+    (sum, row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter
+      ? sum + row.amount
+      : sum,
+    0,
+  );
+}
+
+function quarterTrend(rows: SdLine[], quarter: (typeof FISCAL_QUARTER_ORDER)[number]): { label: string; value: number }[] {
+  const months = QUARTER_MONTHS[quarter];
+  return months.map((month) => ({
+    label: String(month).padStart(2, "0"),
+    value: rows.reduce(
+      (sum, row) => Number(row.postingDate.slice(5, 7)) === month ? sum + row.amount : sum,
+      0,
+    ),
+  }));
+}
+
 /** Build visible fiscal-quarter totals and their requested QoQ/YoY baselines. */
 export function buildQuarterSummaries(
   activeRows: SdLine[],
   comparisonRows: SdLine[],
   fiscalYears: string[],
   selectedQuarters: string[],
+  dateRange: { from?: string; to?: string } = {},
 ): QuarterSummary[] {
   const visible = FISCAL_QUARTER_ORDER.filter(
     (quarter) => !selectedQuarters.length || selectedQuarters.includes(quarter),
@@ -292,9 +348,21 @@ export function buildQuarterSummaries(
   const years = [...new Set(fiscalYears)].sort((a, b) => a.localeCompare(b));
   const currentYear = years.at(-1) ?? null;
   const baselineYear = years.length > 1 ? years.at(-2) ?? null : null;
+  const comparisonMode: "qoq" | "yoy" = years.length > 1 || (!years.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
+    ? "yoy"
+    : "qoq";
+  const latestDateYear = Math.max(0, ...activeRows.map((row) => dateYear(row.postingDate) ?? 0));
 
   return visible.map((quarter, index) => {
-    const amount = quarterAmount(activeRows, years.length ? currentYear : null, quarter);
+    const matchingYears = activeRows
+      .filter((row) => fiscalQuarter(row.postingDate) === quarter)
+      .map((row) => dateYear(row.postingDate))
+      .filter((year): year is number => year != null);
+    const inferredYear = Math.max(0, ...matchingYears) || latestDateYear;
+    const currentRows = currentYear
+      ? activeRows.filter((row) => row.fiscalYear === currentYear && fiscalQuarter(row.postingDate) === quarter)
+      : activeRows.filter((row) => dateYear(row.postingDate) === inferredYear && fiscalQuarter(row.postingDate) === quarter);
+    const amount = currentRows.reduce((sum, row) => sum + row.amount, 0);
     let baselineAmount: number | null = null;
     let comparisonLabel = "No comparison";
 
@@ -317,17 +385,42 @@ export function buildQuarterSummaries(
           : null;
         comparisonLabel = previousQuarter ? `vs ${previousYear} ${previousQuarter}` : "No comparison";
       }
+    } else if (currentRows.length && comparisonMode === "yoy") {
+      baselineAmount = calendarQuarterAmount(comparisonRows, inferredYear - 1, quarter);
+      comparisonLabel = `vs ${inferredYear - 1} ${quarter}`;
+    } else if (currentRows.length) {
+      const priorSelected = visible[index - 1];
+      if (priorSelected) {
+        const priorYears = activeRows
+          .filter((row) => fiscalQuarter(row.postingDate) === priorSelected)
+          .map((row) => dateYear(row.postingDate))
+          .filter((year): year is number => year != null && year <= inferredYear);
+        const priorYear = Math.max(0, ...priorYears) || inferredYear;
+        baselineAmount = calendarQuarterAmount(activeRows, priorYear, priorSelected);
+        comparisonLabel = `vs ${priorSelected}`;
+      } else {
+        const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
+        const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
+        const previousYear = quarter === "Q4" ? inferredYear - 1 : inferredYear;
+        baselineAmount = previousQuarter
+          ? calendarQuarterAmount(comparisonRows, previousYear, previousQuarter)
+          : null;
+        comparisonLabel = previousQuarter ? `vs ${previousYear} ${previousQuarter}` : "No comparison";
+      }
     }
+
+    const validBaselineAmount = baselineAmount != null && baselineAmount !== 0 ? baselineAmount : null;
 
     return {
       quarter,
       amount,
       baselineAmount,
-      changePct:
-        baselineAmount != null && baselineAmount !== 0
-          ? ((amount - baselineAmount) / Math.abs(baselineAmount)) * 100
-          : null,
+      changePct: validBaselineAmount != null ? ((amount - validBaselineAmount) / Math.abs(validBaselineAmount)) * 100 : null,
       comparisonLabel,
+      varianceAmount: validBaselineAmount != null ? amount - validBaselineAmount : null,
+      periodLabel: QUARTER_PERIODS[quarter],
+      comparisonMode,
+      trend: quarterTrend(currentRows, quarter),
     };
   });
 }

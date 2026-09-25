@@ -30,7 +30,8 @@ import {
   ChevronRight,
   ChevronDown,
   CalendarDays,
-
+  Zap,
+  BarChart3,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -424,36 +425,114 @@ function KpiCard({
 function QuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number }) {
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
-  const baselineHeight = 12;
-  const currentHeight = summary.baselineAmount && summary.baselineAmount !== 0
-    ? Math.max(5, Math.min(24, baselineHeight * Math.abs(summary.amount / summary.baselineAmount)))
-    : baselineHeight;
+  const chartData = summary.trend.map((point) => ({ ...point, value: point.value / 1e7 }));
   return (
     <section
-      className="relative min-w-0 overflow-hidden rounded-xl border border-border bg-card p-3 shadow-tile"
-      style={{ background: `linear-gradient(145deg, color-mix(in oklab, ${color} 7%, var(--color-card)) 0%, var(--color-card) 72%)` }}
+      className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 shadow-tile"
     >
-      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-muted-foreground">Quarter {summary.quarter.slice(1)}</p>
-          <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{INRC(summary.amount)}</p>
-        </div>
-        <div className="flex h-8 shrink-0 items-end gap-1" aria-hidden="true">
-          <span className="w-2 rounded-t-sm bg-muted-foreground/30" style={{ height: baselineHeight }} />
-          <span className="w-2 rounded-t-sm" style={{ height: currentHeight, background: direction === "down" ? "var(--kpi-down)" : direction === "up" ? "var(--kpi-up)" : color }} />
-        </div>
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5" style={{ background: color }} />
+      <div className="flex items-center gap-2 pt-1">
+        <span className="size-2 shrink-0 rounded-full" style={{ background: color }} />
+        <p className="truncate text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Quarter {summary.quarter.slice(1)}</p>
+        <BarChart3 className="ml-auto size-4 shrink-0" style={{ color }} />
       </div>
-      <p className="mt-1 flex min-w-0 items-center gap-1 text-[11px]">
+      <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{INRC(summary.amount)}</p>
+      <p className="mt-1.5 flex min-w-0 items-center gap-1 text-[11px]">
         <span
-          className="tabular shrink-0 font-semibold"
+          className="tabular shrink-0 rounded-full px-2 py-0.5 font-semibold"
           style={{ color: direction === "up" ? "var(--kpi-up)" : direction === "down" ? "var(--kpi-down)" : "var(--color-muted-foreground)" }}
         >
           {direction === "up" ? "↑" : direction === "down" ? "↓" : "—"}{summary.changePct == null ? "" : ` ${Math.abs(summary.changePct).toFixed(1)}%`}
         </span>
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] text-muted-foreground">
+        <span>{summary.periodLabel}</span>
+        {summary.varianceAmount != null ? (
+          <span className="tabular font-medium" style={{ color: direction === "up" ? "var(--kpi-up)" : "var(--kpi-down)" }}>
+            {summary.varianceAmount >= 0 ? "+" : "−"}{CRORES(Math.abs(summary.varianceAmount))}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-1 h-12 overflow-hidden rounded-md bg-muted/40">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 7, right: 5, bottom: 2, left: 5 }}>
+            <Area type="monotone" dataKey="value" stroke={color} fill={color} fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </section>
+  );
+}
+
+function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSummary[]; onDownload: () => void; busy: boolean }) {
+  const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
+  const comparable = summaries.filter((item) => item.varianceAmount != null);
+  const strongest = [...summaries].sort((a, b) => b.amount - a.amount)[0];
+  const best = [...comparable].sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))[0];
+  const weakest = [...comparable].sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))[0];
+  const averageVariance = comparable.length
+    ? comparable.reduce((sum, item) => sum + (item.varianceAmount ?? 0), 0) / comparable.length
+    : null;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <section className="rounded-lg border border-border bg-card p-4 shadow-tile">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-border pb-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold text-card-foreground">Quarterly Trajectory &amp; Up/Down Variance Analysis</h3>
+            <p className="text-xs text-muted-foreground">Actual sales against the automatic comparison baseline</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-primary" />Actual</span>
+            <span className="inline-flex items-center gap-1"><span className="h-0 w-3 border-t border-dashed border-muted-foreground" />Baseline</span>
+          </div>
+        </div>
+        <div className="mt-4 space-y-4">
+          {summaries.map((item, index) => {
+            const color = KPI_TONES[(index + 1) % KPI_TONES.length];
+            const actualWidth = Math.max(item.amount ? 3 : 0, Math.min(100, (Math.abs(item.amount) / max) * 100));
+            const baselineWidth = item.baselineAmount == null ? null : Math.min(100, (Math.abs(item.baselineAmount) / max) * 100);
+            return (
+              <div key={item.quarter} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)_8rem] sm:items-center">
+                <div>
+                  <p className="text-xs font-semibold text-card-foreground">Quarter {item.quarter.slice(1)}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.periodLabel}</p>
+                </div>
+                <div className="relative h-6 overflow-hidden rounded-md bg-muted">
+                  <span className="absolute inset-y-0 left-0 rounded-md" style={{ width: `${actualWidth}%`, background: color }} />
+                  <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-primary-foreground">{CRORES(item.amount)}</span>
+                  {baselineWidth != null ? <span className="absolute inset-y-0 border-l-2 border-dashed border-foreground/60" style={{ left: `${baselineWidth}%` }} /> : null}
+                </div>
+                <div className="text-right text-xs font-semibold" style={{ color: item.varianceAmount == null ? "var(--color-muted-foreground)" : item.varianceAmount >= 0 ? "var(--kpi-up)" : "var(--kpi-down)" }}>
+                  {item.varianceAmount == null ? "No baseline" : `${item.varianceAmount >= 0 ? "↑ +" : "↓ −"}${CRORES(Math.abs(item.varianceAmount))}`}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
+          <span>{comparable.filter((item) => (item.varianceAmount ?? 0) > 0).length} quarters increased</span>
+          {averageVariance != null ? <span>Average variance: <strong className="text-foreground">{averageVariance >= 0 ? "+" : "−"}{CRORES(Math.abs(averageVariance))}</strong></span> : null}
+        </div>
+      </section>
+      <section className="flex flex-col rounded-lg border border-border bg-card p-4 shadow-tile">
+        <div className="flex items-center gap-2 border-b border-border pb-3">
+          <Zap className="size-4 text-warning" />
+          <h3 className="text-sm font-semibold text-card-foreground">Executive Insights</h3>
+          <Badge variant="secondary" className="ml-auto text-[10px]">Live filters</Badge>
+        </div>
+        <div className="mt-3 flex-1 space-y-2.5">
+          {strongest ? <div className="rounded-md border border-warning/30 bg-warning/5 p-3"><p className="text-xs font-semibold">Peak in {strongest.quarter} ({CRORES(strongest.amount)})</p><p className="mt-1 text-[11px] text-muted-foreground">Highest sales quarter in the current filtered period.</p></div> : null}
+          {best ? <div className="rounded-md border border-success/30 bg-success/5 p-3"><p className="text-xs font-semibold">Strongest improvement · {best.quarter}</p><p className="mt-1 text-[11px] text-muted-foreground">{Math.abs(best.changePct ?? 0).toFixed(1)}% {best.changePct != null && best.changePct >= 0 ? "above" : "below"} {best.comparisonLabel.replace("vs ", "")}.</p></div> : null}
+          {weakest && weakest !== best ? <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs font-semibold">Largest decline · {weakest.quarter}</p><p className="mt-1 text-[11px] text-muted-foreground">{Math.abs(weakest.changePct ?? 0).toFixed(1)}% below {weakest.comparisonLabel.replace("vs ", "")}.</p></div> : null}
+          {!comparable.length ? <p className="py-6 text-center text-xs text-muted-foreground">Comparison history is not available for this selection.</p> : null}
+        </div>
+        <Button className="mt-4 w-full" onClick={onDownload} disabled={busy}>
+          <BarChart3 className="mr-2 size-4" /> {busy ? "Preparing…" : "Generate Detailed Variance Report"}
+        </Button>
+      </section>
+    </div>
   );
 }
 
@@ -1807,8 +1886,8 @@ export function SdLiveDashboard() {
     [typeFiltered, filters],
   );
   const quarterSummaries = useMemo(
-    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters),
-    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters],
+    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, { from: filters.from, to: filters.to }),
+    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, filters.from, filters.to],
   );
 
   const opts = useMemo(
@@ -1883,6 +1962,23 @@ export function SdLiveDashboard() {
       }),
       "sd-sales-lines.csv",
     );
+
+  const downloadDashboardPdf = async () => {
+    setPdfBusy(true);
+    setPdfExportAllModels(true);
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
+      toast.success("Dashboard PDF downloaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
+    } finally {
+      setPdfExportAllModels(false);
+      setPdfBusy(false);
+    }
+  };
 
   // grouped rows behind the clickable KPI tiles
   const focusRows: FocusRow[] = useMemo(() => {
@@ -1995,22 +2091,7 @@ export function SdLiveDashboard() {
             size="sm"
             className="h-9"
             disabled={pdfBusy || !all.length}
-            onClick={async () => {
-              setPdfBusy(true);
-              setPdfExportAllModels(true);
-              try {
-                await new Promise<void>((resolve) => {
-                  requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-                });
-                await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
-                toast.success("Dashboard PDF downloaded");
-              } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
-              } finally {
-                setPdfExportAllModels(false);
-                setPdfBusy(false);
-              }
-            }}
+            onClick={downloadDashboardPdf}
           >
             <Download className="mr-1 size-4" /> {pdfBusy ? "Preparing…" : "PDF"}
           </Button>
@@ -2288,6 +2369,8 @@ export function SdLiveDashboard() {
               ))}
             </div>
           </div>
+
+          <QuarterAnalysis summaries={quarterSummaries} onDownload={downloadDashboardPdf} busy={pdfBusy} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
