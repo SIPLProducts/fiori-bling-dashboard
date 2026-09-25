@@ -582,7 +582,12 @@ export type SdAnalytics = {
     contributionPct: number;
     cumulativePct: number;
   }[];
-  alerts: { tone: "up" | "down" | "warn"; text: string }[];
+  alerts: {
+    tone: "up" | "down" | "warn";
+    title: string;
+    text: string;
+    basis: string;
+  }[];
   mixByType: NamedTotal[];
   byNewRepl: NamedTotal[];
   unassignedNewReplCount: number;
@@ -805,32 +810,42 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
 
   // Management alerts derived from the current selection.
   const segList = rank(bySeg);
-  const alerts: { tone: "up" | "down" | "warn"; text: string }[] = [];
+  const alerts: SdAnalytics["alerts"] = [];
   const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   if (momPct != null)
     alerts.push({
       tone: momPct >= 0 ? "up" : "down",
+      title: "Sales momentum",
       text: `Sales ${momPct >= 0 ? "grew" : "declined"} ${pct(momPct)} in ${last?.month} ${cmpLabel}.`,
+      basis: "Latest comparable sales months",
     });
   if (custTotal)
     alerts.push({
       tone: "warn",
+      title: "Customer concentration",
       text: `Top 5 customers contribute ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
+      basis: "All customers in the current selection",
     });
   if (segList[0])
     alerts.push({
       tone: "up",
+      title: "Leading segment",
       text: `${segList[0].name} is the largest segment at ${((segList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
+      basis: "Sales amount grouped by business segment",
     });
   if (pcList[0])
     alerts.push({
       tone: "up",
+      title: "Top profit centre",
       text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)} Cr.`,
+      basis: "Sales amount grouped by profit centre",
     });
   if (deltas.revenuePerAh.pct != null)
     alerts.push({
       tone: deltas.revenuePerAh.pct >= 0 ? "up" : "down",
+      title: "Revenue per AH",
       text: `Revenue per AH ${deltas.revenuePerAh.pct >= 0 ? "improved" : "dropped"} ${pct(deltas.revenuePerAh.pct)} ${cmpLabel}.`,
+      basis: "Sales divided by Total AH for comparable months",
     });
 
   return {

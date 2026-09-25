@@ -504,6 +504,27 @@ describe("Sales by Model amount and per-AH analytics", () => {
   });
 });
 
+describe("dynamic management alerts", () => {
+  test("derives labelled alert points from the filtered sales rows", () => {
+    const rows = [
+      { ...row("2026", "2026-07-10"), month: "JUL-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", pcShortName: "PC-A", totalAh: 100, amount: 100 },
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", pcShortName: "PC-A", totalAh: 100, amount: 150 },
+    ];
+
+    const alerts = buildSdAnalytics(rows).alerts;
+
+    expect(alerts.map((alert) => alert.title)).toEqual([
+      "Sales momentum",
+      "Customer concentration",
+      "Leading segment",
+      "Top profit centre",
+      "Revenue per AH",
+    ]);
+    expect(alerts.every((alert) => alert.basis.length > 0)).toBe(true);
+    expect(alerts[0]?.text).toContain("+50.0%");
+  });
+});
+
 describe("dynamic PC Short Name colors", () => {
   test("keeps colors stable and distinct beyond the former ten-color limit", () => {
     const names = Array.from({ length: 24 }, (_, index) => `DIVISION-${index + 1}`);
