@@ -22,7 +22,9 @@
 - Outside-range quarter tiles will show **“Outside selected range”**, an amount placeholder `—`, no arrow, no percentage, no variance, and no misleading zero-value sparkline.
 - Partial quarter tiles will retain the **Active** badge, add the exact **“Partial (Through DD Mon)”** sub-label, and identify that the percentage uses the same elapsed duration in the baseline quarter.
 - Complete quarters continue showing their amount, trend, percentage, and variance normally.
-- Exclude outside-range quarters from trajectory bars, increase/decline counts, average variance, strongest/weakest comparison insights, and active-quarter selection.
+- Apply the corrected states to **Quarterly Trajectory & Up/Down Variance Analysis**: outside-range quarters show a neutral placeholder row, while partial quarters use the same-elapsed-days baseline and display that scope clearly.
+- Apply the corrected states to **Executive Insights**: exclude outside-range quarters from strongest/weakest results, decline callouts, increase counts, and average variance; describe partial-quarter insights as same-elapsed-days comparisons.
+- Exclude outside-range quarters from active-quarter selection.
 - Keep the PDF consistent with the corrected on-screen states.
 
 ## Technical details
