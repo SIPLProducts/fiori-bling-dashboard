@@ -446,6 +446,7 @@ function KpiCard({
 }
 
 function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
+  const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
   const chartData = summary.trend.map((point) => ({ ...point, value: point.value / 1e7 }));
@@ -467,31 +468,32 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
         {active ? <Badge className="ml-auto px-1.5 py-0 text-[9px]">Active</Badge> : null}
         <BarChart3 className={`${active ? "" : "ml-auto"} size-4 shrink-0`} style={{ color }} />
       </div>
-      <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{INRC(summary.amount)}</p>
+      <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{outside ? "—" : INRC(summary.amount)}</p>
+      {summary.statusLabel ? <p className="mt-1 truncate text-[10px] font-medium text-muted-foreground">{summary.statusLabel}</p> : null}
       <p className="mt-1.5 flex min-w-0 items-center gap-1 text-[11px]">
         <span
           className="tabular shrink-0 rounded-full px-2 py-0.5 font-semibold"
           style={{ color: direction === "up" ? "var(--kpi-up)" : direction === "down" ? "var(--kpi-down)" : "var(--color-muted-foreground)" }}
         >
-          {direction === "up" ? "↑" : direction === "down" ? "↓" : "—"}{summary.changePct == null ? "" : ` ${Math.abs(summary.changePct).toFixed(1)}%`}
+          {outside ? "—" : direction === "up" ? "↑" : direction === "down" ? "↓" : "—"}{summary.changePct == null ? "" : ` ${Math.abs(summary.changePct).toFixed(1)}%`}
         </span>
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
       <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] text-muted-foreground">
         <span>{summary.periodLabel}</span>
-        {summary.varianceAmount != null ? (
+        {!outside && summary.varianceAmount != null ? (
           <span className="tabular font-medium" style={{ color: direction === "up" ? "var(--kpi-up)" : "var(--kpi-down)" }}>
             {summary.varianceAmount >= 0 ? "+" : "−"}{CRORES(Math.abs(summary.varianceAmount))}
           </span>
         ) : null}
       </div>
-      <div className="mt-1 h-12 overflow-hidden rounded-md bg-muted/40">
+      {!outside ? <div className="mt-1 h-12 overflow-hidden rounded-md bg-muted/40">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 7, right: 5, bottom: 2, left: 5 }}>
             <Area type="monotone" dataKey="value" stroke={color} fill={color} fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
-      </div>
+      </div> : <div className="mt-1 grid h-12 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
     </section>
   );
 }
@@ -524,7 +526,6 @@ function buildSalesBreakdown(items: NamedTotal[]): { named: SalesBreakdown[]; ot
 function TotalSalesCard({
   amount,
   postingCount,
-  fiscalYear,
   breakdown,
   target,
   onClick,
@@ -532,7 +533,6 @@ function TotalSalesCard({
 }: {
   amount: number;
   postingCount: number;
-  fiscalYear: string;
   breakdown: { named: SalesBreakdown[]; other: number };
   target: number | null;
   onClick: () => void;
@@ -552,7 +552,7 @@ function TotalSalesCard({
     >
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-primary" />
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Sales · {fiscalYearLabel(fiscalYear)}</p>
+        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Sales</p>
         <span className="grid size-7 place-items-center rounded-md bg-primary/10 text-primary"><IndianRupee className="size-3.5" /></span>
       </div>
       <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{INR_CRORES(amount)}</p>
@@ -573,15 +573,15 @@ function TotalSalesCard({
         </div>
         {breakdown.other !== 0 ? <p className="mt-1 text-[10px] text-muted-foreground">Other sales types: {CRORES(breakdown.other)} ({share(breakdown.other).toFixed(1)}%)</p> : null}
       </div>
-      <div className="mt-3 border-t border-border pt-2.5">
+      {target ? <div className="mt-3 border-t border-border pt-2.5">
         <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
-          <span>{target ? `Revenue target: ${INRC(target)}` : "Target not configured"}</span>
+          <span>Revenue target: {INRC(target)}</span>
           {achievement != null ? <strong className="tabular text-foreground">{achievement.toFixed(1)}%</strong> : null}
         </div>
         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
           <span className="block h-full rounded-full bg-success" style={{ width: `${Math.min(100, Math.max(0, achievement ?? 0))}%` }} />
         </div>
-      </div>
+      </div> : null}
       <p className="mt-2 text-[10px] text-muted-foreground">Filtered postings <span className="tabular float-right font-semibold text-primary">{NUM(postingCount)} lines</span></p>
     </section>
   );
@@ -656,8 +656,9 @@ function RevenueTargetDialog({
 
 function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSummary[]; onDownload: () => void; busy: boolean }) {
   const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
-  const comparable = summaries.filter((item) => item.varianceAmount != null);
-  const strongest = [...summaries].sort((a, b) => b.amount - a.amount)[0];
+  const eligible = summaries.filter((item) => item.status !== "outside" && item.recordCount > 0);
+  const comparable = eligible.filter((item) => item.varianceAmount != null);
+  const strongest = [...eligible].sort((a, b) => b.amount - a.amount)[0];
   const best = [...comparable].sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))[0];
   const weakest = [...comparable].sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))[0];
   const averageVariance = comparable.length
@@ -680,21 +681,22 @@ function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSu
         <div className="mt-4 space-y-4">
           {summaries.map((item, index) => {
             const color = KPI_TONES[(index + 1) % KPI_TONES.length];
-            const actualWidth = Math.max(item.amount ? 3 : 0, Math.min(100, (Math.abs(item.amount) / max) * 100));
+            const outside = item.status === "outside";
+            const actualWidth = outside ? 0 : Math.max(item.amount ? 3 : 0, Math.min(100, (Math.abs(item.amount) / max) * 100));
             const baselineWidth = item.baselineAmount == null ? null : Math.min(100, (Math.abs(item.baselineAmount) / max) * 100);
             return (
               <div key={item.quarter} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)_8rem] sm:items-center">
                 <div>
                   <p className="text-xs font-semibold text-card-foreground">Quarter {item.quarter.slice(1)}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.periodLabel}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.statusLabel || item.periodLabel}</p>
                 </div>
                 <div className="relative h-6 overflow-hidden rounded-md bg-muted">
                   <span className="absolute inset-y-0 left-0 rounded-md" style={{ width: `${actualWidth}%`, background: color }} />
-                  <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-primary-foreground">{CRORES(item.amount)}</span>
-                  {baselineWidth != null ? <span className="absolute inset-y-0 border-l-2 border-dashed border-foreground/60" style={{ left: `${baselineWidth}%` }} /> : null}
+                  <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-primary-foreground">{outside ? "—" : CRORES(item.amount)}</span>
+                  {!outside && baselineWidth != null ? <span className="absolute inset-y-0 border-l-2 border-dashed border-foreground/60" style={{ left: `${baselineWidth}%` }} /> : null}
                 </div>
                 <div className="text-right text-xs font-semibold" style={{ color: item.varianceAmount == null ? "var(--color-muted-foreground)" : item.varianceAmount >= 0 ? "var(--kpi-up)" : "var(--kpi-down)" }}>
-                  {item.varianceAmount == null ? "No baseline" : `${item.varianceAmount >= 0 ? "↑ +" : "↓ −"}${CRORES(Math.abs(item.varianceAmount))}`}
+                   {outside ? "Outside range" : item.varianceAmount == null ? "No baseline" : `${item.varianceAmount >= 0 ? "↑ +" : "↓ −"}${CRORES(Math.abs(item.varianceAmount))}`}
                 </div>
               </div>
             );
@@ -2217,7 +2219,7 @@ export function SdLiveDashboard() {
     : quarterSummaries[0]?.fiscalYear ?? "";
   const revenueTarget = revenueTargets.find((target) => target.fiscalYear === selectedFiscalYear)?.targetAmount ?? null;
   const salesBreakdown = buildSalesBreakdown(analytics.mixByType);
-  const latestQuarterWithSales = [...quarterSummaries].reverse().find((summary) => summary.recordCount > 0)?.quarter ?? null;
+  const latestQuarterWithSales = [...quarterSummaries].reverse().find((summary) => summary.status !== "outside" && summary.recordCount > 0)?.quarter ?? null;
 
   const pcColors = buildPcColors(filtered);
   const pcLabel = (key: string) => {
@@ -2562,7 +2564,6 @@ export function SdLiveDashboard() {
             <TotalSalesCard
               amount={totalRevenue}
               postingCount={filtered.length}
-              fiscalYear={selectedFiscalYear}
               breakdown={salesBreakdown}
               target={revenueTarget}
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}

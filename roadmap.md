@@ -58,3 +58,4 @@
 - [x] Refine Sales Dashboard titles and units, add filter-aware fiscal quarter comparison tiles, and clarify Main Group drill-down navigation
 - [x] Add date-aware QoQ/YoY quarter comparisons, sparklines, variance analysis, and live executive insights
 - [x] Align Sales tiles to April–March fiscal years, sequential quarter baselines, sales-type breakdowns, and admin-managed revenue targets
+- [x] Correct future and partial quarter states across tiles, trajectory analysis, and executive insights
