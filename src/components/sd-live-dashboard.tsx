@@ -308,8 +308,8 @@ function latestYearMonths(monthly: MonthRow[]) {
     .map((r) => ({ label: shortMonth(r.p.idx), revenue: r.revenue, quantity: r.quantity }));
 }
 
-/** Human label for the complete posting-date range loaded from ZFISALES. */
-function availableDataLabel(rows: SdLine[]) {
+/** Human date range for the complete posting data loaded from ZFISALES. */
+function availableDataRange(rows: SdLine[]) {
   const fmt = (iso: string) => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime())
@@ -319,7 +319,7 @@ function availableDataLabel(rows: SdLine[]) {
   const dates = rows.map((row) => row.postingDate).filter(Boolean).sort();
   const first = dates[0];
   const last = dates.at(-1);
-  return first && last ? `Data available: ${fmt(first)} - ${fmt(last)}` : "Data available: —";
+  return first && last ? `${fmt(first)} - ${fmt(last)}` : "—";
 }
 
 
@@ -2206,8 +2206,9 @@ export function SdLiveDashboard() {
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
         <div className="flex max-w-full flex-wrap items-center gap-2">
-          <span className="hidden h-9 items-center rounded-md border border-border bg-card px-3 text-sm text-card-foreground shadow-tile sm:inline-flex">
-            {availableDataLabel(all)}
+          <span className="hidden h-9 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 text-sm text-primary shadow-tile sm:inline-flex">
+            <span className="font-medium">Data available:</span>
+            <span className="font-semibold">{availableDataRange(all)}</span>
           </span>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
@@ -2501,7 +2502,7 @@ export function SdLiveDashboard() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
-            <Panel title="Sales by Main Group (Amount)" accent={5} expandable>
+            <Panel title="Sales by Main Group" accent={5} expandable>
               {(full: boolean) => (
                 <MainGroupTreemap
                   items={analytics.byMainGroup}
@@ -2562,7 +2563,7 @@ export function SdLiveDashboard() {
             </Panel>
 
             <Panel
-              title="Sales Trend (Amount)"
+              title="Sales Trend"
               accent={1}
               expandable
               actions={

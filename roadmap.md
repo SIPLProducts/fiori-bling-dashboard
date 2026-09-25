@@ -65,3 +65,4 @@
 - [x] Prevent the Quality Sales report crash by removing its unused Revenue Target request; retain the existing migration
 - [x] Remove the detailed variance report action and refine Smart Filters with restrained enterprise color
 - [x] Remove the currency and Crores suffix from Top 10 Customers values while retaining crore scaling
+- [x] Highlight the dynamic ZFISALES data range and simplify the Main Group and Sales Trend titles
