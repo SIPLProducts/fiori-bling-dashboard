@@ -64,8 +64,10 @@ import {
   buildSdAnalytics,
   buildQuarterSummaries,
   currentFiscalYear,
+  localIsoDate,
   emptySdFilters,
   fetchSdLines,
+  fiscalQuarter,
   fiscalYearForDate,
   limitModelPerformance,
   uniqueValues,
@@ -2078,15 +2080,22 @@ export function SdLiveDashboard() {
     const target = salesTypeTab === "Services" ? "service" : salesTypeTab.toLowerCase();
     return all.filter((r) => (r.salesType || "").trim().toLowerCase() === target);
   }, [all, salesTypeTab]);
-  const filtered = useMemo(() => applySdFilters(typeFiltered, filters), [typeFiltered, filters]);
+  const today = localIsoDate();
+  // SAP can contain future-dated postings. Unless the user explicitly asks for
+  // a later end date, keep every dashboard metric within today's business date.
+  const effectiveFilters = useMemo(
+    () => ({ ...filters, to: filters.to || today }),
+    [filters, today],
+  );
+  const filtered = useMemo(() => applySdFilters(typeFiltered, effectiveFilters), [typeFiltered, effectiveFilters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
   const quarterComparisonRows = useMemo(
     () => applySdFilters(typeFiltered, { ...filters, from: "", to: "", fiscalYears: [], quarters: [] }),
     [typeFiltered, filters],
   );
   const quarterSummaries = useMemo(
-    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, { from: filters.from, to: filters.to }),
-    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, filters.from, filters.to],
+    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, { from: filters.from, to: effectiveFilters.to }),
+    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, filters.from, effectiveFilters.to],
   );
 
   const opts = useMemo(
@@ -2219,7 +2228,13 @@ export function SdLiveDashboard() {
     : quarterSummaries[0]?.fiscalYear ?? "";
   const revenueTarget = revenueTargets.find((target) => target.fiscalYear === selectedFiscalYear)?.targetAmount ?? null;
   const salesBreakdown = buildSalesBreakdown(analytics.mixByType);
-  const latestQuarterWithSales = [...quarterSummaries].reverse().find((summary) => summary.status !== "outside" && summary.recordCount > 0)?.quarter ?? null;
+  const activeDate = filters.to || today;
+  const activeFiscalYear = fiscalYearForDate(activeDate);
+  const activeQuarter = quarterSummaries.some(
+    (summary) => summary.fiscalYear === activeFiscalYear && summary.quarter === fiscalQuarter(activeDate) && summary.status !== "outside",
+  )
+    ? fiscalQuarter(activeDate)
+    : null;
 
   const pcColors = buildPcColors(filtered);
   const pcLabel = (key: string) => {
@@ -2582,7 +2597,7 @@ export function SdLiveDashboard() {
               }`}
             >
               {quarterSummaries.map((summary, index) => (
-                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === latestQuarterWithSales} />
+                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarter} />
               ))}
             </div>
           </div>
