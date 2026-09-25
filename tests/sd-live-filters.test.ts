@@ -199,7 +199,7 @@ describe("fiscal quarter summary tiles", () => {
       sale("2026", "2026-04-10", 75),
     ];
     const active = applySdFilters(history, filters({ from: "2025-04-01", to: "2026-04-30" }));
-    const summary = buildQuarterSummaries(active, history, [], ["Q1"], {
+    const summary = buildQuarterSummaries(active, history, ["2025", "2026"], ["Q1"], {
       from: "2025-04-01",
       to: "2026-04-30",
     })[0];
