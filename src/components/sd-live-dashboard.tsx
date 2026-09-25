@@ -2545,7 +2545,20 @@ export function SdLiveDashboard() {
           {/* Row 2 — customers, sales trend, top profit centres */}
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Top 10 Customers" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
+              {(full: boolean) => (
+                <BarList
+                  items={analytics.topCustomers}
+                  tone={1}
+                  full={full}
+                  onSelect={(customer) => openDrilldown({ customer })}
+                  valueFormatter={(value) =>
+                    (value / 1e7).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  }
+                />
+              )}
             </Panel>
 
             <Panel
