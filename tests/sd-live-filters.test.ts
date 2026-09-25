@@ -129,6 +129,7 @@ describe("fiscal quarter summary tiles", () => {
     const all = [
       sale("2025", "2026-01-10", 80),
       sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-07-10", 120),
       sale("2026", "2026-10-10", 150),
     ];
     const active = applySdFilters(all, filters({ fiscalYears: ["2026"], quarters: ["Q1", "Q3"] }));
@@ -136,7 +137,7 @@ describe("fiscal quarter summary tiles", () => {
 
     expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3"]);
     expect(summaries[0]).toMatchObject({ amount: 100, baselineAmount: 80, changePct: 25, comparisonLabel: "vs Q4" });
-    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: null, changePct: null, comparisonLabel: "Starting baseline" });
+    expect(summaries[1]).toMatchObject({ amount: 150, baselineAmount: 120, changePct: 25, comparisonLabel: "vs Q2" });
   });
 
   test("compares matching quarters between the two latest selected fiscal years", () => {
