@@ -2038,6 +2038,8 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fetchTargets = useServerFn(listSalesRevenueTargets);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -2051,6 +2053,13 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
+  const [targetDialogOpen, setTargetDialogOpen] = useState(false);
+
+  const { data: launchpad } = useLaunchpad();
+  const { data: revenueTargets = [] } = useQuery({
+    queryKey: ["sales-revenue-targets"],
+    queryFn: () => fetchTargets(),
+  });
 
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -2085,7 +2094,7 @@ export function SdLiveDashboard() {
       profitCentres: uniqueValues(all, (r) => r.pcShortName),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
-      fiscalYears: uniqueValues(all, (r) => r.fiscalYear).sort((a, b) => b.localeCompare(a)),
+      fiscalYears: uniqueValues(all, (r) => fiscalYearForDate(r.postingDate)).sort((a, b) => b.localeCompare(a)),
     }),
     [all],
   );
@@ -2204,6 +2213,12 @@ export function SdLiveDashboard() {
   }
 
   const totalRevenue = analytics.kpis.revenue;
+  const selectedFiscalYear = filters.fiscalYears.length === 1
+    ? filters.fiscalYears[0] ?? ""
+    : quarterSummaries[0]?.fiscalYear ?? "";
+  const revenueTarget = revenueTargets.find((target) => target.fiscalYear === selectedFiscalYear)?.targetAmount ?? null;
+  const salesBreakdown = buildSalesBreakdown(analytics.mixByType);
+  const latestQuarterWithSales = [...quarterSummaries].reverse().find((summary) => summary.recordCount > 0)?.quarter ?? null;
 
   const pcColors = buildPcColors(filtered);
   const pcLabel = (key: string) => {
@@ -2275,6 +2290,11 @@ export function SdLiveDashboard() {
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
           </Button>
+          {launchpad?.isSuperAdmin ? (
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setTargetDialogOpen(true)}>
+              <Target className="mr-1 size-4" /> Revenue Targets
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="sm"
@@ -2286,6 +2306,15 @@ export function SdLiveDashboard() {
           </Button>
         </div>
       </div>
+
+      {launchpad?.isSuperAdmin ? (
+        <RevenueTargetDialog
+          open={targetDialogOpen}
+          onOpenChange={setTargetDialogOpen}
+          fiscalYears={opts.fiscalYears}
+          targets={revenueTargets}
+        />
+      ) : null}
 
       {/* smart filter bar */}
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">
@@ -2531,13 +2560,12 @@ export function SdLiveDashboard() {
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
-            <KpiCard
-              label="Total Sales"
-              value={INRC(totalRevenue)}
-              tone={0}
-              icon={IndianRupee}
-              delta={analytics.deltas.revenue}
-              caption="Filtered postings · click for details"
+            <TotalSalesCard
+              amount={totalRevenue}
+              postingCount={filtered.length}
+              fiscalYear={selectedFiscalYear}
+              breakdown={salesBreakdown}
+              target={revenueTarget}
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
             />
@@ -2554,7 +2582,7 @@ export function SdLiveDashboard() {
               }`}
             >
               {quarterSummaries.map((summary, index) => (
-                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} />
+                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === latestQuarterWithSales} />
               ))}
             </div>
           </div>
