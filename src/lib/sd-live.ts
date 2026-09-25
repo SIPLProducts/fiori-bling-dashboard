@@ -259,6 +259,19 @@ export function fiscalQuarter(postingDate: string): string {
   return "";
 }
 
+/** SAP fiscal-year key: 2026 means 1 Apr 2026 through 31 Mar 2027. */
+export function fiscalYearForDate(postingDate: string): string {
+  const year = Number(postingDate.slice(0, 4));
+  const month = Number(postingDate.slice(5, 7));
+  if (!Number.isFinite(year) || month < 1 || month > 12) return "";
+  return String(month >= 4 ? year : year - 1);
+}
+
+export function currentFiscalYear(date = new Date()): string {
+  const month = date.getMonth() + 1;
+  return String(month >= 4 ? date.getFullYear() : date.getFullYear() - 1);
+}
+
 export type QuarterSummary = {
   quarter: "Q1" | "Q2" | "Q3" | "Q4";
   amount: number;
@@ -273,14 +286,15 @@ export type QuarterSummary = {
 
 const FISCAL_QUARTER_ORDER = ["Q1", "Q2", "Q3", "Q4"] as const;
 
-function quarterAmount(rows: SdLine[], fiscalYear: string | null, quarter: string): number {
-  return rows.reduce(
-    (sum, row) =>
-      (!fiscalYear || row.fiscalYear === fiscalYear) && fiscalQuarter(row.postingDate) === quarter
-        ? sum + row.amount
-        : sum,
-    0,
+function quarterRows(rows: SdLine[], fiscalYear: string, quarter: string): SdLine[] {
+  return rows.filter(
+    (row) => fiscalYearForDate(row.postingDate) === fiscalYear && fiscalQuarter(row.postingDate) === quarter,
   );
+}
+
+function quarterAmount(rows: SdLine[], fiscalYear: string, quarter: string): number | null {
+  const matching = quarterRows(rows, fiscalYear, quarter);
+  return matching.length ? matching.reduce((sum, row) => sum + row.amount, 0) : null;
 }
 
 const QUARTER_MONTHS: Record<(typeof FISCAL_QUARTER_ORDER)[number], number[]> = {
@@ -297,30 +311,12 @@ const QUARTER_PERIODS: Record<(typeof FISCAL_QUARTER_ORDER)[number], string> = {
   Q4: "Jan–Mar",
 };
 
-function dateYear(postingDate: string): number | null {
-  const year = Number(postingDate.slice(0, 4));
-  return Number.isFinite(year) && year > 0 ? year : null;
-}
-
 function dateRangeMonths(rows: SdLine[], from = "", to = ""): number {
   const dates = rows.map((row) => row.postingDate).filter(Boolean).sort();
   const start = new Date(from || dates[0] || "");
   const end = new Date(to || dates.at(-1) || "");
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
   return (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + end.getUTCMonth() - start.getUTCMonth() + 1;
-}
-
-function calendarQuarterAmount(rows: SdLine[], year: number, quarter: string): number | null {
-  const matching = rows.filter(
-    (row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter,
-  );
-  if (!matching.length) return null;
-  return matching.reduce(
-    (sum, row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter
-      ? sum + row.amount
-      : sum,
-    0,
-  );
 }
 
 function quarterTrend(rows: SdLine[], quarter: (typeof FISCAL_QUARTER_ORDER)[number]): { label: string; value: number }[] {
@@ -345,68 +341,29 @@ export function buildQuarterSummaries(
   const visible = FISCAL_QUARTER_ORDER.filter(
     (quarter) => !selectedQuarters.length || selectedQuarters.includes(quarter),
   );
-  const years = [...new Set(fiscalYears)].sort((a, b) => a.localeCompare(b));
-  const currentYear = years.at(-1) ?? null;
-  const baselineYear = years.length > 1 ? years.at(-2) ?? null : null;
-  const comparisonMode: "qoq" | "yoy" = years.length > 1 || (!years.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
+  const inferredYears = activeRows.map((row) => fiscalYearForDate(row.postingDate)).filter(Boolean);
+  const years = [...new Set(fiscalYears.length ? fiscalYears : inferredYears)].sort((a, b) => a.localeCompare(b));
+  const currentYear = years.at(-1) ?? "";
+  const baselineYear = years.length > 1 ? years.at(-2) ?? "" : "";
+  const comparisonMode: "qoq" | "yoy" = years.length > 1 || (!fiscalYears.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
     ? "yoy"
     : "qoq";
-  const latestDateYear = Math.max(0, ...activeRows.map((row) => dateYear(row.postingDate) ?? 0));
 
-  return visible.map((quarter, index) => {
-    const matchingYears = activeRows
-      .filter((row) => fiscalQuarter(row.postingDate) === quarter)
-      .map((row) => dateYear(row.postingDate))
-      .filter((year): year is number => year != null);
-    const inferredYear = Math.max(0, ...matchingYears) || latestDateYear;
-    const currentRows = currentYear
-      ? activeRows.filter((row) => row.fiscalYear === currentYear && fiscalQuarter(row.postingDate) === quarter)
-      : activeRows.filter((row) => dateYear(row.postingDate) === inferredYear && fiscalQuarter(row.postingDate) === quarter);
+  return visible.map((quarter) => {
+    const currentRows = currentYear ? quarterRows(activeRows, currentYear, quarter) : [];
     const amount = currentRows.reduce((sum, row) => sum + row.amount, 0);
     let baselineAmount: number | null = null;
     let comparisonLabel = "No comparison";
 
-    if (currentYear && baselineYear) {
+    if (currentYear && comparisonMode === "yoy" && baselineYear) {
       baselineAmount = quarterAmount(comparisonRows, baselineYear, quarter);
-      comparisonLabel = `vs ${baselineYear} ${quarter}`;
+      comparisonLabel = `vs FY ${baselineYear}–${String(Number(baselineYear) + 1).slice(-2)} ${quarter}`;
     } else if (currentYear) {
-      const priorSelected = visible[index - 1];
-      if (priorSelected) {
-        baselineAmount = quarterAmount(activeRows, currentYear, priorSelected);
-        comparisonLabel = `vs ${priorSelected}`;
-      } else {
-        const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
-        const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
-        const previousYear = quarter === "Q1" && /^\d+$/.test(currentYear)
-          ? String(Number(currentYear) - 1)
-          : currentYear;
-        baselineAmount = previousQuarter
-          ? quarterAmount(comparisonRows, previousYear, previousQuarter)
-          : null;
-        comparisonLabel = previousQuarter ? `vs ${previousYear} ${previousQuarter}` : "No comparison";
-      }
-    } else if (currentRows.length && comparisonMode === "yoy") {
-      baselineAmount = calendarQuarterAmount(comparisonRows, inferredYear - 1, quarter);
-      comparisonLabel = `vs ${inferredYear - 1} ${quarter}`;
-    } else if (currentRows.length) {
-      const priorSelected = visible[index - 1];
-      if (priorSelected) {
-        const priorYears = activeRows
-          .filter((row) => fiscalQuarter(row.postingDate) === priorSelected)
-          .map((row) => dateYear(row.postingDate))
-          .filter((year): year is number => year != null && year <= inferredYear);
-        const priorYear = Math.max(0, ...priorYears) || inferredYear;
-        baselineAmount = calendarQuarterAmount(activeRows, priorYear, priorSelected);
-        comparisonLabel = `vs ${priorSelected}`;
-      } else {
-        const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
-        const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
-        const previousYear = quarter === "Q4" ? inferredYear - 1 : inferredYear;
-        baselineAmount = previousQuarter
-          ? calendarQuarterAmount(comparisonRows, previousYear, previousQuarter)
-          : null;
-        comparisonLabel = previousQuarter ? `vs ${previousYear} ${previousQuarter}` : "No comparison";
-      }
+      const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
+      const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
+      const previousYear = quarter === "Q1" ? String(Number(currentYear) - 1) : currentYear;
+      baselineAmount = previousQuarter ? quarterAmount(comparisonRows, previousYear, previousQuarter) : null;
+      comparisonLabel = baselineAmount == null || !previousQuarter ? "Starting baseline" : `vs ${previousQuarter}`;
     }
 
     const validBaselineAmount = baselineAmount != null && baselineAmount !== 0 ? baselineAmount : null;
@@ -431,7 +388,7 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
   return rows.filter((r) => {
     if (f.from && r.postingDate && r.postingDate < f.from) return false;
     if (f.to && r.postingDate && r.postingDate > f.to) return false;
-    if (!inList(f.fiscalYears, r.fiscalYear)) return false;
+    if (!inList(f.fiscalYears, fiscalYearForDate(r.postingDate))) return false;
     if (!inList(f.quarters, fiscalQuarter(r.postingDate))) return false;
     if (!inList(f.plants, r.plant)) return false;
     if (
