@@ -35,6 +35,11 @@ import {
   BarChart3,
   Target,
   Trash2,
+  BellRing,
+  TrendingUp,
+  TrendingDown,
+  TriangleAlert,
+  Radio,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -2870,32 +2875,49 @@ export function SdLiveDashboard() {
               <BsarkBars items={analytics.byNewRepl} unassigned={analytics.unassignedNewReplCount} />
             </Panel>
 
-            <Panel title="Management Alerts" accent={5}>
-              <ul className="space-y-2.5">
-                {analytics.alerts.map((a, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span
-                      className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-bold"
-                      style={{
-                        background:
-                          a.tone === "down"
-                            ? "color-mix(in oklab, #dc2626 15%, transparent)"
-                            : a.tone === "warn"
-                              ? "color-mix(in oklab, #f59e0b 20%, transparent)"
-                              : "color-mix(in oklab, #16a34a 18%, transparent)",
-                        color: a.tone === "down" ? "#dc2626" : a.tone === "warn" ? "#b45309" : "#16a34a",
-                      }}
-                    >
-                      {a.tone === "down" ? "↓" : a.tone === "warn" ? "!" : "↑"}
-                    </span>
-                    <span className="text-muted-foreground">{a.text}</span>
-                  </li>
-                ))}
+            <section className="flex flex-col rounded-lg border border-border bg-card p-4 shadow-tile">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <BellRing className="size-4 text-primary" />
+                <h2 className="text-sm font-semibold text-card-foreground">Management Alerts</h2>
+                <Badge variant="secondary" className="ml-auto gap-1 text-[10px]">
+                  <Radio className="size-3" /> Live filters
+                </Badge>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Automatically recalculated from the sales records matching your current filters.
+              </p>
+              <ul className="mt-3 grid gap-2.5">
+                {analytics.alerts.map((alert, index) => {
+                  const AlertIcon = alert.tone === "down" ? TrendingDown : alert.tone === "warn" ? TriangleAlert : TrendingUp;
+                  const toneClass = alert.tone === "down"
+                    ? "border-destructive/25 bg-destructive/5 text-destructive"
+                    : alert.tone === "warn"
+                      ? "border-warning/30 bg-warning/5 text-warning"
+                      : "border-success/30 bg-success/5 text-success";
+                  return (
+                    <li key={`${alert.title}-${index}`} className={`rounded-md border p-3 ${toneClass}`}>
+                      <div className="flex items-start gap-2.5">
+                        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-card/80 ring-1 ring-current/15">
+                          <AlertIcon className="size-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-card-foreground">{alert.title}</p>
+                          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{alert.text}</p>
+                          <p className="mt-2 border-t border-current/10 pt-2 text-[10px] text-muted-foreground">
+                            Based on: <span className="font-medium text-card-foreground">{alert.basis}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
                 {analytics.alerts.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">No alerts for this selection.</li>
+                  <li className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground">
+                    No comparable alert points are available for this selection.
+                  </li>
                 ) : null}
               </ul>
-            </Panel>
+            </section>
           </div>
 
           {/* Additional analysis kept below the management view */}
