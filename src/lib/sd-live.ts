@@ -409,15 +409,15 @@ export function buildQuarterSummaries(
       }
     }
 
-    const validBaseline = baselineAmount != null && baselineAmount !== 0;
+    const validBaselineAmount = baselineAmount != null && baselineAmount !== 0 ? baselineAmount : null;
 
     return {
       quarter,
       amount,
       baselineAmount,
-      changePct: validBaseline ? ((amount - baselineAmount) / Math.abs(baselineAmount)) * 100 : null,
+      changePct: validBaselineAmount != null ? ((amount - validBaselineAmount) / Math.abs(validBaselineAmount)) * 100 : null,
       comparisonLabel,
-      varianceAmount: validBaseline ? amount - baselineAmount : null,
+      varianceAmount: validBaselineAmount != null ? amount - validBaselineAmount : null,
       periodLabel: QUARTER_PERIODS[quarter],
       comparisonMode,
       trend: quarterTrend(currentRows, quarter),
