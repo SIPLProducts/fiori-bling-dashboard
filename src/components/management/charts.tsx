@@ -372,6 +372,6 @@ export function TopProfitCentres({ data }: { data: NamedValue[] }) {
 
 export function TopCustomers({ data, onSelect }: { data: NamedValue[]; onSelect?: (name: string) => void }) {
   return (
-    <HorizontalBarChart title="Top 10 Customers by Amount" data={data} color={CHART_COLORS.teal} {...(onSelect ? { onSelect } : {})} />
+    <HorizontalBarChart title="Top 10 Customers" data={data} color={CHART_COLORS.teal} {...(onSelect ? { onSelect } : {})} />
   );
 }

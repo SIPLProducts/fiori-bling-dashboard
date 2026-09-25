@@ -2547,7 +2547,7 @@ export function SdLiveDashboard() {
             <>
           {/* Row 2 — customers, sales trend, top profit centres */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Top 10 Customers by Amount" accent={2} expandable>
+            <Panel title="Top 10 Customers" accent={2} expandable>
               {(full: boolean) => <BarList items={analytics.topCustomers} tone={1} full={full} onSelect={(customer) => openDrilldown({ customer })} />}
             </Panel>
 
