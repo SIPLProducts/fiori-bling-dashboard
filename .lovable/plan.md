@@ -1,10 +1,11 @@
-# Clarify the available-data date label
+# Clarify the ZFISALES available-data label
 
 ## Change
-- Remove the calendar icon from the date badge beside the Sales Dashboard heading.
-- When no date filter is selected, label the automatically detected period as **“Data available: Jan 2025 – Aug 2026”** (using the live first and last available months).
-- When a date filter is selected, keep showing the selected period clearly rather than calling it the available-data period.
+- Remove the calendar icon from the badge beside the Sales Dashboard heading.
+- Keep the range fully dynamic from the actual ZFISALES records; do not hard-code or alter the dates.
+- With no date filter, show **“Data available: [earliest month] – [latest month]”** based on all available ZFISALES data.
+- With a date filter, show **“Selected period: [start month] – [end month]”** so it is not confused with overall data availability.
 
 ## Verification
-- Check the default and filtered labels on desktop and mobile.
-- Confirm the dashboard calculations and filters remain unchanged.
+- Confirm the unfiltered label matches the earliest and latest ZFISALES posting dates.
+- Confirm selecting and clearing a date filter changes only the label context, not the underlying data or calculations.
