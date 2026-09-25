@@ -192,6 +192,21 @@ describe("fiscal quarter summary tiles", () => {
     expect(summaries[1]).toMatchObject({ quarter: "Q2", amount: 150, baselineAmount: 200, changePct: -25, comparisonMode: "yoy" });
   });
 
+  test("compares a partial multi-year quarter with the same elapsed days in the prior year", () => {
+    const history = [
+      sale("2025", "2025-04-10", 50),
+      sale("2025", "2025-06-30", 500),
+      sale("2026", "2026-04-10", 75),
+    ];
+    const active = applySdFilters(history, filters({ from: "2025-04-01", to: "2026-04-30" }));
+    const summary = buildQuarterSummaries(active, history, [], ["Q1"], {
+      from: "2025-04-01",
+      to: "2026-04-30",
+    })[0];
+
+    expect(summary).toMatchObject({ status: "partial", baselineAmount: 50, changePct: 50, comparisonMode: "yoy" });
+  });
+
   test("keeps partial current-quarter amounts while using the historical baseline", () => {
     const history = [
       sale("2026", "2026-04-10", 100),
