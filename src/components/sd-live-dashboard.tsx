@@ -579,7 +579,7 @@ function TotalSalesCard({
   );
 }
 
-function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSummary[]; onDownload: () => void; busy: boolean }) {
+function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
   const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
   const eligible = summaries.filter((item) => item.status !== "outside" && item.recordCount > 0);
   const comparable = eligible.filter((item) => item.varianceAmount != null);
@@ -644,9 +644,6 @@ function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSu
           {weakest && weakest !== best ? <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs font-semibold">Largest decline · {weakest.quarter}</p><p className="mt-1 text-[11px] text-muted-foreground">{Math.abs(weakest.changePct ?? 0).toFixed(1)}% below {weakest.comparisonLabel.replace("vs ", "")}.</p></div> : null}
           {!comparable.length ? <p className="py-6 text-center text-xs text-muted-foreground">Comparison history is not available for this selection.</p> : null}
         </div>
-        <Button className="mt-4 w-full" onClick={onDownload} disabled={busy}>
-          <BarChart3 className="mr-2 size-4" /> {busy ? "Preparing…" : "Generate Detailed Variance Report"}
-        </Button>
       </section>
     </div>
   );
@@ -2228,13 +2225,13 @@ export function SdLiveDashboard() {
       </div>
 
       {/* smart filter bar */}
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-tile">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 sm:flex sm:flex-wrap sm:justify-between">
+      <section className="overflow-hidden rounded-lg border border-primary/25 bg-card shadow-tile ring-1 ring-primary/5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-primary/15 bg-accent/55 px-4 py-2.5 sm:flex sm:flex-wrap sm:justify-between">
           <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-card-foreground">
             <Filter className="size-4 shrink-0 text-primary" />
             <span className="truncate">Smart filters</span>
             {activeChips.length ? (
-              <Badge variant="secondary" className="shrink-0">
+              <Badge className="shrink-0 border border-primary/20 bg-primary/10 text-primary shadow-none hover:bg-primary/10">
                 {activeChips.length}
               </Badge>
             ) : (
@@ -2278,7 +2275,7 @@ export function SdLiveDashboard() {
         </div>
 
         {showFilters ? (
-          <div className="space-y-3 border-t border-border bg-muted/30 px-4 py-3">
+          <div className="space-y-3 bg-accent/20 px-4 py-3">
             <div className="relative sm:hidden">
               <Search className="pointer-events-none absolute top-2.5 left-2 size-4 text-muted-foreground" />
               <Input
@@ -2424,13 +2421,13 @@ export function SdLiveDashboard() {
 
 
         {activeChips.length ? (
-          <div className="flex flex-wrap gap-2 border-t border-border px-4 py-2">
+          <div className="flex flex-wrap gap-2 border-t border-primary/15 bg-primary/5 px-4 py-2">
             {activeChips.map((chip) => (
               <button
                 key={chip.label}
                 type="button"
                 onClick={chip.clear}
-                className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+                className="rounded-full border border-primary/25 bg-accent px-3 py-1 text-xs font-medium text-accent-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
               >
                 {chip.label} ✕
               </button>
@@ -2500,7 +2497,7 @@ export function SdLiveDashboard() {
             </div>
           </div>
 
-          <QuarterAnalysis summaries={quarterSummaries} onDownload={downloadDashboardPdf} busy={pdfBusy} />
+          <QuarterAnalysis summaries={quarterSummaries} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">

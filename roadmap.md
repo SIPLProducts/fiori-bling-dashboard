@@ -63,3 +63,4 @@
 - [x] Restyle Management Alerts like Executive Insights and explain each live, filter-driven alert basis
 - [x] Simplify the Sales Dashboard header and show the full ZFISALES available-data range
 - [x] Prevent the Quality Sales report crash by removing its unused Revenue Target request; retain the existing migration
+- [x] Remove the detailed variance report action and refine Smart Filters with restrained enterprise color
