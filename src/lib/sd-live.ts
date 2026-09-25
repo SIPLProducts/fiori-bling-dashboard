@@ -310,8 +310,12 @@ function dateRangeMonths(rows: SdLine[], from = "", to = ""): number {
   return (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + end.getUTCMonth() - start.getUTCMonth() + 1;
 }
 
-function calendarQuarterAmount(rows: SdLine[], year: number, quarter: string): number {
-  return rows.reduce(
+function calendarQuarterAmount(rows: SdLine[], year: number, quarter: string): number | null {
+  const matching = rows.filter(
+    (row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter,
+  );
+  if (!matching.length) return null;
+  return matching.reduce(
     (sum, row) => dateYear(row.postingDate) === year && fiscalQuarter(row.postingDate) === quarter
       ? sum + row.amount
       : sum,
