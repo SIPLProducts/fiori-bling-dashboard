@@ -1,11 +1,15 @@
-# Clarify the ZFISALES available-data label
+# Simplify the Sales Dashboard header
 
-## Change
-- Remove the calendar icon from the badge beside the Sales Dashboard heading.
-- Keep the range fully dynamic from the actual ZFISALES records; do not hard-code or alter the dates.
-- With no date filter, show **“Data available: [earliest month] – [latest month]”** based on all available ZFISALES data.
-- With a date filter, show **“Selected period: [start month] – [end month]”** so it is not confused with overall data availability.
+## Changes
+- Remove the **Revenue Targets** button from the dashboard header.
+- Remove the calendar icon from the date badge.
+- Replace the current date text with **“Data available: [from] – [to]”**.
+- Calculate `[from]` and `[to]` dynamically from the earliest and latest posting dates across all loaded ZFISALES records.
+- Keep this available-data range unchanged when dashboard filters are selected, because it describes the complete ZFISALES dataset—not the selected filter period.
+- Do not hard-code dates or change any sales records, filters, totals, charts, or calculations.
 
 ## Verification
-- Confirm the unfiltered label matches the earliest and latest ZFISALES posting dates.
-- Confirm selecting and clearing a date filter changes only the label context, not the underlying data or calculations.
+- Confirm the label matches the actual minimum and maximum ZFISALES posting dates.
+- Confirm the calendar icon and Revenue Targets header action are gone.
+- Confirm applying filters does not alter the available-data label.
+- Check the revised header on desktop and mobile.
