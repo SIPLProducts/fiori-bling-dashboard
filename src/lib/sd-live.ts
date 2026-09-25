@@ -274,6 +274,8 @@ export function currentFiscalYear(date = new Date()): string {
 
 export type QuarterSummary = {
   quarter: "Q1" | "Q2" | "Q3" | "Q4";
+  fiscalYear: string;
+  recordCount: number;
   amount: number;
   baselineAmount: number | null;
   changePct: number | null;
@@ -370,6 +372,8 @@ export function buildQuarterSummaries(
 
     return {
       quarter,
+      fiscalYear: currentYear,
+      recordCount: currentRows.length,
       amount,
       baselineAmount,
       changePct: validBaselineAmount != null ? ((amount - validBaselineAmount) / Math.abs(validBaselineAmount)) * 100 : null,
