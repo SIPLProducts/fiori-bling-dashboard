@@ -246,6 +246,22 @@ describe("fiscal quarter summary tiles", () => {
     expect(summaries[3]).toMatchObject({ quarter: "Q4", status: "outside", changePct: null, varianceAmount: null });
   });
 
+  test("caps an unfiltered current fiscal year at today and excludes future-dated postings", () => {
+    const history = [
+      sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-07-10", 50),
+      sale("2026", "2026-10-10", 72),
+      sale("2026", "2027-01-10", 30),
+    ];
+    const effective = applySdFilters(history, filters({ to: "2026-09-25" }));
+    const summaries = buildQuarterSummaries(effective, history, [], [], { to: "2026-09-25" });
+
+    expect(effective.reduce((sum, item) => sum + item.amount, 0)).toBe(150);
+    expect(summaries[1]).toMatchObject({ quarter: "Q2", status: "partial", amount: 50 });
+    expect(summaries[2]).toMatchObject({ quarter: "Q3", status: "outside", amount: 0, changePct: null, varianceAmount: null });
+    expect(summaries[3]).toMatchObject({ quarter: "Q4", status: "outside", amount: 0, changePct: null, varianceAmount: null });
+  });
+
   test("quarter amounts use the same actively filtered rows as Total Sales", () => {
     const active = [sale("2026", "2026-04-10", 25), sale("2026", "2026-07-10", -5)];
     const summaries = buildQuarterSummaries(active, active, ["2026"], []);

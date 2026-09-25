@@ -272,6 +272,13 @@ export function currentFiscalYear(date = new Date()): string {
   return String(month >= 4 ? date.getFullYear() : date.getFullYear() - 1);
 }
 
+export function localIsoDate(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export type QuarterSummary = {
   quarter: "Q1" | "Q2" | "Q3" | "Q4";
   fiscalYear: string;
