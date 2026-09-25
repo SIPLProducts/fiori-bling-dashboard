@@ -19,6 +19,7 @@
 
 ## Tile and analysis states
 
+- Remove the **“Target not configured”** placeholder from Total Sales when no annual revenue target exists; keep the configured-target progress display unchanged.
 - Outside-range quarter tiles will show **“Outside selected range”**, an amount placeholder `—`, no arrow, no percentage, no variance, and no misleading zero-value sparkline.
 - Partial quarter tiles will retain the **Active** badge, add the exact **“Partial (Through DD Mon)”** sub-label, and identify that the percentage uses the same elapsed duration in the baseline quarter.
 - Complete quarters continue showing their amount, trend, percentage, and variance normally.
