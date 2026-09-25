@@ -259,6 +259,79 @@ export function fiscalQuarter(postingDate: string): string {
   return "";
 }
 
+export type QuarterSummary = {
+  quarter: "Q1" | "Q2" | "Q3" | "Q4";
+  amount: number;
+  baselineAmount: number | null;
+  changePct: number | null;
+  comparisonLabel: string;
+};
+
+const FISCAL_QUARTER_ORDER = ["Q1", "Q2", "Q3", "Q4"] as const;
+
+function quarterAmount(rows: SdLine[], fiscalYear: string | null, quarter: string): number {
+  return rows.reduce(
+    (sum, row) =>
+      (!fiscalYear || row.fiscalYear === fiscalYear) && fiscalQuarter(row.postingDate) === quarter
+        ? sum + row.amount
+        : sum,
+    0,
+  );
+}
+
+/** Build visible fiscal-quarter totals and their requested QoQ/YoY baselines. */
+export function buildQuarterSummaries(
+  activeRows: SdLine[],
+  comparisonRows: SdLine[],
+  fiscalYears: string[],
+  selectedQuarters: string[],
+): QuarterSummary[] {
+  const visible = FISCAL_QUARTER_ORDER.filter(
+    (quarter) => !selectedQuarters.length || selectedQuarters.includes(quarter),
+  );
+  const years = [...new Set(fiscalYears)].sort((a, b) => a.localeCompare(b));
+  const currentYear = years.at(-1) ?? null;
+  const baselineYear = years.length > 1 ? years.at(-2) ?? null : null;
+
+  return visible.map((quarter, index) => {
+    const amount = quarterAmount(activeRows, years.length ? currentYear : null, quarter);
+    let baselineAmount: number | null = null;
+    let comparisonLabel = "No comparison";
+
+    if (currentYear && baselineYear) {
+      baselineAmount = quarterAmount(comparisonRows, baselineYear, quarter);
+      comparisonLabel = `vs ${baselineYear} ${quarter}`;
+    } else if (currentYear) {
+      const priorSelected = visible[index - 1];
+      if (priorSelected) {
+        baselineAmount = quarterAmount(activeRows, currentYear, priorSelected);
+        comparisonLabel = `vs ${priorSelected}`;
+      } else {
+        const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
+        const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
+        const previousYear = quarter === "Q1" && /^\d+$/.test(currentYear)
+          ? String(Number(currentYear) - 1)
+          : currentYear;
+        baselineAmount = previousQuarter
+          ? quarterAmount(comparisonRows, previousYear, previousQuarter)
+          : null;
+        comparisonLabel = previousQuarter ? `vs ${previousYear} ${previousQuarter}` : "No comparison";
+      }
+    }
+
+    return {
+      quarter,
+      amount,
+      baselineAmount,
+      changePct:
+        baselineAmount != null && baselineAmount !== 0
+          ? ((amount - baselineAmount) / Math.abs(baselineAmount)) * 100
+          : null,
+      comparisonLabel,
+    };
+  });
+}
+
 export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
   const term = f.search.trim().toLowerCase();
   const inList = (list: string[], value: string) => !list.length || list.includes(value);

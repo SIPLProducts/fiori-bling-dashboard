@@ -50,12 +50,14 @@ import {
 import {
   applySdFilters,
   buildSdAnalytics,
+  buildQuarterSummaries,
   emptySdFilters,
   fetchSdLines,
   limitModelPerformance,
   uniqueValues,
   type NamedTotal,
   type ModelPerformance,
+  type QuarterSummary,
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
@@ -87,8 +89,12 @@ const INRC = (value: number) => `₹${compact(value)}`;
 
 const LAKHS = (value: number) =>
   `${(value / 1e5).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0L`;
+const LAKHS_VALUE = (value: number) =>
+  (value / 1e5).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const CRORES = (value: number) =>
   `${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0Cr`;
+const CRORES_VALUE = (value: number) =>
+  `₹${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const INR_CRORES = (value: number) => `₹${CRORES(value)}`;
 const PER_AH = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/AH`;
@@ -415,6 +421,42 @@ function KpiCard({
   );
 }
 
+function QuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number }) {
+  const color = KPI_TONES[tone % KPI_TONES.length];
+  const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
+  const baselineHeight = 12;
+  const currentHeight = summary.baselineAmount && summary.baselineAmount !== 0
+    ? Math.max(5, Math.min(24, baselineHeight * Math.abs(summary.amount / summary.baselineAmount)))
+    : baselineHeight;
+  return (
+    <section
+      className="relative min-w-0 overflow-hidden rounded-xl border border-border bg-card p-3 shadow-tile"
+      style={{ background: `linear-gradient(145deg, color-mix(in oklab, ${color} 7%, var(--color-card)) 0%, var(--color-card) 72%)` }}
+    >
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-muted-foreground">Quarter {summary.quarter.slice(1)}</p>
+          <p className="tabular mt-2 truncate text-lg font-semibold text-card-foreground">{INRC(summary.amount)}</p>
+        </div>
+        <div className="flex h-8 shrink-0 items-end gap-1" aria-hidden="true">
+          <span className="w-2 rounded-t-sm bg-muted-foreground/30" style={{ height: baselineHeight }} />
+          <span className="w-2 rounded-t-sm" style={{ height: currentHeight, background: direction === "down" ? "var(--kpi-down)" : direction === "up" ? "var(--kpi-up)" : color }} />
+        </div>
+      </div>
+      <p className="mt-1 flex min-w-0 items-center gap-1 text-[11px]">
+        <span
+          className="tabular shrink-0 font-semibold"
+          style={{ color: direction === "up" ? "var(--kpi-up)" : direction === "down" ? "var(--kpi-down)" : "var(--color-muted-foreground)" }}
+        >
+          {direction === "up" ? "↑" : direction === "down" ? "↓" : "—"}{summary.changePct == null ? "" : ` ${Math.abs(summary.changePct).toFixed(1)}%`}
+        </span>
+        <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
+      </p>
+    </section>
+  );
+}
+
 
 
 function ShareBars({ items, total }: { items: { name: string; value: number }[]; total: number }) {
@@ -643,16 +685,18 @@ function BarList({
   tone = 0,
   full = false,
   onSelect,
+  valueFormatter = INRC,
 }: {
   items: { name: string; value: number; count?: number }[];
   tone?: number;
   full?: boolean;
   onSelect?: (name: string) => void;
+  valueFormatter?: (value: number) => string;
 }) {
   if (!items.length) return <p className="py-10 text-center text-sm text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.value), 1);
   const tip = (item: { name: string; value: number; count?: number }) =>
-    `${item.name || "—"}\n₹${item.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}${
+    `${item.name || "—"}\n${valueFormatter(item.value)}${
       item.count != null ? `\n${item.count.toLocaleString("en-IN")} records` : ""
     }`;
   return (
@@ -684,7 +728,7 @@ function BarList({
             className="tabular w-20 shrink-0 whitespace-nowrap text-right text-[11px] font-medium"
             title={tip(item)}
           >
-            ₹{compact(item.value)}
+            {valueFormatter(item.value)}
           </span>
           {full ? (
             <span
@@ -716,7 +760,7 @@ function MixBars({
 
       <BarChart data={items} layout="vertical" margin={{ left: 0, right: 140, top: 4, bottom: 4 }}>
         <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
-        <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
+        <XAxis type="number" tickFormatter={(value: number) => (value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 1 })} tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
         <YAxis
           type="category"
           dataKey="name"
@@ -728,7 +772,7 @@ function MixBars({
         <Tooltip
           {...tooltipStyle}
           formatter={(v: number, _n: string, p: { payload?: { name?: string } }) => [
-            `${INRC(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
+            `${CRORES_VALUE(v)} · ${total ? ((v / total) * 100).toFixed(1) : "0"}%`,
             p?.payload?.name ?? "Revenue",
           ]}
         />
@@ -740,7 +784,7 @@ function MixBars({
             dataKey="value"
             position="right"
             formatter={(v: number) =>
-              `${compact(v)} (${total ? ((v / total) * 100).toFixed(1) : "0"}%)`
+              `${CRORES_VALUE(v)} (${total ? ((v / total) * 100).toFixed(1) : "0"}%)`
             }
             fontSize={11}
             fontWeight={600}
@@ -1000,19 +1044,25 @@ function MainGroupBars({
   return (
     <div className={full ? "flex h-full flex-col" : ""}>
       <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-        <span className="min-w-0 truncate">
+        <div className="flex min-w-0 items-center gap-2">
           {selected ? (
             <>
-              <button type="button" className="hover:text-foreground" onClick={() => onSelect(null)}>
-                ← All main groups
-              </button>
-              {" · "}
-              <span className="text-foreground">{selected}</span>
+              <Button
+                type="button"
+                variant={full ? "default" : "outline"}
+                size="sm"
+                className="h-7 shrink-0 px-2 text-[11px]"
+                onClick={() => onSelect(null)}
+              >
+                <ChevronLeft className="size-3.5" />
+                Back to Main Group
+              </Button>
+              <span className="min-w-0 truncate text-foreground">Selected main group · {selected}</span>
             </>
           ) : (
-            "Click a bar to see its sub groups"
+            <span>Click a bar to see its sub groups</span>
           )}
-        </span>
+        </div>
         <span className="tabular shrink-0">₹{compact(categories.reduce((sum, item) => sum + item.value, 0))}</span>
       </div>
       <div
@@ -1752,6 +1802,14 @@ export function SdLiveDashboard() {
   }, [all, salesTypeTab]);
   const filtered = useMemo(() => applySdFilters(typeFiltered, filters), [typeFiltered, filters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
+  const quarterComparisonRows = useMemo(
+    () => applySdFilters(typeFiltered, { ...filters, from: "", to: "", fiscalYears: [], quarters: [] }),
+    [typeFiltered, filters],
+  );
+  const quarterSummaries = useMemo(
+    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters),
+    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters],
+  );
 
   const opts = useMemo(
     () => ({
@@ -2204,7 +2262,7 @@ export function SdLiveDashboard() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
             <KpiCard
-              label="Total Sales (Amount)"
+              label="Total Sales"
               value={INRC(totalRevenue)}
               tone={0}
               icon={IndianRupee}
@@ -2213,6 +2271,11 @@ export function SdLiveDashboard() {
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
             />
+            </div>
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-8" style={{ gridTemplateColumns: `repeat(${Math.min(quarterSummaries.length, 4)}, minmax(0, 1fr))` }}>
+              {quarterSummaries.map((summary, index) => (
+                <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} />
+              ))}
             </div>
           </div>
 
@@ -2232,7 +2295,7 @@ export function SdLiveDashboard() {
             </div>
 
             <div className="min-w-0 lg:col-span-8">
-            <Panel title={selectedMainGroup ? "Main Group → Sub Group (Amount)" : "Main Group vs Sub Group (Amount)"} accent={3} expandable>
+            <Panel title="Main Group in CR" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
                   items={analytics.byMainGroup}
@@ -2344,17 +2407,17 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel title="Top 10 Profit Centres by Amount" accent={4} expandable>
-              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} />}
+            <Panel title="Top 10 Profit Centres" accent={4} expandable>
+              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Sales by Segment (Amount)" accent={2} expandable>
+            <Panel title="Segment" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
 
-            <Panel title="Customer Contribution Pareto (Top Sales up to 10)" accent={1} expandable>
+            <Panel title="Customer Contribution (Top Sales up to 10)" accent={1} expandable>
               {(full: boolean) => (
                 <div className={`cxo-chart-surface ${full ? "h-full" : ""}`}>
                 <ResponsiveContainer width="100%" height={full ? "100%" : 300}>
@@ -2448,7 +2511,7 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel title="Sales Mix by Type" accent={2} expandable>
+            <Panel title="Sales Mix" accent={2} expandable>
               {(full: boolean) => (
                 <div className={full ? "flex h-full flex-col" : ""}>
                   <div className={full ? "min-h-0 flex-1" : ""}>
@@ -2468,7 +2531,7 @@ export function SdLiveDashboard() {
                           />
                           {m.name || "—"}
                         </span>
-                        <span className="tabular">{INRC(m.value)}</span>
+                        <span className="tabular">{CRORES_VALUE(m.value)}</span>
                       </div>
                     ))}
                   </div>
@@ -2513,19 +2576,19 @@ export function SdLiveDashboard() {
           {/* Additional analysis kept below the management view */}
           <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Top 10 Materials" accent={3} expandable>
-              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} />}
+              {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
 
-            <Panel title="Top 10 Sales Employees" accent={2} expandable>
-              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} />}
+            <Panel title="Top 10 Sales Men" accent={2} expandable>
+              {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
 
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <KpiCard
-              label="Total AH"
-              value={LAKHS(analytics.kpis.positiveAhTotal)}
+              label="Total LAH (Lakhs)"
+              value={LAKHS_VALUE(analytics.kpis.positiveAhTotal)}
               tone={4}
               icon={Building2}
               caption="Total AH > 0"
