@@ -2038,7 +2038,6 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const fetchTargets = useServerFn(listSalesRevenueTargets);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
