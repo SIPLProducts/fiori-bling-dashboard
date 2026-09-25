@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Area,
   Bar,
@@ -79,9 +78,6 @@ import {
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
-import {
-  listSalesRevenueTargets,
-} from "@/lib/sales-targets.functions";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -1969,7 +1965,6 @@ function LinesTable({
 
 export function SdLiveDashboard() {
   const navigate = useNavigate();
-  const fetchTargets = useServerFn(listSalesRevenueTargets);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -1983,11 +1978,6 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
-  const { data: revenueTargets = [] } = useQuery({
-    queryKey: ["sales-revenue-targets"],
-    queryFn: () => fetchTargets(),
-  });
-
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
     queryFn: fetchSdLines,
@@ -2147,10 +2137,6 @@ export function SdLiveDashboard() {
   }
 
   const totalRevenue = analytics.kpis.revenue;
-  const selectedFiscalYear = filters.fiscalYears.length === 1
-    ? filters.fiscalYears[0] ?? ""
-    : quarterSummaries[0]?.fiscalYear ?? "";
-  const revenueTarget = revenueTargets.find((target) => target.fiscalYear === selectedFiscalYear)?.targetAmount ?? null;
   const salesBreakdown = buildSalesBreakdown(analytics.mixByType);
   const activeDate = filters.to || today;
   const activeFiscalYear = fiscalYearForDate(activeDate);
@@ -2492,7 +2478,7 @@ export function SdLiveDashboard() {
               amount={totalRevenue}
               postingCount={filtered.length}
               breakdown={salesBreakdown}
-              target={revenueTarget}
+              target={null}
               onClick={() => setFocus(focus === "revenue" ? null : "revenue")}
               active={focus === "revenue"}
             />
