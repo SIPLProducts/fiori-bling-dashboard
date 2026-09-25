@@ -2272,7 +2272,17 @@ export function SdLiveDashboard() {
               active={focus === "revenue"}
             />
             </div>
-            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-8" style={{ gridTemplateColumns: `repeat(${Math.min(quarterSummaries.length, 4)}, minmax(0, 1fr))` }}>
+            <div
+              className={`grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-8 ${
+                quarterSummaries.length === 1
+                  ? "lg:grid-cols-1"
+                  : quarterSummaries.length === 2
+                    ? "lg:grid-cols-2"
+                    : quarterSummaries.length === 3
+                      ? "lg:grid-cols-3"
+                      : "lg:grid-cols-4"
+              }`}
+            >
               {quarterSummaries.map((summary, index) => (
                 <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} />
               ))}
