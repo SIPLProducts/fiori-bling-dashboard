@@ -2491,7 +2491,10 @@ export function SdLiveDashboard() {
                   </div>
                 </label>
               ) : null}
-              <label className="min-w-0 text-xs font-medium text-muted-foreground md:col-span-2 lg:col-span-2">
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-12">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground md:col-span-2 lg:col-span-4">
                 Profit centre
                 <div className="mt-1">
                   <MultiSelect
@@ -2501,7 +2504,7 @@ export function SdLiveDashboard() {
                   />
                 </div>
               </label>
-              <label className="min-w-0 text-xs font-medium text-muted-foreground lg:col-span-2">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground lg:col-span-4">
                 Segment
                 <div className="mt-1">
                   <MultiSelect
@@ -2511,7 +2514,7 @@ export function SdLiveDashboard() {
                   />
                 </div>
               </label>
-              <label className="min-w-0 text-xs font-medium text-muted-foreground lg:col-span-2">
+              <label className="min-w-0 text-xs font-medium text-muted-foreground md:col-span-2 lg:col-span-4">
                 Customer
                 <div className="mt-1">
                   <MultiSelect
@@ -2888,10 +2891,8 @@ export function SdLiveDashboard() {
               <p className="mt-2 text-[10.5px] text-muted-foreground">
                 Automatically recalculated from the sales records matching your current filters.
               </p>
-              <ul className="mt-2.5 grid flex-1 content-start gap-2 md:grid-cols-12">
-                {["Sales momentum", "Revenue per AH", "Customer concentration", "Leading segment", "Top profit centre"]
-                  .flatMap((title) => analytics.alerts.filter((alert) => alert.title === title))
-                  .map((alert) => {
+              <ul className="mt-2.5 grid flex-1 content-start gap-2 md:grid-cols-2">
+                {analytics.alerts.map((alert, index) => {
                   const AlertIcon = alert.tone === "down" ? TrendingDown : alert.tone === "warn" ? TriangleAlert : TrendingUp;
                   const toneClass = alert.tone === "down"
                     ? "border-destructive/25 bg-destructive/5 text-destructive"
@@ -2900,8 +2901,8 @@ export function SdLiveDashboard() {
                       : "border-success/30 bg-success/5 text-success";
                   return (
                     <li
-                      key={alert.title}
-                      className={`rounded-md border p-2.5 ${alert.title === "Sales momentum" || alert.title === "Revenue per AH" ? "md:col-span-6" : "md:col-span-4"} ${toneClass}`}
+                      key={`${alert.title}-${index}`}
+                      className={`rounded-md border p-2.5 ${index === 4 ? "md:col-span-2" : ""} ${toneClass}`}
                     >
                       <div className="flex items-start gap-2">
                         <span className="grid size-6 shrink-0 place-items-center rounded-md bg-card/80 ring-1 ring-current/15">
@@ -2919,7 +2920,7 @@ export function SdLiveDashboard() {
                   );
                 })}
                 {analytics.alerts.length === 0 ? (
-                  <li className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground md:col-span-12">
+                  <li className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground md:col-span-2">
                     No comparable alert points are available for this selection.
                   </li>
                 ) : null}
