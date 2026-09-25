@@ -465,7 +465,7 @@ function QuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number 
   );
 }
 
-function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
+function QuarterAnalysis({ summaries, onDownload, busy }: { summaries: QuarterSummary[]; onDownload: () => void; busy: boolean }) {
   const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
   const comparable = summaries.filter((item) => item.varianceAmount != null);
   const strongest = [...summaries].sort((a, b) => b.amount - a.amount)[0];
@@ -528,6 +528,9 @@ function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
           {weakest && weakest !== best ? <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs font-semibold">Largest decline · {weakest.quarter}</p><p className="mt-1 text-[11px] text-muted-foreground">{Math.abs(weakest.changePct ?? 0).toFixed(1)}% below {weakest.comparisonLabel.replace("vs ", "")}.</p></div> : null}
           {!comparable.length ? <p className="py-6 text-center text-xs text-muted-foreground">Comparison history is not available for this selection.</p> : null}
         </div>
+        <Button className="mt-4 w-full" onClick={onDownload} disabled={busy}>
+          <BarChart3 className="mr-2 size-4" /> {busy ? "Preparing…" : "Generate Detailed Variance Report"}
+        </Button>
       </section>
     </div>
   );
@@ -1883,8 +1886,8 @@ export function SdLiveDashboard() {
     [typeFiltered, filters],
   );
   const quarterSummaries = useMemo(
-    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters),
-    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters],
+    () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, { from: filters.from, to: filters.to }),
+    [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, filters.from, filters.to],
   );
 
   const opts = useMemo(
@@ -1959,6 +1962,23 @@ export function SdLiveDashboard() {
       }),
       "sd-sales-lines.csv",
     );
+
+  const downloadDashboardPdf = async () => {
+    setPdfBusy(true);
+    setPdfExportAllModels(true);
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
+      toast.success("Dashboard PDF downloaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
+    } finally {
+      setPdfExportAllModels(false);
+      setPdfBusy(false);
+    }
+  };
 
   // grouped rows behind the clickable KPI tiles
   const focusRows: FocusRow[] = useMemo(() => {
@@ -2071,22 +2091,7 @@ export function SdLiveDashboard() {
             size="sm"
             className="h-9"
             disabled={pdfBusy || !all.length}
-            onClick={async () => {
-              setPdfBusy(true);
-              setPdfExportAllModels(true);
-              try {
-                await new Promise<void>((resolve) => {
-                  requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-                });
-                await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
-                toast.success("Dashboard PDF downloaded");
-              } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
-              } finally {
-                setPdfExportAllModels(false);
-                setPdfBusy(false);
-              }
-            }}
+            onClick={downloadDashboardPdf}
           >
             <Download className="mr-1 size-4" /> {pdfBusy ? "Preparing…" : "PDF"}
           </Button>
@@ -2364,6 +2369,8 @@ export function SdLiveDashboard() {
               ))}
             </div>
           </div>
+
+          <QuarterAnalysis summaries={quarterSummaries} onDownload={downloadDashboardPdf} busy={pdfBusy} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
