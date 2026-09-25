@@ -155,8 +155,53 @@ describe("fiscal quarter summary tiles", () => {
     const noYear = buildQuarterSummaries(active, active, [], ["Q1"]);
     const zeroBaseline = buildQuarterSummaries(active, active, ["2026"], ["Q1"]);
 
-    expect(noYear[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null });
+    expect(noYear[0]).toMatchObject({ amount: 100, baselineAmount: null, changePct: null, comparisonMode: "qoq" });
     expect(zeroBaseline[0]).toMatchObject({ amount: 100, baselineAmount: 0, changePct: null });
+  });
+
+  test("infers QoQ comparisons for This year when no fiscal year is selected", () => {
+    const history = [
+      sale("2026", "2026-01-10", 80),
+      sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-07-10", 125),
+    ];
+    const active = applySdFilters(history, filters({ from: "2026-01-01", to: "2026-09-25" }));
+    const summaries = buildQuarterSummaries(active, history, [], [], { from: "2026-01-01", to: "2026-09-25" });
+
+    expect(summaries[0]).toMatchObject({ quarter: "Q1", amount: 100, baselineAmount: 80, changePct: 25, comparisonMode: "qoq" });
+    expect(summaries[1]).toMatchObject({ quarter: "Q2", amount: 125, baselineAmount: 100, changePct: 25 });
+  });
+
+  test("switches a date range of 18 months or more to matching-quarter YoY", () => {
+    const history = [
+      sale("2025", "2025-04-10", 100),
+      sale("2026", "2026-04-10", 140),
+      sale("2025", "2025-07-10", 200),
+      sale("2026", "2026-07-10", 150),
+    ];
+    const summaries = buildQuarterSummaries(history, history, [], ["Q1", "Q2"], {
+      from: "2025-04-01",
+      to: "2026-09-30",
+    });
+
+    expect(summaries[0]).toMatchObject({ quarter: "Q1", amount: 140, baselineAmount: 100, changePct: 40, comparisonMode: "yoy" });
+    expect(summaries[1]).toMatchObject({ quarter: "Q2", amount: 150, baselineAmount: 200, changePct: -25, comparisonMode: "yoy" });
+  });
+
+  test("keeps partial current-quarter amounts while using the historical baseline", () => {
+    const history = [
+      sale("2026", "2026-04-10", 100),
+      sale("2026", "2026-07-10", 50),
+      sale("2026", "2026-08-10", -10),
+    ];
+    const active = applySdFilters(history, filters({ from: "2026-07-01", to: "2026-08-15" }));
+    const summary = buildQuarterSummaries(active, history, [], ["Q2"], {
+      from: "2026-07-01",
+      to: "2026-08-15",
+    })[0];
+
+    expect(summary).toMatchObject({ amount: 40, baselineAmount: 100, changePct: -60, varianceAmount: -60 });
+    expect(summary?.trend.map((point) => point.value)).toEqual([40, 0, 0]);
   });
 
   test("quarter amounts use the same actively filtered rows as Total Sales", () => {
