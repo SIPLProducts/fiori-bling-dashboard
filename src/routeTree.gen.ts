@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
 import { Route as AuthenticatedManagementDashboardRouteImport } from './routes/_authenticated/management-dashboard'
+import { Route as ApiTbnAssistantRouteImport } from './routes/api/tbn-assistant'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin/roles'
 import { Route as AuthenticatedAdminSapApiRouteImport } from './routes/_authenticated/admin/sap-api'
@@ -58,6 +59,11 @@ const AuthenticatedManagementDashboardRoute =
     path: '/management-dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiTbnAssistantRoute = ApiTbnAssistantRouteImport.update({
+  id: '/api/tbn-assistant',
+  path: '/api/tbn-assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminPermissionsRoute =
   AuthenticatedAdminPermissionsRouteImport.update({
     id: '/admin/permissions',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
+  '/api/tbn-assistant': typeof ApiTbnAssistantRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
+  '/api/tbn-assistant': typeof ApiTbnAssistantRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
   '/_authenticated/management-dashboard': typeof AuthenticatedManagementDashboardRoute
+  '/api/tbn-assistant': typeof ApiTbnAssistantRoute
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/sap-api': typeof AuthenticatedAdminSapApiRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/launchpad'
     | '/management-dashboard'
+    | '/api/tbn-assistant'
     | '/admin/permissions'
     | '/admin/roles'
     | '/admin/sap-api'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/launchpad'
     | '/management-dashboard'
+    | '/api/tbn-assistant'
     | '/admin/permissions'
     | '/admin/roles'
     | '/admin/sap-api'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/launchpad'
     | '/_authenticated/management-dashboard'
+    | '/api/tbn-assistant'
     | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/sap-api'
@@ -317,6 +329,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiTbnAssistantRoute: typeof ApiTbnAssistantRoute
   ApiPublicSapPullZfisalesRoute: typeof ApiPublicSapPullZfisalesRoute
   ApiPublicSapSyncZfisalesRoute: typeof ApiPublicSapSyncZfisalesRoute
 }
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/management-dashboard'
       preLoaderRoute: typeof AuthenticatedManagementDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/tbn-assistant': {
+      id: '/api/tbn-assistant'
+      path: '/api/tbn-assistant'
+      fullPath: '/api/tbn-assistant'
+      preLoaderRoute: typeof ApiTbnAssistantRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/permissions': {
       id: '/_authenticated/admin/permissions'
@@ -551,6 +571,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiTbnAssistantRoute: ApiTbnAssistantRoute,
   ApiPublicSapPullZfisalesRoute: ApiPublicSapPullZfisalesRoute,
   ApiPublicSapSyncZfisalesRoute: ApiPublicSapSyncZfisalesRoute,
 }
