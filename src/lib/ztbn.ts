@@ -115,7 +115,7 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
       debit,
       credit,
       net: debit - credit,
-      cumulativeBalance: numeric(row.cumm_balance),
+      cumulativeBalance: numeric(row["cumm_balance"]),
     };
   });
   const centres = activeCentres.map((centre) => {
