@@ -1,3 +1,4 @@
+- [x] Match the TBN dashboard to the supplied compact CFO management layout using source-backed measures only
 - [x] Remove the TBN AI assistant and its dashboard action
 - [x] Add chart data-point drill-downs showing the exact contributing TBN GL entries
 - [x] Add a temporary multi-thread TBN Finance Assistant grounded in the current filtered dashboard, secured by TBN access and powered through Lovable AI Gateway.

@@ -53,5 +53,5 @@ function TbnDashboardRoute() {
   if (!allowed) return <ReportShell title="TBN" description="ZTBN management dashboard"><AccessDenied area="TBN" /></ReportShell>;
   if (columns.error || rows.error) return <ReportShell title="TBN" description="ZTBN management dashboard"><p className="rounded-md border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">Unable to load TBN dashboard data. Please refresh.</p></ReportShell>;
   if (columns.isLoading || rows.isLoading) return <ReportShell title="TBN" description="Loading management dashboard…"><Skeleton className="h-[650px] w-full" /></ReportShell>;
-  return <ReportShell title="TBN" description="Financial accounting management dashboard" tcode="ZTBN"><TbnDashboard rows={rows.data ?? []} columns={columns.data ?? []} /></ReportShell>;
+  return <ReportShell title="TBN Management Dashboard" description="Real-time trial-balance insights for confident financial review" tcode="ZTBN"><TbnDashboard rows={rows.data ?? []} columns={columns.data ?? []} /></ReportShell>;
 }
