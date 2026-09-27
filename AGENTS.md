@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep ZTBN as a wide source-aligned table keyed by `source_row_no`, with scheduled sync disabled until a dedicated SAP endpoint and mapper exist, because its 261-column trial-balance format does not match the sales sync model.
