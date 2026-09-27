@@ -74,3 +74,4 @@
 - [x] Keep the TBN dashboard synchronized in real time with every ZTBN data change
 - [x] Add shared Profit Centre, GL, balance-type, and amount filters across the live TBN dashboard
 - [x] Apply distinct semantic color across each full TBN summary card
+- [x] Extend the TBN semantic color system across charts, alerts, detail table, and GL detail view
