@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, CircleDollarSign, Download, Filter, LoaderCircle, RotateCcw, Scale, Search, TableProperties } from "lucide-react";
 import { toast } from "sonner";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Panel } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,14 @@ function money(value: number) {
   if (absolute >= 1e7) return `₹ ${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`;
   if (absolute >= 1e5) return `₹ ${(value / 1e5).toLocaleString("en-IN", { maximumFractionDigits: 2 })} L`;
   return `₹ ${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}
+
+function chartValue(value: number) {
+  const absolute = Math.abs(value);
+  if (absolute >= 1e7) return `${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr`;
+  if (absolute >= 1e5) return `${(value / 1e5).toLocaleString("en-IN", { maximumFractionDigits: 1 })} L`;
+  if (absolute >= 1e3) return `${(value / 1e3).toLocaleString("en-IN", { maximumFractionDigits: 1 })} K`;
+  return value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 }
 
 const tooltipStyle = { borderColor: "var(--border)", borderRadius: 6, background: "var(--popover)", color: "var(--popover-foreground)", fontSize: 11 };
@@ -111,9 +119,9 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     {summary.accountCount === 0 ? <div className="mt-3 rounded-md border border-dashed border-border bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">No GL accounts match the selected filters.</div> : null}
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]} /><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]} /></BarChart></ResponsiveContainer></Panel>
-      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={composition} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="78%"><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
-      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}</Bar></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><ResponsiveContainer width="100%" height={250}><BarChart data={leadingCentres} margin={{ top: 24 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]}><LabelList dataKey="debit" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]}><LabelList dataKey="credit" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={composition} dataKey="value" nameKey="name" innerRadius="45%" outerRadius="68%" labelLine={false} label={({ name, value }) => `${name}: ${chartValue(Number(value))}`}><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
+      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><ResponsiveContainer width="100%" height={250}><BarChart data={leadingCentres} margin={{ top: 24 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}<LabelList dataKey="net" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></Panel>
     </div>
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
