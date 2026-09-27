@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, CircleDollarSign, Scale, Search, TableProperties } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, CircleDollarSign, Filter, RotateCcw, Scale, Search, TableProperties } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Panel } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { aggregateZtbn, profitCentresFromColumns, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
+import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
 
 function money(value: number) {
   const absolute = Math.abs(value);
@@ -33,10 +34,23 @@ function DetailDialog({ row, onClose }: { row: ZtbnGlSummary | null; onClose: ()
 
 export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: ZtbnColumn[] }) {
   const profitCentres = useMemo(() => profitCentresFromColumns(columns), [columns]);
-  const [profitCentre, setProfitCentre] = useState("all");
+  const [selectedProfitCentres, setSelectedProfitCentres] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [balanceType, setBalanceType] = useState<ZtbnBalanceType>("all");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
   const [detail, setDetail] = useState<ZtbnGlSummary | null>(null);
-  const summary = useMemo(() => aggregateZtbn(rows, profitCentres, profitCentre, search), [rows, profitCentres, profitCentre, search]);
+  const parsedMin = minAmount === "" ? null : Number(minAmount);
+  const parsedMax = maxAmount === "" ? null : Number(maxAmount);
+  const summary = useMemo(() => aggregateZtbn(rows, profitCentres, selectedProfitCentres, search, balanceType, Number.isFinite(parsedMin) ? parsedMin : null, Number.isFinite(parsedMax) ? parsedMax : null), [rows, profitCentres, selectedProfitCentres, search, balanceType, parsedMin, parsedMax]);
+  const activeFilterCount = Number(selectedProfitCentres.length > 0) + Number(Boolean(search.trim())) + Number(balanceType !== "all") + Number(minAmount !== "") + Number(maxAmount !== "");
+  const resetFilters = () => {
+    setSelectedProfitCentres([]);
+    setSearch("");
+    setBalanceType("all");
+    setMinAmount("");
+    setMaxAmount("");
+  };
   const leadingCentres = [...summary.centres].sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 8).map((item) => ({ ...item, short: item.label.split("/")[0] }));
   const topGl = [...summary.glRows].sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 8);
   const composition = [{ name: "Debit", value: summary.totalDebit }, { name: "Credit", value: summary.totalCredit }];
@@ -51,12 +65,21 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   ];
 
   return <>
-    <div className="mb-4 flex flex-col gap-3 rounded-md border border-primary/20 bg-accent/35 p-3 lg:flex-row lg:items-center lg:justify-between">
-      <div><h2 className="text-lg font-semibold text-foreground">TBN Management Dashboard</h2><p className="text-xs text-muted-foreground">Live trial-balance intelligence from ZTBN</p></div>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="relative min-w-64"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search GL code or description" className="bg-card pl-9" /></div>
-        <Select value={profitCentre} onValueChange={setProfitCentre}><SelectTrigger className="min-w-64 bg-card"><SelectValue placeholder="All profit centres" /></SelectTrigger><SelectContent><SelectItem value="all">All profit centres</SelectItem>{profitCentres.map((centre) => <SelectItem key={centre.key} value={centre.key}>{centre.label}</SelectItem>)}</SelectContent></Select>
+    <div className="mb-4 rounded-md border border-primary/20 bg-accent/35">
+      <div className="flex flex-col gap-3 border-b border-primary/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="text-lg font-semibold text-foreground">TBN Management Dashboard</h2><p className="text-xs text-muted-foreground">Live trial-balance intelligence from ZTBN</p></div>
         <Button asChild variant="outline"><Link to="/reports/fi/tbn/table"><TableProperties className="size-4" />Full ZTBN Table</Link></Button>
+      </div>
+      <div className="p-3">
+        <div className="mb-2 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="size-4 text-primary" /><span className="text-sm font-semibold text-foreground">Filters</span>{activeFilterCount > 0 ? <span className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{activeFilterCount} active</span> : null}</div><Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button></div>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+          <div><label className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground">Profit Centre</label><MultiSelect options={profitCentres.map((centre) => ({ value: centre.key, label: centre.label }))} selected={selectedProfitCentres} onChange={setSelectedProfitCentres} placeholder="All profit centres" /></div>
+          <div><label className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground">GL Account</label><div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Code or description" className="bg-card pl-9" /></div></div>
+          <div><label className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground">Balance Type</label><Select value={balanceType} onValueChange={(value) => setBalanceType(value as ZtbnBalanceType)}><SelectTrigger className="w-full bg-card"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All balances</SelectItem><SelectItem value="debit">Debit-heavy</SelectItem><SelectItem value="credit">Credit-heavy</SelectItem><SelectItem value="zero">Zero balance</SelectItem></SelectContent></Select></div>
+          <div><label htmlFor="tbn-min-amount" className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground">Minimum absolute balance</label><Input id="tbn-min-amount" type="number" min="0" value={minAmount} onChange={(event) => setMinAmount(event.target.value)} placeholder="No minimum" className="bg-card" /></div>
+          <div><label htmlFor="tbn-max-amount" className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground">Maximum absolute balance</label><Input id="tbn-max-amount" type="number" min="0" value={maxAmount} onChange={(event) => setMaxAmount(event.target.value)} placeholder="No maximum" className="bg-card" /></div>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">Date, monthly, quarterly, company, and plant filters will become available when those fields are supplied in ZTBN.</p>
       </div>
     </div>
 
@@ -68,10 +91,12 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
       <Metric label="GL Accounts" value={summary.accountCount.toLocaleString("en-IN")} icon={BookOpen} tone="bg-muted text-foreground" />
     </div>
 
+    {summary.accountCount === 0 ? <div className="mt-3 rounded-md border border-dashed border-border bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">No GL accounts match the selected filters.</div> : null}
+
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-      <Panel title="Debit vs Credit by Profit Centre" className="lg:col-span-5"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setProfitCentre(key); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--kpi-1)" radius={[2, 2, 0, 0]} /><Bar dataKey="credit" name="Credit" fill="var(--kpi-2)" radius={[2, 2, 0, 0]} /></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Debit vs Credit by Profit Centre" className="lg:col-span-5"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--kpi-1)" radius={[2, 2, 0, 0]} /><Bar dataKey="credit" name="Credit" fill="var(--kpi-2)" radius={[2, 2, 0, 0]} /></BarChart></ResponsiveContainer></Panel>
       <Panel title="Debit / Credit Composition" className="lg:col-span-3"><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={composition} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="78%"><Cell fill="var(--kpi-1)" /><Cell fill="var(--kpi-2)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
-      <Panel title="Net Balance by Profit Centre" className="lg:col-span-4"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setProfitCentre(key); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--kpi-3)" : "var(--destructive)"} />)}</Bar></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Net Balance by Profit Centre" className="lg:col-span-4"><ResponsiveContainer width="100%" height={230}><BarChart data={leadingCentres} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--kpi-3)" : "var(--destructive)"} />)}</Bar></BarChart></ResponsiveContainer></Panel>
     </div>
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
