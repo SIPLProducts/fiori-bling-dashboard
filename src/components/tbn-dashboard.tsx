@@ -13,6 +13,7 @@ import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type Ztb
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { TbnFinanceAssistant } from "@/components/tbn-finance-assistant";
 import type { TbnAiSnapshot } from "@/lib/tbn-ai-types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function money(value: number) {
   const absolute = Math.abs(value);
@@ -27,6 +28,17 @@ function chartValue(value: number) {
   if (absolute >= 1e5) return `${(value / 1e5).toLocaleString("en-IN", { maximumFractionDigits: 1 })} L`;
   if (absolute >= 1e3) return `${(value / 1e3).toLocaleString("en-IN", { maximumFractionDigits: 1 })} K`;
   return value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+}
+
+function visibleChartValue(value: unknown) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue !== 0 ? chartValue(numericValue) : "";
+}
+
+function DenseChartFrame({ children, minWidth = 680 }: { children: React.ReactNode; minWidth?: number }) {
+  return <div className="overflow-x-auto pb-1" tabIndex={0} aria-label="Scrollable chart"><div className="h-[250px]" style={{ minWidth }}>
+    {children}
+  </div></div>;
 }
 
 const tooltipStyle = { borderColor: "var(--border)", borderRadius: 6, background: "var(--popover)", color: "var(--popover-foreground)", fontSize: 11 };
@@ -45,6 +57,7 @@ function DetailDialog({ row, onClose }: { row: ZtbnGlSummary | null; onClose: ()
 }
 
 export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: ZtbnColumn[] }) {
+  const isMobile = useIsMobile();
   const profitCentres = useMemo(() => profitCentresFromColumns(columns), [columns]);
   const [selectedProfitCentres, setSelectedProfitCentres] = useState<string[]>([]);
   const [search, setSearch] = useState("");
@@ -134,9 +147,9 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     {summary.accountCount === 0 ? <div className="mt-3 rounded-md border border-dashed border-border bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">No GL accounts match the selected filters.</div> : null}
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><ResponsiveContainer width="100%" height={250}><BarChart data={leadingCentres} margin={{ top: 24 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]}><LabelList dataKey="debit" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]}><LabelList dataKey="credit" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></Panel>
-      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={composition} dataKey="value" nameKey="name" innerRadius="45%" outerRadius="68%" labelLine={false} label={({ name, value }) => `${name}: ${chartValue(Number(value))}`}><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
-      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><ResponsiveContainer width="100%" height={250}><BarChart data={leadingCentres} margin={{ top: 24 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}<LabelList dataKey="net" position="top" formatter={chartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><DenseChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]} isAnimationActive={false}><LabelList dataKey="debit" position="top" offset={5} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]} isAnimationActive={false}><LabelList dataKey="credit" position="top" offset={15} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
+      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={250}><PieChart margin={{ left: isMobile ? 12 : 4, right: isMobile ? 12 : 4 }}><Pie data={composition} dataKey="value" nameKey="name" innerRadius="45%" outerRadius={isMobile ? "61%" : "66%"} labelLine={!isMobile} label={({ name, value }) => isMobile ? visibleChartValue(value) : `${name}: ${visibleChartValue(value)}`}><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
+      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><DenseChartFrame minWidth={620}><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]} isAnimationActive={false}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}<LabelList dataKey="net" position="top" offset={6} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
     </div>
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
