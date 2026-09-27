@@ -142,7 +142,7 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
     const absoluteBalance = Math.abs(summary.net);
     if (balanceType === "debit" && summary.debit <= summary.credit) return false;
     if (balanceType === "credit" && summary.credit <= summary.debit) return false;
-    if (balanceType === "zero" && (summary.debit !== 0 || summary.credit !== 0)) return false;
+    if (balanceType === "zero" && summary.net !== 0) return false;
     if (minAmount !== null && absoluteBalance < minAmount) return false;
     if (maxAmount !== null && absoluteBalance > maxAmount) return false;
     return true;

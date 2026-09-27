@@ -42,7 +42,7 @@ describe("ZTBN dashboard aggregation", () => {
   });
 
   test("supports zero-balance filtering", () => {
-    const zeroRow = { id: "4", source_row_no: 4, gl_code: "300", gl_description: "Cleared", pc_one_debit: 0, pc_one_credit: 0, cumm_balance: 0 } as ZtbnRow;
+    const zeroRow = { id: "4", source_row_no: 4, gl_code: "300", gl_description: "Cleared", pc_one_debit: 25, pc_one_credit: 25, cumm_balance: 0 } as ZtbnRow;
     const result = aggregateZtbn([...rows, zeroRow], profitCentresFromColumns(columns), [], "", "zero");
     expect(result.accountCount).toBe(1);
     expect(result.glRows[0]?.glCode).toBe("300");

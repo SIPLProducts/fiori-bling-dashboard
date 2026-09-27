@@ -43,7 +43,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   const parsedMin = minAmount === "" ? null : Number(minAmount);
   const parsedMax = maxAmount === "" ? null : Number(maxAmount);
   const summary = useMemo(() => aggregateZtbn(rows, profitCentres, selectedProfitCentres, search, balanceType, Number.isFinite(parsedMin) ? parsedMin : null, Number.isFinite(parsedMax) ? parsedMax : null), [rows, profitCentres, selectedProfitCentres, search, balanceType, parsedMin, parsedMax]);
-  const activeFilterCount = selectedProfitCentres.length + Number(Boolean(search.trim())) + Number(balanceType !== "all") + Number(minAmount !== "") + Number(maxAmount !== "");
+  const activeFilterCount = Number(selectedProfitCentres.length > 0) + Number(Boolean(search.trim())) + Number(balanceType !== "all") + Number(minAmount !== "") + Number(maxAmount !== "");
   const resetFilters = () => {
     setSelectedProfitCentres([]);
     setSearch("");
