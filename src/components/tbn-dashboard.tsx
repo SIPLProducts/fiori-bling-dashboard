@@ -134,7 +134,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     { label: "Zero-balance GLs", value: zeroAccounts, tone: "text-muted-foreground", surface: "border-border bg-secondary" },
   ];
   const latestImport = rows.reduce<string | null>((latest, row) => {
-    const value = typeof row.imported_at === "string" ? row.imported_at : null;
+    const value = typeof row["imported_at"] === "string" ? row["imported_at"] : null;
     return value && (!latest || value > latest) ? value : latest;
   }, null);
   const openCentreDrilldown = (centre: ZtbnCentreSummary, metric: DrilldownMetric) => {
