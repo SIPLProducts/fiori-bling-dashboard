@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, CircleDollarSign, Filter, RotateCcw, Scale, Search, TableProperties } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, CircleDollarSign, Download, Filter, LoaderCircle, RotateCcw, Scale, Search, TableProperties } from "lucide-react";
+import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Panel } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
+import { exportDashboardPdf } from "@/lib/chart-export";
 
 function money(value: number) {
   const absolute = Math.abs(value);
@@ -40,6 +42,8 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [detail, setDetail] = useState<ZtbnGlSummary | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   const parsedMin = minAmount === "" ? null : Number(minAmount);
   const parsedMax = maxAmount === "" ? null : Number(maxAmount);
   const summary = useMemo(() => aggregateZtbn(rows, profitCentres, selectedProfitCentres, search, balanceType, Number.isFinite(parsedMin) ? parsedMin : null, Number.isFinite(parsedMax) ? parsedMax : null), [rows, profitCentres, selectedProfitCentres, search, balanceType, parsedMin, parsedMax]);
@@ -50,6 +54,17 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     setBalanceType("all");
     setMinAmount("");
     setMaxAmount("");
+  };
+  const downloadPdf = async () => {
+    setIsExporting(true);
+    try {
+      await exportDashboardPdf(reportRef.current, `TBN-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("TBN report downloaded");
+    } catch {
+      toast.error("Unable to create the TBN report");
+    } finally {
+      setIsExporting(false);
+    }
   };
   const leadingCentres = [...summary.centres].sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 8).map((item) => ({ ...item, short: item.label.split("/")[0] }));
   const topGl = [...summary.glRows].sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 8);
@@ -68,7 +83,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     <div className="mb-4 rounded-md border border-primary/20 bg-accent/35">
       <div className="flex flex-col gap-3 border-b border-primary/15 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h2 className="text-lg font-semibold text-foreground">TBN Management Dashboard</h2><p className="text-xs text-muted-foreground">Live trial-balance intelligence from ZTBN</p></div>
-        <Button asChild variant="outline"><Link to="/reports/fi/tbn/table"><TableProperties className="size-4" />Full ZTBN Table</Link></Button>
+        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={downloadPdf} disabled={isExporting}>{isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}Download PDF</Button><Button asChild variant="outline"><Link to="/reports/fi/tbn/table"><TableProperties className="size-4" />Full ZTBN Table</Link></Button></div>
       </div>
       <div className="p-3">
         <div className="mb-2 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="size-4 text-primary" /><span className="text-sm font-semibold text-foreground">Filters</span>{activeFilterCount > 0 ? <span className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{activeFilterCount} active</span> : null}</div><Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button></div>
@@ -83,6 +98,8 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
       </div>
     </div>
 
+    <div ref={reportRef} className="bg-background pb-1">
+    <div className="mb-3 flex items-end justify-between gap-3 border-b border-border pb-2"><div><p className="text-lg font-semibold text-foreground">TBN Management Report</p><p className="text-[10px] text-muted-foreground">Current filtered ZTBN dashboard · {activeFilterCount > 0 ? `${activeFilterCount} active filters` : "All records"}</p></div><p className="text-[10px] text-muted-foreground">{summary.accountCount.toLocaleString("en-IN")} GL accounts</p></div>
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       <Metric label="Total Debit" value={money(summary.totalDebit)} icon={ArrowUpRight} cardTone="border-primary/30 bg-primary/10" iconTone="bg-primary/15 text-primary" />
       <Metric label="Total Credit" value={money(summary.totalCredit)} icon={ArrowDownRight} cardTone="border-success/30 bg-success/10" iconTone="bg-success/15 text-success" />
@@ -107,7 +124,8 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
       <Panel title="Management Alerts" className="border-warning/20 bg-warning/5 lg:col-span-4"><div className="grid grid-cols-2 gap-2">{alerts.map((alert) => <div key={alert.label} className={`rounded-md border p-3 ${alert.surface}`}><div className="flex items-center gap-2"><AlertTriangle className={`size-4 ${alert.tone}`} /><span className="text-[10px] text-foreground/70">{alert.label}</span></div><p className={`mt-2 text-xl font-semibold ${alert.tone}`}>{alert.value.toLocaleString("en-IN")}</p></div>)}</div></Panel>
-      <Panel title="Leading GL Entries" className="border-accent-foreground/20 bg-accent/30 lg:col-span-8" actions={<span className="text-[10px] text-muted-foreground">Top balances</span>}><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-[10px]"><thead><tr className="border-b border-accent-foreground/20 bg-accent"><th className="px-2 py-2 text-left">GL Account</th><th className="px-2 text-left">Description</th><th className="px-2 text-right text-primary">Debit</th><th className="px-2 text-right text-success">Credit</th><th className="px-2 text-right text-warning-foreground">Net</th><th className="px-2 text-center">Action</th></tr></thead><tbody>{topGl.slice(0, 6).map((row) => <tr key={row.id} className="border-b transition-colors hover:bg-accent/70 last:border-0"><td className="px-2 py-2 font-medium">{row.glCode}</td><td className="max-w-52 truncate px-2" title={row.description}>{row.description}</td><td className="bg-primary/5 px-2 text-right tabular-nums text-primary">{money(row.debit)}</td><td className="bg-success/5 px-2 text-right tabular-nums text-success">{money(row.credit)}</td><td className={`bg-warning/5 px-2 text-right font-medium tabular-nums ${row.net < 0 ? "text-destructive" : "text-success"}`}>{money(row.net)}</td><td className="px-2 text-center"><Button type="button" variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => setDetail(row)}>View</Button></td></tr>)}</tbody></table></div></Panel>
+      <Panel title="Leading GL Entries" className="border-accent-foreground/20 bg-accent/30 lg:col-span-8" actions={<span className="text-[10px] text-muted-foreground">Top balances</span>}><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-[10px]"><thead><tr className="border-b border-accent-foreground/20 bg-accent"><th className="px-2 py-2 text-left">GL Account</th><th className="px-2 text-left">Description</th><th className="px-2 text-right text-primary">Debit</th><th className="px-2 text-right text-success">Credit</th><th className="px-2 text-right text-warning-foreground">Net</th><th data-pdf-exclude className="px-2 text-center">Action</th></tr></thead><tbody>{topGl.slice(0, 6).map((row) => <tr key={row.id} className="border-b transition-colors hover:bg-accent/70 last:border-0"><td className="px-2 py-2 font-medium">{row.glCode}</td><td className="max-w-52 truncate px-2" title={row.description}>{row.description}</td><td className="bg-primary/5 px-2 text-right tabular-nums text-primary">{money(row.debit)}</td><td className="bg-success/5 px-2 text-right tabular-nums text-success">{money(row.credit)}</td><td className={`bg-warning/5 px-2 text-right font-medium tabular-nums ${row.net < 0 ? "text-destructive" : "text-success"}`}>{money(row.net)}</td><td data-pdf-exclude className="px-2 text-center"><Button type="button" variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => setDetail(row)}>View</Button></td></tr>)}</tbody></table></div></Panel>
+    </div>
     </div>
     <DetailDialog row={detail} onClose={() => setDetail(null)} />
   </>;
