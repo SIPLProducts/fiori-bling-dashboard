@@ -1,3 +1,4 @@
+- [x] Add a temporary multi-thread TBN Finance Assistant grounded in the current filtered dashboard, secured by TBN access and powered through Lovable AI Gateway.
 # Roadmap
 
 - [x] Treemap: uniform equal-size grid tiles, centered name/amount/%, keep drill-down
