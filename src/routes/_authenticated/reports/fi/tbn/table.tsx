@@ -10,12 +10,12 @@ import { useLaunchpad } from "@/lib/use-launchpad";
 import { hasScreen } from "@/lib/screens";
 import { listZtbnColumns, listZtbnRows, type ZtbnColumn } from "@/lib/ztbn";
 
-export const Route = createFileRoute("/_authenticated/reports/fi/tbn")({
+export const Route = createFileRoute("/_authenticated/reports/fi/tbn/table")({
   head: () => ({
     meta: [
-      { title: "TBN — Financial Accounting" },
+      { title: "Full ZTBN Table — Financial Accounting" },
       { name: "description", content: "Complete ZTBN trial-balance values by GL and profit centre." },
-      { property: "og:title", content: "TBN — Financial Accounting" },
+      { property: "og:title", content: "Full ZTBN Table — Financial Accounting" },
       { property: "og:description", content: "Complete ZTBN trial-balance values by GL and profit centre." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
