@@ -11,3 +11,4 @@
 
 - Keep ZTBN as a wide source-aligned table keyed by `source_row_no`, with scheduled sync disabled until a dedicated SAP endpoint and mapper exist, because its 261-column trial-balance format does not match the sales sync model.
 - Present ZTBN reporting through a paginated, horizontally scrollable TBN view because the source has 261 business columns and cannot fit a fixed dashboard grid.
+- Treat `public.ztbn` as the sole TBN dashboard source and refresh its cached dashboard/table queries through one cleaned-up Realtime subscription, with periodic refresh as a connection fallback.

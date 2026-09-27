@@ -71,3 +71,4 @@
 - [x] Render every registered table card under Tables Master instead of limiting the section to one card
 - [x] Add a TBN tile under Financial Accounting with a searchable, paginated view of all ZTBN columns and values
 - [x] Turn TBN View Details into a live ZTBN management dashboard with GL and profit-centre drill-downs
+- [x] Keep the TBN dashboard synchronized in real time with every ZTBN data change
