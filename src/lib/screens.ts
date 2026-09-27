@@ -57,6 +57,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: "fi.open-payables", label: "Open Payables", tileKey: "fi_payables" },
       { key: "fi.days-sales-outstanding", label: "Days Sales Outstanding", tileKey: "fi_dso" },
       { key: "fi.cash-flow-trend", label: "Cash Flow Trend", tileKey: "fi_cash_trend" },
+      { key: "fi.tbn", label: "TBN", tileKey: "fi_tbn" },
     ],
   },
   {
@@ -76,6 +77,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     groupKey: TABLES_MASTER_GROUP_KEY,
     children: [
       { key: "tables.zfisales-detail", label: "ZFISALES Detail", tileKey: "table_zfisales_detail" },
+      { key: "tables.ztbn", label: "ZTBN", tileKey: "table_ztbn" },
     ],
   },
 ];

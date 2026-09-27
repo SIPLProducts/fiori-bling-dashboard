@@ -86,6 +86,7 @@ function Launchpad() {
             ))}
           </div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <TableStatusTile title={group.key === "financial-accounting" ? "FI Overview" : "PP Overview"} value="Live" note={group.key === "financial-accounting" ? "Financial overview" : "Production overview"} href={group.key === "financial-accounting" ? "/reports/module/fi" : "/reports/module/pp"} action="Open overview" icon={group.key === "financial-accounting" ? CircleDollarSign : Factory} />
+            {groupTiles.filter((tile) => tile.kind === "launch" && tile.screen_key === "fi.tbn").map((tile) => <TileCard key={tile.id} tile={tile} />)}
             {groupTiles.filter((tile) => tile.kind !== "launch").map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div>}
         </section>;
