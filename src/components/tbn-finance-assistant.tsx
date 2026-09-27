@@ -77,7 +77,7 @@ function ChatThread({ thread, currentSnapshot, onMessages, onSnapshot }: {
       {messages.length === 0 ? <div className="mb-2 flex flex-wrap gap-1.5">{starterQuestions.map((question) => <Button key={question} type="button" variant="outline" size="sm" className="h-auto whitespace-normal text-left text-[11px]" onClick={() => void submit(question)}>{question}</Button>)}</div> : null}
       <PromptInput onSubmit={({ text }) => submit(text)}>
         <PromptInputBody><PromptInputTextarea placeholder="Ask about balances, profit centres, or GL movements…" disabled={busy} /></PromptInputBody>
-        <PromptInputFooter><PromptInputTools><span className="px-1 text-[10px] text-muted-foreground">Current filtered ZTBN data · no chat history is stored</span></PromptInputTools><PromptInputSubmit status={status} onStop={stop} disabled={!busy && false} /></PromptInputFooter>
+        <PromptInputFooter><PromptInputTools><span className="px-1 text-[10px] text-muted-foreground">Current filtered ZTBN data · no chat history is stored</span></PromptInputTools><PromptInputSubmit status={status} onStop={stop} /></PromptInputFooter>
       </PromptInput>
     </div>
   </div>;
@@ -113,7 +113,7 @@ export function TbnFinanceAssistant({ snapshot }: { snapshot: TbnAiSnapshot }) {
             <Button type="button" variant="outline" size="sm" className="w-full" onClick={addThread}><Plus className="size-4" />New analysis</Button>
             <div className="mt-3 flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">{threads.map((thread) => <div key={thread.id} className={`flex min-w-40 items-center rounded-md border ${thread.id === active.id ? "border-primary/30 bg-primary/10" : "border-transparent"}`}><button type="button" onClick={() => setActiveId(thread.id)} className="min-w-0 flex-1 px-3 py-2 text-left"><span className="block truncate text-xs font-medium">{thread.title}</span><span className="block text-[10px] text-muted-foreground">{thread.messages.length ? `${thread.messages.filter((m) => m.role === "user").length} questions` : "New thread"}</span></button><Button type="button" variant="ghost" size="icon" className="mr-1 size-7" onClick={() => removeThread(thread.id)} aria-label={`Delete ${thread.title}`}><Trash2 className="size-3.5" /></Button></div>)}</div>
           </aside>
-          <ChatThread key={active.id} thread={active} currentSnapshot={snapshot} onMessages={(messages) => updateActive({ messages, title: messageText(messages.find((message) => message.role === "user") ?? messages[0]!).slice(0, 36) || active.title })} onSnapshot={(value) => updateActive({ snapshot: value })} />
+          <ChatThread key={active.id} thread={active} currentSnapshot={snapshot} onMessages={(messages) => { const firstUser = messages.find((message) => message.role === "user"); updateActive({ messages, title: firstUser ? messageText(firstUser).slice(0, 36) || active.title : active.title }); }} onSnapshot={(value) => updateActive({ snapshot: value })} />
         </div>
       </DialogContent>
     </Dialog>
