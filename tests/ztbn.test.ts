@@ -47,4 +47,13 @@ describe("ZTBN dashboard aggregation", () => {
     expect(result.accountCount).toBe(1);
     expect(result.glRows[0]?.glCode).toBe("300");
   });
+
+  test("keeps the exact GL contributors behind each profit-centre chart value", () => {
+    const result = aggregateZtbn(rows, profitCentresFromColumns(columns));
+    const centre = result.centres[0];
+    expect(centre?.glRows.map((row) => row.glCode)).toEqual(["100", "200"]);
+    expect(centre?.glRows.reduce((sum, row) => sum + row.debit, 0)).toBe(centre?.debit);
+    expect(centre?.glRows.reduce((sum, row) => sum + row.credit, 0)).toBe(centre?.credit);
+    expect(centre?.glRows.reduce((sum, row) => sum + row.net, 0)).toBe(centre?.net);
+  });
 });
