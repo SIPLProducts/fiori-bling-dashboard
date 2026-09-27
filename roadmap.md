@@ -69,3 +69,4 @@
 - [x] Create ZTBN in Tables Master with all 261 workbook fields and import all 796 supplied rows
 - [x] Add the missing ZTBN launchpad box under Tables Master and link it to `/tables/ztbn`
 - [x] Render every registered table card under Tables Master instead of limiting the section to one card
+- [x] Add a TBN tile under Financial Accounting with a searchable, paginated view of all ZTBN columns and values
