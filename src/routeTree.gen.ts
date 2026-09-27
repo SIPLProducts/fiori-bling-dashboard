@@ -21,13 +21,15 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedTablesIndexRouteImport } from './routes/_authenticated/tables/index'
 import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authenticated/tables/$tableKey'
-import { Route as AuthenticatedReportsFiTbnRouteImport } from './routes/_authenticated/reports/fi/tbn'
+import { Route as AuthenticatedReportsFiTbnRouteRouteImport } from './routes/_authenticated/reports/fi/tbn/route'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
 import { Route as AuthenticatedReportsSdDrilldownRouteImport } from './routes/_authenticated/reports/sd/drilldown'
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
 import { Route as AuthenticatedReportsSdKpiRouteImport } from './routes/_authenticated/reports/sd/kpi'
 import { Route as AuthenticatedReportsSdOpenSalesOrdersRouteImport } from './routes/_authenticated/reports/sd/open-sales-orders'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
+import { Route as AuthenticatedReportsFiTbnIndexRouteImport } from './routes/_authenticated/reports/fi/tbn/index'
+import { Route as AuthenticatedReportsFiTbnTableRouteImport } from './routes/_authenticated/reports/fi/tbn/table'
 import { Route as ApiPublicSapPullZfisalesRouteImport } from './routes/api/public/sap/pull/zfisales'
 import { Route as ApiPublicSapSyncZfisalesRouteImport } from './routes/api/public/sap/sync/zfisales'
 
@@ -96,8 +98,8 @@ const AuthenticatedTablesTableKeyRoute =
     path: '/tables/$tableKey',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedReportsFiTbnRoute =
-  AuthenticatedReportsFiTbnRouteImport.update({
+const AuthenticatedReportsFiTbnRouteRoute =
+  AuthenticatedReportsFiTbnRouteRouteImport.update({
     id: '/reports/fi/tbn',
     path: '/reports/fi/tbn',
     getParentRoute: () => AuthenticatedRouteRoute,
@@ -138,6 +140,18 @@ const AuthenticatedReportsSdRegisterRoute =
     path: '/reports/sd/register',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsFiTbnIndexRoute =
+  AuthenticatedReportsFiTbnIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedReportsFiTbnRouteRoute,
+  } as any)
+const AuthenticatedReportsFiTbnTableRoute =
+  AuthenticatedReportsFiTbnTableRouteImport.update({
+    id: '/table',
+    path: '/table',
+    getParentRoute: () => AuthenticatedReportsFiTbnRouteRoute,
+  } as any)
 const ApiPublicSapPullZfisalesRoute =
   ApiPublicSapPullZfisalesRouteImport.update({
     id: '/api/public/sap/pull/zfisales',
@@ -163,15 +177,17 @@ export interface FileRoutesByFullPath {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables/': typeof AuthenticatedTablesIndexRoute
-  '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRoute
+  '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
+  '/reports/fi/tbn/': typeof AuthenticatedReportsFiTbnIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -185,15 +201,16 @@ export interface FileRoutesByTo {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables': typeof AuthenticatedTablesIndexRoute
-  '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
+  '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -209,15 +226,17 @@ export interface FileRoutesById {
   '/_authenticated/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/_authenticated/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/_authenticated/tables/': typeof AuthenticatedTablesIndexRoute
-  '/_authenticated/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRoute
+  '/_authenticated/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/_authenticated/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
   '/_authenticated/reports/sd/kpi': typeof AuthenticatedReportsSdKpiRoute
   '/_authenticated/reports/sd/open-sales-orders': typeof AuthenticatedReportsSdOpenSalesOrdersRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
+  '/_authenticated/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
+  '/_authenticated/reports/fi/tbn/': typeof AuthenticatedReportsFiTbnIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -240,8 +259,10 @@ export interface FileRouteTypes {
     | '/reports/sd/kpi'
     | '/reports/sd/open-sales-orders'
     | '/reports/sd/register'
+    | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
+    | '/reports/fi/tbn/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -255,15 +276,16 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/tables/$tableKey'
     | '/tables'
-    | '/reports/fi/tbn'
     | '/reports/module/$module'
     | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
     | '/reports/sd/kpi'
     | '/reports/sd/open-sales-orders'
     | '/reports/sd/register'
+    | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
+    | '/reports/fi/tbn'
   id:
     | '__root__'
     | '/'
@@ -285,8 +307,10 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/kpi'
     | '/_authenticated/reports/sd/open-sales-orders'
     | '/_authenticated/reports/sd/register'
+    | '/_authenticated/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
+    | '/_authenticated/reports/fi/tbn/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -387,7 +411,7 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/reports/fi/tbn'
       path: '/reports/fi/tbn'
       fullPath: '/reports/fi/tbn'
-      preLoaderRoute: typeof AuthenticatedReportsFiTbnRouteImport
+      preLoaderRoute: typeof AuthenticatedReportsFiTbnRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/module/$module': {
@@ -432,6 +456,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSdRegisterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/fi/tbn/': {
+      id: '/_authenticated/reports/fi/tbn/'
+      path: '/'
+      fullPath: '/reports/fi/tbn/'
+      preLoaderRoute: typeof AuthenticatedReportsFiTbnIndexRouteImport
+      parentRoute: typeof AuthenticatedReportsFiTbnRouteRoute
+    }
+    '/_authenticated/reports/fi/tbn/table': {
+      id: '/_authenticated/reports/fi/tbn/table'
+      path: '/table'
+      fullPath: '/reports/fi/tbn/table'
+      preLoaderRoute: typeof AuthenticatedReportsFiTbnTableRouteImport
+      parentRoute: typeof AuthenticatedReportsFiTbnRouteRoute
+    }
     '/api/public/sap/pull/zfisales': {
       id: '/api/public/sap/pull/zfisales'
       path: '/api/public/sap/pull/zfisales'
@@ -449,6 +487,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedReportsFiTbnRouteRouteChildren {
+  AuthenticatedReportsFiTbnTableRoute: typeof AuthenticatedReportsFiTbnTableRoute
+  AuthenticatedReportsFiTbnIndexRoute: typeof AuthenticatedReportsFiTbnIndexRoute
+}
+
+const AuthenticatedReportsFiTbnRouteRouteChildren: AuthenticatedReportsFiTbnRouteRouteChildren =
+  {
+    AuthenticatedReportsFiTbnTableRoute: AuthenticatedReportsFiTbnTableRoute,
+    AuthenticatedReportsFiTbnIndexRoute: AuthenticatedReportsFiTbnIndexRoute,
+  }
+
+const AuthenticatedReportsFiTbnRouteRouteWithChildren =
+  AuthenticatedReportsFiTbnRouteRoute._addFileChildren(
+    AuthenticatedReportsFiTbnRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaunchpadRoute: typeof AuthenticatedLaunchpadRoute
   AuthenticatedManagementDashboardRoute: typeof AuthenticatedManagementDashboardRoute
@@ -459,7 +513,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSalesAnalyticsRoute: typeof AuthenticatedReportsSalesAnalyticsRoute
   AuthenticatedTablesTableKeyRoute: typeof AuthenticatedTablesTableKeyRoute
   AuthenticatedTablesIndexRoute: typeof AuthenticatedTablesIndexRoute
-  AuthenticatedReportsFiTbnRoute: typeof AuthenticatedReportsFiTbnRoute
+  AuthenticatedReportsFiTbnRouteRoute: typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
   AuthenticatedReportsSdDrilldownRoute: typeof AuthenticatedReportsSdDrilldownRoute
   AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
@@ -479,7 +533,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsSalesAnalyticsRoute,
   AuthenticatedTablesTableKeyRoute: AuthenticatedTablesTableKeyRoute,
   AuthenticatedTablesIndexRoute: AuthenticatedTablesIndexRoute,
-  AuthenticatedReportsFiTbnRoute: AuthenticatedReportsFiTbnRoute,
+  AuthenticatedReportsFiTbnRouteRoute:
+    AuthenticatedReportsFiTbnRouteRouteWithChildren,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
   AuthenticatedReportsSdDrilldownRoute: AuthenticatedReportsSdDrilldownRoute,
   AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,
