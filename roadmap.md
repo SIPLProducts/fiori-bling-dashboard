@@ -1,3 +1,4 @@
+- [x] Add chart data-point drill-downs showing the exact contributing TBN GL entries
 - [x] Add a temporary multi-thread TBN Finance Assistant grounded in the current filtered dashboard, secured by TBN access and powered through Lovable AI Gateway.
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap

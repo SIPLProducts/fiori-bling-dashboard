@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
+import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type ZtbnCentreSummary, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { TbnFinanceAssistant } from "@/components/tbn-finance-assistant";
 import type { TbnAiSnapshot } from "@/lib/tbn-ai-types";
@@ -56,6 +56,39 @@ function DetailDialog({ row, onClose }: { row: ZtbnGlSummary | null; onClose: ()
   </DialogContent></Dialog>;
 }
 
+type DrilldownMetric = "debit" | "credit" | "net";
+
+type ChartDrilldown = {
+  title: string;
+  context: string;
+  metric: DrilldownMetric;
+  total: number;
+  rows: ZtbnGlSummary[];
+};
+
+function ChartDrilldownDialog({ drilldown, onClose }: { drilldown: ChartDrilldown | null; onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const matchingRows = useMemo(() => {
+    if (!drilldown) return [];
+    const term = query.trim().toLowerCase();
+    return drilldown.rows
+      .filter((row) => row[drilldown.metric] !== 0)
+      .filter((row) => !term || `${row.glCode} ${row.description}`.toLowerCase().includes(term))
+      .sort((a, b) => Math.abs(b[drilldown.metric]) - Math.abs(a[drilldown.metric]));
+  }, [drilldown, query]);
+
+  const close = () => {
+    setQuery("");
+    onClose();
+  };
+
+  return <Dialog open={Boolean(drilldown)} onOpenChange={(open) => { if (!open) close(); }}><DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden p-0"><DialogHeader className="border-b border-border px-5 py-4"><DialogTitle>{drilldown?.title}</DialogTitle><DialogDescription>{drilldown?.context} · Exact selected value: {money(drilldown?.total ?? 0)}</DialogDescription></DialogHeader>
+    <div className="min-h-0 px-5 pb-5"><div className="my-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"><div className="relative min-w-0"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search GL code or description" className="pl-9" /></div><span className="shrink-0 text-xs text-muted-foreground">{matchingRows.length.toLocaleString("en-IN")} entries</span></div>
+      <div className="max-h-[55vh] overflow-auto rounded-md border border-border"><table className="w-full min-w-[720px] text-xs"><thead className="sticky top-0 z-10 bg-card"><tr className="border-b"><th className="px-3 py-2 text-left">GL Account</th><th className="px-3 text-left">Description</th><th className="px-3 text-right text-primary">Debit</th><th className="px-3 text-right text-success">Credit</th><th className="px-3 text-right">Net</th><th className="px-3 text-right">Contribution</th></tr></thead><tbody>{matchingRows.map((row) => { const contribution = drilldown && drilldown.total !== 0 ? Math.abs(row[drilldown.metric] / drilldown.total) * 100 : 0; return <tr key={row.id} className="border-b last:border-0"><td className="px-3 py-2 font-medium">{row.glCode}</td><td className="max-w-64 truncate px-3" title={row.description}>{row.description}</td><td className="bg-primary/5 px-3 text-right tabular-nums">{money(row.debit)}</td><td className="bg-success/5 px-3 text-right tabular-nums">{money(row.credit)}</td><td className={`px-3 text-right tabular-nums ${row.net < 0 ? "text-destructive" : "text-success"}`}>{money(row.net)}</td><td className="px-3 text-right font-medium tabular-nums">{contribution.toLocaleString("en-IN", { maximumFractionDigits: 1 })}%</td></tr>; })}</tbody></table>{matchingRows.length === 0 ? <p className="px-4 py-8 text-center text-sm text-muted-foreground">No contributing GL entries match this search.</p> : null}</div>
+    </div>
+  </DialogContent></Dialog>;
+}
+
 export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: ZtbnColumn[] }) {
   const isMobile = useIsMobile();
   const profitCentres = useMemo(() => profitCentresFromColumns(columns), [columns]);
@@ -65,6 +98,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [detail, setDetail] = useState<ZtbnGlSummary | null>(null);
+  const [chartDrilldown, setChartDrilldown] = useState<ChartDrilldown | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const parsedMin = minAmount === "" ? null : Number(minAmount);
@@ -101,6 +135,17 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     { label: "Credit-heavy GLs", value: creditHeavy, tone: "text-success", surface: "border-success/30 bg-success/10" },
     { label: "Zero-balance GLs", value: zeroAccounts, tone: "text-muted-foreground", surface: "border-border bg-secondary" },
   ];
+  const openCentreDrilldown = (centre: ZtbnCentreSummary, metric: DrilldownMetric) => {
+    const metricLabel = metric === "net" ? "Net Balance" : metric === "debit" ? "Debit" : "Credit";
+    setChartDrilldown({ title: `${centre.label.split("/")[0]} · ${metricLabel}`, context: centre.label, metric, total: centre[metric], rows: centre.glRows });
+  };
+  const openCompositionDrilldown = (metric: "debit" | "credit") => setChartDrilldown({
+    title: `${metric === "debit" ? "Debit" : "Credit"} Composition`,
+    context: "All currently filtered profit centres",
+    metric,
+    total: metric === "debit" ? summary.totalDebit : summary.totalCredit,
+    rows: summary.glRows,
+  });
   const aiSnapshot = useMemo<TbnAiSnapshot>(() => ({
     filters: activeFilterCount > 0 ? `${activeFilterCount} active filters; profit centres: ${selectedProfitCentres.join(", ") || "all"}; GL search: ${search || "none"}; balance type: ${balanceType}; amount range: ${minAmount || "none"} to ${maxAmount || "none"}` : "All records",
     accountCount: summary.accountCount,
@@ -147,15 +192,15 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     {summary.accountCount === 0 ? <div className="mt-3 rounded-md border border-dashed border-border bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">No GL accounts match the selected filters.</div> : null}
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><DenseChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]} isAnimationActive={false}><LabelList dataKey="debit" position="top" offset={5} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]} isAnimationActive={false}><LabelList dataKey="credit" position="top" offset={15} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
-      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={250}><PieChart margin={{ left: isMobile ? 12 : 4, right: isMobile ? 12 : 4 }}><Pie data={composition} dataKey="value" nameKey="name" innerRadius="45%" outerRadius={isMobile ? "61%" : "66%"} labelLine={!isMobile} label={({ name, value }) => isMobile ? visibleChartValue(value) : `${name}: ${visibleChartValue(value)}`}><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
-      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><DenseChartFrame minWidth={620}><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} onClick={(state) => { const key = state?.activePayload?.[0]?.payload?.key; if (typeof key === "string") setSelectedProfitCentres([key]); }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]} isAnimationActive={false}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}<LabelList dataKey="net" position="top" offset={6} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
+      <Panel title="Debit vs Credit by Profit Centre" className="border-primary/20 bg-primary/5 lg:col-span-5"><DenseChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--primary)" radius={[2, 2, 0, 0]} isAnimationActive={false} onClick={(data) => openCentreDrilldown(data as ZtbnCentreSummary, "debit")}><LabelList dataKey="debit" position="top" offset={5} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar><Bar dataKey="credit" name="Credit" fill="var(--success)" radius={[2, 2, 0, 0]} isAnimationActive={false} onClick={(data) => openCentreDrilldown(data as ZtbnCentreSummary, "credit")}><LabelList dataKey="credit" position="top" offset={15} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
+      <Panel title="Debit / Credit Composition" className="border-success/20 bg-success/5 lg:col-span-3"><ResponsiveContainer width="100%" height={250}><PieChart margin={{ left: isMobile ? 12 : 4, right: isMobile ? 12 : 4 }}><Pie data={composition} dataKey="value" nameKey="name" innerRadius="45%" outerRadius={isMobile ? "61%" : "66%"} labelLine={!isMobile} label={({ name, value }) => isMobile ? visibleChartValue(value) : `${name}: ${visibleChartValue(value)}`} className="cursor-pointer" onClick={(data) => openCompositionDrilldown(String(data.name).toLowerCase() === "credit" ? "credit" : "debit")}><Cell fill="var(--primary)" /><Cell fill="var(--success)" /></Pie><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /></PieChart></ResponsiveContainer></Panel>
+      <Panel title="Net Balance by Profit Centre" className="border-warning/25 bg-warning/5 lg:col-span-4"><DenseChartFrame minWidth={620}><ResponsiveContainer width="100%" height="100%"><BarChart data={leadingCentres} margin={{ top: 28, right: 12, left: 4 }} className="cursor-pointer"><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="short" tick={{ fontSize: 9 }} interval={0} angle={-18} height={48} /><YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => chartValue(v)} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Bar dataKey="net" name="Net balance" radius={[2, 2, 0, 0]} isAnimationActive={false} onClick={(data) => openCentreDrilldown(data as ZtbnCentreSummary, "net")}>{leadingCentres.map((item) => <Cell key={item.key} fill={item.net >= 0 ? "var(--success)" : "var(--destructive)"} />)}<LabelList dataKey="net" position="top" offset={6} formatter={visibleChartValue} className="fill-foreground text-[8px]" /></Bar></BarChart></ResponsiveContainer></DenseChartFrame></Panel>
     </div>
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
       <Panel title="Top GL Accounts by Balance" className="lg:col-span-4"><div className="space-y-2">{topGl.map((row) => { const width = Math.max(4, Math.abs(row.net) / Math.max(...topGl.map((item) => Math.abs(item.net)), 1) * 100); return <button key={row.id} type="button" onClick={() => setDetail(row)} className="w-full text-left"><div className="mb-1 flex justify-between gap-2 text-[10px]"><span className="truncate">{row.glCode} · {row.description}</span><span className="shrink-0 tabular-nums">{money(row.net)}</span></div><div className="h-2 overflow-hidden rounded-sm bg-muted"><div className="h-full rounded-sm bg-primary" style={{ width: `${width}%` }} /></div></button>; })}</div></Panel>
       <Panel title="Profit Centre Performance" className="lg:col-span-4"><div className="max-h-64 overflow-auto"><table className="w-full text-[10px]"><thead className="sticky top-0 bg-card"><tr className="border-b"><th className="py-2 text-left">Profit centre</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Net</th></tr></thead><tbody>{leadingCentres.map((item) => <tr key={item.key} className="border-b last:border-0"><td className="max-w-40 truncate py-2" title={item.label}>{item.short}</td><td className="text-right tabular-nums">{money(item.debit)}</td><td className="text-right tabular-nums">{money(item.credit)}</td><td className={`text-right font-medium tabular-nums ${item.net < 0 ? "text-destructive" : "text-success"}`}>{money(item.net)}</td></tr>)}</tbody></table></div></Panel>
-      <Panel title="Leading GL Debit vs Credit" className="lg:col-span-4"><ResponsiveContainer width="100%" height={250}><BarChart data={topGl.slice(0, 6)} layout="vertical" margin={{ left: 8, right: 12 }}><XAxis type="number" tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><YAxis type="category" dataKey="glCode" width={70} tick={{ fontSize: 9 }} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--kpi-1)" /><Bar dataKey="credit" name="Credit" fill="var(--kpi-2)" /></BarChart></ResponsiveContainer></Panel>
+      <Panel title="Leading GL Debit vs Credit" className="lg:col-span-4"><ResponsiveContainer width="100%" height={250}><BarChart data={topGl.slice(0, 6)} layout="vertical" margin={{ left: 8, right: 12 }} className="cursor-pointer"><XAxis type="number" tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1e7).toFixed(0)}`} /><YAxis type="category" dataKey="glCode" width={70} tick={{ fontSize: 9 }} /><Tooltip contentStyle={tooltipStyle} formatter={(value: number) => money(value)} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar dataKey="debit" name="Debit" fill="var(--kpi-1)" onClick={(row) => setDetail(row as ZtbnGlSummary)} /><Bar dataKey="credit" name="Credit" fill="var(--kpi-2)" onClick={(row) => setDetail(row as ZtbnGlSummary)} /></BarChart></ResponsiveContainer></Panel>
     </div>
 
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
@@ -164,5 +209,6 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     </div>
     </div>
     <DetailDialog row={detail} onClose={() => setDetail(null)} />
+    <ChartDrilldownDialog drilldown={chartDrilldown} onClose={() => setChartDrilldown(null)} />
   </>;
 }

@@ -32,6 +32,13 @@ export type ZtbnGlSummary = {
   cumulativeBalance: number;
 };
 
+export type ZtbnCentreSummary = ZtbnProfitCentre & {
+  debit: number;
+  credit: number;
+  net: number;
+  glRows: ZtbnGlSummary[];
+};
+
 export type ZtbnBalanceType = "all" | "debit" | "credit" | "zero";
 
 export async function listZtbnColumns(): Promise<ZtbnColumn[]> {
@@ -149,10 +156,24 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
   });
   const filteredRows = matchedRows.map(({ source }) => source);
   const glRows = matchedRows.map(({ summary }) => summary);
-  const centres = activeCentres.map((centre) => {
-    const debit = filteredRows.reduce((sum, row) => sum + numeric(row[centre.debitField]), 0);
-    const credit = filteredRows.reduce((sum, row) => sum + numeric(row[centre.creditField]), 0);
-    return { ...centre, debit, credit, net: debit - credit };
+  const centres: ZtbnCentreSummary[] = activeCentres.map((centre) => {
+    const centreGlRows = filteredRows.map((row) => {
+      const debit = numeric(row[centre.debitField]);
+      const credit = numeric(row[centre.creditField]);
+      return {
+        id: row.id,
+        sourceRowNo: row.source_row_no,
+        glCode: String(row.gl_code ?? ""),
+        description: String(row.gl_description ?? "—"),
+        debit,
+        credit,
+        net: debit - credit,
+        cumulativeBalance: numeric(row["cumm_balance"]),
+      };
+    });
+    const debit = centreGlRows.reduce((sum, row) => sum + row.debit, 0);
+    const credit = centreGlRows.reduce((sum, row) => sum + row.credit, 0);
+    return { ...centre, debit, credit, net: debit - credit, glRows: centreGlRows };
   });
   const totalDebit = glRows.reduce((sum, row) => sum + row.debit, 0);
   const totalCredit = glRows.reduce((sum, row) => sum + row.credit, 0);
