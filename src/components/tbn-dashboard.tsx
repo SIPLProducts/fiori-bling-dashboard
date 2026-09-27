@@ -11,6 +11,8 @@ import { MultiSelect } from "@/components/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { aggregateZtbn, profitCentresFromColumns, type ZtbnBalanceType, type ZtbnColumn, type ZtbnGlSummary, type ZtbnRow } from "@/lib/ztbn";
 import { exportDashboardPdf } from "@/lib/chart-export";
+import { TbnFinanceAssistant } from "@/components/tbn-finance-assistant";
+import type { TbnAiSnapshot } from "@/lib/tbn-ai-types";
 
 function money(value: number) {
   const absolute = Math.abs(value);
@@ -86,12 +88,25 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     { label: "Credit-heavy GLs", value: creditHeavy, tone: "text-success", surface: "border-success/30 bg-success/10" },
     { label: "Zero-balance GLs", value: zeroAccounts, tone: "text-muted-foreground", surface: "border-border bg-secondary" },
   ];
+  const aiSnapshot = useMemo<TbnAiSnapshot>(() => ({
+    filters: activeFilterCount > 0 ? `${activeFilterCount} active filters; profit centres: ${selectedProfitCentres.join(", ") || "all"}; GL search: ${search || "none"}; balance type: ${balanceType}; amount range: ${minAmount || "none"} to ${maxAmount || "none"}` : "All records",
+    accountCount: summary.accountCount,
+    totalDebit: summary.totalDebit,
+    totalCredit: summary.totalCredit,
+    netBalance: summary.netBalance,
+    cumulativeBalance: summary.cumulativeBalance,
+    debitHeavyAccounts: debitHeavy,
+    creditHeavyAccounts: creditHeavy,
+    zeroBalanceAccounts: zeroAccounts,
+    profitCentres: leadingCentres.map((item) => ({ name: item.label, debit: item.debit, credit: item.credit, net: item.net })),
+    leadingGlAccounts: topGl.map((row) => ({ code: row.glCode, description: row.description, debit: row.debit, credit: row.credit, net: row.net })),
+  }), [activeFilterCount, selectedProfitCentres, search, balanceType, minAmount, maxAmount, summary, debitHeavy, creditHeavy, zeroAccounts, leadingCentres, topGl]);
 
   return <>
     <div className="mb-4 rounded-md border border-primary/20 bg-accent/35">
       <div className="flex flex-col gap-3 border-b border-primary/15 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h2 className="text-lg font-semibold text-foreground">TBN Management Dashboard</h2><p className="text-xs text-muted-foreground">Live trial-balance intelligence from ZTBN</p></div>
-        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={downloadPdf} disabled={isExporting}>{isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}Download PDF</Button><Button asChild variant="outline"><Link to="/reports/fi/tbn/table"><TableProperties className="size-4" />Full ZTBN Table</Link></Button></div>
+        <div className="flex flex-wrap gap-2"><TbnFinanceAssistant snapshot={aiSnapshot} /><Button type="button" variant="outline" onClick={downloadPdf} disabled={isExporting}>{isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}Download PDF</Button><Button asChild variant="outline"><Link to="/reports/fi/tbn/table"><TableProperties className="size-4" />Full ZTBN Table</Link></Button></div>
       </div>
       <div className="p-3">
         <div className="mb-2 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="size-4 text-primary" /><span className="text-sm font-semibold text-foreground">Filters</span>{activeFilterCount > 0 ? <span className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{activeFilterCount} active</span> : null}</div><Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button></div>
