@@ -137,7 +137,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   ];
   const openCentreDrilldown = (centre: ZtbnCentreSummary, metric: DrilldownMetric) => {
     const metricLabel = metric === "net" ? "Net Balance" : metric === "debit" ? "Debit" : "Credit";
-    setChartDrilldown({ title: `${centre.short ?? centre.label} · ${metricLabel}`, context: centre.label, metric, total: centre[metric], rows: centre.glRows });
+    setChartDrilldown({ title: `${centre.label.split("/")[0]} · ${metricLabel}`, context: centre.label, metric, total: centre[metric], rows: centre.glRows });
   };
   const openCompositionDrilldown = (metric: "debit" | "credit") => setChartDrilldown({
     title: `${metric === "debit" ? "Debit" : "Credit"} Composition`,
