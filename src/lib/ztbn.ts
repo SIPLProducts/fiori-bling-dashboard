@@ -81,6 +81,22 @@ export async function listAllZtbnRows(): Promise<ZtbnRow[]> {
   return rows;
 }
 
+/** Refreshes TBN views whenever the source-aligned ZTBN table changes. */
+export function subscribeZtbn(onChange: () => void): () => void {
+  const channel = supabase
+    .channel("ztbn-live")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "ztbn" },
+      () => onChange(),
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}
+
 function numeric(value: string | number | null | undefined): number {
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
