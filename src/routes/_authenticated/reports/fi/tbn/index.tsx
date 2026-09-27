@@ -37,13 +37,17 @@ function TbnDashboardRoute() {
   useEffect(() => {
     if (!allowed) return;
     let refreshTimer: number | undefined;
-    return subscribeZtbn(() => {
+    const unsubscribe = subscribeZtbn(() => {
       window.clearTimeout(refreshTimer);
       refreshTimer = window.setTimeout(() => {
         void queryClient.invalidateQueries({ queryKey: ["ztbn-dashboard-rows"] });
         void queryClient.invalidateQueries({ queryKey: ["ztbn-rows"] });
       }, 300);
     });
+    return () => {
+      window.clearTimeout(refreshTimer);
+      unsubscribe();
+    };
   }, [allowed, queryClient]);
   if (accessLoading) return <ReportShell title="TBN" description="Loading management dashboard…"><Skeleton className="h-[650px] w-full" /></ReportShell>;
   if (!allowed) return <ReportShell title="TBN" description="ZTBN management dashboard"><AccessDenied area="TBN" /></ReportShell>;
