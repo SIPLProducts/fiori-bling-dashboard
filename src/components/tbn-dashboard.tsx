@@ -19,9 +19,9 @@ function money(value: number) {
 
 const tooltipStyle = { borderColor: "var(--border)", borderRadius: 6, background: "var(--popover)", color: "var(--popover-foreground)", fontSize: 11 };
 
-function Metric({ label, value, icon: Icon, tone }: { label: string; value: string; icon: typeof Scale; tone: string }) {
-  return <div className="min-w-0 rounded-md border border-border bg-card p-3 shadow-tile">
-    <div className="flex items-start justify-between gap-2"><p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p><span className={`grid size-8 shrink-0 place-items-center rounded-md ${tone}`}><Icon className="size-4" /></span></div>
+function Metric({ label, value, icon: Icon, cardTone, iconTone }: { label: string; value: string; icon: typeof Scale; cardTone: string; iconTone: string }) {
+  return <div className={`min-w-0 rounded-md border p-3 shadow-tile transition-shadow hover:shadow-tile-hover ${cardTone}`}>
+    <div className="flex items-start justify-between gap-2"><p className="text-[10px] font-semibold uppercase text-foreground/70">{label}</p><span className={`grid size-8 shrink-0 place-items-center rounded-md ${iconTone}`}><Icon className="size-4" /></span></div>
     <p className="mt-3 truncate text-lg font-semibold tabular-nums text-foreground" title={value}>{value}</p>
   </div>;
 }
@@ -84,11 +84,11 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
     </div>
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-      <Metric label="Total Debit" value={money(summary.totalDebit)} icon={ArrowUpRight} tone="bg-primary/10 text-primary" />
-      <Metric label="Total Credit" value={money(summary.totalCredit)} icon={ArrowDownRight} tone="bg-success/10 text-success" />
-      <Metric label="Net Balance" value={money(summary.netBalance)} icon={Scale} tone="bg-warning/10 text-warning" />
-      <Metric label="Cumulative Balance" value={money(summary.cumulativeBalance)} icon={CircleDollarSign} tone="bg-accent text-accent-foreground" />
-      <Metric label="GL Accounts" value={summary.accountCount.toLocaleString("en-IN")} icon={BookOpen} tone="bg-muted text-foreground" />
+      <Metric label="Total Debit" value={money(summary.totalDebit)} icon={ArrowUpRight} cardTone="border-primary/30 bg-primary/10" iconTone="bg-primary/15 text-primary" />
+      <Metric label="Total Credit" value={money(summary.totalCredit)} icon={ArrowDownRight} cardTone="border-success/30 bg-success/10" iconTone="bg-success/15 text-success" />
+      <Metric label="Net Balance" value={money(summary.netBalance)} icon={Scale} cardTone="border-warning/35 bg-warning/15" iconTone="bg-warning/20 text-warning-foreground" />
+      <Metric label="Cumulative Balance" value={money(summary.cumulativeBalance)} icon={CircleDollarSign} cardTone="border-accent-foreground/25 bg-accent" iconTone="bg-accent-foreground/10 text-accent-foreground" />
+      <Metric label="GL Accounts" value={summary.accountCount.toLocaleString("en-IN")} icon={BookOpen} cardTone="border-border bg-secondary" iconTone="bg-foreground/10 text-foreground" />
     </div>
 
     {summary.accountCount === 0 ? <div className="mt-3 rounded-md border border-dashed border-border bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">No GL accounts match the selected filters.</div> : null}
