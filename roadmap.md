@@ -76,3 +76,4 @@
 - [x] Apply distinct semantic color across each full TBN summary card
 - [x] Extend the TBN semantic color system across charts, alerts, detail table, and GL detail view
 - [x] Export the current filtered TBN dashboard charts, alerts, and GL detail table as a shareable PDF
+- [x] Display compact amount labels directly on the TBN debit, credit, composition, and net-balance charts
