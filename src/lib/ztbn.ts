@@ -131,7 +131,9 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
     totalDebit,
     totalCredit,
     netBalance: totalDebit - totalCredit,
-    cumulativeBalance: glRows.reduce((sum, row) => sum + row.cumulativeBalance, 0),
+    cumulativeBalance: selectedPc === "all"
+      ? glRows.reduce((sum, row) => sum + row.cumulativeBalance, 0)
+      : totalDebit - totalCredit,
     accountCount: glRows.length,
   };
 }
