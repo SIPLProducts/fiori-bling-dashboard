@@ -81,7 +81,7 @@ function Launchpad() {
                 title={tile.title}
                 value={tile.title === "ZFISALES_DETAIL" ? "Sync Active" : "Open"}
                 note={tile.subtitle ?? "Table configuration"}
-                href={tile.target_path ?? undefined}
+                {...(tile.target_path ? { href: tile.target_path } : {})}
               />
             ))}
           </div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
