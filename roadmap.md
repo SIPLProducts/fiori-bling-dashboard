@@ -67,3 +67,4 @@
 - [x] Remove the currency and Crores suffix from Top 10 Customers values while retaining crore scaling
 - [x] Highlight the dynamic ZFISALES data range and simplify the Main Group and Sales Trend titles
 - [x] Create ZTBN in Tables Master with all 261 workbook fields and import all 796 supplied rows
+- [x] Add the missing ZTBN launchpad box under Tables Master and link it to `/tables/ztbn`
