@@ -32,6 +32,8 @@ export type ZtbnGlSummary = {
   cumulativeBalance: number;
 };
 
+export type ZtbnBalanceType = "all" | "debit" | "credit" | "zero";
+
 export async function listZtbnColumns(): Promise<ZtbnColumn[]> {
   const { data, error } = await supabase
     .from("sap_table_fields")
@@ -115,15 +117,16 @@ export function profitCentresFromColumns(columns: ZtbnColumn[]): ZtbnProfitCentr
     });
 }
 
-export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[], selectedPc = "all", search = "") {
+export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[], selectedPc: string | string[] = "all", search = "", balanceType: ZtbnBalanceType = "all", minAmount: number | null = null, maxAmount: number | null = null) {
+  const selectedProfitCentres = Array.isArray(selectedPc) ? selectedPc : selectedPc === "all" ? [] : [selectedPc];
   const term = search.trim().toLowerCase();
   const detailRows = rows.filter((row) => String(row.gl_code ?? "").trim() !== "");
-  const filteredRows = detailRows.filter((row) => !term || `${row.gl_code ?? ""} ${row.gl_description ?? ""}`.toLowerCase().includes(term));
-  const activeCentres = selectedPc === "all" ? profitCentres : profitCentres.filter((centre) => centre.key === selectedPc);
-  const glRows: ZtbnGlSummary[] = filteredRows.map((row) => {
+  const searchedRows = detailRows.filter((row) => !term || `${row.gl_code ?? ""} ${row.gl_description ?? ""}`.toLowerCase().includes(term));
+  const activeCentres = selectedProfitCentres.length === 0 ? profitCentres : profitCentres.filter((centre) => selectedProfitCentres.includes(centre.key));
+  const summarizedRows = searchedRows.map((row) => {
     const debit = activeCentres.reduce((sum, centre) => sum + numeric(row[centre.debitField]), 0);
     const credit = activeCentres.reduce((sum, centre) => sum + numeric(row[centre.creditField]), 0);
-    return {
+    const summary: ZtbnGlSummary = {
       id: row.id,
       sourceRowNo: row.source_row_no,
       glCode: String(row.gl_code ?? ""),
@@ -133,7 +136,19 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
       net: debit - credit,
       cumulativeBalance: numeric(row["cumm_balance"]),
     };
+    return { source: row, summary };
   });
+  const matchedRows = summarizedRows.filter(({ summary }) => {
+    const absoluteBalance = Math.abs(summary.net);
+    if (balanceType === "debit" && summary.debit <= summary.credit) return false;
+    if (balanceType === "credit" && summary.credit <= summary.debit) return false;
+    if (balanceType === "zero" && (summary.debit !== 0 || summary.credit !== 0)) return false;
+    if (minAmount !== null && absoluteBalance < minAmount) return false;
+    if (maxAmount !== null && absoluteBalance > maxAmount) return false;
+    return true;
+  });
+  const filteredRows = matchedRows.map(({ source }) => source);
+  const glRows = matchedRows.map(({ summary }) => summary);
   const centres = activeCentres.map((centre) => {
     const debit = filteredRows.reduce((sum, row) => sum + numeric(row[centre.debitField]), 0);
     const credit = filteredRows.reduce((sum, row) => sum + numeric(row[centre.creditField]), 0);
@@ -147,7 +162,7 @@ export function aggregateZtbn(rows: ZtbnRow[], profitCentres: ZtbnProfitCentre[]
     totalDebit,
     totalCredit,
     netBalance: totalDebit - totalCredit,
-    cumulativeBalance: selectedPc === "all"
+    cumulativeBalance: selectedProfitCentres.length === 0
       ? glRows.reduce((sum, row) => sum + row.cumulativeBalance, 0)
       : totalDebit - totalCredit,
     accountCount: glRows.length,

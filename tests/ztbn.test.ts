@@ -33,4 +33,18 @@ describe("ZTBN dashboard aggregation", () => {
     expect(result.totalDebit).toBe(150);
     expect(result.totalCredit).toBe(20);
   });
+
+  test("combines profit-centre, balance-type, and amount filters", () => {
+    const result = aggregateZtbn(rows, profitCentresFromColumns(columns), ["pc_one"], "", "credit", 40, 60);
+    expect(result.accountCount).toBe(1);
+    expect(result.glRows[0]?.glCode).toBe("200");
+    expect(result.netBalance).toBe(-50);
+  });
+
+  test("supports zero-balance filtering", () => {
+    const zeroRow = { id: "4", source_row_no: 4, gl_code: "300", gl_description: "Cleared", pc_one_debit: 0, pc_one_credit: 0, cumm_balance: 0 } as ZtbnRow;
+    const result = aggregateZtbn([...rows, zeroRow], profitCentresFromColumns(columns), [], "", "zero");
+    expect(result.accountCount).toBe(1);
+    expect(result.glRows[0]?.glCode).toBe("300");
+  });
 });
