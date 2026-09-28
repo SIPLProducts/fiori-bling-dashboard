@@ -268,6 +268,15 @@
 .pdf-alert-positive { background: color-mix(in oklab, var(--success) 5%, var(--card)); }.pdf-alert-positive span { background: color-mix(in oklab, var(--success) 14%, var(--card)); color: var(--success); }
 .pdf-alert-warning { background: color-mix(in oklab, var(--warning) 5%, var(--card)); }.pdf-alert-warning span { background: color-mix(in oklab, var(--warning) 14%, var(--card)); color: var(--warning); }
 .pdf-alert-negative { background: color-mix(in oklab, var(--destructive) 4%, var(--card)); }.pdf-alert-negative span { background: color-mix(in oklab, var(--destructive) 12%, var(--card)); color: var(--destructive); }
+.pdf-page-one-summary > .pdf-report-card { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 20px; }
+.pdf-page-one-summary > .pdf-report-card:first-child > div { margin-top: 34px; }
+.pdf-page-one-summary > .pdf-report-card:last-child > div { margin-top: 18px; }
+.pdf-page-one-summary .pdf-insight { padding: 14px; }
+.pdf-page-two-primary { min-height: 310px; }
+.pdf-page-two-primary > .pdf-report-card { padding-top: 18px; }
+.pdf-page-two-primary > .pdf-report-card > div { margin-top: 24px; }
+.pdf-page-two-secondary > .pdf-report-card { display: flex; flex-direction: column; padding-top: 18px; }
+.pdf-page-two-secondary > .pdf-report-card > div { margin-top: 70px; }
 
 .pdf-export-theme [data-pdf-page-block],
 .pdf-export-theme [data-pdf-page-block] > *,
