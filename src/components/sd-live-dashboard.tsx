@@ -42,6 +42,7 @@ import {
 import { Panel } from "@/components/report-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SalesRefreshButton } from "@/components/sales-refresh-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -82,6 +83,7 @@ import {
   type SdFilters,
   type SdLine,
 } from "@/lib/sd-live";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -2104,9 +2106,10 @@ export function SdLiveDashboard() {
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
   const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
-  const { data: lines, isLoading } = useQuery({
+  const { data: lines, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sd-live-lines"],
     queryFn: fetchSdLines,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
 
   const all = useMemo(() => lines ?? [], [lines]);
@@ -2402,6 +2405,7 @@ export function SdLiveDashboard() {
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
           </Button>
+          <SalesRefreshButton refreshing={isFetching} onRefresh={refetch} />
           <Button
             variant="outline"
             size="sm"

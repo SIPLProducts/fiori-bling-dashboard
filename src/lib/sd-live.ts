@@ -208,24 +208,6 @@ export async function fetchSdLines(): Promise<SdLine[]> {
   return rows;
 }
 
-/**
- * Watches the sales table and calls back whenever postings change,
- * so dashboards refresh without a manual reload.
- */
-export function subscribeSdLines(onChange: () => void): () => void {
-  const channel = supabase
-    .channel("zfisales-detail-live")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "zfisales_detail" },
-      () => onChange(),
-    )
-    .subscribe();
-  return () => {
-    void supabase.removeChannel(channel);
-  };
-}
-
 export type SdFilters = {
   from: string;
   to: string;
