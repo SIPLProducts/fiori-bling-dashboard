@@ -56,7 +56,7 @@ import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
+import { downloadCsv, exportReportPagesPdf } from "@/lib/chart-export";
 import hblLogo from "@/assets/hbl-logo.png";
 import {
   readSharedSalesFilters,
@@ -80,6 +80,7 @@ import {
   type ModelPerformance,
   type QuarterSummary,
   type SdFilters,
+  type SdAnalytics,
   type SdLine,
 } from "@/lib/sd-live";
 

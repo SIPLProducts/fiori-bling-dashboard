@@ -233,3 +233,33 @@ export async function exportDashboardPdf(
 
   pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
 }
+
+/** Capture explicit report pages and preserve their authored A4 portrait layout. */
+export async function exportReportPagesPdf(
+  container: HTMLElement | null,
+  filename: string,
+  pageSelector = "[data-pdf-report-page]",
+) {
+  if (!container) throw new Error("Report is not available yet");
+
+  const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
+  const pages = Array.from(container.querySelectorAll<HTMLElement>(pageSelector));
+  if (!pages.length) throw new Error("No report pages are available for export");
+
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  for (const [index, page] of pages.entries()) {
+    const canvas = await toCanvas(page, {
+      backgroundColor: window.getComputedStyle(page).backgroundColor || "#ffffff",
+      cacheBust: true,
+      pixelRatio: 2,
+      skipFonts: true,
+    });
+    if (index > 0) pdf.addPage("a4", "portrait");
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pageWidth, pageHeight);
+  }
+
+  pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+}
