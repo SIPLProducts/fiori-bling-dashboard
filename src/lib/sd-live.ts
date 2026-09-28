@@ -886,7 +886,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const croreAmount = (v: number) => `₹${(v / 1e7).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })} Cr`;
+  })}`;
   if (momPct != null)
     alerts.push({
       id: "sales-momentum",
