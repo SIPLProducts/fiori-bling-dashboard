@@ -586,8 +586,8 @@ describe("Sales by Model amount and per-AH analytics", () => {
 describe("dynamic management alerts", () => {
   test("derives labelled alert points from the filtered sales rows", () => {
     const rows = [
-      { ...row("2026", "2026-07-10"), month: "JUL-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 100, amount: 100 },
-      { ...row("2026", "2026-08-10"), month: "AUG-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 100, amount: 150 },
+      { ...row("2026", "2026-07-10"), month: "JUL-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 10_000_000, amount: 10_000_000 },
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 10_000_000, amount: 15_000_000 },
     ];
 
     const alerts = buildSdAnalytics(rows).alerts;
@@ -601,15 +601,15 @@ describe("dynamic management alerts", () => {
     ]);
     expect(alerts.every((alert) => alert.basis.length > 0)).toBe(true);
     expect(alerts[0]?.text).toContain("+50.0%");
-    expect(alerts[1]?.text).toContain("₹250");
+    expect(alerts[1]?.text).toContain("₹2.50 Cr");
     expect(alerts[1]?.text).toContain("100.0%");
     expect(alerts[2]?.text).toContain("Power");
-    expect(alerts[2]?.text).toContain("₹250");
+    expect(alerts[2]?.text).toContain("₹2.50 Cr");
     expect(alerts[2]?.text).toContain("100.0%");
     expect(alerts[4]?.id).toBe("revenue-per-ah");
     expect(buildSdAnalytics(rows).revenuePerAhComparison).toEqual({
-      current: { month: "AUG-2026", sales: 150, totalAh: 100, revenuePerAh: 1.5, postingCount: 1 },
-      previous: { month: "JUL-2026", sales: 100, totalAh: 100, revenuePerAh: 1, postingCount: 1 },
+      current: { month: "AUG-2026", sales: 15_000_000, totalAh: 10_000_000, revenuePerAh: 1.5, postingCount: 1 },
+      previous: { month: "JUL-2026", sales: 10_000_000, totalAh: 10_000_000, revenuePerAh: 1, postingCount: 1 },
       amountChange: 0.5,
       percentChange: 50,
     });
