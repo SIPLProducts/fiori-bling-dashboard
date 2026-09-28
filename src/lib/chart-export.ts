@@ -22,6 +22,18 @@ export function toCsv(rows: Array<Record<string, unknown>>, columns?: string[]):
   return [head, ...body].join("\n");
 }
 
+export type CsvColumn<T> = {
+  label: string;
+  value: (row: T) => unknown;
+};
+
+/** Build export rows from the currently selected table columns, preserving their order. */
+export function selectCsvColumns<T>(rows: T[], columns: CsvColumn<T>[]): Array<Record<string, unknown>> {
+  return rows.map((row) =>
+    Object.fromEntries(columns.map((column) => [column.label, column.value(row)])),
+  );
+}
+
 export function downloadCsv(
   rows: Array<Record<string, unknown>>,
   filename: string,

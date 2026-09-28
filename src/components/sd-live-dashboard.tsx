@@ -57,7 +57,7 @@ import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
+import { downloadCsv, exportDashboardPdf, selectCsvColumns } from "@/lib/chart-export";
 import hblLogo from "@/assets/hbl-logo.png";
 import {
   readSharedSalesFilters,
@@ -1953,12 +1953,10 @@ function FocusTable({
 
 function LinesTable({
   rows,
-  onExport,
   pcColors,
   pcLegend,
 }: {
   rows: SdLine[];
-  onExport: () => void;
   pcColors: Map<string, string>;
   pcLegend: { key: string; label: string; value: number; color: string }[];
 }) {
@@ -1969,6 +1967,18 @@ function LinesTable({
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   const slice = rows.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+  const exportVisibleRows = () => {
+    const columns = visible.map((column) => ({
+      label: column.label,
+      value: (row: SdLine) =>
+        column.key === "amount"
+          ? Math.round(row.amount)
+          : column.numeric
+            ? Number(column.render(row).replace(/[^\d.-]/g, ""))
+            : column.render(row),
+    }));
+    downloadCsv(selectCsvColumns(rows, columns), "sd-sales-lines.csv");
+  };
 
   return (
     <Panel
@@ -1984,7 +1994,7 @@ function LinesTable({
             }
             placeholder="Columns"
           />
-          <Button variant="outline" size="sm" onClick={onExport}>
+          <Button variant="outline" size="sm" onClick={exportVisibleRows} disabled={!visible.length}>
             <Download className="mr-1 size-3.5" /> CSV
           </Button>
         </div>
@@ -2222,22 +2232,6 @@ export function SdLiveDashboard() {
         clear: () => set({ [key]: [] } as Partial<SdFilters>),
       });
   }
-
-  const exportRows = () =>
-    downloadCsv(
-      filtered.map((r) => {
-        const out: Record<string, string | number> = {};
-        for (const c of COLUMNS)
-          out[c.label] =
-            c.key === "amount"
-              ? Math.round(r.amount)
-              : c.numeric
-                ? Number(c.render(r).replace(/[^\d.-]/g, ""))
-                : c.render(r);
-        return out;
-      }),
-      "sd-sales-lines.csv",
-    );
 
   const downloadDashboardPdf = async () => {
     setPdfBusy(true);
@@ -3170,7 +3164,6 @@ export function SdLiveDashboard() {
           <div data-pdf-exclude>
             <LinesTable
               rows={filtered}
-              onExport={exportRows}
               pcColors={pcColors.map}
               pcLegend={pcLegend}
             />
