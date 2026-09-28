@@ -9,7 +9,7 @@ describe("stable Sales report query policy", () => {
     expect(STABLE_SALES_QUERY_OPTIONS.refetchInterval).toBe(false);
   });
 
-  test("loads the latest committed snapshot whenever a Sales screen mounts", () => {
-    expect(STABLE_SALES_QUERY_OPTIONS.refetchOnMount).toBe("always");
+  test("reuses cached Sales data when a screen or tab remounts", () => {
+    expect(STABLE_SALES_QUERY_OPTIONS.refetchOnMount).toBe(false);
   });
 });
