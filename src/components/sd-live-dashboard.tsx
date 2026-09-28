@@ -2222,7 +2222,10 @@ export function SdLiveDashboard() {
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
-      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf");
+      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
+        headerSelector: "[data-pdf-header]",
+        blockSelector: "[data-pdf-page-block]",
+      });
       toast.success("Dashboard PDF downloaded");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
@@ -2333,13 +2336,9 @@ export function SdLiveDashboard() {
   return (
     <div ref={dashboardRef} className="space-y-4">
       {pdfBusy ? (
-        <div className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
+        <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
-            <div className="min-w-0">
-              <p className="text-base font-semibold text-foreground">HBL MIS PORTAL</p>
-              <p className="text-xs text-muted-foreground">Sales Dashboard</p>
-            </div>
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-x-6 text-right text-xs">
             <div>
@@ -2357,7 +2356,7 @@ export function SdLiveDashboard() {
       ) : null}
 
       {/* executive header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div data-pdf-page-block className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
@@ -2594,7 +2593,7 @@ export function SdLiveDashboard() {
         ) : null}
       </section>
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div data-pdf-page-block className="flex flex-wrap items-center justify-end gap-3">
         <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-1">
           {SALES_TYPE_TABS.map((tab) => (
             <button
@@ -2627,7 +2626,7 @@ export function SdLiveDashboard() {
         </section>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div data-pdf-page-block className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
             <TotalSalesCard
               amount={totalRevenue}
@@ -2655,9 +2654,11 @@ export function SdLiveDashboard() {
             </div>
           </div>
 
-          <QuarterAnalysis summaries={quarterSummaries} />
+          <div data-pdf-page-block>
+            <QuarterAnalysis summaries={quarterSummaries} />
+          </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div data-pdf-page-block className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
             <Panel title="Sales by Main Group" accent={5} expandable>
               {(full: boolean) => (
@@ -2701,7 +2702,7 @@ export function SdLiveDashboard() {
           ) : (
             <>
           {/* Row 2 — customers, sales trend, top profit centres */}
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
             <Panel title="Top 10 Customers" accent={2} expandable>
               {(full: boolean) => (
                 <BarList
@@ -2803,7 +2804,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
             <Panel title="Segment" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
@@ -2931,7 +2932,7 @@ export function SdLiveDashboard() {
             </Panel>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-2">
             <Panel title="Sales by New_Repl" accent={3} expandable>
               <BsarkBars items={analytics.byNewRepl} unassigned={analytics.unassignedNewReplCount} />
             </Panel>
@@ -3063,7 +3064,7 @@ export function SdLiveDashboard() {
           </Dialog>
 
           {/* Additional analysis kept below the management view */}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-2">
             <Panel title="Top 10 Materials" accent={3} expandable>
               {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
@@ -3074,7 +3075,7 @@ export function SdLiveDashboard() {
 
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2">
             <KpiCard
               label="Total LAH (Lakhs)"
               value={LAKHS_VALUE(analytics.kpis.positiveAhTotal)}
@@ -3091,34 +3092,43 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          <Panel
-            title="Sales by Model (Amount & Per AH)"
-            expandable
-            actions={
-              <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
-                {([10, 20, "all"] as const).map((value) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={(pdfExportAllModels ? "all" : modelLimit) === value ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 px-2 text-[11px]"
-                    onClick={() => setModelLimit(value)}
-                  >
-                    {value === "all" ? "All Models" : `Top ${value} Models`}
-                  </Button>
-                ))}
-              </div>
-            }
-          >
-            {(full: boolean) => (
-              <SalesByModelChart
-                items={analytics.modelPerformance}
-                limit={pdfExportAllModels ? "all" : modelLimit}
-                full={full || pdfExportAllModels}
-              />
-            )}
-          </Panel>
+          {pdfExportAllModels ? (
+            Array.from({ length: Math.ceil(analytics.modelPerformance.length / 10) }, (_, page) => {
+              const models = analytics.modelPerformance.slice(page * 10, page * 10 + 10);
+              return (
+                <div key={`pdf-models-${page}`} data-pdf-page-block>
+                  <Panel title={`Sales by Model (Amount & Per AH)${page ? ` · Continued ${page + 1}` : ""}`}>
+                    <SalesByModelChart items={models} limit="all" full={false} />
+                  </Panel>
+                </div>
+              );
+            })
+          ) : (
+            <Panel
+              title="Sales by Model (Amount & Per AH)"
+              expandable
+              actions={
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                  {([10, 20, "all"] as const).map((value) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={modelLimit === value ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setModelLimit(value)}
+                    >
+                      {value === "all" ? "All Models" : `Top ${value} Models`}
+                    </Button>
+                  ))}
+                </div>
+              }
+            >
+              {(full: boolean) => (
+                <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
+              )}
+            </Panel>
+          )}
 
           <div data-pdf-exclude>
             <LinesTable
