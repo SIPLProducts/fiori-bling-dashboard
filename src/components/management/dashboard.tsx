@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { subscribeSdLines } from "@/lib/sd-live";
+import { fiscalYearsForDateRange, subscribeSdLines } from "@/lib/sd-live";
 import { useNavigate } from "@tanstack/react-router";
 import { ShellBar } from "@/components/shell-bar";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -35,7 +35,7 @@ import {
 
 export function ManagementDashboard() {
   const navigate = useNavigate();
-  const [preset, setPreset] = useState<RangePreset>("All postings");
+  const [preset, setPreset] = useState<RangePreset>("Current fiscal year");
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
   // Bumped when the user resets the card arrangement.
   const [layoutVersion, setLayoutVersion] = useState(0);
@@ -62,7 +62,7 @@ export function ManagementDashboard() {
   const options = useMemo(() => filterOptions(rows ?? []), [rows]);
 
   // Set when a shared posting-date range was applied, so the preset effect
-  // below does not immediately overwrite it with the "All postings" range.
+  // below does not immediately overwrite it with the opening fiscal-year range.
   const sharedDatesApplied = useRef(false);
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export function ManagementDashboard() {
         customer: selection.customer ?? filters.customer,
         from: filters.from,
         to: filters.to,
-        fiscalYears: [],
+        fiscalYears: fiscalYearsForDateRange(filters.from, filters.to),
         quarters: [],
         salesType: filters.salesType,
         segments: filters.businessSegment ? [filters.businessSegment] : [],

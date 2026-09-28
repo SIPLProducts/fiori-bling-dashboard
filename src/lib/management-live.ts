@@ -3,7 +3,7 @@
  * Reads real postings from zfisales_detail (via fetchSdLines) and shapes them
  * into the datasets the reference dashboard cards expect.
  */
-import { fetchSdLines, type SdLine } from "@/lib/sd-live";
+import { currentFiscalYearRange, fetchSdLines, type SdLine } from "@/lib/sd-live";
 import { CHART_COLORS } from "@/lib/management-data";
 import type {
   MainGroupBlock,
@@ -97,6 +97,7 @@ export type RangePreset =
   | "Last 3 months"
   | "Last 6 months"
   | "Last 12 months"
+  | "Current fiscal year"
   | "Current year"
   | "Previous year"
   | "Custom range";
@@ -106,6 +107,7 @@ export const RANGE_PRESETS: RangePreset[] = [
   "Last 3 months",
   "Last 6 months",
   "Last 12 months",
+  "Current fiscal year",
   "Current year",
   "Previous year",
   "Custom range",
@@ -126,6 +128,10 @@ export function presetRange(preset: RangePreset, bounds: { min: string; max: str
   if (preset === "Last 3 months") return { from: back(3), to: max };
   if (preset === "Last 6 months") return { from: back(6), to: max };
   if (preset === "Last 12 months") return { from: back(12), to: max };
+  if (preset === "Current fiscal year") {
+    const range = currentFiscalYearRange();
+    return { from: range.from, to: range.to };
+  }
   const year = end.getUTCFullYear();
   if (preset === "Current year") return { from: `${year}-01-01`, to: max };
   return { from: `${year - 1}-01-01`, to: `${year - 1}-12-31` };

@@ -99,3 +99,4 @@
 - [x] Prevent Sales Dashboard PDF card clipping, repeat the logo and date range, and paginate all model rows
 - [x] Refactor the Sales Analytics PDF into branded, high-resolution, page-safe executive sections with page numbering
 - [x] Ensure every exported Sales by Model page renders its bars and values before PDF capture
+- [x] Default all Sales reporting screens and resets to the current April–March fiscal year

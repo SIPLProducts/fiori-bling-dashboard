@@ -22,6 +22,7 @@ import {
 import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { formatDateTimeISTLabel } from "@/lib/format";
+import { currentFiscalYear } from "@/lib/sd-live";
 
 import { MultiSelect } from "@/components/multi-select";
 import { ChartExportActions } from "@/components/chart-export-buttons";
@@ -68,9 +69,8 @@ function isoDay(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const EMPTY: SalesFilters = {
-
-  fiscalYear: "",
+const defaultFilters = (): SalesFilters => ({
+  fiscalYear: currentFiscalYear(),
   companyCodes: [],
   profitCentres: [],
   salesTypes: [],
@@ -79,7 +79,7 @@ const EMPTY: SalesFilters = {
   postingTo: "",
   search: "",
   seriesBy: "none",
-};
+});
 
 const PIE_COLORS = [
   "var(--color-primary)",
@@ -394,8 +394,8 @@ function SalesAnalyticsPage() {
     hasScreen(launchpad?.screens, "sd.total-sales") ||
     hasScreen(launchpad?.screens, "tables.zfisales-detail");
 
-  const [draft, setDraft] = useState<SalesFilters>(EMPTY);
-  const [applied, setApplied] = useState<SalesFilters>(EMPTY);
+  const [draft, setDraft] = useState<SalesFilters>(() => defaultFilters());
+  const [applied, setApplied] = useState<SalesFilters>(() => defaultFilters());
   const [filtersOpen, setFiltersOpen] = useState(true);
 
 
@@ -739,8 +739,9 @@ function SalesAnalyticsPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setDraft(EMPTY);
-                    setApplied(EMPTY);
+                    const next = defaultFilters();
+                    setDraft(next);
+                    setApplied(next);
                   }}
                 >
                   Reset

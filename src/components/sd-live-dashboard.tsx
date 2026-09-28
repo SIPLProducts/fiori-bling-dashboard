@@ -68,6 +68,7 @@ import {
   buildSdAnalytics,
   buildQuarterSummaries,
   currentFiscalYear,
+  currentSdFilters,
   localIsoDate,
   emptySdFilters,
   fetchSdLines,
@@ -2090,7 +2091,7 @@ function LinesTable({
 export function SdLiveDashboard() {
   const navigate = useNavigate();
   const dashboardRef = useRef<HTMLDivElement>(null);
-  const [filters, setFilters] = useState<SdFilters>(emptySdFilters);
+  const [filters, setFilters] = useState<SdFilters>(() => currentSdFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfExportAllModels, setPdfExportAllModels] = useState(false);
@@ -2114,9 +2115,14 @@ export function SdLiveDashboard() {
     [all],
   );
   useEffect(() => {
-    const shared = readSharedSalesFilters();
-    setFilters((prev) => ({ ...prev, ...shared }));
-    return subscribeSharedSalesFilters((next) => setFilters((prev) => ({ ...prev, ...next })));
+    const applyShared = (shared: ReturnType<typeof readSharedSalesFilters>) =>
+      setFilters((prev) => ({
+        ...prev,
+        ...shared,
+        ...(shared.from || shared.to ? { fiscalYears: [], quarters: [] } : {}),
+      }));
+    applyShared(readSharedSalesFilters());
+    return subscribeSharedSalesFilters(applyShared);
   }, []);
   const typeFiltered = useMemo(() => {
     if (salesTypeTab === "All") return all;
@@ -2438,7 +2444,7 @@ export function SdLiveDashboard() {
               className="h-9"
               disabled={!activeChips.length}
               onClick={() => {
-                setFilters(emptySdFilters);
+                setFilters(currentSdFilters());
                 writeSharedSalesFilters({ segments: [], customers: [], profitCentres: [], from: "", to: "" });
               }}
             >
