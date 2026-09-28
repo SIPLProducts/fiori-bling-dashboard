@@ -36,6 +36,7 @@ import {
   TrendingDown,
   TriangleAlert,
   Radio,
+  ExternalLink,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -82,6 +83,8 @@ import {
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const INR_EXACT = (value: number) =>
+  value.toLocaleString("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const NUM = (value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
@@ -2075,6 +2078,7 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
+  const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
   const { data: lines, isLoading } = useQuery({
     queryKey: ["sd-live-lines"],
     queryFn: fetchSdLines,
@@ -2903,9 +2907,9 @@ export function SdLiveDashboard() {
                   return (
                     <li
                       key={`${alert.title}-${index}`}
-                      className={`rounded-md border p-2.5 ${index === 4 ? "md:col-span-2" : ""} ${toneClass}`}
+                      className={`rounded-md border ${index === 4 ? "md:col-span-2" : ""} ${toneClass}`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2 p-2.5">
                         <span className="grid size-6 shrink-0 place-items-center rounded-md bg-card/80 ring-1 ring-current/15">
                           <AlertIcon className="size-3.5" />
                         </span>
@@ -2915,6 +2919,17 @@ export function SdLiveDashboard() {
                           <p className="mt-1.5 border-t border-current/10 pt-1.5 text-[9.5px] leading-snug text-muted-foreground">
                             Based on: <span className="font-medium text-card-foreground">{alert.basis}</span>
                           </p>
+                          {alert.id === "revenue-per-ah" ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="mt-1.5 h-7 px-0 text-[10px] text-primary hover:bg-transparent hover:text-primary"
+                              onClick={() => setShowRevenuePerAh(true)}
+                            >
+                              View monthly comparison <ExternalLink className="ml-1 size-3" />
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
                     </li>
@@ -2928,6 +2943,52 @@ export function SdLiveDashboard() {
               </ul>
             </section>
           </div>
+
+          <Dialog open={showRevenuePerAh} onOpenChange={setShowRevenuePerAh}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Revenue per AH · Monthly comparison</DialogTitle>
+                <DialogDescription>
+                  Local-currency sales divided by Total AH for records with Total AH greater than zero.
+                </DialogDescription>
+              </DialogHeader>
+              {analytics.revenuePerAhComparison.current && analytics.revenuePerAhComparison.previous ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[analytics.revenuePerAhComparison.previous, analytics.revenuePerAhComparison.current].map((point, index) => (
+                      <div key={point.month} className={`rounded-md border p-3 ${index === 1 ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30"}`}>
+                        <p className="text-xs font-semibold text-card-foreground">{point.month}</p>
+                        <dl className="mt-3 grid gap-2 text-xs">
+                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Sales amount</dt><dd className="font-semibold tabular-nums">{INR_EXACT(point.sales)}</dd></div>
+                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Total AH</dt><dd className="font-semibold tabular-nums">{point.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</dd></div>
+                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Revenue per AH</dt><dd className="font-semibold tabular-nums text-primary">{INR_EXACT(point.revenuePerAh)}</dd></div>
+                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Posting count</dt><dd className="font-semibold tabular-nums">{NUM(point.postingCount)}</dd></div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`rounded-md border p-3 ${analytics.revenuePerAhComparison.amountChange != null && analytics.revenuePerAhComparison.amountChange >= 0 ? "border-success/30 bg-success/5" : "border-destructive/25 bg-destructive/5"}`}>
+                    <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">Movement</p>
+                    <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="text-sm font-semibold text-card-foreground">
+                        {analytics.revenuePerAhComparison.amountChange == null ? "—" : INR_EXACT(analytics.revenuePerAhComparison.amountChange)} per AH
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums text-card-foreground">
+                        {analytics.revenuePerAhComparison.percentChange == null ? "—" : `${analytics.revenuePerAhComparison.percentChange >= 0 ? "+" : ""}${analytics.revenuePerAhComparison.percentChange.toFixed(1)}%`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
+                  Two comparable months with positive Total AH are not available for the current filters.
+                </div>
+              )}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowRevenuePerAh(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Additional analysis kept below the management view */}
           <div className="grid gap-4 lg:grid-cols-2">

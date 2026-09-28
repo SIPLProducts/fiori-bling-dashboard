@@ -586,8 +586,8 @@ describe("Sales by Model amount and per-AH analytics", () => {
 describe("dynamic management alerts", () => {
   test("derives labelled alert points from the filtered sales rows", () => {
     const rows = [
-      { ...row("2026", "2026-07-10"), month: "JUL-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", pcShortName: "PC-A", totalAh: 100, amount: 100 },
-      { ...row("2026", "2026-08-10"), month: "AUG-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", pcShortName: "PC-A", totalAh: 100, amount: 150 },
+      { ...row("2026", "2026-07-10"), month: "JUL-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 100, amount: 100 },
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", customer: "C1", customerName: "Alpha", businessSegment: "Industrial", mainGroup: "Power", pcShortName: "PC-A", totalAh: 100, amount: 150 },
     ];
 
     const alerts = buildSdAnalytics(rows).alerts;
@@ -595,12 +595,32 @@ describe("dynamic management alerts", () => {
     expect(alerts.map((alert) => alert.title)).toEqual([
       "Sales momentum",
       "Customer concentration",
-      "Leading segment",
+      "Leading main group",
       "Top profit centre",
       "Revenue per AH",
     ]);
     expect(alerts.every((alert) => alert.basis.length > 0)).toBe(true);
     expect(alerts[0]?.text).toContain("+50.0%");
+    expect(alerts[2]?.text).toContain("Power");
+    expect(alerts[4]?.id).toBe("revenue-per-ah");
+    expect(buildSdAnalytics(rows).revenuePerAhComparison).toEqual({
+      current: { month: "AUG-2026", sales: 150, totalAh: 100, revenuePerAh: 1.5, postingCount: 1 },
+      previous: { month: "JUL-2026", sales: 100, totalAh: 100, revenuePerAh: 1, postingCount: 1 },
+      amountChange: 0.5,
+      percentChange: 50,
+    });
+  });
+
+  test("excludes zero-AH records from the monthly Revenue per AH comparison", () => {
+    const analytics = buildSdAnalytics([
+      { ...row("2026", "2026-07-10"), month: "JUL-2026", totalAh: 100, amount: 200 },
+      { ...row("2026", "2026-07-11"), month: "JUL-2026", totalAh: 0, amount: 900 },
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", totalAh: 50, amount: 150 },
+    ]);
+
+    expect(analytics.revenuePerAhComparison.current).toEqual({ month: "AUG-2026", sales: 150, totalAh: 50, revenuePerAh: 3, postingCount: 1 });
+    expect(analytics.revenuePerAhComparison.previous).toEqual({ month: "JUL-2026", sales: 200, totalAh: 100, revenuePerAh: 2, postingCount: 1 });
+    expect(analytics.revenuePerAhComparison.percentChange).toBe(50);
   });
 });
 
