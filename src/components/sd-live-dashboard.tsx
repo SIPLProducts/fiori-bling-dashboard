@@ -476,7 +476,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
   );
   return (
     <section
-      className="relative min-w-0 overflow-hidden rounded-lg border bg-card p-3 shadow-tile"
+      className="relative min-w-0 overflow-visible rounded-lg border bg-card p-3 shadow-tile"
       style={{
         borderColor: active ? color : "var(--color-border)",
         background: active
@@ -511,7 +511,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {hasChartData ? <div className="mt-2 h-40 overflow-hidden rounded-md bg-muted/40 pt-1">
+      {hasChartData ? <div className="mt-2 h-40 overflow-visible rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
             {series.length > 1 ? (
@@ -542,7 +542,9 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
               domain={[domainMin, domainMax]}
             />
             <Tooltip
+              allowEscapeViewBox={{ x: true, y: true }}
               cursor={{ fill: "var(--chart-hover-fill)" }}
+              wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
               content={({ active: tooltipActive, payload }) => {
                 const point = payload?.[0]?.payload as Record<string, string | number> | undefined;
                 if (!tooltipActive || !point) return null;

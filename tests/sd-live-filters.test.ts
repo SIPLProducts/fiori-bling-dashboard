@@ -182,6 +182,13 @@ describe("fiscal quarter summary tiles", () => {
     const summaries = buildQuarterSummaries(active, all, ["2025", "2026"], []);
 
     expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3", "Q4"]);
+    expect(summaries.find((item) => item.quarter === "Q3")).toMatchObject({
+      fiscalYear: "2025",
+      status: "complete",
+      statusLabel: "",
+      amount: 300,
+      comparisonLabel: "No comparison",
+    });
     expect(summaries.find((item) => item.quarter === "Q3")?.yearTrends).toEqual([
       {
         fiscalYear: "2025",
@@ -200,6 +207,12 @@ describe("fiscal quarter summary tiles", () => {
         ],
       },
     ]);
+    expect(summaries.find((item) => item.quarter === "Q4")).toMatchObject({
+      fiscalYear: "2025",
+      status: "complete",
+      amount: 400,
+      comparisonLabel: "No comparison",
+    });
   });
 
   test("uses neutral comparison without a year or a usable baseline", () => {

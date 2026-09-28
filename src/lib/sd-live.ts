@@ -434,34 +434,41 @@ export function buildQuarterSummaries(
   const inferredYears = activeRows.map((row) => fiscalYearForDate(row.postingDate)).filter(Boolean);
   const years = [...new Set(fiscalYears.length ? fiscalYears : inferredYears)].sort((a, b) => a.localeCompare(b));
   const currentYear = years.at(-1) ?? "";
-  const baselineYear = years.length > 1 ? years.at(-2) ?? "" : "";
   const comparisonMode: "qoq" | "yoy" = fiscalYears.length > 1 || (!fiscalYears.length && dateRangeMonths(activeRows, dateRange.from, dateRange.to) >= 18)
     ? "yoy"
     : "qoq";
 
   return visible.map((quarter) => {
-    const currentRows = currentYear ? quarterRows(activeRows, currentYear, quarter) : [];
+    const quarterRowsByYear = years.map((fiscalYear) => ({
+      fiscalYear,
+      rows: quarterRows(activeRows, fiscalYear, quarter),
+    }));
+    const summaryYear = quarterRowsByYear
+      .filter(({ rows }) => rows.reduce((sum, row) => sum + row.amount, 0) !== 0)
+      .at(-1)?.fiscalYear ?? currentYear;
+    const currentRows = summaryYear ? quarterRows(activeRows, summaryYear, quarter) : [];
     const amount = currentRows.reduce((sum, row) => sum + row.amount, 0);
-    const selection = currentYear
-      ? quarterSelectionStatus(currentYear, quarter, dateRange.from, dateRange.to)
+    const baselineYear = years.filter((year) => year < summaryYear).at(-1) ?? "";
+    const selection = summaryYear
+      ? quarterSelectionStatus(summaryYear, quarter, dateRange.from, dateRange.to)
       : { status: "outside" as const, statusLabel: "Outside selected range", intersectionStart: new Date(0), intersectionEnd: new Date(0) };
     let baselineAmount: number | null = null;
     let comparisonLabel = "No comparison";
 
     if (selection.status === "outside") {
       comparisonLabel = "Outside selected range";
-    } else if (currentYear && comparisonMode === "yoy" && baselineYear) {
+    } else if (summaryYear && comparisonMode === "yoy" && baselineYear) {
       baselineAmount = selection.status === "partial"
-        ? elapsedBaselineAmount(comparisonRows, currentYear, quarter, baselineYear, quarter, selection.intersectionStart, selection.intersectionEnd)
+        ? elapsedBaselineAmount(comparisonRows, summaryYear, quarter, baselineYear, quarter, selection.intersectionStart, selection.intersectionEnd)
         : quarterAmount(comparisonRows, baselineYear, quarter);
       comparisonLabel = `vs FY ${baselineYear}–${String(Number(baselineYear) + 1).slice(-2)} ${quarter}`;
-    } else if (currentYear) {
+    } else if (summaryYear && comparisonMode === "qoq") {
       const quarterIndex = FISCAL_QUARTER_ORDER.indexOf(quarter);
       const previousQuarter = FISCAL_QUARTER_ORDER[(quarterIndex + 3) % 4];
-      const previousYear = quarter === "Q1" ? String(Number(currentYear) - 1) : currentYear;
+      const previousYear = quarter === "Q1" ? String(Number(summaryYear) - 1) : summaryYear;
       baselineAmount = previousQuarter
         ? selection.status === "partial"
-          ? elapsedBaselineAmount(comparisonRows, currentYear, quarter, previousYear, previousQuarter, selection.intersectionStart, selection.intersectionEnd)
+          ? elapsedBaselineAmount(comparisonRows, summaryYear, quarter, previousYear, previousQuarter, selection.intersectionStart, selection.intersectionEnd)
           : quarterAmount(comparisonRows, previousYear, previousQuarter)
         : null;
       comparisonLabel = baselineAmount == null || !previousQuarter
@@ -476,7 +483,7 @@ export function buildQuarterSummaries(
 
     return {
       quarter,
-      fiscalYear: currentYear,
+      fiscalYear: summaryYear,
       status: selection.status,
       statusLabel: selection.statusLabel,
       recordCount: currentRows.length,

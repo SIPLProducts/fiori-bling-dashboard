@@ -88,3 +88,4 @@
 - [x] Add dynamic intermediate Y-axis ticks and grouped monthly bars for two selected financial years
 - [x] Keep quarters visible when any selected fiscal year has data, leaving missing-year bars empty
 - [x] Hide monthly bar-top values for two-year quarter comparisons to prevent overlap
+- [x] Prevent quarter tooltips from clipping and use the latest selected year containing quarter data for card status
