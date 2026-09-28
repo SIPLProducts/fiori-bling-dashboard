@@ -189,14 +189,16 @@ export async function exportDashboardPdf(
       width *= scale;
       height = contentHeight;
     }
-    const current = pages[pages.length - 1];
+    const current = pages.at(-1);
+    if (!current) throw new Error("Unable to create the first PDF page");
     const requiresBreak = item.startsSection && current.length > 0;
     const requiredHeight = (current.length ? blockGap : 0) + height;
     if (requiresBreak || usedHeight + requiredHeight > contentHeight) {
       pages.push([]);
       usedHeight = 0;
     }
-    const target = pages[pages.length - 1];
+    const target = pages.at(-1);
+    if (!target) throw new Error("Unable to compose the PDF page");
     target.push({ canvas: item.canvas, width, height });
     usedHeight += (target.length > 1 ? blockGap : 0) + height;
   }
