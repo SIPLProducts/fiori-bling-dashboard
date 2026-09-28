@@ -293,6 +293,7 @@ export type QuarterSummary = {
   periodLabel: string;
   comparisonMode: "qoq" | "yoy";
   trend: { label: string; value: number; count: number }[];
+  yearTrends: { fiscalYear: string; points: { label: string; value: number; count: number }[] }[];
 };
 
 const FISCAL_QUARTER_ORDER = ["Q1", "Q2", "Q3", "Q4"] as const;
@@ -487,6 +488,12 @@ export function buildQuarterSummaries(
       periodLabel: QUARTER_PERIODS[quarter],
       comparisonMode,
       trend: quarterTrend(currentRows, quarter),
+      yearTrends: (fiscalYears.length > 1 ? years.slice(-2) : [currentYear])
+        .filter(Boolean)
+        .map((fiscalYear) => ({
+          fiscalYear,
+          points: quarterTrend(quarterRows(activeRows, fiscalYear, quarter), quarter),
+        })),
     };
   }).filter((summary) => summary.amount !== 0);
 }

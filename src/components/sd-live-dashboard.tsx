@@ -443,7 +443,36 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
-  const chartData = summary.trend.map((point) => ({ ...point, value: point.value / 1e7 }));
+  const series = summary.yearTrends.map((trend, index) => ({
+    fiscalYear: trend.fiscalYear,
+    key: `fy${trend.fiscalYear}`,
+    countKey: `fy${trend.fiscalYear}Count`,
+    color: index === summary.yearTrends.length - 1 ? color : "var(--color-muted-foreground)",
+  }));
+  const chartData = summary.trend.map((point, monthIndex) => {
+    const row: Record<string, string | number> = { label: point.label };
+    summary.yearTrends.forEach((trend) => {
+      const yearPoint = trend.points[monthIndex];
+      row[`fy${trend.fiscalYear}`] = (yearPoint?.value ?? 0) / 1e7;
+      row[`fy${trend.fiscalYear}Count`] = yearPoint?.count ?? 0;
+    });
+    return row;
+  });
+  const chartValues = series.flatMap(({ key }) => chartData.map((point) => Number(point[key] ?? 0)));
+  const chartMin = Math.min(0, ...chartValues);
+  const chartMax = Math.max(0, ...chartValues);
+  const range = Math.max(Math.abs(chartMin), Math.abs(chartMax), 1);
+  const rawStep = range / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalizedStep = rawStep / magnitude;
+  const stepMultiplier = normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10;
+  const tickStep = stepMultiplier * magnitude;
+  const domainMin = Math.floor(chartMin / tickStep) * tickStep;
+  const domainMax = Math.ceil(chartMax / tickStep) * tickStep;
+  const yTicks = Array.from(
+    { length: Math.round((domainMax - domainMin) / tickStep) + 1 },
+    (_, index) => Number((domainMin + index * tickStep).toPrecision(12)),
+  );
   return (
     <section
       className="relative min-w-0 overflow-hidden rounded-lg border bg-card p-3 shadow-tile"
@@ -481,9 +510,19 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {!outside ? <div className="mt-2 h-36 overflow-hidden rounded-md bg-muted/40 pt-1">
+      {!outside ? <div className="mt-2 h-40 overflow-hidden rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 20, right: 6, bottom: 20, left: 6 }}>
+          <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
+            {series.length > 1 ? (
+              <Legend
+                verticalAlign="top"
+                align="right"
+                iconType="square"
+                iconSize={7}
+                wrapperStyle={{ fontSize: 9, color: "var(--color-muted-foreground)", paddingBottom: 4 }}
+                formatter={(_value, entry) => `FY ${entry.value}–${String(Number(entry.value) + 1).slice(-2)}`}
+              />
+            ) : null}
             <XAxis
               dataKey="label"
               axisLine={{ stroke: "var(--color-border)" }}
@@ -492,44 +531,48 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
               label={{ value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 }}
             />
             <YAxis
-              width={isMobile ? 48 : 54}
-              tickCount={3}
+              width={isMobile ? 52 : 58}
+              ticks={yTicks}
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: isMobile ? 8 : 9, fill: "var(--color-muted-foreground)" }}
               tickFormatter={(value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
               label={{ value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 }}
-              domain={[
-                (dataMin: number) => Math.min(0, dataMin),
-                (dataMax: number) => Math.max(0, dataMax),
-              ]}
+              domain={[domainMin, domainMax]}
             />
             <Tooltip
               cursor={{ fill: "var(--chart-hover-fill)" }}
               content={({ active: tooltipActive, payload }) => {
-                const point = payload?.[0]?.payload as { label: string; value: number; count: number } | undefined;
+                const point = payload?.[0]?.payload as Record<string, string | number> | undefined;
                 if (!tooltipActive || !point) return null;
                 return (
                   <div className="rounded-md border border-border bg-popover px-2.5 py-2 text-[11px] text-popover-foreground shadow-md">
-                    <p className="font-semibold">{point.label}</p>
-                    <p className="mt-1 text-muted-foreground">Value <span className="tabular font-medium text-foreground">₹{point.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
-                    <p className="text-muted-foreground">Count <span className="tabular font-medium text-foreground">{NUM(point.count)}</span></p>
+                    <p className="font-semibold">{String(point["label"])}</p>
+                    {series.map((item, index) => (
+                      <div key={item.fiscalYear} className={index === 0 ? "mt-1" : "mt-1.5"}>
+                        {series.length > 1 ? <p className="font-medium" style={{ color: item.color }}>FY {item.fiscalYear}–{String(Number(item.fiscalYear) + 1).slice(-2)}</p> : null}
+                        <p className="text-muted-foreground">Value <span className="tabular font-medium text-foreground">₹{Number(point[item.key] ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                        <p className="text-muted-foreground">Count <span className="tabular font-medium text-foreground">{NUM(Number(point[item.countKey] ?? 0))}</span></p>
+                      </div>
+                    ))}
                   </div>
                 );
               }}
             />
-            <Bar dataKey="value" fill={color} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(value: number) => value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                fontSize={isMobile ? 8 : 9}
-                fill="var(--chart-label-strong)"
-              />
-            </Bar>
+            {series.map((item) => (
+              <Bar key={item.key} dataKey={item.key} name={item.fiscalYear} fill={item.color} radius={[3, 3, 0, 0]} maxBarSize={series.length > 1 ? 20 : 28} isAnimationActive={false}>
+                <LabelList
+                  dataKey={item.key}
+                  position="top"
+                  formatter={(value: number) => value === 0 ? "" : value.toLocaleString("en-IN", { minimumFractionDigits: isMobile ? 0 : 2, maximumFractionDigits: isMobile ? 1 : 2 })}
+                  fontSize={isMobile ? 7 : 9}
+                  fill="var(--chart-label-strong)"
+                />
+              </Bar>
+            ))}
           </BarChart>
         </ResponsiveContainer>
-      </div> : <div className="mt-2 grid h-36 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
+      </div> : <div className="mt-2 grid h-40 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
     </section>
   );
 }
