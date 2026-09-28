@@ -840,13 +840,19 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
         postingCount: bucket.positiveAhPostingCount,
       }
     : null;
-  const currentPerAh = perAhPoint(lastB);
-  const previousPerAh = perAhPoint(prevB);
+  // Revenue per AH has its own eligible month pair. Sales Momentum months may
+  // contain revenue but no positive Total AH, which would make this comparison empty.
+  const positiveAhMonths = monthBuckets.filter((bucket) => bucket.positiveAhTotal > 0);
+  const currentPerAh = perAhPoint(positiveAhMonths.at(-1));
+  const previousPerAh = perAhPoint(positiveAhMonths.at(-2));
+  const perAhPct = currentPerAh && previousPerAh && previousPerAh.revenuePerAh !== 0
+    ? ((currentPerAh.revenuePerAh - previousPerAh.revenuePerAh) / Math.abs(previousPerAh.revenuePerAh)) * 100
+    : null;
   const revenuePerAhComparison = {
     current: currentPerAh,
     previous: previousPerAh,
     amountChange: currentPerAh && previousPerAh ? currentPerAh.revenuePerAh - previousPerAh.revenuePerAh : null,
-    percentChange: deltas.revenuePerAh.pct,
+    percentChange: perAhPct,
   };
 
   // Customer concentration (Pareto) over the whole filtered selection. The
@@ -879,7 +885,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       id: "customer-concentration",
       tone: "warn",
       title: "Customer concentration",
-      text: `Top 5 customers contribute ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
+      text: `Top 5 customers contribute ₹${cut(5).toLocaleString("en-IN", { maximumFractionDigits: 2 })}, equal to ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
       basis: "All customers in the current selection",
     });
   if (mainGroupList[0])
@@ -887,7 +893,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       id: "leading-main-group",
       tone: "up",
       title: "Leading main group",
-      text: `${mainGroupList[0].name} is the largest main group at ${((mainGroupList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
+      text: `${mainGroupList[0].name} leads with ₹${mainGroupList[0].value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}, equal to ${((mainGroupList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
       basis: "Sales amount grouped by main group",
     });
   if (pcList[0])
@@ -898,13 +904,15 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)}.`,
       basis: "Sales amount grouped by profit centre",
     });
-  if (deltas.revenuePerAh.pct != null)
+  if (currentPerAh)
     alerts.push({
       id: "revenue-per-ah",
-      tone: deltas.revenuePerAh.pct >= 0 ? "up" : "down",
+      tone: perAhPct == null ? "warn" : perAhPct >= 0 ? "up" : "down",
       title: "Revenue per AH",
-      text: `Revenue per AH ${deltas.revenuePerAh.pct >= 0 ? "improved" : "dropped"} ${pct(deltas.revenuePerAh.pct)} ${cmpLabel}.`,
-      basis: "Sales divided by Total AH for comparable months",
+      text: perAhPct == null
+        ? `${currentPerAh.month} has eligible Revenue per AH data; another positive-AH month is required for comparison.`
+        : `Revenue per AH ${perAhPct >= 0 ? "improved" : "dropped"} ${pct(perAhPct)} in ${currentPerAh.month} vs ${previousPerAh?.month}.`,
+      basis: "Latest months containing records with Total AH greater than zero",
     });
 
   return {

@@ -601,7 +601,11 @@ describe("dynamic management alerts", () => {
     ]);
     expect(alerts.every((alert) => alert.basis.length > 0)).toBe(true);
     expect(alerts[0]?.text).toContain("+50.0%");
+    expect(alerts[1]?.text).toContain("₹250");
+    expect(alerts[1]?.text).toContain("100.0%");
     expect(alerts[2]?.text).toContain("Power");
+    expect(alerts[2]?.text).toContain("₹250");
+    expect(alerts[2]?.text).toContain("100.0%");
     expect(alerts[4]?.id).toBe("revenue-per-ah");
     expect(buildSdAnalytics(rows).revenuePerAhComparison).toEqual({
       current: { month: "AUG-2026", sales: 150, totalAh: 100, revenuePerAh: 1.5, postingCount: 1 },
@@ -621,6 +625,29 @@ describe("dynamic management alerts", () => {
     expect(analytics.revenuePerAhComparison.current).toEqual({ month: "AUG-2026", sales: 150, totalAh: 50, revenuePerAh: 3, postingCount: 1 });
     expect(analytics.revenuePerAhComparison.previous).toEqual({ month: "JUL-2026", sales: 200, totalAh: 100, revenuePerAh: 2, postingCount: 1 });
     expect(analytics.revenuePerAhComparison.percentChange).toBe(50);
+  });
+
+  test("chooses the latest two positive-AH months independently of Sales Momentum", () => {
+    const analytics = buildSdAnalytics([
+      { ...row("2026", "2026-06-10"), month: "JUN-2026", totalAh: 100, amount: 200 },
+      { ...row("2026", "2026-07-10"), month: "JUL-2026", totalAh: 50, amount: 150 },
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", totalAh: 0, amount: 1_000 },
+    ]);
+
+    expect(analytics.revenuePerAhComparison.current?.month).toBe("JUL-2026");
+    expect(analytics.revenuePerAhComparison.previous?.month).toBe("JUN-2026");
+    expect(analytics.revenuePerAhComparison.percentChange).toBe(50);
+  });
+
+  test("keeps the latest eligible month when a second positive-AH month is unavailable", () => {
+    const analytics = buildSdAnalytics([
+      { ...row("2026", "2026-08-10"), month: "AUG-2026", totalAh: 50, amount: 150 },
+      { ...row("2026", "2026-09-10"), month: "SEP-2026", totalAh: 0, amount: 200 },
+    ]);
+
+    expect(analytics.revenuePerAhComparison.current?.month).toBe("AUG-2026");
+    expect(analytics.revenuePerAhComparison.previous).toBeNull();
+    expect(analytics.alerts.find((alert) => alert.id === "revenue-per-ah")?.text).toContain("another positive-AH month");
   });
 });
 
