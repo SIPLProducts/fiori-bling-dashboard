@@ -94,3 +94,4 @@
 - [x] Format Leading Main Group and Customer Concentration alert values in crores
 - [x] Compare Revenue per AH using the latest two Posting Date months in scope and show monthly sales in crores
 - [x] Remove the visible `Cr` suffix from Leading Main Group and Customer Concentration alerts
+- [x] Remove the visible `Cr` suffix from monthly Sales amounts in the Revenue per AH popup

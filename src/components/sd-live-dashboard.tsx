@@ -117,7 +117,6 @@ const CRORES = (value: number) =>
 const CRORES_VALUE = (value: number) =>
   `₹${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const INR_CRORES = (value: number) => `₹${CRORES(value)}`;
-const INR_CRORES_LABELLED = (value: number) => `${INR_CRORES(value)} Cr`;
 const PER_AH = (value: number) =>
   `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/AH`;
 
@@ -2988,7 +2987,7 @@ export function SdLiveDashboard() {
                       <div key={point.month} className={`rounded-md border p-3 ${index === 1 ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30"}`}>
                         <p className="text-xs font-semibold text-card-foreground">{point.month}</p>
                         <dl className="mt-3 grid gap-2 text-xs">
-                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Sales amount</dt><dd className="font-semibold tabular-nums">{INR_CRORES_LABELLED(point.sales)}</dd></div>
+                          <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Sales amount</dt><dd className="font-semibold tabular-nums">{INR_CRORES(point.sales)}</dd></div>
                           <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Total AH</dt><dd className="font-semibold tabular-nums">{point.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</dd></div>
                           <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Revenue per AH</dt><dd className="font-semibold tabular-nums text-primary">{INR_EXACT(point.revenuePerAh)}</dd></div>
                           <div className="flex items-center justify-between gap-4"><dt className="text-muted-foreground">Posting count</dt><dd className="font-semibold tabular-nums">{NUM(point.postingCount)}</dd></div>
