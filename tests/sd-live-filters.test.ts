@@ -601,10 +601,12 @@ describe("dynamic management alerts", () => {
     ]);
     expect(alerts.every((alert) => alert.basis.length > 0)).toBe(true);
     expect(alerts[0]?.text).toContain("+50.0%");
-    expect(alerts[1]?.text).toContain("₹2.50 Cr");
+    expect(alerts[1]?.text).toContain("₹2.50");
+    expect(alerts[1]?.text).not.toContain("Cr");
     expect(alerts[1]?.text).toContain("100.0%");
     expect(alerts[2]?.text).toContain("Power");
-    expect(alerts[2]?.text).toContain("₹2.50 Cr");
+    expect(alerts[2]?.text).toContain("₹2.50");
+    expect(alerts[2]?.text).not.toContain("Cr");
     expect(alerts[2]?.text).toContain("100.0%");
     expect(alerts[4]?.id).toBe("revenue-per-ah");
     expect(buildSdAnalytics(rows).revenuePerAhComparison).toEqual({

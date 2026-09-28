@@ -93,3 +93,4 @@
 - [x] Clarify Revenue per AH filter scope, select eligible months correctly, and add exact alert values with percentages
 - [x] Format Leading Main Group and Customer Concentration alert values in crores
 - [x] Compare Revenue per AH using the latest two Posting Date months in scope and show monthly sales in crores
+- [x] Remove the visible `Cr` suffix from Leading Main Group and Customer Concentration alerts
