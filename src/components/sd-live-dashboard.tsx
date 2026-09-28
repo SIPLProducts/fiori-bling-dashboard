@@ -481,11 +481,22 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {!outside ? <div className="mt-2 h-24 overflow-hidden rounded-md bg-muted/40 pt-1">
+      {!outside ? <div className="mt-2 h-28 overflow-hidden rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 18, right: 4, bottom: 2, left: 4 }}>
+          <BarChart data={chartData} margin={{ top: 20, right: 4, bottom: 2, left: 0 }}>
             <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }} />
-            <YAxis hide domain={["auto", "auto"]} />
+            <YAxis
+              width={isMobile ? 32 : 40}
+              tickCount={3}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: isMobile ? 8 : 9, fill: "var(--color-muted-foreground)" }}
+              tickFormatter={(value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
+              domain={[
+                (dataMin: number) => Math.min(0, dataMin),
+                (dataMax: number) => Math.max(0, dataMax),
+              ]}
+            />
             <Tooltip
               cursor={{ fill: "var(--chart-hover-fill)" }}
               content={({ active: tooltipActive, payload }) => {
@@ -501,11 +512,17 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
               }}
             />
             <Bar dataKey="value" fill={color} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
-              {!isMobile ? <LabelList dataKey="count" position="top" formatter={(count: number) => count ? NUM(count) : ""} fontSize={9} fill="var(--chart-label-strong)" /> : null}
+              <LabelList
+                dataKey="value"
+                position="top"
+                formatter={(value: number) => value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                fontSize={isMobile ? 8 : 9}
+                fill="var(--chart-label-strong)"
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div> : <div className="mt-2 grid h-24 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
+      </div> : <div className="mt-2 grid h-28 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
     </section>
   );
 }
