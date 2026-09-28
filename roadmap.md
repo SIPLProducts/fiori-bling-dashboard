@@ -84,3 +84,4 @@
 - [x] Display compact amount labels directly on the TBN debit, credit, composition, and net-balance charts
 - [x] Remove Crore suffixes from Sales Dashboard values, hide zero-total quarters, and show monthly quarter bars with posting counts
 - [x] Show the quarter charts' crore-scaled amount axis and monthly values above bars instead of posting counts
+- [x] Add visible X/Y axis lines and Month/Amount labels to each Sales quarter chart
