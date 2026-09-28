@@ -89,3 +89,4 @@
 - [x] Keep quarters visible when any selected fiscal year has data, leaving missing-year bars empty
 - [x] Hide monthly bar-top values for two-year quarter comparisons to prevent overlap
 - [x] Prevent quarter tooltips from clipping and use the latest selected year containing quarter data for card status
+- [x] Replace Leading Segment with Leading Main Group and add a monthly Revenue per AH detail popup

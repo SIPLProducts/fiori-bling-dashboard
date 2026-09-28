@@ -602,11 +602,18 @@ export type SdAnalytics = {
     cumulativePct: number;
   }[];
   alerts: {
+    id: "sales-momentum" | "customer-concentration" | "leading-main-group" | "top-profit-centre" | "revenue-per-ah";
     tone: "up" | "down" | "warn";
     title: string;
     text: string;
     basis: string;
   }[];
+  revenuePerAhComparison: {
+    current: { month: string; sales: number; totalAh: number; revenuePerAh: number; postingCount: number } | null;
+    previous: { month: string; sales: number; totalAh: number; revenuePerAh: number; postingCount: number } | null;
+    amountChange: number | null;
+    percentChange: number | null;
+  };
   mixByType: NamedTotal[];
   byNewRepl: NamedTotal[];
   unassignedNewReplCount: number;
@@ -660,6 +667,9 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       revenue: number;
       quantity: number;
       ah: number;
+      positiveAhSales: number;
+      positiveAhTotal: number;
+      positiveAhPostingCount: number;
       docs: Set<string>;
       customers: Set<string>;
     }
@@ -751,12 +761,20 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
         revenue: 0,
         quantity: 0,
         ah: 0,
+        positiveAhSales: 0,
+        positiveAhTotal: 0,
+        positiveAhPostingCount: 0,
         docs: new Set<string>(),
         customers: new Set<string>(),
       };
     bucket.revenue += r.amount;
     bucket.quantity += r.quantity;
     bucket.ah += r.totalAh;
+    if (r.totalAh > 0) {
+      bucket.positiveAhSales += r.amount;
+      bucket.positiveAhTotal += r.totalAh;
+      bucket.positiveAhPostingCount += 1;
+    }
     if (r.docNo) bucket.docs.add(r.docNo);
     if (r.customer) bucket.customers.add(r.customer);
     byMonth.set(label, bucket);
@@ -800,8 +818,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     pct: lastB && prevB ? pctOf(a ?? 0, b ?? 0) : null,
     label: cmpLabel,
   });
-  const rate = (bkt?: { revenue: number; ah: number }) =>
-    bkt && bkt.ah ? bkt.revenue / bkt.ah : 0;
+  const rate = (bkt?: { positiveAhSales: number; positiveAhTotal: number }) =>
+    bkt && bkt.positiveAhTotal ? bkt.positiveAhSales / bkt.positiveAhTotal : 0;
   const perCust = (bkt?: { revenue: number; customers: Set<string> }) =>
     bkt && bkt.customers.size ? bkt.revenue / bkt.customers.size : 0;
 
@@ -812,6 +830,23 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     customers: d(lastB?.customers.size, prevB?.customers.size),
     revenuePerAh: d(rate(lastB), rate(prevB)),
     revenuePerCustomer: d(perCust(lastB), perCust(prevB)),
+  };
+  const perAhPoint = (bucket?: (typeof monthBuckets)[number]) => bucket && bucket.positiveAhTotal > 0
+    ? {
+        month: bucket.month,
+        sales: bucket.positiveAhSales,
+        totalAh: bucket.positiveAhTotal,
+        revenuePerAh: rate(bucket),
+        postingCount: bucket.positiveAhPostingCount,
+      }
+    : null;
+  const currentPerAh = perAhPoint(lastB);
+  const previousPerAh = perAhPoint(prevB);
+  const revenuePerAhComparison = {
+    current: currentPerAh,
+    previous: previousPerAh,
+    amountChange: currentPerAh && previousPerAh ? currentPerAh.revenuePerAh - previousPerAh.revenuePerAh : null,
+    percentChange: deltas.revenuePerAh.pct,
   };
 
   // Customer concentration (Pareto) over the whole filtered selection. The
@@ -828,11 +863,12 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   }));
 
   // Management alerts derived from the current selection.
-  const segList = rank(bySeg);
+  const mainGroupList = rank(byMain);
   const alerts: SdAnalytics["alerts"] = [];
   const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   if (momPct != null)
     alerts.push({
+      id: "sales-momentum",
       tone: momPct >= 0 ? "up" : "down",
       title: "Sales momentum",
       text: `Sales ${momPct >= 0 ? "grew" : "declined"} ${pct(momPct)} in ${last?.month} ${cmpLabel}.`,
@@ -840,20 +876,23 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     });
   if (custTotal)
     alerts.push({
+      id: "customer-concentration",
       tone: "warn",
       title: "Customer concentration",
       text: `Top 5 customers contribute ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
       basis: "All customers in the current selection",
     });
-  if (segList[0])
+  if (mainGroupList[0])
     alerts.push({
+      id: "leading-main-group",
       tone: "up",
-      title: "Leading segment",
-      text: `${segList[0].name} is the largest segment at ${((segList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
-      basis: "Sales amount grouped by business segment",
+      title: "Leading main group",
+      text: `${mainGroupList[0].name} is the largest main group at ${((mainGroupList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
+      basis: "Sales amount grouped by main group",
     });
   if (pcList[0])
     alerts.push({
+      id: "top-profit-centre",
       tone: "up",
       title: "Top profit centre",
       text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)}.`,
@@ -861,6 +900,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     });
   if (deltas.revenuePerAh.pct != null)
     alerts.push({
+      id: "revenue-per-ah",
       tone: deltas.revenuePerAh.pct >= 0 ? "up" : "down",
       title: "Revenue per AH",
       text: `Revenue per AH ${deltas.revenuePerAh.pct >= 0 ? "improved" : "dropped"} ${pct(deltas.revenuePerAh.pct)} ${cmpLabel}.`,
@@ -890,6 +930,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     deltas,
     pareto,
     alerts,
+    revenuePerAhComparison,
 
     mixByType: rank(byType),
     byNewRepl: rank(byNewRepl),
