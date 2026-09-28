@@ -54,6 +54,7 @@ import {
 import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
 import {
   readSharedSalesFilters,
@@ -86,7 +87,7 @@ const NUM = (value: number) => value.toLocaleString("en-IN", { maximumFractionDi
 
 function compact(value: number) {
   const abs = Math.abs(value);
-  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}\u00A0Cr`;
+  if (abs >= 1e7) return (value / 1e7).toFixed(2);
   if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}\u00A0L`;
   if (abs >= 1e3) return `${(value / 1e3).toFixed(1)}\u00A0K`;
   return NUM(value);
@@ -95,13 +96,13 @@ function compact(value: number) {
 /** Shorter form for axis ticks so labels never get clipped. */
 function axisCompact(value: number) {
   const abs = Math.abs(value);
-  if (abs >= 1e7) return `${Math.round(value / 1e7).toLocaleString("en-IN")}\u00A0Cr`;
+  if (abs >= 1e7) return Math.round(value / 1e7).toLocaleString("en-IN");
   if (abs >= 1e5) return `${Math.round(value / 1e5).toLocaleString("en-IN")}\u00A0L`;
   if (abs >= 1e3) return `${Math.round(value / 1e3).toLocaleString("en-IN")}\u00A0K`;
   return NUM(value);
 }
 
-/** Compact INR display: crores as "Cr", lakhs as "L", thousands as "K". */
+/** Compact INR display with crore values shown without a suffix. */
 const INRC = (value: number) => `₹${compact(value)}`;
 
 const LAKHS = (value: number) =>
@@ -109,7 +110,7 @@ const LAKHS = (value: number) =>
 const LAKHS_VALUE = (value: number) =>
   (value / 1e5).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const CRORES = (value: number) =>
-  `${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00A0Cr`;
+  (value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const CRORES_VALUE = (value: number) =>
   `₹${(value / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const INR_CRORES = (value: number) => `₹${CRORES(value)}`;
@@ -438,6 +439,7 @@ function KpiCard({
 }
 
 function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
+  const isMobile = useIsMobile();
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
@@ -479,13 +481,31 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {!outside ? <div className="mt-1 h-12 overflow-hidden rounded-md bg-muted/40">
+      {!outside ? <div className="mt-2 h-24 overflow-hidden rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 7, right: 5, bottom: 2, left: 5 }}>
-            <Area type="monotone" dataKey="value" stroke={color} fill={color} fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
-          </ComposedChart>
+          <BarChart data={chartData} margin={{ top: 18, right: 4, bottom: 2, left: 4 }}>
+            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }} />
+            <YAxis hide domain={["auto", "auto"]} />
+            <Tooltip
+              cursor={{ fill: "var(--chart-hover-fill)" }}
+              content={({ active: tooltipActive, payload }) => {
+                const point = payload?.[0]?.payload as { label: string; value: number; count: number } | undefined;
+                if (!tooltipActive || !point) return null;
+                return (
+                  <div className="rounded-md border border-border bg-popover px-2.5 py-2 text-[11px] text-popover-foreground shadow-md">
+                    <p className="font-semibold">{point.label}</p>
+                    <p className="mt-1 text-muted-foreground">Value <span className="tabular font-medium text-foreground">₹{point.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                    <p className="text-muted-foreground">Count <span className="tabular font-medium text-foreground">{NUM(point.count)}</span></p>
+                  </div>
+                );
+              }}
+            />
+            <Bar dataKey="value" fill={color} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
+              {!isMobile ? <LabelList dataKey="count" position="top" formatter={(count: number) => count ? NUM(count) : ""} fontSize={9} fill="var(--chart-label-strong)" /> : null}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
-      </div> : <div className="mt-1 grid h-12 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
+      </div> : <div className="mt-2 grid h-24 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
     </section>
   );
 }
@@ -580,6 +600,14 @@ function TotalSalesCard({
 }
 
 function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
+  if (!summaries.length) {
+    return (
+      <section className="rounded-lg border border-dashed border-border bg-card p-8 text-center shadow-tile">
+        <h3 className="text-sm font-semibold text-card-foreground">Quarterly Trajectory &amp; Up/Down Variance Analysis</h3>
+        <p className="mt-1 text-xs text-muted-foreground">No quarter has a non-zero value for the current filters.</p>
+      </section>
+    );
+  }
   const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
   const eligible = summaries.filter((item) => item.status !== "outside" && item.recordCount > 0);
   const comparable = eligible.filter((item) => item.varianceAmount != null);
@@ -775,11 +803,11 @@ function SalesByModelChart({
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={(value: number) => `${(value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`}
+              tickFormatter={(value: number) => (value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
               stroke="var(--chart-axis-line)"
               tickLine={false}
-              label={{ value: "Amount in local cur. (₹ Cr)", position: "insideBottom", offset: -12, fill: "var(--chart-axis-label)", fontSize: 10 }}
+              label={{ value: "Amount in local cur. (₹)", position: "insideBottom", offset: -12, fill: "var(--chart-axis-label)", fontSize: 10 }}
             />
             <YAxis
               type="category"
@@ -2516,7 +2544,7 @@ export function SdLiveDashboard() {
             </div>
 
             <div className="min-w-0 lg:col-span-8">
-            <Panel title="Main Group in CR" accent={3} expandable>
+            <Panel title="Main Group" accent={3} expandable>
               {(full: boolean) => (
                 <MainGroupBars
                   items={analytics.byMainGroup}
