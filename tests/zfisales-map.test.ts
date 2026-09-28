@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canonicalJson, mapPayload, sha256 } from "../src/lib/zfisales-map.ts";
+import { canonicalJson, mapPayload, postingDateRange, sha256 } from "../src/lib/zfisales-map.ts";
 
 const base = { WERKS: "", GJAHR: 2026, BELNR: "0100035244", BUZEI: "10", HKONT: "31111100" };
 
@@ -64,12 +64,27 @@ test("preserves distinct rows that share all six requested SAP key fields", () =
 });
 
 test("request scope is stable and different filters remain isolated", () => {
-  const first = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
-  const same = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
-  const other = mapPayload([base], "Sales_Reports_KPI", { body: { BUDAT_F: "20260801", BUDAT_T: "20260831" } });
+  const dated = { ...base, BUDAT: "20260901" };
+  const first = mapPayload([dated], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
+  const same = mapPayload([dated], "Sales_Reports_KPI", { body: { BUDAT_F: "20260901", BUDAT_T: "20260916" } });
+  const other = mapPayload([dated], "Sales_Reports_KPI", { body: { BUDAT_F: "20260801", BUDAT_T: "20260831" } });
   assert.equal(first.syncScopeKey, same.syncScopeKey);
   assert.notEqual(first.syncScopeKey, other.syncScopeKey);
   assert.notEqual(first.snapshotId, same.snapshotId);
+});
+
+test("derives the replacement range from mapped Posting Dates", () => {
+  const result = mapPayload([
+    { ...base, BELNR: "1", BUDAT: "20260928" },
+    { ...base, BELNR: "2", BUDAT: "20260401" },
+    { ...base, BELNR: "3", BUDAT: "20260715" },
+  ], "Sales_Reports_KPI");
+  assert.deepEqual(result.postingRange, { from: "2026-04-01", to: "2026-09-28" });
+});
+
+test("rejects a mapped snapshot when any row has no valid Posting Date", () => {
+  const result = mapPayload([{ ...base, BUDAT: "not-a-date" }], "Sales_Reports_KPI");
+  assert.throws(() => postingDateRange(result.rows), /without a valid Posting Date/);
 });
 
 test("property order does not change full-row identity", () => {

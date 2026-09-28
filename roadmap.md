@@ -100,4 +100,4 @@
 - [x] Refactor the Sales Analytics PDF into branded, high-resolution, page-safe executive sections with page numbering
 - [x] Ensure every exported Sales by Model page renders its bars and values before PDF capture
 - [x] Default all Sales reporting screens and resets to the current April–March fiscal year
-- [ ] Replace successful ZFISALES syncs by Posting Date range while preserving staged snapshot failure protection
+- [x] Replace successful ZFISALES syncs by Posting Date range while preserving staged snapshot failure protection

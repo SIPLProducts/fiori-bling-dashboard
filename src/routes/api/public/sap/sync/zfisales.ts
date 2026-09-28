@@ -30,11 +30,18 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
         const endpoint = "ZFISALES";
         const startedAt = new Date().toISOString();
         const requestSnapshot = { source: "sap-push" };
-        const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+        let mapped;
+        try {
+          mapped = mapPayload(
           payload,
           endpoint,
           requestSnapshot,
-        );
+          );
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Invalid SAP Posting Date range";
+          return Response.json({ error: message }, { status: 422 });
+        }
+        const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingRange } = mapped;
 
         const { data: run } = await supabaseAdmin
           .from("sap_sync_runs")
@@ -61,24 +68,14 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
           }
         };
 
-        if (!rows.length) {
-          let replaced = 0;
-          if (received === 0) {
-            const { data, error } = await supabaseAdmin.rpc("activate_zfisales_snapshot", {
-              _scope_key: syncScopeKey,
-              _snapshot_id: snapshotId,
-              _expected_count: 0,
-            });
-            if (error) throw error;
-            replaced = data ?? 0;
-          }
+        if (!rows.length || !postingRange) {
           await finish({
             status: received ? "error" : "success",
-            records_replaced: replaced,
+            records_replaced: 0,
             records_invalid: invalid,
-            error_message: received ? "No mappable rows" : `${replaced} previous rows removed for this empty SAP snapshot`,
+            error_message: received ? "No mappable rows" : "SAP returned no rows — existing data left unchanged",
           });
-          return Response.json({ received, stored: 0, replaced, skipped, invalid }, { status: received ? 422 : 200 });
+          return Response.json({ received, stored: 0, replaced: 0, skipped, invalid }, { status: received ? 422 : 200 });
         }
 
         try {
@@ -92,6 +89,8 @@ export const Route = createFileRoute("/api/public/sap/sync/zfisales")({
             _scope_key: syncScopeKey,
             _snapshot_id: snapshotId,
             _expected_count: rows.length,
+            _posting_from: postingRange.from,
+            _posting_to: postingRange.to,
           });
           if (activateError) throw activateError;
           await finish({

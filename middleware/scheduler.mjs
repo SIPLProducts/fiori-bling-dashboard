@@ -151,20 +151,13 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
-    const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+    const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingRange } = mapPayload(
       payload,
       endpoint,
       requestSnapshot,
     );
-    if (!rows.length) {
-      if (received > 0) return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
-      const { data: replaced, error } = await db.rpc("activate_zfisales_snapshot", {
-        _scope_key: syncScopeKey,
-        _snapshot_id: snapshotId,
-        _expected_count: 0,
-      });
-      if (error) throw new Error(error.message);
-      return { received, stored: 0, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+    if (!rows.length || !postingRange) {
+      return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
     }
 
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -180,12 +173,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       _scope_key: syncScopeKey,
       _snapshot_id: snapshotId,
       _expected_count: rows.length,
+      _posting_from: postingRange.from,
+      _posting_to: postingRange.to,
     });
     if (activateError) {
       await db.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
       throw new Error(activateError.message);
     }
-    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: postingRange.from, postingTo: postingRange.to };
   }
 
   /**
