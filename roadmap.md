@@ -95,3 +95,4 @@
 - [x] Compare Revenue per AH using the latest two Posting Date months in scope and show monthly sales in crores
 - [x] Remove the visible `Cr` suffix from Leading Main Group and Customer Concentration alerts
 - [x] Remove the visible `Cr` suffix from monthly Sales amounts in the Revenue per AH popup
+- [x] Refine the Sales Dashboard PDF with an HBL header, selected date range, and no filter controls
