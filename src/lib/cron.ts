@@ -5,6 +5,8 @@
 
 export type CronPreset = { label: string; expression: string };
 
+export const DAILY_SYNC_TIMES_PREFIX = "IST:";
+
 export const CRON_PRESETS: CronPreset[] = [
   { label: "Every 5 minutes", expression: "*/5 * * * *" },
   { label: "Every 10 minutes", expression: "*/10 * * * *" },
@@ -18,6 +20,30 @@ export const CRON_PRESETS: CronPreset[] = [
 
 export function normalizeCron(expression: string): string {
   return expression.trim().replace(/\s+/g, " ");
+}
+
+export function parseDailySyncTimes(expression: string): string[] | null {
+  const normalized = expression.trim();
+  if (!normalized.startsWith(DAILY_SYNC_TIMES_PREFIX)) return null;
+  const values = normalized
+    .slice(DAILY_SYNC_TIMES_PREFIX.length)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (!values.length || values.some((value) => !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value))) {
+    return [];
+  }
+  return [...new Set(values)].sort();
+}
+
+export function dailySyncTimesExpression(times: string[]): string {
+  const normalized = [...new Set(times.map((time) => time.trim()).filter(Boolean))].sort();
+  return `${DAILY_SYNC_TIMES_PREFIX}${normalized.join(",")}`;
+}
+
+export function isValidScheduleExpression(expression: string): boolean {
+  const dailyTimes = parseDailySyncTimes(expression);
+  return dailyTimes === null ? isValidCron(expression) : dailyTimes.length > 0;
 }
 
 export function isValidCron(expression: string): boolean {
@@ -101,6 +127,34 @@ export function nextCronRuns(expression: string, count = 3, from: Date = new Dat
   return out;
 }
 
+function istDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("hour")}:${value("minute")}`;
+}
+
+export function nextScheduleRuns(expression: string, count = 3, from: Date = new Date()): Date[] {
+  const dailyTimes = parseDailySyncTimes(expression);
+  if (dailyTimes === null) return nextCronRuns(expression, count, from);
+  if (!dailyTimes.length) return [];
+  const wanted = new Set(dailyTimes);
+  const out: Date[] = [];
+  const cursor = new Date(from.getTime());
+  cursor.setUTCSeconds(0, 0);
+  cursor.setUTCMinutes(cursor.getUTCMinutes() + 1);
+  for (let i = 0; i < 8 * 24 * 60 && out.length < count; i += 1) {
+    if (wanted.has(istDateParts(cursor))) out.push(new Date(cursor.getTime()));
+    cursor.setUTCMinutes(cursor.getUTCMinutes() + 1);
+  }
+  return out;
+}
+
 /** Plain-English summary, e.g. "Runs every 5 minutes". */
 export function describeCron(expression: string): string {
   const norm = normalizeCron(expression);
@@ -120,4 +174,11 @@ export function describeCron(expression: string): string {
     return `Runs daily at ${hour.padStart(2, "0")}:${min.padStart(2, "0")} UTC`;
   }
   return `Runs on schedule ${norm}`;
+}
+
+export function describeSchedule(expression: string): string {
+  const dailyTimes = parseDailySyncTimes(expression);
+  if (dailyTimes === null) return describeCron(expression);
+  if (!dailyTimes.length) return "No valid daily sync times";
+  return `Runs daily at ${dailyTimes.join(" and ")} IST`;
 }

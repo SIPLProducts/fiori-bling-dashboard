@@ -64,6 +64,29 @@ export function cronMatches(expression, date = new Date()) {
   );
 }
 
+/** Match the UI's `IST:HH:mm,HH:mm` daily schedule independently of server timezone. */
+export function dailyIstScheduleMatches(expression, date = new Date()) {
+  const text = String(expression || "").trim();
+  if (!text.startsWith("IST:")) return false;
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+  return text
+    .slice(4)
+    .split(",")
+    .map((value) => value.trim())
+    .includes(time);
+}
+
+export function scheduleMatches(expression, date = new Date()) {
+  return String(expression || "").trim().startsWith("IST:")
+    ? dailyIstScheduleMatches(expression, date)
+    : cronMatches(expression, date);
+}
+
 /* --------------------------------- helpers -------------------------------- */
 
 function minuteKey(date) {
@@ -353,7 +376,7 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
       for (const row of data ?? []) {
         if (!row.scheduler_enabled || !row.is_active) continue;
         const expression = String(row.schedule_expression || "").trim();
-        if (!expression || !cronMatches(expression, now)) continue;
+        if (!expression || !scheduleMatches(expression, now)) continue;
         if (lastFired.get(row.name) === stamp) continue;
         lastFired.set(row.name, stamp);
         logLine(`scheduler: ${row.name} is due (${expression})`);

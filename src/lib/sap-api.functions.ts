@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { accessForUser } from "./access";
-import { isValidCron, normalizeCron } from "./cron";
+import { isValidScheduleExpression, normalizeCron, parseDailySyncTimes } from "./cron";
 import {
   IS_STATIC_BUILD,
   keyValueObject,
@@ -139,10 +139,13 @@ export type EndpointInput = {
  * Nothing about the schedule is hard-coded — whatever is saved here runs.
  */
 async function applySchedule(input: EndpointInput): Promise<void> {
-  const expression = normalizeCron(input.schedule_expression);
-  if (input.scheduler_enabled && !isValidCron(expression)) {
+  const dailyTimes = parseDailySyncTimes(input.schedule_expression);
+  const expression = dailyTimes === null
+    ? normalizeCron(input.schedule_expression)
+    : input.schedule_expression.trim();
+  if (input.scheduler_enabled && !isValidScheduleExpression(expression)) {
     throw new Error(
-      `"${input.schedule_expression}" is not a valid cron expression — use 5 fields, e.g. */5 * * * *`,
+      `Choose at least one valid daily IST time, or enter a valid 5-field advanced schedule.`,
     );
   }
   const { error } = await supabase.rpc("apply_sap_sync_schedule", {

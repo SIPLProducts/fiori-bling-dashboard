@@ -16,3 +16,4 @@
 - Default Sales reports to the current April–March fiscal year while allowing explicit shared or URL date selections to override it, so opening totals are current and drill-down context is preserved.
 - Activate ZFISALES snapshots by their validated Posting Date range under an advisory lock, preserving existing active rows when SAP returns no usable data or staging fails.
 - Keep Sales report datasets stable across tab and screen navigation; load newer committed snapshots only through the explicit Refresh action.
+- Store multiple daily SAP sync times as an `IST:HH:mm,...` schedule expression so self-hosted middleware and hosted scheduling share one backward-compatible field.
