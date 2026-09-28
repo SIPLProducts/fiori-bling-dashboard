@@ -2112,6 +2112,22 @@ export function SdLiveDashboard() {
     () => buildQuarterSummaries(filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, { from: filters.from, to: effectiveFilters.to }),
     [filtered, quarterComparisonRows, filters.fiscalYears, filters.quarters, filters.from, effectiveFilters.to],
   );
+  const revenuePerAhScope = useMemo(() => {
+    const years = [...filters.fiscalYears].sort();
+    const fiscalYearLabel = (year: string) => {
+      const next = String(Number(year) + 1).slice(-2);
+      return `FY ${year}–${next} (1 Apr ${year}–31 Mar ${Number(year) + 1})`;
+    };
+    const primary = years.length
+      ? years.map(fiscalYearLabel).join(", ")
+      : "All available records matching the current filters";
+    const limits = [
+      filters.quarters.length ? `Quarter: ${filters.quarters.join(", ")}` : null,
+      filters.from ? `From: ${filters.from}` : null,
+      `Through: ${effectiveFilters.to}`,
+    ].filter((value): value is string => Boolean(value));
+    return { primary, limits };
+  }, [filters.fiscalYears, filters.quarters, filters.from, effectiveFilters.to]);
 
   const opts = useMemo(
     () => ({
@@ -2952,6 +2968,18 @@ export function SdLiveDashboard() {
                   Local-currency sales divided by Total AH for records with Total AH greater than zero.
                 </DialogDescription>
               </DialogHeader>
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <p className="text-[10px] font-semibold tracking-wide text-primary uppercase">Data scope</p>
+                <p className="mt-1 text-sm font-semibold text-card-foreground">{revenuePerAhScope.primary}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {revenuePerAhScope.limits.map((limit) => (
+                    <Badge key={limit} variant="outline" className="bg-card text-[10px]">{limit}</Badge>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  The two latest eligible months below are selected from this scope. Only records with Total AH greater than zero are included.
+                </p>
+              </div>
               {analytics.revenuePerAhComparison.current && analytics.revenuePerAhComparison.previous ? (
                 <div className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -2981,7 +3009,14 @@ export function SdLiveDashboard() {
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
-                  Two comparable months with positive Total AH are not available for the current filters.
+                  {analytics.revenuePerAhComparison.current ? (
+                    <>
+                      <span className="block font-semibold text-card-foreground">Available eligible month: {analytics.revenuePerAhComparison.current.month}</span>
+                      <span className="mt-1 block">One more month containing records with Total AH greater than zero is required for comparison.</span>
+                    </>
+                  ) : (
+                    <>No month containing records with Total AH greater than zero is available for this scope.</>
+                  )}
                 </div>
               )}
               <DialogFooter>

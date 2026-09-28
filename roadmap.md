@@ -90,3 +90,4 @@
 - [x] Hide monthly bar-top values for two-year quarter comparisons to prevent overlap
 - [x] Prevent quarter tooltips from clipping and use the latest selected year containing quarter data for card status
 - [x] Replace Leading Segment with Leading Main Group and add a monthly Revenue per AH detail popup
+- [x] Clarify Revenue per AH filter scope, select eligible months correctly, and add exact alert values with percentages
