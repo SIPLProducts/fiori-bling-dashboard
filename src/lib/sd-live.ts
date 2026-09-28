@@ -495,7 +495,9 @@ export function buildQuarterSummaries(
           points: quarterTrend(quarterRows(activeRows, fiscalYear, quarter), quarter),
         })),
     };
-  }).filter((summary) => summary.amount !== 0);
+  }).filter((summary) => summary.yearTrends.some((trend) =>
+    trend.points.reduce((sum, point) => sum + point.value, 0) !== 0,
+  ));
 }
 
 export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
