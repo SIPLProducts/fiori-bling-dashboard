@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -2231,7 +2232,6 @@ export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(() => currentSdFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfExportAllModels, setPdfExportAllModels] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
@@ -2375,38 +2375,28 @@ export function SdLiveDashboard() {
 
   const downloadDashboardPdf = async () => {
     setPdfBusy(true);
-    setPdfExportAllModels(true);
     try {
       await new Promise<void>((resolve) => {
-        const expectedCharts = Math.ceil(analytics.modelPerformance.length / 10);
         let frame = 0;
-        const waitForModelCharts = () => {
-          const charts = Array.from(
-            dashboardRef.current?.querySelectorAll<HTMLElement>("[data-pdf-model-chart-ready]") ?? [],
-          );
-          const chartsReady =
-            charts.length === expectedCharts &&
-            charts.every((chart) => chart.getBoundingClientRect().width > 0 && chart.querySelector("svg"));
-          if (chartsReady || frame >= 30) {
+        const waitForReport = () => {
+          const report = dashboardRef.current?.querySelector<HTMLElement>("[data-pdf-report-root]");
+          const pages = report?.querySelectorAll<HTMLElement>("[data-pdf-report-page]") ?? [];
+          const chartsReady = pages.length === 4 && Array.from(pages).every((page) => page.getBoundingClientRect().width > 0);
+          if (chartsReady || frame >= 45) {
             requestAnimationFrame(() => resolve());
             return;
           }
           frame += 1;
-          requestAnimationFrame(waitForModelCharts);
+          requestAnimationFrame(waitForReport);
         };
-        requestAnimationFrame(waitForModelCharts);
+        requestAnimationFrame(waitForReport);
       });
-      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
-        headerSelector: "[data-pdf-header]",
-        blockSelector: "[data-pdf-page-block]",
-        sectionBreakSelector: "[data-pdf-section-break]",
-        footerText: "HBL Confidential — Internal Use Only",
-      });
+      const report = dashboardRef.current?.querySelector<HTMLElement>("[data-pdf-report-root]") ?? null;
+      await exportReportPagesPdf(report, "sales-dashboard.pdf");
       toast.success("Dashboard PDF downloaded");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
     } finally {
-      setPdfExportAllModels(false);
       setPdfBusy(false);
     }
   };
@@ -2511,19 +2501,7 @@ export function SdLiveDashboard() {
 
   return (
     <div ref={dashboardRef} className={`space-y-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
-      {pdfBusy ? (
-        <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
-            <div className="min-w-0 border-l border-border pl-3">
-              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal — Sales Analytics</p>
-            </div>
-          </div>
-          <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
-            {reportDate(filters.from || firstPostingDate)} – {reportDate(effectiveFilters.to)}
-          </div>
-        </div>
-      ) : null}
+      {pdfBusy ? <PdfExecutiveReport analytics={analytics} quarters={quarterSummaries} totalRevenue={totalRevenue} postingCount={filtered.length} dateRange={`${reportDate(filters.from || firstPostingDate)} – ${reportDate(effectiveFilters.to)}`} /> : null}
 
       {/* executive header */}
       <div data-pdf-exclude className="flex flex-wrap items-end justify-between gap-3">
@@ -3262,19 +3240,7 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          {pdfExportAllModels ? (
-            Array.from({ length: Math.ceil(analytics.modelPerformance.length / 10) }, (_, page) => {
-              const models = analytics.modelPerformance.slice(page * 10, page * 10 + 10);
-              return (
-                <div key={`pdf-models-${page}`} data-pdf-page-block>
-                  <Panel title="Sales by Model (Amount & Per AH)">
-                    <SalesByModelChart items={models} limit="all" full={false} exportMode />
-                  </Panel>
-                </div>
-              );
-            })
-          ) : (
-            <Panel
+          <Panel
               title="Sales by Model (Amount & Per AH)"
               expandable
               actions={
@@ -3298,7 +3264,6 @@ export function SdLiveDashboard() {
                 <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
               )}
             </Panel>
-          )}
 
           <div data-pdf-exclude>
             <LinesTable
