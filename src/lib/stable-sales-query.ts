@@ -5,6 +5,7 @@
  */
 export const STABLE_SALES_QUERY_OPTIONS = {
   staleTime: Infinity,
+  gcTime: Infinity,
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
   refetchInterval: false as const,
