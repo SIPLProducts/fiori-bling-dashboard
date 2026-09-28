@@ -25,6 +25,8 @@ export type SyncCounts = {
   duplicates: number;
   syncScopeKey: string;
   snapshotId: string;
+  postingFrom: string | null;
+  postingTo: string | null;
 };
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -45,7 +47,7 @@ export async function storeZfisalesPayload(
 ): Promise<SyncCounts> {
   const db = await admin();
   const startedAt = new Date().toISOString();
-  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapPayload(
+  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingRange } = mapPayload(
     payload,
     endpointName,
     requestSnapshot,
@@ -83,26 +85,16 @@ export async function storeZfisalesPayload(
 
 
   try {
-    if (!rows.length) {
-      let replaced = 0;
-      if (received === 0) {
-        const { data, error } = await db.rpc("activate_zfisales_snapshot", {
-          _scope_key: syncScopeKey,
-          _snapshot_id: snapshotId,
-          _expected_count: 0,
-        });
-        if (error) throw error;
-        replaced = data ?? 0;
-      }
+    if (!rows.length || !postingRange) {
       await finish({
-        status: "success",
-        records_replaced: replaced,
+        status: received ? "error" : "success",
+        records_replaced: 0,
         records_invalid: invalid,
         error_message: received
           ? "No mappable rows in the SAP response — existing data left unchanged"
-          : `${replaced} previous rows removed for this empty SAP snapshot`,
+          : "SAP returned no rows — existing data left unchanged",
       });
-      return { received, stored: 0, replaced, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+      return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
     }
 
 
@@ -116,6 +108,8 @@ export async function storeZfisalesPayload(
       _scope_key: syncScopeKey,
       _snapshot_id: snapshotId,
       _expected_count: rows.length,
+      _posting_from: postingRange.from,
+      _posting_to: postingRange.to,
     });
     if (activateError) throw activateError;
     await finish({
@@ -127,7 +121,7 @@ export async function storeZfisalesPayload(
       records_updated: 0,
       error_message: `${rows.length} stored; ${replaced ?? 0} replaced; ${duplicates} repeated occurrences preserved; ${invalid} invalid`,
     });
-    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId };
+    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: postingRange.from, postingTo: postingRange.to };
   } catch (err) {
     await db.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "Snapshot write failed" });

@@ -201,6 +201,21 @@ export type ZfisalesDetailRow = {
   synced_at: string;
 };
 
+export type PostingDateRange = { from: string; to: string };
+
+export function postingDateRange(rows: ZfisalesDetailRow[]): PostingDateRange | null {
+  if (!rows.length) return null;
+  const dates = rows.map((row) => row.posting_date);
+  if (dates.some((date) => !date)) {
+    throw new Error("SAP response contains mapped rows without a valid Posting Date");
+  }
+  const validDates = dates.filter((date): date is string => Boolean(date)).sort();
+  const from = validDates[0];
+  const to = validDates[validDates.length - 1];
+  if (!from || !to) throw new Error("SAP response does not contain a valid Posting Date range");
+  return { from, to };
+}
+
 
 export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): ZfisalesDetailRow | null {
   const plant = str(pickField(raw, ["WERKS", "werks", "plant"]));
@@ -348,5 +363,14 @@ export function mapPayload(
       is_active_snapshot: false,
     });
   }
-  return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
+  return {
+    received: raws.length,
+    rows,
+    skipped: invalid,
+    invalid,
+    duplicates,
+    syncScopeKey,
+    snapshotId,
+    postingRange: postingDateRange(rows),
+  };
 }

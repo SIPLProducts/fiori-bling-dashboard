@@ -1883,6 +1883,8 @@ export type Database = {
       activate_zfisales_snapshot: {
         Args: {
           _expected_count: number
+          _posting_from: string
+          _posting_to: string
           _scope_key: string
           _snapshot_id: string
         }

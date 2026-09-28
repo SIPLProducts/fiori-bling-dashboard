@@ -111,6 +111,18 @@ function extractRows(payload) {
   }
   return [];
 }
+function postingDateRange(rows) {
+  if (!rows.length) return null;
+  const dates = rows.map((row) => row.posting_date);
+  if (dates.some((date) => !date)) {
+    throw new Error("SAP response contains mapped rows without a valid Posting Date");
+  }
+  const validDates = dates.filter((date) => Boolean(date)).sort();
+  const from = validDates[0];
+  const to = validDates[validDates.length - 1];
+  if (!from || !to) throw new Error("SAP response does not contain a valid Posting Date range");
+  return { from, to };
+}
 function mapRow(raw, sourceEndpoint, syncedAt) {
   const plant = str(pickField(raw, ["WERKS", "werks", "plant"]));
   const fiscalYear = str(pickField(raw, ["GJAHR", "gjahr", "fiscalYear"]));
@@ -242,7 +254,16 @@ function mapPayload(payload, sourceEndpoint, requestSnapshot, suppliedSnapshotId
       is_active_snapshot: false
     });
   }
-  return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
+  return {
+    received: raws.length,
+    rows,
+    skipped: invalid,
+    invalid,
+    duplicates,
+    syncScopeKey,
+    snapshotId,
+    postingRange: postingDateRange(rows)
+  };
 }
 
 // ../src/lib/open-sales-orders-map.ts
@@ -463,6 +484,7 @@ export {
   mapOpenSalesOrdersPayload,
   mapPayload,
   mapRow,
+  postingDateRange,
   salvageTruncatedArray,
   sha256,
   toIsoDate,
