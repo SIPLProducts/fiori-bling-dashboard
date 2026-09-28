@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fiscalYearsForDateRange, subscribeSdLines } from "@/lib/sd-live";
+import { useQuery } from "@tanstack/react-query";
+import { fiscalYearsForDateRange } from "@/lib/sd-live";
 import { useNavigate } from "@tanstack/react-router";
 import { ShellBar } from "@/components/shell-bar";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -32,6 +32,7 @@ import {
   subscribeSharedSalesFilters,
   writeSharedSalesFilters,
 } from "@/lib/shared-sales-filters";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 export function ManagementDashboard() {
   const navigate = useNavigate();
@@ -39,23 +40,13 @@ export function ManagementDashboard() {
   const [filters, setFilters] = useState<MgmtFilters>(emptyMgmtFilters);
   // Bumped when the user resets the card arrangement.
   const [layoutVersion, setLayoutVersion] = useState(0);
-  const queryClient = useQueryClient();
   const { data: launchpad } = useLaunchpad();
 
-  const { data: rows, isLoading, error } = useQuery({
+  const { data: rows, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["management-sd-lines"],
     queryFn: fetchSdLines,
-    staleTime: 5 * 60 * 1000,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
-
-  // Refresh whenever new postings land in the sales table.
-  useEffect(
-    () =>
-      subscribeSdLines(() => {
-        void queryClient.invalidateQueries({ queryKey: ["management-sd-lines"] });
-      }),
-    [queryClient],
-  );
 
 
   const bounds = useMemo(() => dataDateRange(rows ?? []), [rows]);
@@ -166,6 +157,8 @@ export function ManagementDashboard() {
             });
           }}
           options={options}
+          refreshing={isFetching}
+          onRefresh={refetch}
           onResetLayout={() => {
             clearCardOrder();
             setLayoutVersion((v) => v + 1);

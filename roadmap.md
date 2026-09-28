@@ -102,4 +102,4 @@
 - [x] Default all Sales reporting screens and resets to the current April–March fiscal year
 - [x] Replace successful ZFISALES syncs by Posting Date range while preserving staged snapshot failure protection
 
-- [ ] Keep open Sales screens stable; refresh latest committed data only on Refresh, filter changes, navigation/re-entry, or page reload.
+- [x] Keep open Sales screens stable; refresh latest committed data only on Refresh, filter changes, navigation/re-entry, or page reload.

@@ -35,6 +35,7 @@ import { ReportShell, Panel, AccessDenied } from "@/components/report-shell";
 import { ChartExportActions } from "@/components/chart-export-buttons";
 import { MultiSelect } from "@/components/multi-select";
 import { Button } from "@/components/ui/button";
+import { SalesRefreshButton } from "@/components/sales-refresh-button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSdSalesKpi } from "@/lib/sd-kpi.functions";
@@ -42,6 +43,7 @@ import type { SdKpiFilters } from "@/lib/sd-kpi";
 import { SD_REPORTS, canAccessSdReport } from "@/lib/sd-reports";
 import { currentFiscalYearRange } from "@/lib/sd-live";
 import { useLaunchpad } from "@/lib/use-launchpad";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 
 const DEF = SD_REPORTS.find((r) => r.key === "kpi")!;
@@ -211,10 +213,11 @@ function SalesKpiPage() {
   const trendRef = useRef<HTMLDivElement>(null);
   const plantRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sd-sales-kpi", applied],
     queryFn: () => getSdSalesKpi({ data: applied }),
     enabled: allowed,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
 
   const centreOptions = useMemo(
@@ -362,6 +365,9 @@ function SalesKpiPage() {
         <AccessDenied area={DEF.title} />
       ) : (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <SalesRefreshButton refreshing={isFetching} onRefresh={refetch} />
+          </div>
           {/* Filter bar */}
           <section className="sticky top-14 z-30 rounded-md border border-border bg-card/95 p-4 shadow-tile backdrop-blur">
             <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_auto]">

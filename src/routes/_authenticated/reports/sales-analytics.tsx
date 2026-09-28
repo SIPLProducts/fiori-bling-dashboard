@@ -30,10 +30,12 @@ import { DrilldownTable } from "@/components/drilldown-table";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SalesRefreshButton } from "@/components/sales-refresh-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { getSalesAnalytics, getSalesSyncStatus } from "@/lib/zfisales.functions";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 import type {
   ComparisonBasis,
   SalesComparison,
@@ -406,10 +408,11 @@ function SalesAnalyticsPage() {
   const dimensionRef = useRef<HTMLDivElement | null>(null);
   const segmentRef = useRef<HTMLDivElement | null>(null);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["zfisales", applied],
     queryFn: () => fetchAnalytics({ data: applied }),
     enabled: allowed,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
 
   const { data: syncStatus } = useQuery({
@@ -545,12 +548,15 @@ function SalesAnalyticsPage() {
       description="Sales register analysis by posting date, company code, profit centre, fiscal year, segment and customer."
     >
       {allowed && syncStatus ? (
-        <p className="mb-3 text-xs text-muted-foreground">
-          Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "ZFISALES_DETAIL — no data yet (awaiting first SAP sync)"}</span>
-          {syncStatus.rowCount ? ` · ${syncStatus.rowCount.toLocaleString()} rows` : ""}
-          {syncStatus.lastSyncedAt ? ` · last synced ${formatDateTimeISTLabel(syncStatus.lastSyncedAt)}` : ""}
-          {syncStatus.lastStatus && syncStatus.lastStatus !== "success" ? ` · last run ${syncStatus.lastStatus}` : ""}
-        </p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Source: <span className="font-medium text-foreground">{syncStatus.source === "ZFISALES_DETAIL" ? "ZFISALES_DETAIL" : "ZFISALES_DETAIL — no data yet (awaiting first SAP sync)"}</span>
+            {syncStatus.rowCount ? ` · ${syncStatus.rowCount.toLocaleString()} rows` : ""}
+            {syncStatus.lastSyncedAt ? ` · last synced ${formatDateTimeISTLabel(syncStatus.lastSyncedAt)}` : ""}
+            {syncStatus.lastStatus && syncStatus.lastStatus !== "success" ? ` · last run ${syncStatus.lastStatus}` : ""}
+          </p>
+          <SalesRefreshButton refreshing={isFetching} onRefresh={refetch} />
+        </div>
       ) : null}
       {!rolesLoading && !allowed ? (
         <AccessDenied area="SD — Sales Analytics" />

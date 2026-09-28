@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CalendarDays, ChevronDown, Filter, RotateCcw } from "lucide-react";
+import { SalesRefreshButton } from "@/components/sales-refresh-button";
 import {
   FILTER_DEFS,
   RANGE_PRESETS,
@@ -38,6 +39,8 @@ type Props = {
   onFiltersChange: (filters: MgmtFilters) => void;
   options: Record<string, string[]>;
   onResetLayout: () => void;
+  refreshing: boolean;
+  onRefresh: () => Promise<unknown>;
 };
 
 const controlClass =
@@ -53,6 +56,8 @@ export function DashboardHeader({
   onFiltersChange,
   options,
   onResetLayout,
+  refreshing,
+  onRefresh,
 }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [draft, setDraft] = useState<MgmtFilters>(filters);
@@ -76,6 +81,7 @@ export function DashboardHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <SalesRefreshButton refreshing={refreshing} onRefresh={onRefresh} className="h-10" />
         <button
           type="button"
           className={controlClass}

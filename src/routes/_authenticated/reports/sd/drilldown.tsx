@@ -10,6 +10,7 @@ import { downloadCsv } from "@/lib/chart-export";
 import { applySdFilters, currentFiscalYear, fetchSdLines, type SdFilters, type SdLine } from "@/lib/sd-live";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 const PAGE_SIZE = 50;
 const strings = (value: unknown) =>
@@ -67,6 +68,7 @@ function NetSalesDrilldown() {
     queryKey: ["sd-live-lines"],
     queryFn: fetchSdLines,
     enabled: allowed,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
 
   const rows = useMemo(() => {
