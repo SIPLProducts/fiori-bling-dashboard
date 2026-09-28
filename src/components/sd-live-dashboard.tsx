@@ -854,16 +854,21 @@ function SalesByModelChart({
   items,
   limit,
   full,
+  exportMode = false,
 }: {
   items: ModelPerformance[];
   limit: ModelLimit;
   full: boolean;
+  exportMode?: boolean;
 }) {
   const data = limitModelPerformance(items, limit);
   if (!data.length)
     return <p className="py-10 text-center text-sm text-muted-foreground">No models match the current filters.</p>;
 
   const chartHeight = Math.max(full ? 520 : 320, data.length * 42);
+  const modelAxisWidth = exportMode
+    ? Math.min(250, Math.max(190, Math.max(...data.map((item) => item.model.length)) * 7.2))
+    : 180;
   const rateByModel = new Map(data.map((item) => [item.model, item.perAhRate]));
   const axisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => {
     const model = payload?.value ?? "Unassigned";
@@ -883,7 +888,7 @@ function SalesByModelChart({
     <div className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}>
       <div style={{ height: chartHeight, minWidth: 720 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart layout="vertical" data={data} margin={{ top: 8, right: 104, bottom: 18, left: 16 }}>
+          <BarChart layout="vertical" data={data} margin={{ top: 8, right: exportMode ? 140 : 104, bottom: 18, left: 16 }}>
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
             <XAxis
               type="number"
@@ -896,7 +901,7 @@ function SalesByModelChart({
             <YAxis
               type="category"
               dataKey="model"
-              width={180}
+              width={modelAxisWidth}
               interval={0}
               tick={axisTick}
               stroke="var(--chart-axis-line)"
@@ -2342,8 +2347,7 @@ export function SdLiveDashboard() {
           <div className="flex min-w-0 items-center gap-3">
             <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
             <div className="min-w-0 border-l border-border pl-3">
-              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal</p>
-              <p className="text-xs text-muted-foreground">Sales Analytics</p>
+              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal — Sales Analytics</p>
             </div>
           </div>
           <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
@@ -3095,7 +3099,7 @@ export function SdLiveDashboard() {
               return (
                 <div key={`pdf-models-${page}`} data-pdf-page-block>
                   <Panel title="Sales by Model (Amount & Per AH)">
-                    <SalesByModelChart items={models} limit="all" full={false} />
+                    <SalesByModelChart items={models} limit="all" full={false} exportMode />
                   </Panel>
                 </div>
               );
