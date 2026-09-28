@@ -40,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getSdSalesKpi } from "@/lib/sd-kpi.functions";
 import type { SdKpiFilters } from "@/lib/sd-kpi";
 import { SD_REPORTS, canAccessSdReport } from "@/lib/sd-reports";
+import { currentFiscalYearRange } from "@/lib/sd-live";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
 
@@ -65,7 +66,10 @@ export const Route = createFileRoute("/_authenticated/reports/sd/kpi")({
   errorComponent: () => <p className="p-8 text-sm text-destructive">Unable to load the sales KPI report.</p>,
 });
 
-const EMPTY: SdKpiFilters = { postingFrom: "", postingTo: "", profitCentres: [], plants: [] };
+const defaultFilters = (): SdKpiFilters => {
+  const range = currentFiscalYearRange();
+  return { postingFrom: range.from, postingTo: range.to, profitCentres: [], plants: [] };
+};
 
 function inr(value: number) {
   return value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -201,8 +205,8 @@ function SalesKpiPage() {
   const { data: launchpad, isLoading: accessLoading } = useLaunchpad();
   const allowed = canAccessSdReport("kpi", launchpad?.screens);
 
-  const [draft, setDraft] = useState<SdKpiFilters>(EMPTY);
-  const [applied, setApplied] = useState<SdKpiFilters>(EMPTY);
+  const [draft, setDraft] = useState<SdKpiFilters>(() => defaultFilters());
+  const [applied, setApplied] = useState<SdKpiFilters>(() => defaultFilters());
   const [search, setSearch] = useState("");
   const trendRef = useRef<HTMLDivElement>(null);
   const plantRef = useRef<HTMLDivElement>(null);
@@ -460,8 +464,9 @@ function SalesKpiPage() {
                   variant="outline"
                   className="h-9 rounded-sm"
                   onClick={() => {
-                    setDraft(EMPTY);
-                    setApplied(EMPTY);
+                    const next = defaultFilters();
+                    setDraft(next);
+                    setApplied(next);
                   }}
                 >
                   <RotateCcw className="mr-1 size-3.5" /> Reset

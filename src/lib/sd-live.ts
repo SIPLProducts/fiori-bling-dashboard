@@ -272,6 +272,23 @@ export function currentFiscalYear(date = new Date()): string {
   return String(month >= 4 ? date.getFullYear() : date.getFullYear() - 1);
 }
 
+/** Current April–March fiscal year and its elapsed local-date window. */
+export function currentFiscalYearRange(date = new Date()) {
+  const fiscalYear = currentFiscalYear(date);
+  return {
+    fiscalYear,
+    from: `${fiscalYear}-04-01`,
+    to: localIsoDate(date),
+  };
+}
+
+export function currentSdFilters(date = new Date()): SdFilters {
+  return {
+    ...emptySdFilters,
+    fiscalYears: [currentFiscalYear(date)],
+  };
+}
+
 export function localIsoDate(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
