@@ -292,7 +292,7 @@ export type QuarterSummary = {
   varianceAmount: number | null;
   periodLabel: string;
   comparisonMode: "qoq" | "yoy";
-  trend: { label: string; value: number }[];
+  trend: { label: string; value: number; count: number }[];
 };
 
 const FISCAL_QUARTER_ORDER = ["Q1", "Q2", "Q3", "Q4"] as const;
@@ -405,15 +405,18 @@ function dateRangeMonths(rows: SdLine[], from = "", to = ""): number {
   return (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + end.getUTCMonth() - start.getUTCMonth() + 1;
 }
 
-function quarterTrend(rows: SdLine[], quarter: (typeof FISCAL_QUARTER_ORDER)[number]): { label: string; value: number }[] {
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function quarterTrend(rows: SdLine[], quarter: (typeof FISCAL_QUARTER_ORDER)[number]): { label: string; value: number; count: number }[] {
   const months = QUARTER_MONTHS[quarter];
-  return months.map((month) => ({
-    label: String(month).padStart(2, "0"),
-    value: rows.reduce(
-      (sum, row) => Number(row.postingDate.slice(5, 7)) === month ? sum + row.amount : sum,
-      0,
-    ),
-  }));
+  return months.map((month) => {
+    const monthRows = rows.filter((row) => Number(row.postingDate.slice(5, 7)) === month);
+    return {
+      label: MONTH_LABELS[month - 1] ?? String(month).padStart(2, "0"),
+      value: monthRows.reduce((sum, row) => sum + row.amount, 0),
+      count: monthRows.length,
+    };
+  });
 }
 
 /** Build visible fiscal-quarter totals and their requested QoQ/YoY baselines. */
@@ -485,7 +488,7 @@ export function buildQuarterSummaries(
       comparisonMode,
       trend: quarterTrend(currentRows, quarter),
     };
-  });
+  }).filter((summary) => summary.amount !== 0);
 }
 
 export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
@@ -837,7 +840,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     alerts.push({
       tone: "up",
       title: "Top profit centre",
-      text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)} Cr.`,
+      text: `${pcList[0].name} leads profit centres with ₹${(pcList[0].value / 1e7).toFixed(2)}.`,
       basis: "Sales amount grouped by profit centre",
     });
   if (deltas.revenuePerAh.pct != null)

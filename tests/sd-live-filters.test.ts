@@ -220,7 +220,11 @@ describe("fiscal quarter summary tiles", () => {
     })[0];
 
     expect(summary).toMatchObject({ amount: 40, baselineAmount: 100, changePct: -60, varianceAmount: -60 });
-    expect(summary?.trend.map((point) => point.value)).toEqual([50, -10, 0]);
+    expect(summary?.trend).toEqual([
+      { label: "Jul", value: 50, count: 1 },
+      { label: "Aug", value: -10, count: 1 },
+      { label: "Sep", value: 0, count: 0 },
+    ]);
   });
 
   test("marks future quarters outside range and compares a partial quarter by elapsed days", () => {
@@ -242,8 +246,7 @@ describe("fiscal quarter summary tiles", () => {
       changePct: 150,
       comparisonLabel: "vs Q1 · same elapsed days",
     });
-    expect(summaries[2]).toMatchObject({ quarter: "Q3", status: "outside", changePct: null, varianceAmount: null });
-    expect(summaries[3]).toMatchObject({ quarter: "Q4", status: "outside", changePct: null, varianceAmount: null });
+    expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q2"]);
   });
 
   test("caps an unfiltered current fiscal year at today and excludes future-dated postings", () => {
@@ -258,8 +261,23 @@ describe("fiscal quarter summary tiles", () => {
 
     expect(effective.reduce((sum, item) => sum + item.amount, 0)).toBe(150);
     expect(summaries[1]).toMatchObject({ quarter: "Q2", status: "partial", amount: 50 });
-    expect(summaries[2]).toMatchObject({ quarter: "Q3", status: "outside", amount: 0, changePct: null, varianceAmount: null });
-    expect(summaries[3]).toMatchObject({ quarter: "Q4", status: "outside", amount: 0, changePct: null, varianceAmount: null });
+    expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q2"]);
+  });
+
+  test("hides a quarter when its filtered postings net to zero", () => {
+    const active = [
+      sale("2026", "2026-04-10", 25),
+      sale("2026", "2026-05-10", -25),
+      sale("2026", "2026-07-10", 10),
+    ];
+    const summaries = buildQuarterSummaries(active, active, ["2026"], []);
+
+    expect(summaries.map((item) => item.quarter)).toEqual(["Q2"]);
+    expect(summaries[0]?.trend).toEqual([
+      { label: "Jul", value: 10, count: 1 },
+      { label: "Aug", value: 0, count: 0 },
+      { label: "Sep", value: 0, count: 0 },
+    ]);
   });
 
   test("quarter amounts use the same actively filtered rows as Total Sales", () => {
