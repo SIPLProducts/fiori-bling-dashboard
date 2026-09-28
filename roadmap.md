@@ -97,3 +97,4 @@
 - [x] Remove the visible `Cr` suffix from monthly Sales amounts in the Revenue per AH popup
 - [x] Refine the Sales Dashboard PDF with an HBL header, selected date range, and no filter controls
 - [x] Prevent Sales Dashboard PDF card clipping, repeat the logo and date range, and paginate all model rows
+- [x] Refactor the Sales Analytics PDF into branded, high-resolution, page-safe executive sections with page numbering

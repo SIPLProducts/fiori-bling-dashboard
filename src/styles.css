@@ -153,6 +153,62 @@
   --chart-emphasis: oklch(0.62 0.16 55);
 }
 
+.pdf-export-theme {
+  --primary: oklch(0.42 0.13 252);
+  --success: oklch(0.56 0.13 170);
+  --warning: oklch(0.72 0.15 70);
+  --destructive: oklch(0.58 0.2 25);
+  --muted: oklch(0.968 0.007 247);
+  --muted-foreground: oklch(0.47 0.025 252);
+  --kpi-1: oklch(0.42 0.13 252);
+  --kpi-2: oklch(0.56 0.13 170);
+  --kpi-3: oklch(0.72 0.15 70);
+  --kpi-4: oklch(0.58 0.2 25);
+  --kpi-5: oklch(0.5 0.035 252);
+  --kpi-6: oklch(0.66 0.08 205);
+  --chart-1: var(--kpi-1);
+  --chart-2: var(--kpi-2);
+  --chart-3: var(--kpi-3);
+  --chart-4: var(--kpi-4);
+  --chart-5: var(--kpi-5);
+  --chart-axis-label: oklch(0.42 0.025 252);
+  --chart-axis-line: oklch(0.7 0.02 252 / 68%);
+  --chart-grid-line: oklch(0.8 0.016 252 / 55%);
+  --chart-emphasis: oklch(0.58 0.2 25);
+  background: var(--card);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.pdf-export-theme [data-pdf-page-block],
+.pdf-export-theme [data-pdf-page-block] > *,
+.pdf-export-theme section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-export-theme [data-pdf-page-block] {
+  overflow: visible;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 15mm 12mm;
+  }
+
+  [data-pdf-page-block],
+  [data-pdf-page-block] > *,
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-pdf-section-break] {
+    break-before: page;
+    page-break-before: always;
+  }
+}
+
 
 .dark {
   --background: oklch(0.21 0.019 253);
