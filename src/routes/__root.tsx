@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { isStableSalesQuery } from "@/lib/stable-sales-query";
 
 function NotFoundComponent() {
   return (
@@ -143,7 +144,11 @@ function RootComponent() {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event !== "SIGNED_OUT") {
+        queryClient.invalidateQueries({
+          predicate: (query) => !isStableSalesQuery(query.queryKey),
+        });
+      }
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
