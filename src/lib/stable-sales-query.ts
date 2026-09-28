@@ -11,3 +11,14 @@ export const STABLE_SALES_QUERY_OPTIONS = {
   refetchInterval: false as const,
   refetchOnMount: false,
 };
+
+const STABLE_SALES_QUERY_ROOTS = new Set([
+  "sd-live-lines",
+  "management-sd-lines",
+  "zfisales",
+  "sd-sales-kpi",
+]);
+
+export function isStableSalesQuery(queryKey: readonly unknown[]) {
+  return typeof queryKey[0] === "string" && STABLE_SALES_QUERY_ROOTS.has(queryKey[0]);
+}
