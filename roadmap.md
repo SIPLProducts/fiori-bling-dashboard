@@ -98,3 +98,4 @@
 - [x] Refine the Sales Dashboard PDF with an HBL header, selected date range, and no filter controls
 - [x] Prevent Sales Dashboard PDF card clipping, repeat the logo and date range, and paginate all model rows
 - [x] Refactor the Sales Analytics PDF into branded, high-resolution, page-safe executive sections with page numbering
+- [x] Ensure every exported Sales by Model page renders its bars and values before PDF capture
