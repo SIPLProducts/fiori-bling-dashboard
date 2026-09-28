@@ -117,11 +117,15 @@ export async function exportDashboardPdf(
   container: HTMLElement | null,
   filename: string,
   excludeSelector = "[data-pdf-exclude]",
+  options?: { headerSelector?: string; blockSelector?: string },
 ) {
   if (!container) throw new Error("Dashboard is not available yet");
 
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
   const rootRect = container.getBoundingClientRect();
+  const headerElement = options?.headerSelector
+    ? container.querySelector<HTMLElement>(options.headerSelector)
+    : null;
   const includedChildren = Array.from(container.children).filter(
     (child) => !(child instanceof HTMLElement && child.matches(excludeSelector)),
   );
@@ -141,26 +145,46 @@ export async function exportDashboardPdf(
     filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
   });
 
+  const headerCanvas = headerElement
+    ? await toCanvas(headerElement, {
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+        pixelRatio: 1.5,
+        filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
+      })
+    : null;
+
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
   const margin = 8;
   const printableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
   const printableHeight = pdf.internal.pageSize.getHeight() - margin * 2;
   const pixelsPerMm = canvas.width / printableWidth;
-  const maxSliceHeight = Math.floor(printableHeight * pixelsPerMm);
-  const pixelScale = canvas.width / Math.max(rootRect.width, 1);
-  const sectionBreaks = includedChildren
-    .map((child) => Math.round((child.getBoundingClientRect().bottom - rootRect.top) * pixelScale))
+  const headerHeight = headerCanvas ? (headerCanvas.height / headerCanvas.width) * printableWidth : 0;
+  const headerGap = headerCanvas ? 4 : 0;
+  const contentHeight = printableHeight - headerHeight - headerGap;
+  const maxSliceHeight = Math.floor(contentHeight * pixelsPerMm);
+  const pixelScale = canvas.height / Math.max(exportHeight, 1);
+  const blocks = options?.blockSelector
+    ? Array.from(container.querySelectorAll<HTMLElement>(options.blockSelector))
+    : includedChildren;
+  const breakSafety = Math.max(2, Math.round(96 * pixelScale));
+  const sectionBreaks = blocks
+    .map((child) => {
+      const rect = child.getBoundingClientRect();
+      return Math.round((rect.top - rootRect.top) * pixelScale) - breakSafety;
+    })
     .filter((point) => point > 0 && point < canvas.height)
     .sort((a, b) => a - b);
 
-  let sourceY = 0;
+  let sourceY = headerElement
+    ? Math.round((headerElement.getBoundingClientRect().bottom - rootRect.top) * pixelScale)
+    : 0;
   let pageIndex = 0;
   while (sourceY < canvas.height) {
     const idealEnd = Math.min(canvas.height, sourceY + maxSliceHeight);
-    const minimumEnd = sourceY + Math.floor(maxSliceHeight * 0.45);
     const safeEnd = [...sectionBreaks]
       .reverse()
-      .find((point) => point <= idealEnd && point >= minimumEnd);
+      .find((point) => point <= idealEnd && point > sourceY);
     const sourceEnd = idealEnd === canvas.height ? canvas.height : (safeEnd ?? idealEnd);
     const sourceHeight = Math.max(1, sourceEnd - sourceY);
     const pageCanvas = document.createElement("canvas");
@@ -171,8 +195,25 @@ export async function exportDashboardPdf(
     context.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
 
     if (pageIndex > 0) pdf.addPage("a4", "landscape");
+    if (headerCanvas) {
+      pdf.addImage(
+        headerCanvas.toDataURL("image/jpeg", 0.94),
+        "JPEG",
+        margin,
+        margin,
+        printableWidth,
+        headerHeight,
+      );
+    }
     const imageHeight = sourceHeight / pixelsPerMm;
-    pdf.addImage(pageCanvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, printableWidth, imageHeight);
+    pdf.addImage(
+      pageCanvas.toDataURL("image/jpeg", 0.92),
+      "JPEG",
+      margin,
+      margin + headerHeight + headerGap,
+      printableWidth,
+      imageHeight,
+    );
     sourceY = sourceEnd;
     pageIndex += 1;
   }
