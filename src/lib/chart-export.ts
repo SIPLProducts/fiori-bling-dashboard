@@ -117,105 +117,116 @@ export async function exportDashboardPdf(
   container: HTMLElement | null,
   filename: string,
   excludeSelector = "[data-pdf-exclude]",
-  options?: { headerSelector?: string; blockSelector?: string },
+  options?: {
+    headerSelector?: string;
+    blockSelector?: string;
+    sectionBreakSelector?: string;
+    footerText?: string;
+  },
 ) {
   if (!container) throw new Error("Dashboard is not available yet");
 
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
-  const rootRect = container.getBoundingClientRect();
   const headerElement = options?.headerSelector
     ? container.querySelector<HTMLElement>(options.headerSelector)
     : null;
-  const includedChildren = Array.from(container.children).filter(
-    (child) => !(child instanceof HTMLElement && child.matches(excludeSelector)),
-  );
-  const exportHeight = Math.max(
-    1,
-    ...includedChildren.map((child) => Math.ceil(child.getBoundingClientRect().bottom - rootRect.top)),
-  );
-  const backgroundColor = window.getComputedStyle(container).backgroundColor;
-  const canvas = await toCanvas(container, {
-    backgroundColor:
-      backgroundColor && backgroundColor !== "rgba(0, 0, 0, 0)" && backgroundColor !== "transparent"
-        ? backgroundColor
-        : "#ffffff",
-    cacheBust: true,
-    height: exportHeight,
-    pixelRatio: 1.5,
-    filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
-  });
+  const blocks = options?.blockSelector
+    ? Array.from(container.querySelectorAll<HTMLElement>(options.blockSelector)).filter(
+        (block) => !block.matches(excludeSelector) && block !== headerElement,
+      )
+    : Array.from(container.children).filter(
+        (child): child is HTMLElement =>
+          child instanceof HTMLElement && !child.matches(excludeSelector) && child !== headerElement,
+      );
+  if (!blocks.length) throw new Error("No dashboard sections are available for export");
+
+  const capture = (element: HTMLElement) => {
+    const background = window.getComputedStyle(element).backgroundColor;
+    return toCanvas(element, {
+      backgroundColor:
+        background && background !== "rgba(0, 0, 0, 0)" && background !== "transparent"
+          ? background
+          : "#ffffff",
+      cacheBust: true,
+      pixelRatio: 2,
+      skipFonts: true,
+      filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
+    });
+  };
 
   const headerCanvas = headerElement
-    ? await toCanvas(headerElement, {
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-        pixelRatio: 1.5,
-        filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
-      })
+    ? await capture(headerElement)
     : null;
+  const blockCanvases = await Promise.all(
+    blocks.map(async (element) => ({
+      canvas: await capture(element),
+      startsSection: options?.sectionBreakSelector
+        ? element.matches(options.sectionBreakSelector)
+        : false,
+    })),
+  );
 
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
-  const margin = 8;
-  const printableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
-  const printableHeight = pdf.internal.pageSize.getHeight() - margin * 2;
-  const pixelsPerMm = canvas.width / printableWidth;
+  const marginX = 12;
+  const marginY = 15;
+  const printableWidth = pdf.internal.pageSize.getWidth() - marginX * 2;
+  const printableHeight = pdf.internal.pageSize.getHeight() - marginY * 2;
   const headerHeight = headerCanvas ? (headerCanvas.height / headerCanvas.width) * printableWidth : 0;
   const headerGap = headerCanvas ? 4 : 0;
-  const contentHeight = printableHeight - headerHeight - headerGap;
-  const maxSliceHeight = Math.floor(contentHeight * pixelsPerMm);
-  const pixelScale = canvas.height / Math.max(exportHeight, 1);
-  const blocks = options?.blockSelector
-    ? Array.from(container.querySelectorAll<HTMLElement>(options.blockSelector))
-    : includedChildren;
-  const breakSafety = Math.max(2, Math.round(96 * pixelScale));
-  const sectionBreaks = blocks
-    .map((child) => {
-      const rect = child.getBoundingClientRect();
-      return Math.round((rect.top - rootRect.top) * pixelScale) - breakSafety;
-    })
-    .filter((point) => point > 0 && point < canvas.height)
-    .sort((a, b) => a - b);
+  const footerHeight = 7;
+  const contentTop = marginY + headerHeight + headerGap;
+  const contentBottom = pdf.internal.pageSize.getHeight() - marginY - footerHeight;
+  const contentHeight = contentBottom - contentTop;
+  const blockGap = 3;
+  const pages: Array<Array<{ canvas: HTMLCanvasElement; width: number; height: number }>> = [[]];
+  let usedHeight = 0;
 
-  let sourceY = headerElement
-    ? Math.round((headerElement.getBoundingClientRect().bottom - rootRect.top) * pixelScale)
-    : 0;
-  let pageIndex = 0;
-  while (sourceY < canvas.height) {
-    const idealEnd = Math.min(canvas.height, sourceY + maxSliceHeight);
-    const safeEnd = [...sectionBreaks]
-      .reverse()
-      .find((point) => point <= idealEnd && point > sourceY);
-    const sourceEnd = idealEnd === canvas.height ? canvas.height : (safeEnd ?? idealEnd);
-    const sourceHeight = Math.max(1, sourceEnd - sourceY);
-    const pageCanvas = document.createElement("canvas");
-    pageCanvas.width = canvas.width;
-    pageCanvas.height = sourceHeight;
-    const context = pageCanvas.getContext("2d");
-    if (!context) throw new Error("PDF canvas is not supported");
-    context.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+  for (const item of blockCanvases) {
+    let width = printableWidth;
+    let height = (item.canvas.height / item.canvas.width) * width;
+    if (height > contentHeight) {
+      const scale = contentHeight / height;
+      width *= scale;
+      height = contentHeight;
+    }
+    const current = pages[pages.length - 1];
+    const requiresBreak = item.startsSection && current.length > 0;
+    const requiredHeight = (current.length ? blockGap : 0) + height;
+    if (requiresBreak || usedHeight + requiredHeight > contentHeight) {
+      pages.push([]);
+      usedHeight = 0;
+    }
+    const target = pages[pages.length - 1];
+    target.push({ canvas: item.canvas, width, height });
+    usedHeight += (target.length > 1 ? blockGap : 0) + height;
+  }
 
+  pages.forEach((page, pageIndex) => {
     if (pageIndex > 0) pdf.addPage("a4", "landscape");
     if (headerCanvas) {
-      pdf.addImage(
-        headerCanvas.toDataURL("image/jpeg", 0.94),
-        "JPEG",
-        margin,
-        margin,
-        printableWidth,
-        headerHeight,
-      );
+      pdf.addImage(headerCanvas.toDataURL("image/png"), "PNG", marginX, marginY, printableWidth, headerHeight);
     }
-    const imageHeight = sourceHeight / pixelsPerMm;
-    pdf.addImage(
-      pageCanvas.toDataURL("image/jpeg", 0.92),
-      "JPEG",
-      margin,
-      margin + headerHeight + headerGap,
-      printableWidth,
-      imageHeight,
-    );
-    sourceY = sourceEnd;
-    pageIndex += 1;
+    let y = contentTop;
+    page.forEach((item, blockIndex) => {
+      if (blockIndex > 0) y += blockGap;
+      const x = marginX + (printableWidth - item.width) / 2;
+      pdf.addImage(item.canvas.toDataURL("image/png"), "PNG", x, y, item.width, item.height);
+      y += item.height;
+    });
+
+    const footerY = pdf.internal.pageSize.getHeight() - marginY + 1;
+    pdf.setDrawColor(211, 218, 226);
+    pdf.setLineWidth(0.2);
+    pdf.line(marginX, footerY - 4, pdf.internal.pageSize.getWidth() - marginX, footerY - 4);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(options?.footerText ?? "HBL Confidential — Internal Use Only", pdf.internal.pageSize.getWidth() / 2, footerY, { align: "center" });
+    pdf.text(`Page ${pageIndex + 1} of ${pages.length}`, pdf.internal.pageSize.getWidth() - marginX, footerY, { align: "right" });
+  });
+
+  if (!pages[0]?.length) {
+    throw new Error("No dashboard pages could be composed");
   }
 
   pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);

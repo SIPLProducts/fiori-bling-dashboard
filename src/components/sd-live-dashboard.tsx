@@ -2225,6 +2225,8 @@ export function SdLiveDashboard() {
       await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
         blockSelector: "[data-pdf-page-block]",
+        sectionBreakSelector: "[data-pdf-section-break]",
+        footerText: "HBL Confidential — Internal Use Only",
       });
       toast.success("Dashboard PDF downloaded");
     } catch (error) {
@@ -2334,29 +2336,24 @@ export function SdLiveDashboard() {
   };
 
   return (
-    <div ref={dashboardRef} className="space-y-4">
+    <div ref={dashboardRef} className={`space-y-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
       {pdfBusy ? (
         <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
+            <div className="min-w-0 border-l border-border pl-3">
+              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal</p>
+              <p className="text-xs text-muted-foreground">Sales Analytics</p>
+            </div>
           </div>
-          <div className="grid shrink-0 grid-cols-2 gap-x-6 text-right text-xs">
-            <div>
-              <p className="font-medium text-muted-foreground">From</p>
-              <p className="mt-0.5 font-semibold text-foreground">
-                {reportDate(filters.from || firstPostingDate)}
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-muted-foreground">To</p>
-              <p className="mt-0.5 font-semibold text-foreground">{reportDate(effectiveFilters.to)}</p>
-            </div>
+          <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
+            {reportDate(filters.from || firstPostingDate)} – {reportDate(effectiveFilters.to)}
           </div>
         </div>
       ) : null}
 
       {/* executive header */}
-      <div data-pdf-page-block className="flex flex-wrap items-end justify-between gap-3">
+      <div data-pdf-exclude className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
@@ -2658,7 +2655,7 @@ export function SdLiveDashboard() {
             <QuarterAnalysis summaries={quarterSummaries} />
           </div>
 
-          <div data-pdf-page-block className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div data-pdf-page-block data-pdf-section-break className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-4">
             <Panel title="Sales by Main Group" accent={5} expandable>
               {(full: boolean) => (
@@ -3075,7 +3072,7 @@ export function SdLiveDashboard() {
 
           </div>
 
-          <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2">
+          <div data-pdf-page-block data-pdf-section-break className="grid gap-4 sm:grid-cols-2">
             <KpiCard
               label="Total LAH (Lakhs)"
               value={LAKHS_VALUE(analytics.kpis.positiveAhTotal)}
@@ -3097,7 +3094,7 @@ export function SdLiveDashboard() {
               const models = analytics.modelPerformance.slice(page * 10, page * 10 + 10);
               return (
                 <div key={`pdf-models-${page}`} data-pdf-page-block>
-                  <Panel title={`Sales by Model (Amount & Per AH)${page ? ` · Continued ${page + 1}` : ""}`}>
+                  <Panel title="Sales by Model (Amount & Per AH)">
                     <SalesByModelChart items={models} limit="all" full={false} />
                   </Panel>
                 </div>
