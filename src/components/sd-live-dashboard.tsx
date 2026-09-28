@@ -885,7 +885,10 @@ function SalesByModelChart({
   };
 
   return (
-    <div className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}>
+    <div
+      className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}
+      data-pdf-model-chart-ready={exportMode ? "true" : undefined}
+    >
       <div style={{ height: chartHeight, minWidth: 720 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart layout="vertical" data={data} margin={{ top: 8, right: exportMode ? 140 : 104, bottom: 18, left: 16 }}>
@@ -931,7 +934,14 @@ function SalesByModelChart({
                 );
               }}
             />
-            <Bar dataKey="totalAmount" name="Sales Amount" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} maxBarSize={28}>
+            <Bar
+              dataKey="totalAmount"
+              name="Sales Amount"
+              fill="var(--kpi-1)"
+              radius={[0, 3, 3, 0]}
+              maxBarSize={28}
+              isAnimationActive={!exportMode}
+            >
               <LabelList
                 dataKey="totalAmount"
                 position="right"
@@ -2225,7 +2235,23 @@ export function SdLiveDashboard() {
     setPdfExportAllModels(true);
     try {
       await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        const expectedCharts = Math.ceil(analytics.modelPerformance.length / 10);
+        let frame = 0;
+        const waitForModelCharts = () => {
+          const charts = Array.from(
+            dashboardRef.current?.querySelectorAll<HTMLElement>("[data-pdf-model-chart-ready]") ?? [],
+          );
+          const chartsReady =
+            charts.length === expectedCharts &&
+            charts.every((chart) => chart.getBoundingClientRect().width > 0 && chart.querySelector("svg"));
+          if (chartsReady || frame >= 30) {
+            requestAnimationFrame(() => resolve());
+            return;
+          }
+          frame += 1;
+          requestAnimationFrame(waitForModelCharts);
+        };
+        requestAnimationFrame(waitForModelCharts);
       });
       await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
