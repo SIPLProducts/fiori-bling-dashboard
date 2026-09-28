@@ -152,6 +152,24 @@ describe("fiscal quarter summary tiles", () => {
 
     expect(summaries[0]).toMatchObject({ quarter: "Q1", amount: 120, baselineAmount: 100, changePct: 20 });
     expect(summaries[1]).toMatchObject({ quarter: "Q2", amount: 150, baselineAmount: 200, changePct: -25 });
+    expect(summaries[0]?.yearTrends).toEqual([
+      {
+        fiscalYear: "2025",
+        points: [
+          { label: "Apr", value: 100, count: 1 },
+          { label: "May", value: 0, count: 0 },
+          { label: "Jun", value: 0, count: 0 },
+        ],
+      },
+      {
+        fiscalYear: "2026",
+        points: [
+          { label: "Apr", value: 120, count: 1 },
+          { label: "May", value: 0, count: 0 },
+          { label: "Jun", value: 0, count: 0 },
+        ],
+      },
+    ]);
   });
 
   test("uses neutral comparison without a year or a usable baseline", () => {
