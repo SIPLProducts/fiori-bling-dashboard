@@ -562,13 +562,15 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
             />
             {series.map((item) => (
               <Bar key={item.key} dataKey={item.key} name={item.fiscalYear} fill={item.color} radius={[3, 3, 0, 0]} maxBarSize={series.length > 1 ? 20 : 28} isAnimationActive={false}>
-                <LabelList
-                  dataKey={item.key}
-                  position="top"
-                  formatter={(value: number) => value === 0 ? "" : value.toLocaleString("en-IN", { minimumFractionDigits: isMobile ? 0 : 2, maximumFractionDigits: isMobile ? 1 : 2 })}
-                  fontSize={isMobile ? 7 : 9}
-                  fill="var(--chart-label-strong)"
-                />
+                {series.length === 1 ? (
+                  <LabelList
+                    dataKey={item.key}
+                    position="top"
+                    formatter={(value: number) => value === 0 ? "" : value.toLocaleString("en-IN", { minimumFractionDigits: isMobile ? 0 : 2, maximumFractionDigits: isMobile ? 1 : 2 })}
+                    fontSize={isMobile ? 7 : 9}
+                    fill="var(--chart-label-strong)"
+                  />
+                ) : null}
               </Bar>
             ))}
           </BarChart>
