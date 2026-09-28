@@ -194,7 +194,7 @@ is hard-coded:
 
 | Read every minute from | Used for |
 | --- | --- |
-| `sap_endpoints.schedule_expression` | when to run (5-field cron) |
+| `sap_endpoints.schedule_expression` | when to run (daily `IST:HH:mm,...` times or an existing 5-field cron) |
 | `sap_endpoints.scheduler_enabled` / `is_active` | whether to run at all |
 | `sap_endpoints.endpoint_path`, `http_method`, `query_params`, `headers`, `body_template` | the SAP request |
 | `sap_systems.base_url`, `sap_client` | which SAP system and client |

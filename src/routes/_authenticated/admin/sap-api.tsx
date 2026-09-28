@@ -22,16 +22,23 @@ import {
   Trash2,
   CalendarClock,
 } from "lucide-react";
-import { CRON_PRESETS, describeCron, isValidCron, nextCronRuns } from "@/lib/cron";
+import {
+  CRON_PRESETS,
+  dailySyncTimesExpression,
+  describeSchedule,
+  isValidScheduleExpression,
+  nextScheduleRuns,
+  parseDailySyncTimes,
+} from "@/lib/cron";
 
 /** Plain-English schedule read-out plus the next three run times in IST. */
 function SchedulePreview({ expression, enabled }: { expression: string; enabled: boolean }) {
-  const valid = isValidCron(expression);
-  const runs = valid && enabled ? nextCronRuns(expression, 3) : [];
+  const valid = isValidScheduleExpression(expression);
+  const runs = valid && enabled ? nextScheduleRuns(expression, 3) : [];
   return (
     <div className="rounded-sm border border-border bg-muted/40 p-3 text-xs">
       <p className={valid ? "font-medium text-card-foreground" : "font-medium text-destructive"}>
-        {expression.trim() ? describeCron(expression) : "No interval set"}
+        {expression.trim() ? describeSchedule(expression) : "No interval set"}
       </p>
       {!enabled ? (
         <p className="mt-1 text-muted-foreground">Scheduled sync is switched off.</p>
@@ -47,6 +54,105 @@ function SchedulePreview({ expression, enabled }: { expression: string; enabled:
       <p className="mt-2 text-muted-foreground">
         Saved here and applied to the background scheduler immediately — nothing is fixed in code.
       </p>
+    </div>
+  );
+}
+
+function DailySyncTimes({
+  expression,
+  onChange,
+}: {
+  expression: string;
+  onChange: (expression: string) => void;
+}) {
+  const parsed = parseDailySyncTimes(expression);
+  const dailyMode = parsed !== null;
+  const times = parsed ?? [];
+
+  function updateTime(index: number, value: string) {
+    onChange(dailySyncTimesExpression(times.map((time, i) => (i === index ? value : time))));
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex w-fit rounded-md border border-border bg-muted p-1">
+        <Button
+          type="button"
+          size="sm"
+          variant={dailyMode ? "default" : "ghost"}
+          onClick={() => onChange(dailySyncTimesExpression(times.length ? times : ["05:30"]))}
+        >
+          Daily times
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={dailyMode ? "ghost" : "default"}
+          onClick={() => onChange("0 0 * * *")}
+        >
+          Advanced
+        </Button>
+      </div>
+
+      {dailyMode ? (
+        <Field label="Daily sync times (IST)" hint="Add each time the SAP sync should run every day.">
+          <div className="space-y-2">
+            {times.map((time, index) => (
+              <div key={`${time}-${index}`} className="flex max-w-sm items-center gap-2">
+                <Input
+                  type="time"
+                  value={time}
+                  aria-label={`Daily sync time ${index + 1}`}
+                  onChange={(event) => updateTime(index, event.target.value)}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label={`Remove ${time} sync time`}
+                  disabled={times.length === 1}
+                  onClick={() => onChange(dailySyncTimesExpression(times.filter((_, i) => i !== index)))}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => onChange(dailySyncTimesExpression([...times, "13:00"]))}
+            >
+              <Plus className="size-4" /> Add time
+            </Button>
+          </div>
+        </Field>
+      ) : (
+        <Field
+          label="Advanced schedule"
+          hint="Pick a preset or enter a standard 5-field schedule. Times use the middleware server timezone."
+        >
+          <div className="relative">
+            <Input value={expression} onChange={(event) => onChange(event.target.value)} className="pr-10" />
+            <Select value="" onValueChange={onChange}>
+              <SelectTrigger
+                aria-label="Choose an interval"
+                className="absolute right-0 top-0 h-full w-10 justify-center border-0 bg-transparent px-0 shadow-none [&>svg:last-child]:hidden"
+              >
+                <CalendarClock className="size-4 text-muted-foreground" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {CRON_PRESETS.map((preset) => (
+                  <SelectItem key={preset.expression} value={preset.expression}>
+                    {preset.label} — {preset.expression}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Field>
+      )}
     </div>
   );
 }
@@ -385,7 +491,7 @@ function defaultEndpoint(): EndpointInput {
     response_root: "",
     response_notes: "",
     scheduler_enabled: false,
-    schedule_expression: "",
+    schedule_expression: dailySyncTimesExpression(["05:30"]),
     is_active: true,
     posting_range: "last7d",
   };
@@ -1076,33 +1182,10 @@ function EndpointDetail({
               />
               <Label>Enable scheduled sync</Label>
             </div>
-            <Field
-              label="Interval / cron expression"
-              hint="Pick a preset from the icon on the right, or type your own 5-field expression."
-            >
-              <div className="relative">
-                <Input
-                  value={form.schedule_expression}
-                  onChange={(e) => set("schedule_expression", e.target.value)}
-                  className="pr-10"
-                />
-                <Select value="" onValueChange={(v) => set("schedule_expression", v)}>
-                  <SelectTrigger
-                    aria-label="Choose an interval"
-                    className="absolute right-0 top-0 h-full w-10 justify-center border-0 bg-transparent px-0 shadow-none [&>svg:last-child]:hidden"
-                  >
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                  </SelectTrigger>
-                  <SelectContent align="end">
-                    {CRON_PRESETS.map((p) => (
-                      <SelectItem key={p.expression} value={p.expression}>
-                        {p.label} — {p.expression}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </Field>
+            <DailySyncTimes
+              expression={form.schedule_expression}
+              onChange={(expression) => set("schedule_expression", expression)}
+            />
             <SchedulePreview
               expression={form.schedule_expression}
               enabled={form.scheduler_enabled}
