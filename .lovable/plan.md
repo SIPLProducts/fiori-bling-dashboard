@@ -1,7 +1,8 @@
 # Improve Quarter Scale and Two-Year Comparison
 
 ## Quarter chart scale
-- Show intermediate Y-axis tick values between zero and the highest monthly amount, using a consistent readable scale rather than only `0` and the maximum.
+- Show dynamic, rounded intermediate Y-axis tick values between zero and the highest monthly amount—for example `0, 50, 100, 150, 200, 250, 300`—rather than only `0` and the maximum.
+- Calculate the tick interval from each chart's data range so smaller charts receive suitable steps such as `0, 5, 10, 15, 20`, while larger charts use larger rounded steps.
 - Keep the axis title `Amount (₹)`, number-only crore scaling, visible axis lines, and the `Month` title.
 - Allow negative monthly values by extending the scale below zero when required.
 
