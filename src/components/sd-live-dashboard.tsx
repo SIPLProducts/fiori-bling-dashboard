@@ -2193,18 +2193,18 @@ function PdfExecutiveReport({ analytics, quarters, totalRevenue, postingCount, d
   return <div data-pdf-report-root className="pdf-report-root">
     <PdfPage page={1} title="C-Suite Executive Overview" dateRange={dateRange}>
       <div className="grid grid-cols-4 gap-2.5"><PdfTotalCard amount={totalRevenue} postingCount={postingCount} />{shownQuarters.map((quarter, index) => <PdfQuarterCard key={quarter.quarter} summary={quarter} tone={index + 1} />)}{Array.from({ length: Math.max(0, 3 - shownQuarters.length) }, (_, index) => <section key={`empty-quarter-${index}`} className="pdf-kpi-card"><span className="pdf-kpi-label">Quarter</span><p className="pdf-kpi-value">—</p><p className="pdf-kpi-delta text-muted-foreground">No non-zero sales</p></section>)}</div>
-      <div className="mt-3 grid min-h-0 flex-1 grid-cols-[1.7fr_1fr] gap-3">
+      <div className="pdf-page-one-summary mt-3 grid min-h-0 flex-1 grid-cols-[1.7fr_1fr] gap-3">
         <PdfPanel title="Quarterly Trajectory & Variance Analysis"><div className="mt-5 space-y-5">{shownQuarters.map((quarter, index) => <div key={quarter.quarter} className="grid grid-cols-[50px_1fr_74px] items-center gap-2 text-[10px]"><strong>{quarter.quarter}</strong><div className="relative h-6 rounded-md bg-muted"><span className="absolute inset-y-0 left-0 rounded-md" style={{ width: `${Math.max(3, Math.abs(quarter.amount) / quarterMax * 100)}%`, background: KPI_TONES[(index + 1) % KPI_TONES.length] }} /><span className="absolute inset-y-0 left-2 flex items-center font-semibold text-primary-foreground">{CRORES(quarter.amount)}</span></div><strong className={quarter.varianceAmount != null && quarter.varianceAmount < 0 ? "text-destructive" : "text-success"}>{quarter.varianceAmount == null ? "—" : `${quarter.varianceAmount >= 0 ? "+" : "−"}${CRORES(Math.abs(quarter.varianceAmount))}`}</strong></div>)}</div></PdfPanel>
         <PdfPanel title="Executive Insights"><div className="mt-3 space-y-2">{highestQuarter ? <div className="pdf-insight pdf-insight-warning"><strong>Peak quarter · {highestQuarter.quarter}</strong><p>{INR_CRORES(highestQuarter.amount)} in the current filtered period.</p></div> : null}{analytics.alerts.slice(0, 3).map((alert) => <div key={alert.id} className={`pdf-insight ${alert.tone === "down" ? "pdf-insight-negative" : "pdf-insight-positive"}`}><strong>{alert.title}</strong><p>{alert.text}</p></div>)}</div></PdfPanel>
       </div>
     </PdfPage>
 
     <PdfPage page={2} title="Strategic Sales & Segment Distribution" dateRange={dateRange}>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="pdf-page-two-primary grid grid-cols-2 gap-3">
         <PdfPanel title="Sales by Main Group"><PdfMainGroup items={analytics.byMainGroup} total={totalRevenue} /></PdfPanel>
         <PdfPanel title="Top 10 Customers"><div className="mt-2"><BarList items={analytics.topCustomers} tone={1} valueFormatter={CRORES_VALUE} /></div></PdfPanel>
       </div>
-      <div className="mt-3 grid min-h-0 flex-1 grid-cols-3 gap-3">
+      <div className="pdf-page-two-secondary mt-3 grid min-h-0 flex-1 grid-cols-3 gap-3">
         <PdfPanel title="Segment Breakdown"><PdfCompactDonut items={analytics.bySegment} total={totalRevenue} /></PdfPanel>
         <PdfPanel title="Sales Mix"><PdfCompactDonut items={analytics.mixByType} total={totalRevenue} /></PdfPanel>
         <PdfPanel title="New vs Repl Sales"><PdfCompactDonut items={analytics.byNewRepl} total={totalRevenue} /></PdfPanel>
