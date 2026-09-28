@@ -481,17 +481,24 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {!outside ? <div className="mt-2 h-28 overflow-hidden rounded-md bg-muted/40 pt-1">
+      {!outside ? <div className="mt-2 h-36 overflow-hidden rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 20, right: 4, bottom: 2, left: 0 }}>
-            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }} />
+          <BarChart data={chartData} margin={{ top: 20, right: 6, bottom: 20, left: 6 }}>
+            <XAxis
+              dataKey="label"
+              axisLine={{ stroke: "var(--color-border)" }}
+              tickLine={{ stroke: "var(--color-border)" }}
+              tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }}
+              label={{ value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 }}
+            />
             <YAxis
-              width={isMobile ? 32 : 40}
+              width={isMobile ? 48 : 54}
               tickCount={3}
-              axisLine={false}
-              tickLine={false}
+              axisLine={{ stroke: "var(--color-border)" }}
+              tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: isMobile ? 8 : 9, fill: "var(--color-muted-foreground)" }}
               tickFormatter={(value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
+              label={{ value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 }}
               domain={[
                 (dataMin: number) => Math.min(0, dataMin),
                 (dataMax: number) => Math.max(0, dataMax),
@@ -522,7 +529,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div> : <div className="mt-2 grid h-28 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
+      </div> : <div className="mt-2 grid h-36 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
     </section>
   );
 }
