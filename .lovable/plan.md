@@ -4,7 +4,7 @@
 Keep figures stable while a user is viewing any Sales report. Newly synchronized SAP data becomes visible only after a deliberate user action that reloads the report.
 
 ## User experience
-- Add a **Refresh** action to the Sales module dashboard, Sales Analytics, Sales KPI, and Management Dashboard headers.
+- Add a **Refresh** action directly beside the **PDF** button in the Sales module dashboard, Sales Analytics, Sales KPI, and Management Dashboard action areas.
 - Show a short loading state while refreshed figures are fetched, then confirm completion without disrupting the current filters.
 - Reload the latest committed sales snapshot when the user:
   - clicks **Refresh**;
