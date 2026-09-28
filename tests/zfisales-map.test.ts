@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canonicalJson, mapPayload, postingDateRange, sha256 } from "../src/lib/zfisales-map.ts";
 
-const base = { WERKS: "", GJAHR: 2026, BELNR: "0100035244", BUZEI: "10", HKONT: "31111100" };
+const base = { WERKS: "", GJAHR: 2026, BELNR: "0100035244", BUZEI: "10", HKONT: "31111100", BUDAT: "20260901" };
 
 test("full-row identity retains rows that collided under the old business key", () => {
   const result = mapPayload([
@@ -83,8 +83,10 @@ test("derives the replacement range from mapped Posting Dates", () => {
 });
 
 test("rejects a mapped snapshot when any row has no valid Posting Date", () => {
-  const result = mapPayload([{ ...base, BUDAT: "not-a-date" }], "Sales_Reports_KPI");
-  assert.throws(() => postingDateRange(result.rows), /without a valid Posting Date/);
+  assert.throws(
+    () => mapPayload([{ ...base, BUDAT: "not-a-date" }], "Sales_Reports_KPI"),
+    /without a valid Posting Date/,
+  );
 });
 
 test("property order does not change full-row identity", () => {
