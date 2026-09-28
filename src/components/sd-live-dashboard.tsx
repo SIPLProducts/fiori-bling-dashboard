@@ -57,6 +57,7 @@ import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
+import hblLogo from "@/assets/hbl-logo.png";
 import {
   readSharedSalesFilters,
   subscribeSharedSalesFilters,
@@ -324,6 +325,14 @@ function availableDataRange(rows: SdLine[]) {
   const first = dates[0];
   const last = dates.at(-1);
   return first && last ? `${fmt(first)} - ${fmt(last)}` : "—";
+}
+
+function reportDate(iso: string) {
+  if (!iso) return "—";
+  const date = new Date(`${iso}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 
@@ -2085,6 +2094,10 @@ export function SdLiveDashboard() {
   });
 
   const all = useMemo(() => lines ?? [], [lines]);
+  const firstPostingDate = useMemo(
+    () => all.map((row) => row.postingDate).filter(Boolean).sort()[0] ?? "",
+    [all],
+  );
   useEffect(() => {
     const shared = readSharedSalesFilters();
     setFilters((prev) => ({ ...prev, ...shared }));
@@ -2319,13 +2332,37 @@ export function SdLiveDashboard() {
 
   return (
     <div ref={dashboardRef} className="space-y-4">
+      {pdfBusy ? (
+        <div className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
+            <div className="min-w-0">
+              <p className="text-base font-semibold text-foreground">HBL MIS PORTAL</p>
+              <p className="text-xs text-muted-foreground">Sales Dashboard</p>
+            </div>
+          </div>
+          <div className="grid shrink-0 grid-cols-2 gap-x-6 text-right text-xs">
+            <div>
+              <p className="font-medium text-muted-foreground">From</p>
+              <p className="mt-0.5 font-semibold text-foreground">
+                {reportDate(filters.from || firstPostingDate)}
+              </p>
+            </div>
+            <div>
+              <p className="font-medium text-muted-foreground">To</p>
+              <p className="mt-0.5 font-semibold text-foreground">{reportDate(effectiveFilters.to)}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* executive header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
         </div>
-        <div className="flex max-w-full flex-wrap items-center gap-2">
+        <div data-pdf-exclude className="flex max-w-full flex-wrap items-center gap-2">
           <span className="hidden h-9 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 text-sm text-primary shadow-tile sm:inline-flex">
             <span className="font-medium">Data available:</span>
             <span className="font-semibold">{availableDataRange(all)}</span>
@@ -2346,7 +2383,7 @@ export function SdLiveDashboard() {
       </div>
 
       {/* smart filter bar */}
-      <section className="overflow-hidden rounded-lg border border-primary/25 bg-card shadow-tile ring-1 ring-primary/5">
+      <section data-pdf-exclude className="overflow-hidden rounded-lg border border-primary/25 bg-card shadow-tile ring-1 ring-primary/5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-primary/15 bg-accent/55 px-4 py-2.5 sm:flex sm:flex-wrap sm:justify-between">
           <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-card-foreground">
             <Filter className="size-4 shrink-0 text-primary" />
