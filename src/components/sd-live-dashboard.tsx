@@ -547,7 +547,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
                 if (!tooltipActive || !point) return null;
                 return (
                   <div className="rounded-md border border-border bg-popover px-2.5 py-2 text-[11px] text-popover-foreground shadow-md">
-                    <p className="font-semibold">{String(point.label)}</p>
+                    <p className="font-semibold">{String(point["label"])}</p>
                     {series.map((item, index) => (
                       <div key={item.fiscalYear} className={index === 0 ? "mt-1" : "mt-1.5"}>
                         {series.length > 1 ? <p className="font-medium" style={{ color: item.color }}>FY {item.fiscalYear}–{String(Number(item.fiscalYear) + 1).slice(-2)}</p> : null}
