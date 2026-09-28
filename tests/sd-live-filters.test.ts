@@ -649,6 +649,18 @@ describe("dynamic management alerts", () => {
     expect(analytics.revenuePerAhComparison.previous).toBeNull();
     expect(analytics.alerts.find((alert) => alert.id === "revenue-per-ah")?.text).toContain("another positive-AH month");
   });
+
+  test("uses Posting Date for the latest two Revenue per AH months when SAP Month labels are stale", () => {
+    const analytics = buildSdAnalytics([
+      { ...row("2026", "2026-08-10"), month: "MAR-2026", totalAh: 100, amount: 20_000_000 },
+      { ...row("2026", "2026-09-10"), month: "MAY-2026", totalAh: 100, amount: 30_000_000 },
+    ]);
+
+    expect(analytics.revenuePerAhComparison.previous?.month).toBe("AUG-2026");
+    expect(analytics.revenuePerAhComparison.current?.month).toBe("SEP-2026");
+    expect(analytics.revenuePerAhComparison.previous?.sales).toBe(20_000_000);
+    expect(analytics.revenuePerAhComparison.current?.sales).toBe(30_000_000);
+  });
 });
 
 describe("dynamic PC Short Name colors", () => {

@@ -648,6 +648,14 @@ function monthSortKey(label: string): string {
   return idx >= 0 && y ? `${y}-${String(idx + 1).padStart(2, "0")}` : label;
 }
 
+function postingMonthLabel(postingDate: string, fallbackMonth: string): string {
+  const [year, month] = postingDate.slice(0, 7).split("-");
+  const monthIndex = Number(month) - 1;
+  return year && monthIndex >= 0 && monthIndex < MONTH_INDEX.length
+    ? `${MONTH_INDEX[monthIndex]}-${year}`
+    : fallbackMonth || "—";
+}
+
 export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byType = new Map<string, NamedTotal>();
   const byNewRepl = new Map<string, NamedTotal>();
@@ -754,7 +762,10 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(subDivisions, division, r.amount);
 
 
-    const label = r.month || (r.postingDate ? r.postingDate.slice(0, 7) : "—");
+    // Posting Date is authoritative for monthly analytics. The SAP Month field
+    // can carry a different accounting label and previously placed Aug/Sep
+    // postings into Jan–May buckets.
+    const label = postingMonthLabel(r.postingDate, r.month);
     const bucket =
       byMonth.get(label) ?? {
         month: label,
