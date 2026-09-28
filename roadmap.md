@@ -87,3 +87,4 @@
 - [x] Add visible X/Y axis lines and Month/Amount labels to each Sales quarter chart
 - [x] Add dynamic intermediate Y-axis ticks and grouped monthly bars for two selected financial years
 - [x] Keep quarters visible when any selected fiscal year has data, leaving missing-year bars empty
+- [x] Hide monthly bar-top values for two-year quarter comparisons to prevent overlap
