@@ -172,6 +172,36 @@ describe("fiscal quarter summary tiles", () => {
     ]);
   });
 
+  test("keeps a quarter visible when an earlier selected year has data and the latest year is empty", () => {
+    const all = [
+      sale("2025", "2025-10-10", 300),
+      sale("2025", "2026-01-10", 400),
+      sale("2026", "2026-04-10", 120),
+    ];
+    const active = applySdFilters(all, filters({ fiscalYears: ["2025", "2026"] }));
+    const summaries = buildQuarterSummaries(active, all, ["2025", "2026"], []);
+
+    expect(summaries.map((item) => item.quarter)).toEqual(["Q1", "Q3", "Q4"]);
+    expect(summaries.find((item) => item.quarter === "Q3")?.yearTrends).toEqual([
+      {
+        fiscalYear: "2025",
+        points: [
+          { label: "Oct", value: 300, count: 1 },
+          { label: "Nov", value: 0, count: 0 },
+          { label: "Dec", value: 0, count: 0 },
+        ],
+      },
+      {
+        fiscalYear: "2026",
+        points: [
+          { label: "Oct", value: 0, count: 0 },
+          { label: "Nov", value: 0, count: 0 },
+          { label: "Dec", value: 0, count: 0 },
+        ],
+      },
+    ]);
+  });
+
   test("uses neutral comparison without a year or a usable baseline", () => {
     const active = [sale("2026", "2026-04-10", 100)];
     const noYear = buildQuarterSummaries(active, active, [], ["Q1"]);

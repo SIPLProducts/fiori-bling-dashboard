@@ -459,6 +459,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
     return row;
   });
   const chartValues = series.flatMap(({ key }) => chartData.map((point) => Number(point[key] ?? 0)));
+  const hasChartData = chartValues.some((value) => value !== 0);
   const chartMin = Math.min(0, ...chartValues);
   const chartMax = Math.max(0, ...chartValues);
   const range = Math.max(Math.abs(chartMin), Math.abs(chartMax), 1);
@@ -510,7 +511,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
           </span>
         ) : null}
       </div>
-      {!outside ? <div className="mt-2 h-40 overflow-hidden rounded-md bg-muted/40 pt-1">
+      {hasChartData ? <div className="mt-2 h-40 overflow-hidden rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
             {series.length > 1 ? (
