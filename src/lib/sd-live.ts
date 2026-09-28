@@ -872,6 +872,10 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const mainGroupList = rank(byMain);
   const alerts: SdAnalytics["alerts"] = [];
   const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const croreAmount = (v: number) => `₹${(v / 1e7).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} Cr`;
   if (momPct != null)
     alerts.push({
       id: "sales-momentum",
@@ -885,7 +889,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       id: "customer-concentration",
       tone: "warn",
       title: "Customer concentration",
-      text: `Top 5 customers contribute ₹${cut(5).toLocaleString("en-IN", { maximumFractionDigits: 2 })}, equal to ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
+      text: `Top 5 customers contribute ${croreAmount(cut(5))}, equal to ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
       basis: "All customers in the current selection",
     });
   if (mainGroupList[0])
@@ -893,7 +897,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       id: "leading-main-group",
       tone: "up",
       title: "Leading main group",
-      text: `${mainGroupList[0].name} leads with ₹${mainGroupList[0].value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}, equal to ${((mainGroupList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
+      text: `${mainGroupList[0].name} leads with ${croreAmount(mainGroupList[0].value)}, equal to ${((mainGroupList[0].value / (revenue || 1)) * 100).toFixed(1)}% of sales.`,
       basis: "Sales amount grouped by main group",
     });
   if (pcList[0])
