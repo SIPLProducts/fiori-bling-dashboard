@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -37,6 +38,7 @@ import {
   TriangleAlert,
   Radio,
   ExternalLink,
+  CalendarDays,
 } from "lucide-react";
 
 import { Panel } from "@/components/report-shell";
@@ -56,7 +58,7 @@ import { toast } from "sonner";
 import { buildDynamicColorMap } from "@/lib/chart-colors";
 import { MultiSelect } from "@/components/multi-select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { downloadCsv, exportDashboardPdf } from "@/lib/chart-export";
+import { downloadCsv, exportReportPagesPdf } from "@/lib/chart-export";
 import hblLogo from "@/assets/hbl-logo.png";
 import {
   readSharedSalesFilters,
@@ -80,6 +82,7 @@ import {
   type ModelPerformance,
   type QuarterSummary,
   type SdFilters,
+  type SdAnalytics,
   type SdLine,
 } from "@/lib/sd-live";
 
@@ -2086,6 +2089,141 @@ function LinesTable({
   );
 }
 
+type PdfReportProps = {
+  analytics: SdAnalytics;
+  quarters: QuarterSummary[];
+  totalRevenue: number;
+  postingCount: number;
+  dateRange: string;
+};
+
+function PdfPage({
+  page,
+  title,
+  dateRange,
+  children,
+}: {
+  page: number;
+  title: string;
+  dateRange: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <article data-pdf-report-page className="pdf-report-page">
+      <header className="pdf-report-header">
+        <div className="flex items-center gap-3">
+          <img src={hblLogo} alt="HBL" className="h-9 w-auto object-contain" />
+          <div className="border-l border-border pl-3">
+            <p className="pdf-report-brand">HBL MIS Portal</p>
+            <p className="pdf-report-subtitle">Sales &amp; Distribution Executive Brief</p>
+          </div>
+        </div>
+        <div className="pdf-report-date"><CalendarDays className="size-3.5" />{dateRange}</div>
+      </header>
+      <div className="pdf-report-content">
+        <div className="mb-3">
+          <p className="pdf-report-kicker">Executive Report · {String(page).padStart(2, "0")}</p>
+          <h2 className="pdf-report-page-title">{title}</h2>
+        </div>
+        {children}
+      </div>
+      <footer className="pdf-report-footer">
+        <span>HBL Confidential — For Internal Executive Review Only</span>
+        <strong>Page {page} of 4</strong>
+      </footer>
+    </article>
+  );
+}
+
+function PdfPanel({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+  return <section className={`pdf-report-card ${className}`}><h3 className="pdf-report-card-title">{title}</h3>{children}</section>;
+}
+
+function PdfRankTable({ items }: { items: NamedTotal[] }) {
+  if (!items.length) return <p className="pdf-report-empty">No data for this selection</p>;
+  return <div className="mt-2 overflow-hidden rounded-md border border-border">
+    {items.slice(0, 10).map((item, index) => <div key={item.name} className="pdf-rank-row">
+      <span className="pdf-rank-number">{index + 1}</span>
+      <span className="min-w-0 flex-1 truncate">{item.name || "—"}</span>
+      <strong className="tabular-nums">{CRORES_VALUE(item.value)}</strong>
+    </div>)}
+  </div>;
+}
+
+function PdfQuarterCard({ summary, tone }: { summary: QuarterSummary; tone: number }) {
+  const color = KPI_TONES[tone % KPI_TONES.length];
+  const data = summary.trend.map((point) => ({ name: point.label, value: point.value / 1e7 }));
+  return <section className="pdf-kpi-card" style={{ "--pdf-accent": color } as React.CSSProperties}>
+    <div className="flex items-center justify-between"><span className="pdf-kpi-label">{summary.quarter}</span><span className="pdf-status-pill">{summary.statusLabel || "Complete"}</span></div>
+    <p className="pdf-kpi-value">{INR_CRORES(summary.amount)}</p>
+    <p className={`pdf-kpi-delta ${summary.changePct != null && summary.changePct < 0 ? "text-destructive" : "text-success"}`}>
+      {summary.changePct == null ? "No comparison" : `${summary.changePct >= 0 ? "+" : "−"}${Math.abs(summary.changePct).toFixed(1)}% ${summary.comparisonLabel}`}
+    </p>
+    <div className="mt-2 h-16"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data} margin={{ top: 5, right: 2, bottom: 0, left: 2 }}><Area type="monotone" dataKey="value" stroke={color} fill={color} fillOpacity={0.12} strokeWidth={2} isAnimationActive={false} /></AreaChart></ResponsiveContainer></div>
+  </section>;
+}
+
+function PdfTotalCard({ amount, postingCount }: { amount: number; postingCount: number }) {
+  return <section className="pdf-kpi-card pdf-total-card">
+    <span className="pdf-kpi-label">Total Sales</span>
+    <p className="pdf-kpi-value">{INR_CRORES(amount)}</p>
+    <div className="mt-5 h-1.5 rounded-full bg-muted"><span className="block h-full w-full rounded-full bg-primary" /></div>
+    <p className="mt-3 text-[10px] text-muted-foreground">Filtered postings <strong className="float-right text-foreground">{NUM(postingCount)} lines</strong></p>
+  </section>;
+}
+
+function PdfMainGroup({ items, total }: { items: NamedTotal[]; total: number }) {
+  const visible = items.slice(0, 6);
+  return <div className="mt-2 grid grid-cols-[170px_minmax(0,1fr)] items-center gap-4">
+    <div className="relative h-40"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={visible} dataKey="value" nameKey="name" innerRadius="58%" outerRadius="88%" paddingAngle={2} stroke="none" isAnimationActive={false}>{visible.map((item, index) => <Cell key={item.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}</Pie></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 grid place-items-center text-center"><div><strong className="text-sm text-foreground">{INR_CRORES(total)}</strong><p className="text-[9px] text-muted-foreground">Total sales</p></div></div></div>
+    <div className="space-y-2">{visible.map((item, index) => <div key={item.name}><div className="flex justify-between gap-2 text-[10px]"><span className="min-w-0 truncate"><i className="mr-1.5 inline-block size-2 rounded-sm" style={{ background: CHART_COLORS[index % CHART_COLORS.length] }} />{item.name}</span><strong>{total ? ((item.value / total) * 100).toFixed(1) : "0"}%</strong></div><div className="mt-1 h-1.5 rounded-full bg-muted"><span className="block h-full rounded-full" style={{ width: `${Math.max(2, total ? item.value / total * 100 : 0)}%`, background: CHART_COLORS[index % CHART_COLORS.length] }} /></div></div>)}</div>
+  </div>;
+}
+
+function PdfCompactDonut({ items, total }: { items: NamedTotal[]; total: number }) {
+  return <div className="mt-2 grid grid-cols-[110px_1fr] items-center gap-2"><div className="h-28"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={items} dataKey="value" innerRadius="52%" outerRadius="82%" paddingAngle={2} stroke="none" isAnimationActive={false}>{items.map((item, index) => <Cell key={item.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}</Pie></PieChart></ResponsiveContainer></div><div className="space-y-1.5">{items.slice(0, 5).map((item, index) => <div key={item.name} className="flex justify-between gap-2 text-[9px]"><span className="min-w-0 truncate"><i className="mr-1 inline-block size-2 rounded-sm" style={{ background: CHART_COLORS[index % CHART_COLORS.length] }} />{item.name}</span><strong>{total ? ((item.value / total) * 100).toFixed(1) : "0"}%</strong></div>)}</div></div>;
+}
+
+function PdfExecutiveReport({ analytics, quarters, totalRevenue, postingCount, dateRange }: PdfReportProps) {
+  const shownQuarters = quarters.filter((quarter) => quarter.amount !== 0).slice(0, 3);
+  const quarterMax = Math.max(1, ...quarters.map((quarter) => Math.abs(quarter.amount)));
+  const models = analytics.modelPerformance.slice(0, 15);
+  const modelMax = Math.max(1, ...models.map((model) => Math.abs(model.totalAmount)));
+  const highestQuarter = [...shownQuarters].sort((a, b) => b.amount - a.amount)[0];
+  return <div data-pdf-report-root className="pdf-report-root">
+    <PdfPage page={1} title="C-Suite Executive Overview" dateRange={dateRange}>
+      <div className="grid grid-cols-4 gap-2.5"><PdfTotalCard amount={totalRevenue} postingCount={postingCount} />{shownQuarters.map((quarter, index) => <PdfQuarterCard key={quarter.quarter} summary={quarter} tone={index + 1} />)}{Array.from({ length: Math.max(0, 3 - shownQuarters.length) }, (_, index) => <section key={`empty-quarter-${index}`} className="pdf-kpi-card"><span className="pdf-kpi-label">Quarter</span><p className="pdf-kpi-value">—</p><p className="pdf-kpi-delta text-muted-foreground">No non-zero sales</p></section>)}</div>
+      <div className="mt-3 grid min-h-0 flex-1 grid-cols-[1.7fr_1fr] gap-3">
+        <PdfPanel title="Quarterly Trajectory & Variance Analysis"><div className="mt-5 space-y-5">{shownQuarters.map((quarter, index) => <div key={quarter.quarter} className="grid grid-cols-[50px_1fr_74px] items-center gap-2 text-[10px]"><strong>{quarter.quarter}</strong><div className="relative h-6 rounded-md bg-muted"><span className="absolute inset-y-0 left-0 rounded-md" style={{ width: `${Math.max(3, Math.abs(quarter.amount) / quarterMax * 100)}%`, background: KPI_TONES[(index + 1) % KPI_TONES.length] }} /><span className="absolute inset-y-0 left-2 flex items-center font-semibold text-primary-foreground">{CRORES(quarter.amount)}</span></div><strong className={quarter.varianceAmount != null && quarter.varianceAmount < 0 ? "text-destructive" : "text-success"}>{quarter.varianceAmount == null ? "—" : `${quarter.varianceAmount >= 0 ? "+" : "−"}${CRORES(Math.abs(quarter.varianceAmount))}`}</strong></div>)}</div></PdfPanel>
+        <PdfPanel title="Executive Insights"><div className="mt-3 space-y-2">{highestQuarter ? <div className="pdf-insight pdf-insight-warning"><strong>Peak quarter · {highestQuarter.quarter}</strong><p>{INR_CRORES(highestQuarter.amount)} in the current filtered period.</p></div> : null}{analytics.alerts.slice(0, 3).map((alert) => <div key={alert.id} className={`pdf-insight ${alert.tone === "down" ? "pdf-insight-negative" : "pdf-insight-positive"}`}><strong>{alert.title}</strong><p>{alert.text}</p></div>)}</div></PdfPanel>
+      </div>
+    </PdfPage>
+
+    <PdfPage page={2} title="Strategic Sales & Segment Distribution" dateRange={dateRange}>
+      <div className="grid grid-cols-2 gap-3">
+        <PdfPanel title="Sales by Main Group"><PdfMainGroup items={analytics.byMainGroup} total={totalRevenue} /></PdfPanel>
+        <PdfPanel title="Top 10 Customers"><div className="mt-2"><BarList items={analytics.topCustomers} tone={1} valueFormatter={CRORES_VALUE} /></div></PdfPanel>
+      </div>
+      <div className="mt-3 grid min-h-0 flex-1 grid-cols-3 gap-3">
+        <PdfPanel title="Segment Breakdown"><PdfCompactDonut items={analytics.bySegment} total={totalRevenue} /></PdfPanel>
+        <PdfPanel title="Sales Mix"><PdfCompactDonut items={analytics.mixByType} total={totalRevenue} /></PdfPanel>
+        <PdfPanel title="New vs Repl Sales"><PdfCompactDonut items={analytics.byNewRepl} total={totalRevenue} /></PdfPanel>
+      </div>
+    </PdfPage>
+
+    <PdfPage page={3} title="Operations, Rankings & Executive Alerts" dateRange={dateRange}>
+      <div className="grid grid-cols-2 gap-3"><PdfPanel title="Top 10 Profit Centres"><PdfRankTable items={analytics.topProfitCentres} /></PdfPanel><PdfPanel title="Top 10 Sales Executives"><PdfRankTable items={analytics.topSalesEmployees} /></PdfPanel></div>
+      <div className="mt-3 grid grid-cols-[1.4fr_1fr] gap-3"><PdfPanel title="Top 10 Materials"><PdfRankTable items={analytics.topMaterials} /></PdfPanel><PdfPanel title="AH Performance"><div className="mt-4 grid gap-3"><div className="pdf-combined-kpi"><span>Total LAH (Lakhs)</span><strong>{LAKHS_VALUE(analytics.kpis.positiveAhTotal)}</strong><small>Total AH greater than zero</small></div><div className="pdf-combined-kpi pdf-combined-kpi-accent"><span>AH Sales</span><strong>{CRORES_VALUE(analytics.kpis.positiveAhSales)}</strong><small>Local-currency amount</small></div></div></PdfPanel></div>
+      <PdfPanel title="Management Alerts" className="mt-3"><div className="mt-2 grid grid-cols-2 gap-2">{analytics.alerts.slice(0, 4).map((alert) => <div key={alert.id} className={`pdf-alert ${alert.tone === "down" ? "pdf-alert-negative" : alert.tone === "warn" ? "pdf-alert-warning" : "pdf-alert-positive"}`}><div className="flex items-center justify-between"><strong>{alert.title}</strong><span>{alert.tone === "down" ? "Decline" : alert.tone === "warn" ? "Watch" : "Positive"}</span></div><p>{alert.text}</p></div>)}</div></PdfPanel>
+    </PdfPage>
+
+    <PdfPage page={4} title="Model Performance & Customer Contribution" dateRange={dateRange}>
+      <PdfPanel title="Top 15 Models by Revenue & ₹/AH"><div className="mt-3 space-y-1.5">{models.map((model, index) => <div key={model.model} className="grid grid-cols-[20px_120px_1fr_70px] items-center gap-2 text-[9px]"><span className="text-muted-foreground">{String(index + 1).padStart(2, "0")}</span><span className="truncate font-medium">{model.model || "Unassigned"}<small className="block text-[8px] font-normal text-muted-foreground">{PER_AH(model.perAhRate)}</small></span><div className="h-4 rounded-sm bg-muted"><span className="block h-full rounded-sm bg-primary" style={{ width: `${Math.max(2, Math.abs(model.totalAmount) / modelMax * 100)}%` }} /></div><strong className="text-right tabular-nums">{CRORES_VALUE(model.totalAmount)}</strong></div>)}</div></PdfPanel>
+      <PdfPanel title="Customer Contribution Pareto Curve" className="mt-3 min-h-0 flex-1"><div className="mt-2 h-[310px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={analytics.pareto} margin={{ top: 24, right: 18, bottom: 62, left: 4 }}><CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} /><XAxis dataKey="customer" interval={0} angle={-32} textAnchor="end" height={78} tick={{ fontSize: 8, fill: "var(--chart-axis-label)" }} tickFormatter={(value: string) => value.length > 16 ? `${value.slice(0, 15)}…` : value} /><YAxis yAxisId="left" width={52} tickFormatter={axisCompact} tick={{ fontSize: 8, fill: "var(--chart-axis-label)" }} /><YAxis yAxisId="right" orientation="right" width={36} domain={[0, 100]} tickFormatter={(value: number) => `${value}%`} tick={{ fontSize: 8, fill: "var(--chart-emphasis)" }} /><Bar yAxisId="left" dataKey="value" fill="var(--kpi-1)" radius={[3, 3, 0, 0]} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => compact(value)} fontSize={8} fill="var(--chart-label-strong)" /></Bar><Line yAxisId="right" dataKey="cumulativePct" stroke="var(--chart-emphasis)" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false}><LabelList dataKey="cumulativePct" position="top" formatter={(value: number) => `${value.toFixed(0)}%`} fontSize={8} fill="var(--chart-emphasis)" /></Line></ComposedChart></ResponsiveContainer></div></PdfPanel>
+    </PdfPage>
+  </div>;
+}
+
 /* -------------------------------- dashboard ------------------------------- */
 
 export function SdLiveDashboard() {
@@ -2094,7 +2232,6 @@ export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(() => currentSdFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfExportAllModels, setPdfExportAllModels] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
@@ -2238,38 +2375,28 @@ export function SdLiveDashboard() {
 
   const downloadDashboardPdf = async () => {
     setPdfBusy(true);
-    setPdfExportAllModels(true);
     try {
       await new Promise<void>((resolve) => {
-        const expectedCharts = Math.ceil(analytics.modelPerformance.length / 10);
         let frame = 0;
-        const waitForModelCharts = () => {
-          const charts = Array.from(
-            dashboardRef.current?.querySelectorAll<HTMLElement>("[data-pdf-model-chart-ready]") ?? [],
-          );
-          const chartsReady =
-            charts.length === expectedCharts &&
-            charts.every((chart) => chart.getBoundingClientRect().width > 0 && chart.querySelector("svg"));
-          if (chartsReady || frame >= 30) {
+        const waitForReport = () => {
+          const report = dashboardRef.current?.querySelector<HTMLElement>("[data-pdf-report-root]");
+          const pages = report?.querySelectorAll<HTMLElement>("[data-pdf-report-page]") ?? [];
+          const chartsReady = pages.length === 4 && Array.from(pages).every((page) => page.getBoundingClientRect().width > 0);
+          if (chartsReady || frame >= 45) {
             requestAnimationFrame(() => resolve());
             return;
           }
           frame += 1;
-          requestAnimationFrame(waitForModelCharts);
+          requestAnimationFrame(waitForReport);
         };
-        requestAnimationFrame(waitForModelCharts);
+        requestAnimationFrame(waitForReport);
       });
-      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
-        headerSelector: "[data-pdf-header]",
-        blockSelector: "[data-pdf-page-block]",
-        sectionBreakSelector: "[data-pdf-section-break]",
-        footerText: "HBL Confidential — Internal Use Only",
-      });
+      const report = dashboardRef.current?.querySelector<HTMLElement>("[data-pdf-report-root]") ?? null;
+      await exportReportPagesPdf(report, "sales-dashboard.pdf");
       toast.success("Dashboard PDF downloaded");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
     } finally {
-      setPdfExportAllModels(false);
       setPdfBusy(false);
     }
   };
@@ -2374,19 +2501,7 @@ export function SdLiveDashboard() {
 
   return (
     <div ref={dashboardRef} className={`space-y-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
-      {pdfBusy ? (
-        <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
-            <div className="min-w-0 border-l border-border pl-3">
-              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal — Sales Analytics</p>
-            </div>
-          </div>
-          <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
-            {reportDate(filters.from || firstPostingDate)} – {reportDate(effectiveFilters.to)}
-          </div>
-        </div>
-      ) : null}
+      {pdfBusy ? <PdfExecutiveReport analytics={analytics} quarters={quarterSummaries} totalRevenue={totalRevenue} postingCount={filtered.length} dateRange={`${reportDate(filters.from || firstPostingDate)} – ${reportDate(effectiveFilters.to)}`} /> : null}
 
       {/* executive header */}
       <div data-pdf-exclude className="flex flex-wrap items-end justify-between gap-3">
@@ -3125,19 +3240,7 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          {pdfExportAllModels ? (
-            Array.from({ length: Math.ceil(analytics.modelPerformance.length / 10) }, (_, page) => {
-              const models = analytics.modelPerformance.slice(page * 10, page * 10 + 10);
-              return (
-                <div key={`pdf-models-${page}`} data-pdf-page-block>
-                  <Panel title="Sales by Model (Amount & Per AH)">
-                    <SalesByModelChart items={models} limit="all" full={false} exportMode />
-                  </Panel>
-                </div>
-              );
-            })
-          ) : (
-            <Panel
+          <Panel
               title="Sales by Model (Amount & Per AH)"
               expandable
               actions={
@@ -3161,7 +3264,6 @@ export function SdLiveDashboard() {
                 <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
               )}
             </Panel>
-          )}
 
           <div data-pdf-exclude>
             <LinesTable
