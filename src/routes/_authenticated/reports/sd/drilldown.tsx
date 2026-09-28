@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv } from "@/lib/chart-export";
-import { applySdFilters, fetchSdLines, type SdFilters, type SdLine } from "@/lib/sd-live";
+import { applySdFilters, currentFiscalYear, fetchSdLines, type SdFilters, type SdLine } from "@/lib/sd-live";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authenticated/reports/sd/drilldown")({
     customer: typeof search["customer"] === "string" ? search["customer"] : "",
     from: typeof search["from"] === "string" ? search["from"] : "",
     to: typeof search["to"] === "string" ? search["to"] : "",
-    fiscalYears: strings(search["fiscalYears"]),
+    fiscalYears: Object.prototype.hasOwnProperty.call(search, "fiscalYears")
+      ? strings(search["fiscalYears"])
+      : [currentFiscalYear()],
     quarters: strings(search["quarters"]),
     salesType: typeof search["salesType"] === "string" ? search["salesType"] : "",
     segments: strings(search["segments"]),

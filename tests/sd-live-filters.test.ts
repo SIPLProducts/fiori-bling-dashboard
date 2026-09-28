@@ -3,6 +3,10 @@ import {
   applySdFilters,
   buildSdAnalytics,
   buildQuarterSummaries,
+  currentFiscalYear,
+  currentFiscalYearRange,
+  currentSdFilters,
+  fiscalYearsForDateRange,
   fiscalYearForDate,
   fiscalQuarter,
   limitModelPerformance,
@@ -95,6 +99,21 @@ const row = (fiscalYear: string, postingDate: string): SdLine => ({
 });
 
 describe("sales dashboard fiscal multi-select filters", () => {
+  test("defaults reports to the current April–March fiscal year", () => {
+    const september = new Date(2026, 8, 28);
+    const february = new Date(2027, 1, 5);
+
+    expect(currentFiscalYear(september)).toBe("2026");
+    expect(currentFiscalYear(february)).toBe("2026");
+    expect(currentFiscalYearRange(september)).toEqual({
+      fiscalYear: "2026",
+      from: "2026-04-01",
+      to: "2026-09-28",
+    });
+    expect(currentSdFilters(february).fiscalYears).toEqual(["2026"]);
+    expect(fiscalYearsForDateRange("2025-10-01", "2026-08-31")).toEqual(["2025", "2026"]);
+  });
+
   test("maps April–March fiscal quarters", () => {
     expect(fiscalQuarter("2026-04-01")).toBe("Q1");
     expect(fiscalQuarter("2026-07-01")).toBe("Q2");

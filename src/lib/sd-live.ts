@@ -289,6 +289,16 @@ export function currentSdFilters(date = new Date()): SdFilters {
   };
 }
 
+export function fiscalYearsForDateRange(from: string, to: string): string[] {
+  if (!from && !to) return [currentFiscalYear()];
+  const startYear = Number(fiscalYearForDate(from || to));
+  const endYear = Number(fiscalYearForDate(to || from));
+  if (!Number.isFinite(startYear) || !Number.isFinite(endYear)) return [];
+  const first = Math.min(startYear, endYear);
+  const last = Math.max(startYear, endYear);
+  return Array.from({ length: last - first + 1 }, (_, index) => String(first + index));
+}
+
 export function localIsoDate(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
