@@ -148,6 +148,12 @@ async function applySchedule(input: EndpointInput): Promise<void> {
       `Choose at least one valid daily IST time, or enter a valid 5-field advanced schedule.`,
     );
   }
+  // Self-hosted installations run the middleware scheduler, which reads the
+  // saved expression directly. The hosted database timer only accepts cron.
+  if (IS_STATIC_BUILD) return;
+  if (dailyTimes !== null) {
+    throw new Error("Daily IST times are available on self-hosted installations.");
+  }
   const { error } = await supabase.rpc("apply_sap_sync_schedule", {
     _endpoint: input.name.trim(),
     _enabled: input.scheduler_enabled,
