@@ -195,7 +195,7 @@ export function OpenSalesOrdersDashboard() {
     filteredData.forEach((row) => zoneMap.set(row.zone.replace(" Zone", ""), (zoneMap.get(row.zone.replace(" Zone", "")) ?? 0) + 1));
     const zones = [...zoneMap].map(([name, count]) => ({ name, count, share: percent(count, filteredData.length) })).sort((a, b) => b.count - a.count);
     const partialCount = filteredData.filter((row) => row.deliveredQuantity > 0).length;
-    const documentTypes = ["ZDOR", "ZEOR", "ZSOR"].map((name) => {
+    const documentTypes = [...new Set(filteredData.map((row) => row.documentType))].sort().map((name) => {
       const rows = filteredData.filter((row) => row.documentType === name);
       return { name, count: rows.length, value: rows.reduce((sum, row) => sum + row.value, 0) };
     });

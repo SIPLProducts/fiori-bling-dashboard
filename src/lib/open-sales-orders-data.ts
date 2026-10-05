@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { loadConsistentPagedRows, type SdDatasetMarker } from "@/lib/sd-live";
 
 export type OpenSalesOrder = {
   order: string;
@@ -29,6 +30,8 @@ export type OpenSalesOrder = {
 };
 
 type OpenSalesOrderRecord = {
+  id: string;
+  updated_at: string;
   sales_order: string;
   sales_order_item: string | null;
   order_type: string | null;
@@ -60,7 +63,7 @@ type OpenSalesOrderRecord = {
   overall_status: string | null;
 };
 
-const OPEN_ORDER_COLUMNS = "sales_order,sales_order_item,order_type,customer_sold_to,customer_sold_to_name,material,material_description,model,product_range,product_type,division,quantity,open_quantity,delivered_quantity,open_value,delivery_date,order_date,days_open,sales_org,distribution_channel,sales_office,sales_group,sales_zone,region,sales_type,profit_center,product_category,delivery_status,overall_status";
+const OPEN_ORDER_COLUMNS = "id,updated_at,sales_order,sales_order_item,order_type,customer_sold_to,customer_sold_to_name,material,material_description,model,product_range,product_type,division,quantity,open_quantity,delivered_quantity,open_value,delivery_date,order_date,days_open,sales_org,distribution_channel,sales_office,sales_group,sales_zone,region,sales_type,profit_center,product_category,delivery_status,overall_status";
 const PAGE_SIZE = 1000;
 const text = (value: string | null | undefined, fallback = "Unassigned") => value?.trim() || fallback;
 const amount = (value: number | string | null) => Number(value) || 0;
@@ -98,19 +101,30 @@ function toDashboardRow(row: OpenSalesOrderRecord): OpenSalesOrder {
 }
 
 export async function getOpenSalesOrders() {
-  const records: OpenSalesOrderRecord[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
+  const readMarker = async (): Promise<SdDatasetMarker> => {
+    const [countResult, latestResult] = await Promise.all([
+      supabase.from("open_sales_orders").select("id", { count: "exact", head: true }).eq("is_active_snapshot", true),
+      supabase.from("open_sales_orders").select("updated_at").eq("is_active_snapshot", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    if (countResult.error) throw countResult.error;
+    if (latestResult.error) throw latestResult.error;
+    return { count: countResult.count ?? 0, latestUpdatedAt: latestResult.data?.updated_at ?? "" };
+  };
+  const records = await loadConsistentPagedRows<OpenSalesOrderRecord>({
+    readMarker,
+    readPage: async (from) => {
+      const { data, error } = await supabase
       .from("open_sales_orders")
       .select(OPEN_ORDER_COLUMNS)
       .eq("is_active_snapshot", true)
       .order("sales_order", { ascending: true })
       .order("sales_order_item", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(`Unable to load Open Sales Orders: ${error.message}`);
-    const page = (data ?? []) as unknown as OpenSalesOrderRecord[];
-    records.push(...page);
-    if (page.length < PAGE_SIZE) break;
-  }
+      if (error) throw new Error(`Unable to load Open Sales Orders: ${error.message}`);
+      return (data ?? []) as unknown as OpenSalesOrderRecord[];
+    },
+    rowKey: (row) => row.id,
+    pageSize: PAGE_SIZE,
+  });
   return records.map(toDashboardRow);
 }
