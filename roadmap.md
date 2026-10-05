@@ -124,3 +124,4 @@
 - [x] Place the Open Sales Orders PDF title on its own line between the repeating HBL header and summary tiles.
 - [x] Make Document Type multi-select with ZDOR, ZEOR, and ZSOR checked by default.
 - [x] Convert every Open Sales Orders list filter to checkbox multi-select while keeping non-document filters unrestricted by default.
+- [x] Replace the Open Sales Orders launchpad sample with a live current-financial-year count and latest update time.

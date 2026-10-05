@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { TileRecord } from "@/lib/sap.functions";
 import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
+import { OpenSalesOrdersLaunchCard } from "@/components/open-sales-orders-launch-card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
@@ -101,6 +102,7 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
 export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {
   const fallback = <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties} trend={kpi?.trend} href={tile.target_path ?? "/launchpad"} accent={(tile.sort_order % 6) + 1} />;
   if (tile.kind === "launch" && tile.target_path === "/reports/module/sd") return <NetSalesLaunchCard fallback={fallback} />;
+  if (tile.kpi_key === "sd_open_orders") return <OpenSalesOrdersLaunchCard fallback={fallback} />;
   const Icon = ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties;
   const href = tile.target_path || "/launchpad";
   return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={(tile.sort_order % 6) + 1} />;
