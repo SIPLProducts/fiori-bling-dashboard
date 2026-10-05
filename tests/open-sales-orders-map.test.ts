@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mapOpenSalesOrdersPayload } from "../src/lib/open-sales-orders-map";
 
 const sample = [
-  { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE: "", NETWR: " 10683424.19", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
+  { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE1: "10683424.19", NETWR: "999", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
   { VBELN: "1027920", POSNR: 50, ERDAT: "2017-07-21", KWMENG: "1.000", KWMENG_P: "1.000", NETWR: "0.00" },
 ];
 

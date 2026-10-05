@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Clock3,
   Download,
   FileText,
   FileSpreadsheet,
@@ -88,8 +87,8 @@ function Panel({ title, children, className = "" }: { title: string; children: R
   );
 }
 
-function SummaryCard({ label, value, delta, icon: Icon, tone, lowerIsBetter = false }: { label: string; value: string; delta: number; icon: ComponentType<{ className?: string }>; tone: Tone; lowerIsBetter?: boolean }) {
-  const positive = lowerIsBetter ? delta <= 0 : delta >= 0;
+function SummaryCard({ label, value, delta, icon: Icon, tone }: { label: string; value: string; delta: number; icon: ComponentType<{ className?: string }>; tone: Tone }) {
+  const positive = delta >= 0;
   const styles = TONE_STYLES[tone];
   return (
     <section className={`flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
@@ -195,7 +194,6 @@ export function OpenSalesOrdersDashboard() {
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
     const totalQuantity = filteredData.reduce((sum, row) => sum + row.openQuantity, 0);
-    const averageDays = filteredData.reduce((sum, row) => sum + row.daysOpen, 0) / Math.max(1, filteredData.length);
     const buckets = [
       { name: "1 – 180 Days", rows: filteredData.filter((row) => row.daysOpen <= 180) },
       { name: "181 – 365 Days", rows: filteredData.filter((row) => row.daysOpen > 180 && row.daysOpen <= 365) },
@@ -219,7 +217,6 @@ export function OpenSalesOrdersDashboard() {
     return {
       totalValue,
       totalQuantity,
-      averageDays,
       buckets,
       zones,
       partialCount,
@@ -325,11 +322,10 @@ export function OpenSalesOrdersDashboard() {
         </div> : null}
       </section>
 
-      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-3">
         <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} delta={periodChange(filteredData, () => 1)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} delta={periodChange(filteredData, (row) => row.value)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} delta={periodChange(filteredData, (row) => row.openQuantity)} icon={Package} tone="violet" />
-        <SummaryCard label="Average Days Open" value={formatNumber(metrics.averageDays)} delta={periodChange(filteredData, (row) => row.daysOpen)} icon={Clock3} tone="warning" lowerIsBetter />
       </div>
 
       <div data-pdf-page-block className="grid gap-4 xl:grid-cols-2">
@@ -384,7 +380,7 @@ export function OpenSalesOrdersDashboard() {
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
       </div>
 
-      <section data-pdf-page-block data-pdf-section-break className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
+      <section data-pdf-exclude className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(filteredData.length)} filtered orders</p></div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Page {tablePage} of {tablePageCount}</span><Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !filteredData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button></div>
