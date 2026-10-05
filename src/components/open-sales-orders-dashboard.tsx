@@ -48,7 +48,6 @@ import { MultiSelect } from "@/components/multi-select";
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
 const formatNumber = (value: number) => Math.round(value).toLocaleString("en-IN");
-const ALL = "__all__";
 const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
 
 type Filters = {
