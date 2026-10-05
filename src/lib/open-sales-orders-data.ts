@@ -78,6 +78,8 @@ type OpenSalesOrderRecord = {
   quantity: number | string | null;
   open_quantity: number | string | null;
   delivered_quantity: number | string | null;
+  unit: string | null;
+  currency: string | null;
   open_value: number | string | null;
   delivery_date: string | null;
   order_date: string | null;
