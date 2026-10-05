@@ -36,20 +36,24 @@ export type Database = {
           currency: string | null
           customer_bill_to: string | null
           customer_bill_to_name: string | null
+          customer_group: string | null
           customer_ship_to: string | null
           customer_ship_to_name: string | null
           customer_sold_to: string | null
           customer_sold_to_name: string | null
           days_open: number
+          delivered_quantity: number
           delivery_date: string | null
           delivery_status: string | null
           distribution_channel: string | null
           division: string | null
           id: string
+          industry_description: string | null
           is_active_snapshot: boolean
           material: string | null
           material_description: string | null
           material_type: string | null
+          model: string | null
           occurrence_no: number
           open_quantity: number
           open_value: number
@@ -57,8 +61,11 @@ export type Database = {
           order_type: string | null
           overall_status: string | null
           plant: string | null
+          plant_name: string | null
           preceding_document: string | null
           product_category: string | null
+          product_range: string | null
+          product_type: string | null
           profit_center: string | null
           purchase_order: string | null
           purchase_order_date: string | null
@@ -72,13 +79,16 @@ export type Database = {
           sales_order: string
           sales_order_item: string | null
           sales_org: string | null
+          sales_rep_name: string | null
           sales_type: string | null
+          sales_zone: string | null
           snapshot_id: string
           source_endpoint: string
           sync_scope_key: string
           synced_at: string
           unit: string | null
           updated_at: string
+          usage_description: string | null
         }
         Insert: {
           country?: string | null
@@ -86,20 +96,24 @@ export type Database = {
           currency?: string | null
           customer_bill_to?: string | null
           customer_bill_to_name?: string | null
+          customer_group?: string | null
           customer_ship_to?: string | null
           customer_ship_to_name?: string | null
           customer_sold_to?: string | null
           customer_sold_to_name?: string | null
           days_open?: number
+          delivered_quantity?: number
           delivery_date?: string | null
           delivery_status?: string | null
           distribution_channel?: string | null
           division?: string | null
           id?: string
+          industry_description?: string | null
           is_active_snapshot?: boolean
           material?: string | null
           material_description?: string | null
           material_type?: string | null
+          model?: string | null
           occurrence_no?: number
           open_quantity?: number
           open_value?: number
@@ -107,8 +121,11 @@ export type Database = {
           order_type?: string | null
           overall_status?: string | null
           plant?: string | null
+          plant_name?: string | null
           preceding_document?: string | null
           product_category?: string | null
+          product_range?: string | null
+          product_type?: string | null
           profit_center?: string | null
           purchase_order?: string | null
           purchase_order_date?: string | null
@@ -122,13 +139,16 @@ export type Database = {
           sales_order: string
           sales_order_item?: string | null
           sales_org?: string | null
+          sales_rep_name?: string | null
           sales_type?: string | null
+          sales_zone?: string | null
           snapshot_id: string
           source_endpoint: string
           sync_scope_key: string
           synced_at?: string
           unit?: string | null
           updated_at?: string
+          usage_description?: string | null
         }
         Update: {
           country?: string | null
@@ -136,20 +156,24 @@ export type Database = {
           currency?: string | null
           customer_bill_to?: string | null
           customer_bill_to_name?: string | null
+          customer_group?: string | null
           customer_ship_to?: string | null
           customer_ship_to_name?: string | null
           customer_sold_to?: string | null
           customer_sold_to_name?: string | null
           days_open?: number
+          delivered_quantity?: number
           delivery_date?: string | null
           delivery_status?: string | null
           distribution_channel?: string | null
           division?: string | null
           id?: string
+          industry_description?: string | null
           is_active_snapshot?: boolean
           material?: string | null
           material_description?: string | null
           material_type?: string | null
+          model?: string | null
           occurrence_no?: number
           open_quantity?: number
           open_value?: number
@@ -157,8 +181,11 @@ export type Database = {
           order_type?: string | null
           overall_status?: string | null
           plant?: string | null
+          plant_name?: string | null
           preceding_document?: string | null
           product_category?: string | null
+          product_range?: string | null
+          product_type?: string | null
           profit_center?: string | null
           purchase_order?: string | null
           purchase_order_date?: string | null
@@ -172,13 +199,16 @@ export type Database = {
           sales_order?: string
           sales_order_item?: string | null
           sales_org?: string | null
+          sales_rep_name?: string | null
           sales_type?: string | null
+          sales_zone?: string | null
           snapshot_id?: string
           source_endpoint?: string
           sync_scope_key?: string
           synced_at?: string
           unit?: string | null
           updated_at?: string
+          usage_description?: string | null
         }
         Relationships: []
       }
