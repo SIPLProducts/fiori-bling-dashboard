@@ -48,21 +48,23 @@ const ALL = "__all__";
 
 type Filters = {
   documentType: string;
-  salesOrg: string;
-  channel: string;
-  office: string;
   customer: string;
-  salesGroup: string;
+  zone: string;
+  salesType: string;
+  product: string;
+  division: string;
 };
 
 const EMPTY_FILTERS: Filters = {
   documentType: ALL,
-  salesOrg: ALL,
-  channel: ALL,
-  office: ALL,
   customer: ALL,
-  salesGroup: ALL,
+  zone: ALL,
+  salesType: ALL,
+  product: ALL,
+  division: ALL,
 };
+
+const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
 
 type Tone = "primary" | "success" | "violet" | "warning";
 const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
@@ -158,22 +160,22 @@ export function OpenSalesOrdersDashboard() {
   const tablePageSize = 10;
   const options = useMemo(() => ({
     documentType: [...new Set(data.map((row) => row.documentType))].sort(),
-    salesOrg: [...new Set(data.map((row) => row.salesOrg))].sort(),
-    channel: [...new Set(data.map((row) => row.channel))].sort(),
-    office: [...new Set(data.map((row) => row.office))].sort(),
     customer: [...new Set(data.map((row) => row.customer))].sort(),
-    salesGroup: [...new Set(data.map((row) => row.salesGroup))].sort(),
+    zone: [...new Set(data.map((row) => row.zone))].sort(),
+    salesType: [...new Set(data.map((row) => row.salesType))].sort(),
+    product: [...new Set(data.map(productKey))].sort(),
+    division: [...new Set(data.map((row) => row.division))].sort(),
   }), [data]);
   const filteredData = useMemo(() => data.filter((row) => {
     const rowDate = new Date(`${row.orderDate}T00:00:00`);
     if (dateRange?.from && rowDate < dateRange.from) return false;
     if (dateRange?.to && rowDate > dateRange.to) return false;
     if (filters.documentType !== ALL && row.documentType !== filters.documentType) return false;
-    if (filters.salesOrg !== ALL && row.salesOrg !== filters.salesOrg) return false;
-    if (filters.channel !== ALL && row.channel !== filters.channel) return false;
-    if (filters.office !== ALL && row.office !== filters.office) return false;
     if (filters.customer !== ALL && row.customer !== filters.customer) return false;
-    if (filters.salesGroup !== ALL && row.salesGroup !== filters.salesGroup) return false;
+    if (filters.zone !== ALL && row.zone !== filters.zone) return false;
+    if (filters.salesType !== ALL && row.salesType !== filters.salesType) return false;
+    if (filters.product !== ALL && productKey(row) !== filters.product) return false;
+    if (filters.division !== ALL && row.division !== filters.division) return false;
     return true;
   }), [data, dateRange, filters]);
   const activeFilterCount = Number(Boolean(dateRange?.from)) + Object.values(filters).filter((value) => value !== ALL).length;
@@ -191,9 +193,16 @@ export function OpenSalesOrdersDashboard() {
       { name: "181 – 365 Days", rows: filteredData.filter((row) => row.daysOpen > 180 && row.daysOpen <= 365) },
       { name: "> 365 Days", rows: filteredData.filter((row) => row.daysOpen > 365) },
     ].map((bucket) => ({ ...bucket, count: bucket.rows.length, value: bucket.rows.reduce((sum, row) => sum + row.value, 0), partialValue: bucket.rows.filter((row) => row.deliveredQuantity > 0).reduce((sum, row) => sum + row.value, 0) }));
-    const zoneMap = new Map<string, number>();
-    filteredData.forEach((row) => zoneMap.set(row.zone.replace(" Zone", ""), (zoneMap.get(row.zone.replace(" Zone", "")) ?? 0) + 1));
-    const zones = [...zoneMap].map(([name, count]) => ({ name, count, share: percent(count, filteredData.length) })).sort((a, b) => b.count - a.count);
+    const zoneMap = new Map<string, { name: string; count: number; quantity: number; value: number }>();
+    filteredData.forEach((row) => {
+      const name = row.zone.replace(" Zone", "");
+      const current = zoneMap.get(name) ?? { name, count: 0, quantity: 0, value: 0 };
+      current.count += 1;
+      current.quantity += row.openQuantity;
+      current.value += row.value;
+      zoneMap.set(name, current);
+    });
+    const zones = [...zoneMap.values()].map((zone) => ({ ...zone, share: percent(zone.count, filteredData.length) })).sort((a, b) => b.count - a.count);
     const partialCount = filteredData.filter((row) => row.deliveredQuantity > 0).length;
     const documentTypes = [...new Set(filteredData.map((row) => row.documentType))].sort().map((name) => {
       const rows = filteredData.filter((row) => row.documentType === name);
@@ -256,12 +265,12 @@ export function OpenSalesOrdersDashboard() {
               <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} className="pointer-events-auto p-3" /></PopoverContent>
             </Popover>
           </FilterField>
-          <FilterSelect label="Sales Document Type" value={filters.documentType} options={options.documentType} onChange={(documentType) => setFilters((current) => ({ ...current, documentType }))} />
-          <FilterSelect label="Sales Organization" value={filters.salesOrg} options={options.salesOrg} onChange={(salesOrg) => setFilters((current) => ({ ...current, salesOrg }))} />
-          <FilterSelect label="Distribution Channel" value={filters.channel} options={options.channel} onChange={(channel) => setFilters((current) => ({ ...current, channel }))} />
-          <FilterSelect label="Sales Office" value={filters.office} options={options.office} onChange={(office) => setFilters((current) => ({ ...current, office }))} />
           <FilterSelect label="Customer" value={filters.customer} options={options.customer} onChange={(customer) => setFilters((current) => ({ ...current, customer }))} />
-          <FilterSelect label="Sales Group" value={filters.salesGroup} options={options.salesGroup} onChange={(salesGroup) => setFilters((current) => ({ ...current, salesGroup }))} />
+          <FilterSelect label="Sales Zone" value={filters.zone} options={options.zone} onChange={(zone) => setFilters((current) => ({ ...current, zone }))} />
+          <FilterSelect label="Sales Type" value={filters.salesType} options={options.salesType} onChange={(salesType) => setFilters((current) => ({ ...current, salesType }))} />
+          <FilterSelect label="Products" value={filters.product} options={options.product} onChange={(product) => setFilters((current) => ({ ...current, product }))} />
+          <FilterSelect label="Division" value={filters.division} options={options.division} onChange={(division) => setFilters((current) => ({ ...current, division }))} />
+          <FilterSelect label="Document Type" value={filters.documentType} options={options.documentType} onChange={(documentType) => setFilters((current) => ({ ...current, documentType }))} />
         </div> : null}
       </section>
 
@@ -297,8 +306,8 @@ export function OpenSalesOrdersDashboard() {
         <Panel title="Open Order Value Trend">
           <ResponsiveContainer width="100%" height={250}><BarChart data={metrics.buckets} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" stackId="value" fill="var(--kpi-1)" isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" stackId="value" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} isAnimationActive={false} /></BarChart></ResponsiveContainer>
         </Panel>
-        <Panel title="Open Orders by Sales Zone">
-          <ResponsiveContainer width="100%" height={250}><BarChart data={metrics.zones} layout="vertical" margin={{ top: 8, right: 54, left: 12, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={50} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Open Orders"]} /><Bar dataKey="count" radius={[0, 3, 3, 0]} isAnimationActive={false}>{metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}<LabelList dataKey="count" position="right" formatter={(value: number) => `${value} (${percent(value, filteredData.length)}%)`} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer>
+        <Panel title="Open Order Lines by Sales Zone">
+          <ResponsiveContainer width="100%" height={Math.max(280, metrics.zones.length * 27)}><BarChart data={metrics.zones} layout="vertical" margin={{ top: 8, right: 92, left: 22, bottom: 24 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} label={{ value: "Open Order Lines", position: "insideBottom", offset: -12, fontSize: 10 }} /><YAxis type="category" dataKey="name" width={88} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} /><Bar dataKey="count" name="Open Order Lines" radius={[0, 3, 3, 0]} isAnimationActive={false}>{metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}<LabelList dataKey="count" position="right" formatter={(value: number) => `${formatNumber(value)} lines (${percent(value, filteredData.length)}%)`} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
 
@@ -350,6 +359,12 @@ function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {
 
 function RankingTooltip({ item }: { item: RankedItem }) {
   return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">{item.name}</p><p>Open Value: {formatCr(item.value)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Orders: {formatNumber(item.count)}</p></div>;
+}
+
+type ZoneItem = { name: string; count: number; quantity: number; value: number; share: number };
+
+function SalesZoneTooltip({ item }: { item: ZoneItem }) {
+  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Open Order Lines: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Open Value: {formatCr(item.value)}</p></div>;
 }
 
 function StatusBadge({ partial }: { partial: boolean }) {
