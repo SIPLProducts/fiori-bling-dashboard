@@ -202,7 +202,10 @@ export function OpenSalesOrdersDashboard() {
   useEffect(() => setTablePage(1), [dateRange, filters]);
   const resetFilters = () => {
     setDateRange(undefined);
-    setFilters(EMPTY_FILTERS);
+    setFilters({
+      ...EMPTY_FILTERS,
+      documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
+    });
   };
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
