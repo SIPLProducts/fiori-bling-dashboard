@@ -22,15 +22,17 @@ function relativeUpdate(value: string | null): string {
 }
 
 async function fetchSummary(from: string, to: string): Promise<Summary> {
-  const constrain = <T extends ReturnType<typeof supabase.from>>(query: T) => query
-    .eq("is_active_snapshot", true)
-    .gte("order_date", from)
-    .lte("order_date", to)
-    .in("order_type", DEFAULT_DOCUMENT_TYPES);
-
   const [countResult, latestResult] = await Promise.all([
-    constrain(supabase.from("open_sales_orders").select("id", { count: "exact", head: true })),
-    constrain(supabase.from("open_sales_orders").select("updated_at"))
+    supabase.from("open_sales_orders").select("id", { count: "exact", head: true })
+      .eq("is_active_snapshot", true)
+      .gte("order_date", from)
+      .lte("order_date", to)
+      .in("order_type", DEFAULT_DOCUMENT_TYPES),
+    supabase.from("open_sales_orders").select("updated_at")
+      .eq("is_active_snapshot", true)
+      .gte("order_date", from)
+      .lte("order_date", to)
+      .in("order_type", DEFAULT_DOCUMENT_TYPES)
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
