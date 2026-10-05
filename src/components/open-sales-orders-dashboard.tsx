@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   Box,
   CalendarDays,
@@ -7,7 +7,9 @@ import {
   ChevronRight,
   ChevronUp,
   Clock3,
+  Download,
   FileText,
+  FileSpreadsheet,
   Filter,
   IndianRupee,
   Package,
@@ -40,6 +42,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import hblLogo from "@/assets/hbl-logo.png";
+import { exportDashboardPdf } from "@/lib/chart-export";
+import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -144,6 +149,7 @@ function StatusCard({ title, count, share, partial }: { title: string; count: nu
 }
 
 export function OpenSalesOrdersDashboard() {
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const { data = [], error, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["open-sales-orders-live"],
     queryFn: getOpenSalesOrders,
@@ -157,6 +163,8 @@ export function OpenSalesOrdersDashboard() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [tablePage, setTablePage] = useState(1);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [excelBusy, setExcelBusy] = useState(false);
   const tablePageSize = 10;
   const options = useMemo(() => ({
     documentType: [...new Set(data.map((row) => row.documentType))].sort(),
@@ -227,25 +235,65 @@ export function OpenSalesOrdersDashboard() {
   }, [filteredData]);
   const tablePageCount = Math.max(1, Math.ceil(filteredData.length / tablePageSize));
   const tableRows = filteredData.slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize);
+  const pdfDateLabel = dateRange?.from
+    ? dateRange.to
+      ? `${format(dateRange.from, "dd-MMM-yyyy")} – ${format(dateRange.to, "dd-MMM-yyyy")}`
+      : format(dateRange.from, "dd-MMM-yyyy")
+    : "All order dates";
+
+  const downloadDashboardPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await exportDashboardPdf(dashboardRef.current, "open-sales-orders.pdf", "[data-pdf-exclude]", {
+        headerSelector: "[data-pdf-header]",
+        blockSelector: "[data-pdf-page-block]",
+        sectionBreakSelector: "[data-pdf-section-break]",
+        footerText: "HBL Confidential — Internal Use Only",
+      });
+      toast.success("Open Sales Orders PDF downloaded");
+    } catch (downloadError) {
+      toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download the PDF");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const downloadExcel = async () => {
+    if (!filteredData.length) return toast.error("No filtered orders to export");
+    setExcelBusy(true);
+    try {
+      await downloadOpenSalesOrdersExcel(filteredData);
+      toast.success("Open Sales Orders Excel downloaded");
+    } catch (downloadError) {
+      toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download Excel");
+    } finally {
+      setExcelBusy(false);
+    }
+  };
 
   return (
-    <div className="mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4">
-      <header className="flex items-start justify-between gap-3 px-1">
+    <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
+      {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
+        <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
+        <div className="text-right"><h2 className="text-base font-semibold text-card-foreground">Open Sales Orders</h2><p className="mt-1 text-xs text-muted-foreground">{pdfDateLabel}</p></div>
+      </div> : null}
+      <header data-pdf-exclude className="flex items-start justify-between gap-3 px-1">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders</h1>
           <p className="text-xs text-muted-foreground">Open order position, ageing, delivery status and sales-zone exposure</p>
         </div>
-        <Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
+        <div className="flex items-center gap-2"><Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
           const result = await refetch();
           if (result.error) toast.error(result.error.message);
           else toast.success("Open Sales Orders refreshed");
-        }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />{isFetching ? "Refreshing…" : "Refresh"}</Button>
+        }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />{isFetching ? "Refreshing…" : "Refresh"}</Button><Button type="button" variant="outline" size="sm" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" />{pdfBusy ? "Preparing…" : "PDF"}</Button></div>
       </header>
 
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
       {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
 
-      <section className="rounded-md border border-border bg-card shadow-tile">
+      <section data-pdf-exclude className="rounded-md border border-border bg-card shadow-tile">
         <div className="flex min-h-11 items-center justify-between gap-3 px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <Filter className="size-4 shrink-0 text-primary" />
@@ -274,14 +322,14 @@ export function OpenSalesOrdersDashboard() {
         </div> : null}
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} delta={periodChange(filteredData, () => 1)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} delta={periodChange(filteredData, (row) => row.value)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} delta={periodChange(filteredData, (row) => row.openQuantity)} icon={Package} tone="violet" />
         <SummaryCard label="Average Days Open" value={formatNumber(metrics.averageDays)} delta={periodChange(filteredData, (row) => row.daysOpen)} icon={Clock3} tone="warning" lowerIsBetter />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div data-pdf-page-block className="grid gap-4 xl:grid-cols-2">
         <Panel title="Open Orders by Document Type">
           <div className="grid min-h-64 items-center gap-3 sm:grid-cols-[minmax(180px,0.8fr)_minmax(300px,1.2fr)]">
             <div className="relative h-56">
@@ -303,6 +351,9 @@ export function OpenSalesOrdersDashboard() {
             <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-primary">({percent(bucket.count, filteredData.length)}%)</span></span></div>)}</div>
           </div>
         </Panel>
+      </div>
+
+      <div data-pdf-page-block className="grid gap-4 xl:grid-cols-2">
         <Panel title="Open Order Value Trend">
           <ResponsiveContainer width="100%" height={250}><BarChart data={metrics.buckets} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" stackId="value" fill="var(--kpi-1)" isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" stackId="value" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} isAnimationActive={false} /></BarChart></ResponsiveContainer>
         </Panel>
@@ -311,7 +362,7 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
+      <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
         <StatusCard title="Open Orders (Not Delivered)" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
@@ -324,22 +375,22 @@ export function OpenSalesOrdersDashboard() {
         </section>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 xl:grid-cols-3">
         <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} />
         <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} />
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
       </div>
 
-      <section className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
+      <section data-pdf-page-block data-pdf-section-break className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(filteredData.length)} filtered orders</p></div>
-          <span className="text-xs text-muted-foreground">Page {tablePage} of {tablePageCount}</span>
+          <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Page {tablePage} of {tablePageCount}</span><Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !filteredData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button></div>
         </div>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Customer", "Document Type", "Sales Zone", "Division", "Product", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={14} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters."}</TableCell></TableRow>}</TableBody>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "POSNR", "Customer", "Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters."}</TableCell></TableRow>}</TableBody>
         </Table>
-        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3"><Button variant="outline" size="sm" aria-label="Previous table page" disabled={tablePage <= 1} onClick={() => setTablePage((page) => Math.max(1, page - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={tablePage >= tablePageCount} onClick={() => setTablePage((page) => Math.min(tablePageCount, page + 1))}>Next<ChevronRight /></Button></div>
+        <div data-pdf-exclude className="flex items-center justify-end gap-2 border-t border-border px-4 py-3"><Button variant="outline" size="sm" aria-label="Previous table page" disabled={tablePage <= 1} onClick={() => setTablePage((page) => Math.max(1, page - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={tablePage >= tablePageCount} onClick={() => setTablePage((page) => Math.min(tablePageCount, page + 1))}>Next<ChevronRight /></Button></div>
       </section>
     </div>
   );
