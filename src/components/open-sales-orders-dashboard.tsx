@@ -38,7 +38,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import hblLogo from "@/assets/hbl-logo.png";
@@ -49,25 +48,24 @@ import { MultiSelect } from "@/components/multi-select";
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
 const formatNumber = (value: number) => Math.round(value).toLocaleString("en-IN");
-const ALL = "__all__";
 const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
 
 type Filters = {
   documentTypes: string[];
-  customer: string;
-  zone: string;
-  salesType: string;
-  product: string;
-  division: string;
+  customers: string[];
+  zones: string[];
+  salesTypes: string[];
+  products: string[];
+  divisions: string[];
 };
 
 const EMPTY_FILTERS: Filters = {
   documentTypes: DEFAULT_DOCUMENT_TYPES,
-  customer: ALL,
-  zone: ALL,
-  salesType: ALL,
-  product: ALL,
-  division: ALL,
+  customers: [],
+  zones: [],
+  salesTypes: [],
+  products: [],
+  divisions: [],
 };
 
 const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
@@ -189,16 +187,16 @@ export function OpenSalesOrdersDashboard() {
     if (dateRange?.from && rowDate < dateRange.from) return false;
     if (dateRange?.to && rowDate > dateRange.to) return false;
     if (!filters.documentTypes.includes(row.documentType)) return false;
-    if (filters.customer !== ALL && row.customer !== filters.customer) return false;
-    if (filters.zone !== ALL && row.zone !== filters.zone) return false;
-    if (filters.salesType !== ALL && row.salesType !== filters.salesType) return false;
-    if (filters.product !== ALL && productKey(row) !== filters.product) return false;
-    if (filters.division !== ALL && row.division !== filters.division) return false;
+    if (filters.customers.length && !filters.customers.includes(row.customer)) return false;
+    if (filters.zones.length && !filters.zones.includes(row.zone)) return false;
+    if (filters.salesTypes.length && !filters.salesTypes.includes(row.salesType)) return false;
+    if (filters.products.length && !filters.products.includes(productKey(row))) return false;
+    if (filters.divisions.length && !filters.divisions.includes(row.division)) return false;
     return true;
   }), [data, dateRange, filters]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
     + Number(filters.documentTypes.length > 0)
-    + [filters.customer, filters.zone, filters.salesType, filters.product, filters.division].filter((value) => value !== ALL).length;
+    + [filters.customers, filters.zones, filters.salesTypes, filters.products, filters.divisions].filter((values) => values.length > 0).length;
   useEffect(() => setTablePage(1), [dateRange, filters]);
   const resetFilters = () => {
     setDateRange(undefined);
@@ -329,11 +327,11 @@ export function OpenSalesOrdersDashboard() {
               <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} className="pointer-events-auto p-3" /></PopoverContent>
             </Popover>
           </FilterField>
-          <FilterSelect label="Customer" value={filters.customer} options={options.customer} onChange={(customer) => setFilters((current) => ({ ...current, customer }))} />
-          <FilterSelect label="Sales Zone" value={filters.zone} options={options.zone} onChange={(zone) => setFilters((current) => ({ ...current, zone }))} />
-          <FilterSelect label="Sales Type" value={filters.salesType} options={options.salesType} onChange={(salesType) => setFilters((current) => ({ ...current, salesType }))} />
-          <FilterSelect label="Products" value={filters.product} options={options.product} onChange={(product) => setFilters((current) => ({ ...current, product }))} />
-          <FilterSelect label="Division" value={filters.division} options={options.division} onChange={(division) => setFilters((current) => ({ ...current, division }))} />
+          <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
+          <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
+          <FilterMultiSelect label="Sales Type" selected={filters.salesTypes} options={options.salesType} onChange={(salesTypes) => setFilters((current) => ({ ...current, salesTypes }))} placeholder="All sales types" />
+          <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
+          <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
           <FilterField label="Document Type">
             <MultiSelect
               options={options.documentType.map((type) => ({ value: type, label: type }))}
@@ -426,8 +424,8 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
   return <label className="min-w-0 space-y-1"><span className="block text-[10px] font-medium text-muted-foreground">{label}</span>{children}</label>;
 }
 
-function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return <FilterField label={label}><Select value={value} onValueChange={onChange}><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value={ALL}>All</SelectItem>{options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></FilterField>;
+function FilterMultiSelect({ label, selected, options, onChange, placeholder }: { label: string; selected: string[]; options: string[]; onChange: (value: string[]) => void; placeholder: string }) {
+  return <FilterField label={label}><MultiSelect options={options.map((option) => ({ value: option, label: option }))} selected={selected} onChange={onChange} placeholder={placeholder} /></FilterField>;
 }
 
 function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {
