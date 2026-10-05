@@ -19,4 +19,4 @@
 - Store multiple daily SAP sync times as an `IST:HH:mm,...` schedule expression so self-hosted middleware and hosted scheduling share one backward-compatible field.
 - Give each coming-soon business screen a stable route and permission key backed by one shared placeholder component, so live reports can replace placeholders without changing access or navigation.
 - Scope launchpad sales totals to the same current April–March fiscal-year window as Sales reports, so entry-point cards and dashboards reconcile.
-- Derive Model Wise reporting from filtered ZFISALES `product_type` values and rank by summed sales amount, so it remains source-backed and filter-consistent.
+- Derive Model Wise Type reporting from filtered ZFISALES `product_type` values, retain its complete amount ranking for screen controls, and limit PDF output to Top 10.

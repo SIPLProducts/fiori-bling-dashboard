@@ -108,3 +108,4 @@
 - [x] Let administrators select multiple daily SAP sync times in IST while preserving advanced schedules.
 - [x] Rebrand the Sales PDF header, rename Total Sales to Net Sales, and reorganize SD/FI screens with protected placeholders.
 - [x] Place Sales by Model beside a Top 10 Type-based Model Wise bar chart in equal desktop columns and include both in PDF export.
+- [x] Rename Model Wise to Model Wise Type with Top 10/20/All screen controls while keeping PDF export at Top 10.
