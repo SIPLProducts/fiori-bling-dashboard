@@ -44,14 +44,16 @@ import { toast } from "sonner";
 import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
+import { MultiSelect } from "@/components/multi-select";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
 const formatNumber = (value: number) => Math.round(value).toLocaleString("en-IN");
 const ALL = "__all__";
+const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
 
 type Filters = {
-  documentType: string;
+  documentTypes: string[];
   customer: string;
   zone: string;
   salesType: string;
@@ -60,7 +62,7 @@ type Filters = {
 };
 
 const EMPTY_FILTERS: Filters = {
-  documentType: ALL,
+  documentTypes: DEFAULT_DOCUMENT_TYPES,
   customer: ALL,
   zone: ALL,
   salesType: ALL,
@@ -161,6 +163,7 @@ export function OpenSalesOrdersDashboard() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [excelBusy, setExcelBusy] = useState(false);
@@ -173,11 +176,19 @@ export function OpenSalesOrdersDashboard() {
     product: [...new Set(data.map(productKey))].sort(),
     division: [...new Set(data.map((row) => row.division))].sort(),
   }), [data]);
+  useEffect(() => {
+    if (!data.length || documentTypeDefaultsInitialized.current) return;
+    documentTypeDefaultsInitialized.current = true;
+    setFilters((current) => ({
+      ...current,
+      documentTypes: current.documentTypes.filter((type) => options.documentType.includes(type)),
+    }));
+  }, [data.length, options.documentType]);
   const filteredData = useMemo(() => data.filter((row) => {
     const rowDate = new Date(`${row.orderDate}T00:00:00`);
     if (dateRange?.from && rowDate < dateRange.from) return false;
     if (dateRange?.to && rowDate > dateRange.to) return false;
-    if (filters.documentType !== ALL && row.documentType !== filters.documentType) return false;
+    if (!filters.documentTypes.includes(row.documentType)) return false;
     if (filters.customer !== ALL && row.customer !== filters.customer) return false;
     if (filters.zone !== ALL && row.zone !== filters.zone) return false;
     if (filters.salesType !== ALL && row.salesType !== filters.salesType) return false;
@@ -185,11 +196,16 @@ export function OpenSalesOrdersDashboard() {
     if (filters.division !== ALL && row.division !== filters.division) return false;
     return true;
   }), [data, dateRange, filters]);
-  const activeFilterCount = Number(Boolean(dateRange?.from)) + Object.values(filters).filter((value) => value !== ALL).length;
+  const activeFilterCount = Number(Boolean(dateRange?.from))
+    + Number(filters.documentTypes.length > 0)
+    + [filters.customer, filters.zone, filters.salesType, filters.product, filters.division].filter((value) => value !== ALL).length;
   useEffect(() => setTablePage(1), [dateRange, filters]);
   const resetFilters = () => {
     setDateRange(undefined);
-    setFilters(EMPTY_FILTERS);
+    setFilters({
+      ...EMPTY_FILTERS,
+      documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
+    });
   };
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
@@ -318,7 +334,14 @@ export function OpenSalesOrdersDashboard() {
           <FilterSelect label="Sales Type" value={filters.salesType} options={options.salesType} onChange={(salesType) => setFilters((current) => ({ ...current, salesType }))} />
           <FilterSelect label="Products" value={filters.product} options={options.product} onChange={(product) => setFilters((current) => ({ ...current, product }))} />
           <FilterSelect label="Division" value={filters.division} options={options.division} onChange={(division) => setFilters((current) => ({ ...current, division }))} />
-          <FilterSelect label="Document Type" value={filters.documentType} options={options.documentType} onChange={(documentType) => setFilters((current) => ({ ...current, documentType }))} />
+          <FilterField label="Document Type">
+            <MultiSelect
+              options={options.documentType.map((type) => ({ value: type, label: type }))}
+              selected={filters.documentTypes}
+              onChange={(documentTypes) => setFilters((current) => ({ ...current, documentTypes }))}
+              placeholder="Select document types"
+            />
+          </FilterField>
         </div> : null}
       </section>
 
