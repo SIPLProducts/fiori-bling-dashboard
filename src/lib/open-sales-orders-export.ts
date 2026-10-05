@@ -1,47 +1,73 @@
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 
 export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
-  const XLSX = await import("xlsx");
-  const headers = [
-    "#", "Order No.", "POSNR", "Customer", "Document Type", "Sales Zone", "Division",
-    "Product", "Product Description", "Order Date", "Requested Date", "Days Open",
-    "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status",
+  const { default: ExcelJS } = await import("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "HBL Engineering Limited";
+  const sheet = workbook.addWorksheet("Open Sales Orders", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
+  sheet.columns = [
+    { header: "#", key: "row", width: 7 },
+    { header: "Order No.", key: "order", width: 16 },
+    { header: "POSNR", key: "item", width: 11 },
+    { header: "Customer", key: "customer", width: 32 },
+    { header: "Document Type", key: "documentType", width: 17 },
+    { header: "Sales Zone", key: "zone", width: 19 },
+    { header: "Division", key: "division", width: 13 },
+    { header: "Product", key: "material", width: 19 },
+    { header: "Product Description", key: "description", width: 42 },
+    { header: "Order Date", key: "orderDate", width: 15 },
+    { header: "Requested Date", key: "deliveryDate", width: 17 },
+    { header: "Days Open", key: "daysOpen", width: 13 },
+    { header: "Open Qty", key: "openQuantity", width: 15 },
+    { header: "Delivered Qty", key: "deliveredQuantity", width: 16 },
+    { header: "Open Value (₹ Cr)", key: "value", width: 19 },
+    { header: "Status", key: "status", width: 21 },
   ];
-  const values = rows.map((row, index) => [
-    index + 1,
-    row.order,
-    row.item,
-    row.customer,
-    row.documentType,
-    row.zone.replace(" Zone", ""),
-    row.division,
-    row.material,
-    row.description,
-    row.orderDate,
-    row.deliveryDate,
-    row.daysOpen,
-    row.openQuantity,
-    row.deliveredQuantity,
-    row.value,
-    row.deliveredQuantity > 0 ? "Partially Delivered" : "Open",
-  ]);
-  const sheet = XLSX.utils.aoa_to_sheet([headers, ...values]);
-  sheet["!autofilter"] = { ref: `A1:P${Math.max(1, values.length + 1)}` };
-  sheet["!freeze"] = { xSplit: 0, ySplit: 1, topLeftCell: "A2", activePane: "bottomLeft", state: "frozen" };
-  sheet["!cols"] = [6, 15, 10, 30, 16, 18, 12, 18, 38, 14, 16, 12, 14, 14, 18, 20].map((wch) => ({ wch }));
-  for (let row = 2; row <= values.length + 1; row += 1) {
-    for (const column of ["J", "K"]) {
-      const cell = sheet[`${column}${row}`];
-      if (cell) cell.z = "dd-mmm-yyyy";
-    }
-    for (const column of ["M", "N"]) {
-      const cell = sheet[`${column}${row}`];
-      if (cell) cell.z = "#,##0.00";
-    }
-    const amountCell = sheet[`O${row}`];
-    if (amountCell) amountCell.z = "#,##0.00";
+  rows.forEach((row, index) => sheet.addRow({
+    row: index + 1,
+    order: row.order,
+    item: row.item,
+    customer: row.customer,
+    documentType: row.documentType,
+    zone: row.zone.replace(" Zone", ""),
+    division: row.division,
+    material: row.material,
+    description: row.description,
+    orderDate: row.orderDate,
+    deliveryDate: row.deliveryDate,
+    daysOpen: row.daysOpen,
+    openQuantity: row.openQuantity,
+    deliveredQuantity: row.deliveredQuantity,
+    value: row.value,
+    status: row.deliveredQuantity > 0 ? "Partially Delivered" : "Open",
+  }));
+  sheet.autoFilter = { from: "A1", to: `P${Math.max(1, rows.length + 1)}` };
+  const header = sheet.getRow(1);
+  header.height = 24;
+  header.font = { bold: true, color: { argb: "FFFFFFFF" }, name: "Arial", size: 10 };
+  header.alignment = { vertical: "middle", horizontal: "center" };
+  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } };
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) row.font = { name: "Arial", size: 10 };
+    row.eachCell((cell) => {
+      cell.border = { bottom: { style: "thin", color: { argb: "FFD9E2EC" } } };
+      cell.alignment = { vertical: "middle" };
+    });
+  });
+  for (const key of ["openQuantity", "deliveredQuantity", "value"] as const) {
+    const column = sheet.getColumn(key);
+    column.numFmt = key === "value" ? "#,##0.00" : "#,##0.00;[Red](#,##0.00);-";
   }
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, sheet, "Open Sales Orders");
-  XLSX.writeFile(workbook, "open-sales-orders.xlsx", { compression: true });
+  const bytes = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "open-sales-orders.xlsx";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
