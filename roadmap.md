@@ -117,3 +117,4 @@
 - [x] Rebuild Open Sales Orders to match the supplied four-KPI, aging, trend, zone, delivery-status, and Quick View dashboard.
 - [x] Restore the full six-control Smart Filters card and apply it across every Open Sales Orders metric and chart.
 - [x] Add document-type analysis and filtering, customer/product/model Top 10 cards, and a paginated Open Sales Orders detail table.
+- [x] Refine Open Sales Orders to seven business filters and clarify Sales Zone bars as order-line counts with quantity and value details.
