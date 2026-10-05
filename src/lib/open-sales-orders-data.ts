@@ -4,6 +4,8 @@ export type OpenSalesOrder = {
   material: string;
   description: string;
   quantity: number;
+  openQuantity: number;
+  deliveredQuantity: number;
   value: number;
   deliveryDate: string;
   orderDate: string;
@@ -36,10 +38,12 @@ export const OPEN_SALES_ORDERS: OpenSalesOrder[] = Array.from({ length: 72 }, (_
     material: `MAT-${String(1001 + (index % 18)).padStart(4, "0")}`,
     description: `Product ${String.fromCharCode(65 + (index % 12))}`,
     quantity: 580 + ((index * 337) % 2_900),
+    openQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 1 : 0.58)),
+    deliveredQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 0 : 0.42)),
     value: 1.2 + ((index * 73) % 540) / 100,
     deliveryDate: deliveryDate.toISOString().slice(0, 10),
     orderDate: orderDate.toISOString().slice(0, 10),
-    daysOpen: 8 + ((index * 7) % 31),
+    daysOpen: 24 + ((index * 37) % 760),
     salesOrg: index % 3 === 0 ? "1000" : index % 3 === 1 ? "2000" : "3000",
     channel: index % 3 === 0 ? "Direct" : index % 3 === 1 ? "Dealer" : "Projects",
     office: ["Delhi", "Hyderabad", "Mumbai", "Chennai"][index % 4] ?? "Delhi",
