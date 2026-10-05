@@ -307,7 +307,7 @@ function SalesKpiPage() {
   const kpiCards: KpiCardModel[] = data
     ? [
         {
-          label: "Total sales value",
+          label: "Net sales value",
           value: `₹ ${compact(data.kpis.totalRevenue)}`,
           hint: `${inr(data.totalRows)} line items`,
           icon: IndianRupee,

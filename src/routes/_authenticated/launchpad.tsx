@@ -71,7 +71,7 @@ function Launchpad() {
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
         return <section key={group.key} className="mb-7">
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
-          {group.key === "sales-distribution" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {group.key === "sales-distribution" || group.key === "financial-accounting" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
@@ -85,8 +85,7 @@ function Launchpad() {
               />
             ))}
           </div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <TableStatusTile title={group.key === "financial-accounting" ? "FI Overview" : "PP Overview"} value="Live" note={group.key === "financial-accounting" ? "Financial overview" : "Production overview"} href={group.key === "financial-accounting" ? "/reports/module/fi" : "/reports/module/pp"} action="Open overview" icon={group.key === "financial-accounting" ? CircleDollarSign : Factory} />
-            {groupTiles.filter((tile) => tile.kind === "launch" && tile.screen_key === "fi.tbn").map((tile) => <TileCard key={tile.id} tile={tile} />)}
+            <TableStatusTile title="PP Overview" value="Live" note="Production overview" href="/reports/module/pp" action="Open overview" icon={Factory} />
             {groupTiles.filter((tile) => tile.kind !== "launch").map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div>}
         </section>;

@@ -44,7 +44,9 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     label: "Sales & Distribution",
     groupKey: "sales-distribution",
     children: [
-      { key: "sd.total-sales", label: "Total Sales", tileKey: "sd_total_sales" },
+      { key: "sd.total-sales", label: "Net Sales", tileKey: "sd_total_sales" },
+      { key: "sd.dispatches", label: "Dispatches", tileKey: "sd_dispatches" },
+      { key: "sd.order-book", label: "Order Book", tileKey: "sd_order_book" },
       { key: "sd.open-sales-orders", label: "Open Sales Orders", tileKey: "sd_open_orders" },
     ],
   },
@@ -53,11 +55,9 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     label: "Financial Accounting",
     groupKey: "financial-accounting",
     children: [
-      { key: "fi.open-receivables", label: "Open Receivables", tileKey: "fi_receivables" },
-      { key: "fi.open-payables", label: "Open Payables", tileKey: "fi_payables" },
-      { key: "fi.days-sales-outstanding", label: "Days Sales Outstanding", tileKey: "fi_dso" },
-      { key: "fi.cash-flow-trend", label: "Cash Flow Trend", tileKey: "fi_cash_trend" },
       { key: "fi.tbn", label: "TBN", tileKey: "fi_tbn" },
+      { key: "fi.cash-flow", label: "Cash Flow", tileKey: "fi_cash_flow" },
+      { key: "fi.asset-register", label: "Asset Register", tileKey: "fi_asset_register" },
     ],
   },
   {

@@ -651,7 +651,7 @@ function TotalSalesCard({
     >
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-primary" />
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Sales</p>
+        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Net Sales</p>
         <span className="grid size-7 place-items-center rounded-md bg-primary/10 text-primary"><IndianRupee className="size-3.5" /></span>
       </div>
       <p className="tabular mt-3 text-2xl font-semibold text-card-foreground">{INR_CRORES(amount)}</p>
@@ -2373,15 +2373,24 @@ export function SdLiveDashboard() {
     <div ref={dashboardRef} className={`space-y-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
       {pdfBusy ? (
         <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <img src={hblLogo} alt="HBL" className="h-10 w-auto shrink-0 object-contain" />
-            <div className="min-w-0 border-l border-border pl-3">
-              <p className="truncate text-sm font-semibold text-card-foreground">HBL MIS Enterprise Portal — Sales Analytics</p>
-            </div>
+          <div className="min-w-0">
+            <img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" />
+            <p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p>
           </div>
           <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
             {reportDate(filters.from || firstPostingDate)} – {reportDate(effectiveFilters.to)}
           </div>
+        </div>
+      ) : null}
+
+      {pdfBusy ? (
+        <div data-pdf-page-block className="flex items-center gap-4 border-b border-border bg-card px-4 py-2">
+          <h2 className="mr-auto text-base font-semibold text-foreground">Sales Dashboard</h2>
+          {SALES_TYPE_TABS.map((tab) => (
+            <span key={tab} className={`text-xs font-semibold ${salesTypeTab === tab ? "text-primary" : "text-muted-foreground"}`}>
+              {tab}
+            </span>
+          ))}
         </div>
       ) : null}
 
@@ -2724,7 +2733,7 @@ export function SdLiveDashboard() {
 
           {focus ? (
             <FocusTable
-              title={focus === "revenue" ? "Total Sales by profit centre & customer" : "Billed Customers by document"}
+              title={focus === "revenue" ? "Net Sales by profit centre & customer" : "Billed Customers by document"}
               headers={focusHeaders}
               rows={focusRows}
               onBack={() => setFocus(null)}

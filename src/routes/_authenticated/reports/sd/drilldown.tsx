@@ -96,7 +96,7 @@ function NetSalesDrilldown() {
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const quantity = rows.reduce((sum, row) => sum + row.quantity, 0);
   const kpiLabels: Record<string, string> = {
-    sales: "Total Sales (Amount)",
+    sales: "Net Sales (Amount)",
     growth: "Sales Growth %",
     qty: "Total Quantity",
     cust: "Active Customers",
@@ -176,7 +176,7 @@ function NetSalesDrilldown() {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-md border border-border bg-card p-4 shadow-tile"><p className="text-xs text-muted-foreground">Posting lines</p><p className="mt-1 text-2xl font-semibold tabular">{rows.length.toLocaleString("en-IN")}</p></div>
-          <div className="rounded-md border border-border bg-card p-4 shadow-tile"><p className="text-xs text-muted-foreground">Total sales</p><p className="mt-1 text-2xl font-semibold tabular">{money(total)}</p></div>
+          <div className="rounded-md border border-border bg-card p-4 shadow-tile"><p className="text-xs text-muted-foreground">Net sales</p><p className="mt-1 text-2xl font-semibold tabular">{money(total)}</p></div>
           <div className="rounded-md border border-border bg-card p-4 shadow-tile"><p className="text-xs text-muted-foreground">Total quantity</p><p className="mt-1 text-2xl font-semibold tabular">{number(quantity)}</p></div>
         </div>
 

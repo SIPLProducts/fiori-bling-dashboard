@@ -69,7 +69,7 @@ async function fetchSummary(): Promise<Summary | null> {
   };
 }
 
-/** Launchpad replacement for the plain SD tile: live Total Sales card. */
+/** Launchpad replacement for the plain SD tile: live Net Sales card. */
 export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: ["net-sales-summary"],
@@ -95,7 +95,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[11px] font-semibold tracking-wide text-primary uppercase">
-              Total Sales
+              Net Sales
             </p>
             <p className="tabular mt-1 text-[26px] leading-none font-semibold" style={{ color }}>
               ₹{compact(data.total)}
@@ -135,7 +135,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
           <Link
             to="/reports/module/$module"
             params={{ module: "sd" }}
-            aria-label="Open Total Sales details"
+            aria-label="Open Net Sales details"
             className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
           >
             Open Details
