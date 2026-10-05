@@ -118,3 +118,4 @@
 - [x] Restore the full six-control Smart Filters card and apply it across every Open Sales Orders metric and chart.
 - [x] Add document-type analysis and filtering, customer/product/model Top 10 cards, and a paginated Open Sales Orders detail table.
 - [x] Refine Open Sales Orders to seven business filters and clarify Sales Zone bars as order-line counts with quantity and value details.
+- [x] Add POSNR, Product, Product Description, full filtered Excel export, and branded filter-free PDF export to Open Sales Orders.
