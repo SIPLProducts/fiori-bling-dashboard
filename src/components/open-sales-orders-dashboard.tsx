@@ -260,7 +260,10 @@ export function OpenSalesOrdersDashboard() {
   };
 
   const downloadExcel = async () => {
-    if (!filteredData.length) return toast.error("No filtered orders to export");
+    if (!filteredData.length) {
+      toast.error("No filtered orders to export");
+      return;
+    }
     setExcelBusy(true);
     try {
       await downloadOpenSalesOrdersExcel(filteredData);
