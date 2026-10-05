@@ -2,7 +2,7 @@
 
 ## Behavior
 - Make the Request Date the single source of truth for the Open Sales Orders request.
-- Whenever the date is selected, typed, cleared, or replaced, immediately rebuild the payload with `fkdat` in `YYYYMMDD` format while preserving every other payload field.
+- Whenever any date is selected, immediately rebuild the visible payload with `fkdat` in `YYYYMMDD` format while preserving every other payload field; for example, 05-10-2026 becomes `20261005` before Save.
 - Keep the date picker and payload aligned when the endpoint opens, including saved payloads where `fkdat` is missing or invalid.
 - Keep manual/Test requests on the saved selected date and scheduled requests on the current run date.
 - Leave all other SAP endpoint date controls and payload behavior unchanged.
@@ -18,5 +18,6 @@
 - Recheck the Request tab visually and confirm a clean preview build.
 
 ## Technical details
-- Consolidate picker and payload updates through one Open Sales Orders date-update helper instead of relying only on the native date input change event.
+- Replace the native browser date input with the existing calendar-style date picker and keep its calendar interactive inside the popup.
+- Consolidate picker and payload updates through one Open Sales Orders date-update helper.
 - Add regression coverage at both helper and rendered interaction levels.
