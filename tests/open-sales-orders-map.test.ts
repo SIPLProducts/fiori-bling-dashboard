@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { mapOpenSalesOrdersPayload } from "../src/lib/open-sales-orders-map";
 
-const uploaded = "/mnt/user-uploads/APPTYP_SECTOR_VTWEG_01_pasted.txt";
-const sample = JSON.parse(`[${readFileSync(uploaded, "utf8").trim().replace(/,\s*$/, "")}]`) as Record<string, unknown>[];
+const sample = [
+  { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE: "", NETWR: " 10683424.19", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
+  { VBELN: "1027920", POSNR: 50, ERDAT: "2017-07-21", KWMENG: "1.000", KWMENG_P: "1.000", NETWR: "0.00" },
+];
 
 describe("Open Sales Orders mapping", () => {
   test("maps the attached VBELN + POSNR keys and preserves the raw response", () => {
     const result = mapOpenSalesOrdersPayload(sample, "Open _Sales _Orders");
     expect(result.rows.map((row) => [row.sales_order, row.sales_order_item])).toEqual([["1027671", "150"], ["1027920", "50"]]);
-    expect(Object.keys(result.rows[0]?.raw ?? {})).toHaveLength(125);
+    expect(result.rows[0]?.raw).toEqual(sample[0]);
   });
 
   test("normalizes quantities, dates, descriptions and pending value fallback", () => {
