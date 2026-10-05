@@ -2434,11 +2434,6 @@ export function SdLiveDashboard() {
       {pdfBusy ? (
         <div data-pdf-page-block className="flex items-center gap-4 border-b border-border bg-card px-4 py-2">
           <h2 className="mr-auto text-base font-semibold text-foreground">Sales Dashboard</h2>
-          {SALES_TYPE_TABS.map((tab) => (
-            <span key={tab} className={`text-xs font-semibold ${salesTypeTab === tab ? "text-primary" : "text-muted-foreground"}`}>
-              {tab}
-            </span>
-          ))}
         </div>
       ) : null}
 
@@ -2789,8 +2784,9 @@ export function SdLiveDashboard() {
             />
           ) : (
             <>
-          {/* Row 2 — customers, sales trend, top profit centres */}
-          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
+          {/* PDF pairs these six cards into three break-safe rows; screen keeps the three-column layout. */}
+          <div className={pdfBusy ? "space-y-4" : "grid gap-4 lg:grid-cols-3"}>
+            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Top 10 Customers" accent={2} expandable>
               {(full: boolean) => (
                 <BarList
@@ -2886,17 +2882,19 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
+            </div>
 
+            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Top 10 Profit Centres" accent={4} expandable>
               {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
-          </div>
 
-          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
             <Panel title="Segment" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
+            </div>
 
+            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Customer Contribution (Top Sales up to 10)" accent={1} expandable>
               {(full: boolean) => (
                 <div className={`cxo-chart-surface ${full ? "h-full" : ""}`}>
@@ -3018,6 +3016,7 @@ export function SdLiveDashboard() {
                 </div>
               )}
             </Panel>
+            </div>
           </div>
 
           <div data-pdf-page-block className="grid gap-4 lg:grid-cols-2">
