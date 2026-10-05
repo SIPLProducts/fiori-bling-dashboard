@@ -602,6 +602,42 @@ describe("Sales by Model amount and per-AH analytics", () => {
   });
 });
 
+describe("Model Wise Type analytics", () => {
+  test("groups Type values, retains counts and negatives, and limits the ranking to ten", () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      ...row("2026", `2026-04-${String(index + 1).padStart(2, "0")}`),
+      productType: index === 11 ? "" : `Type ${index + 1}`,
+      amount: (12 - index) * 1_000_000,
+    }));
+    rows.push({ ...row("2026", "2026-04-20"), productType: "Type 1", amount: -500_000 });
+
+    const analytics = buildSdAnalytics(rows);
+
+    expect(analytics.typePerformance).toHaveLength(10);
+    expect(analytics.typePerformance[0]).toEqual({
+      type: "Type 1",
+      totalAmount: 11_500_000,
+      recordCount: 2,
+      salesSharePct: (11_500_000 / 77_500_000) * 100,
+    });
+    expect(analytics.typePerformance.some((item) => item.type === "Unassigned")).toBe(false);
+    expect(analytics.typePerformance.map((item) => item.totalAmount)).toEqual(
+      [...analytics.typePerformance.map((item) => item.totalAmount)].sort((a, b) => b - a),
+    );
+  });
+
+  test("groups blank Type values under Unassigned", () => {
+    const analytics = buildSdAnalytics([
+      { ...row("2026", "2026-04-01"), productType: "", amount: 2_000_000 },
+      { ...row("2026", "2026-04-02"), productType: "  ", amount: 1_000_000 },
+    ]);
+
+    expect(analytics.typePerformance).toEqual([
+      { type: "Unassigned", totalAmount: 3_000_000, recordCount: 2, salesSharePct: 100 },
+    ]);
+  });
+});
+
 describe("dynamic management alerts", () => {
   test("derives labelled alert points from the filtered sales rows", () => {
     const rows = [

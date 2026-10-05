@@ -557,6 +557,13 @@ export type ModelPerformance = {
   salesSharePct: number;
 };
 
+export type TypePerformance = {
+  type: string;
+  totalAmount: number;
+  recordCount: number;
+  salesSharePct: number;
+};
+
 export function limitModelPerformance(items: ModelPerformance[], limit: 10 | 20 | "all") {
   return limit === "all" ? items : items.slice(0, limit);
 }
@@ -639,6 +646,7 @@ export type SdAnalytics = {
   topMaterials: NamedTotal[];
   topSalesEmployees: NamedTotal[];
   modelPerformance: ModelPerformance[];
+  typePerformance: TypePerformance[];
   byMainGroup: NamedTotal[];
   subGroupsByMainGroup: Record<string, NamedTotal[]>;
   divisionsByMainGroup: Record<string, NamedTotal[]>;
@@ -667,6 +675,7 @@ function postingMonthLabel(postingDate: string, fallbackMonth: string): string {
 
 export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
   const byType = new Map<string, NamedTotal>();
+  const byProductType = new Map<string, NamedTotal>();
   const byNewRepl = new Map<string, NamedTotal>();
   const byPc = new Map<string, NamedTotal>();
   const byCust = new Map<string, NamedTotal>();
@@ -732,6 +741,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
+    add(byProductType, r.productType.trim() || "Unassigned", r.amount);
     if (r.newRepl.trim()) add(byNewRepl, r.newRepl.trim(), r.amount);
     else unassignedNewReplCount += 1;
     add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
@@ -974,6 +984,12 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     topMaterials: rank(byMat, 10),
     topSalesEmployees: rank(byEmp, 10),
     modelPerformance,
+    typePerformance: rank(byProductType, 10).map((item) => ({
+      type: item.name,
+      totalAmount: item.value,
+      recordCount: item.count,
+      salesSharePct: revenue !== 0 ? (item.value / revenue) * 100 : 0,
+    })),
     byMainGroup: rank(byMain),
     subGroupsByMainGroup: Object.fromEntries(
       [...bySub.entries()].map(([main, subs]) => [main, rank(subs)]),
