@@ -19,7 +19,7 @@ export function mapOpenSalesOrderRow(raw: Raw, sourceEndpoint: string, syncedAt:
   const openQuantity = pick(raw, ["KWMENG_P", "KWMENG_PC", "OPEN_QTY", "openQuantity"]);
   const normalizedOpenQuantity = openQuantity === "" ? quantity : num(openQuantity);
   const deliveredQuantity = pick(raw, ["RFMNG", "DELIVERED_QTY", "deliveredQuantity"]);
-  const pendingValue = pick(raw, ["P_VALUE", "openValue"]);
+  const pendingValue = pick(raw, ["P_VALUE1", "openValue"]);
   return {
     record_key: rowHash, sync_scope_key: `endpoint:${sourceEndpoint}`, snapshot_id: "00000000-0000-4000-8000-000000000000", row_hash: rowHash, occurrence_no: 1, is_active_snapshot: false,
     sales_order: salesOrder, sales_order_item: salesOrderItem, preceding_document: str(pick(raw, ["VGBEL", "VBELN_P"])), purchase_order: str(pick(raw, ["BSTNK", "bstnk"])), order_type: str(pick(raw, ["AUART", "auart"])),
