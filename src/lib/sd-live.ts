@@ -281,6 +281,13 @@ export function fiscalYearsForDateRange(from: string, to: string): string[] {
   return Array.from({ length: last - first + 1 }, (_, index) => String(first + index));
 }
 
+/** Compact April–March label named for the calendar year in which the period ends. */
+export function shortFiscalYearLabel(fiscalYear: string): string {
+  const startYear = Number(fiscalYear);
+  if (!Number.isFinite(startYear)) return "";
+  return `FY${String(startYear + 1).slice(-2)}`;
+}
+
 export function localIsoDate(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
