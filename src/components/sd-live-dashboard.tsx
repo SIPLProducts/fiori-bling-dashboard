@@ -3115,7 +3115,7 @@ export function SdLiveDashboard() {
             ) : null
           ) : (
             <Panel
-              title="Sales by Model (Amount & Per AH)"
+              title="Sales by Model"
               expandable
               actions={
                 <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
