@@ -105,3 +105,4 @@
 - [x] Keep Sales data stable across tab and screen navigation; refresh latest committed data only through the explicit Refresh button.
 - [x] Export only the currently selected Net Sales List columns to CSV, preserving visible order and all filtered rows.
 - [x] Let administrators select multiple daily SAP sync times in IST while preserving advanced schedules.
+- [x] Rebrand the Sales PDF header, rename Total Sales to Net Sales, and reorganize SD/FI screens with protected placeholders.

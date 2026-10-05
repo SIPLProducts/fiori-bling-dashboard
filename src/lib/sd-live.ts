@@ -909,7 +909,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
       id: "customer-concentration",
       tone: "warn",
       title: "Customer concentration",
-      text: `Top 5 customers contribute ${croreAmount(cut(5))}, equal to ${((cut(5) / custTotal) * 100).toFixed(1)}% of total sales.`,
+      text: `Top 5 customers contribute ${croreAmount(cut(5))}, equal to ${((cut(5) / custTotal) * 100).toFixed(1)}% of net sales.`,
       basis: "All customers in the current selection",
     });
   if (mainGroupList[0])

@@ -319,7 +319,7 @@ export function buildManagementView(
         : `₹ ${Math.round(v).toLocaleString("en-IN")}`;
 
   const kpis: KpiDatum[] = [
-    { id: "sales", label: "Total Sales (Amount)", value: money(cur.amount), delta: growthPct, icon: "rupee", tint: "#E8F0FE", iconColor: "#1769E8" },
+    { id: "sales", label: "Net Sales (Amount)", value: money(cur.amount), delta: growthPct, icon: "rupee", tint: "#E8F0FE", iconColor: "#1769E8" },
     { id: "growth", label: "Sales Growth %", value: `${growthPct.toFixed(1)}%`, delta: growthPct, icon: "growth", tint: "#E6F6EC", iconColor: "#16A34A" },
     { id: "qty", label: "Total Quantity", value: `${(cur.quantity / LAKH).toFixed(2)} Lakhs`, delta: pctDelta(cur.quantity, prv.quantity), icon: "package", tint: "#F1EBFA", iconColor: "#7251B5" },
     { id: "cust", label: "Active Customers", value: cur.customers.size.toLocaleString("en-IN"), delta: pctDelta(cur.customers.size, prv.customers.size), icon: "users", tint: "#FDF0DC", iconColor: "#F59E0B" },
@@ -452,7 +452,7 @@ export function buildManagementView(
         id: "sales-baseline",
         tone: "warning",
         category: "Sales",
-        before: "Total sales are ",
+        before: "Net sales are ",
         highlight: amountLabel(cur.amount),
         after: ", but the previous period has no sales baseline.",
         detail: comparisonDetail,
@@ -463,7 +463,7 @@ export function buildManagementView(
         id: "sales-change",
         tone: unchanged ? "warning" : growthPct < 0 ? "negative" : "positive",
         category: "Sales",
-        before: unchanged ? "Total sales are " : `Total sales ${growthPct < 0 ? "declined" : "increased"} by `,
+        before: unchanged ? "Net sales are " : `Net sales ${growthPct < 0 ? "declined" : "increased"} by `,
         highlight: unchanged ? "unchanged" : signedPct(growthPct),
         after: unchanged ? " against the previous period." : ` (${amountLabel(cur.amount - prv.amount)}) against the previous period.`,
         detail: comparisonDetail,
