@@ -107,3 +107,4 @@
 - [x] Export only the currently selected Net Sales List columns to CSV, preserving visible order and all filtered rows.
 - [x] Let administrators select multiple daily SAP sync times in IST while preserving advanced schedules.
 - [x] Rebrand the Sales PDF header, rename Total Sales to Net Sales, and reorganize SD/FI screens with protected placeholders.
+- [x] Place Sales by Model beside a Top 10 Type-based Model Wise bar chart in equal desktop columns and include both in PDF export.

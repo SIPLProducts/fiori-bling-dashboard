@@ -79,6 +79,7 @@ import {
   uniqueValues,
   type NamedTotal,
   type ModelPerformance,
+  type TypePerformance,
   type QuarterSummary,
   type SdFilters,
   type SdLine,
@@ -865,7 +866,7 @@ function SalesByModelChart({
       className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}
       data-pdf-model-chart-ready={exportMode ? "true" : undefined}
     >
-      <div style={{ height: chartHeight, minWidth: 720 }}>
+      <div style={{ height: chartHeight, minWidth: exportMode ? 520 : 480 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart layout="vertical" data={data} margin={{ top: 8, right: exportMode ? 140 : 104, bottom: 18, left: 16 }}>
             <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
@@ -925,6 +926,70 @@ function SalesByModelChart({
                 fontSize={10}
                 fill="var(--chart-label-strong)"
               />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function ModelWiseChart({ items, exportMode = false }: { items: TypePerformance[]; exportMode?: boolean }) {
+  if (!items.length) {
+    return <p className="py-10 text-center text-sm text-muted-foreground">No Type values match the current filters.</p>;
+  }
+
+  const chartHeight = Math.max(320, items.length * 42);
+  const typeAxisWidth = exportMode
+    ? Math.min(210, Math.max(150, Math.max(...items.map((item) => item.type.length)) * 7.2))
+    : 145;
+
+  return (
+    <div className="cxo-chart-surface max-h-[720px] overflow-auto" data-pdf-model-chart-ready={exportMode ? "true" : undefined}>
+      <div style={{ height: chartHeight, minWidth: 480 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart layout="vertical" data={items} margin={{ top: 8, right: exportMode ? 120 : 96, bottom: 18, left: 8 }}>
+            <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={(value: number) => (value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+              stroke="var(--chart-axis-line)"
+              tickLine={false}
+              label={{ value: "Amount in local cur. (₹)", position: "insideBottom", offset: -12, fill: "var(--chart-axis-label)", fontSize: 10 }}
+            />
+            <YAxis
+              type="category"
+              dataKey="type"
+              width={typeAxisWidth}
+              interval={0}
+              tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+              tickFormatter={(value: string) => value.length > 20 ? `${value.slice(0, 19)}…` : value}
+              stroke="var(--chart-axis-line)"
+              tickLine={false}
+            />
+            <Tooltip
+              cursor={{ fill: "var(--chart-hover-fill)" }}
+              content={({ active, payload }) => {
+                const point = payload?.[0]?.payload as TypePerformance | undefined;
+                if (!active || !point) return null;
+                return (
+                  <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
+                    <p className="mb-1.5 font-semibold">{point.type}</p>
+                    <div className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
+                      <span className="text-muted-foreground">Sales Amount</span>
+                      <span className="text-right font-medium tabular-nums">{INR_CRORES(point.totalAmount)}</span>
+                      <span className="text-muted-foreground">Records</span>
+                      <span className="text-right font-medium tabular-nums">{NUM(point.recordCount)}</span>
+                      <span className="text-muted-foreground">Share of Net Sales</span>
+                      <span className="text-right font-medium tabular-nums">{point.salesSharePct.toFixed(2)}%</span>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Bar dataKey="totalAmount" name="Sales Amount" fill="var(--kpi-2)" radius={[0, 3, 3, 0]} maxBarSize={28} isAnimationActive={!exportMode}>
+              <LabelList dataKey="totalAmount" position="right" formatter={(value: number) => INR_CRORES(value)} fontSize={10} fill="var(--chart-label-strong)" />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -2211,7 +2276,7 @@ export function SdLiveDashboard() {
     setPdfExportTopModels(true);
     try {
       await new Promise<void>((resolve) => {
-        const expectedCharts = analytics.modelPerformance.length ? 1 : 0;
+        const expectedCharts = (analytics.modelPerformance.length ? 1 : 0) + (analytics.typePerformance.length ? 1 : 0);
         let frame = 0;
         const waitForModelCharts = () => {
           const charts = Array.from(
@@ -3105,40 +3170,44 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          {pdfExportTopModels ? (
-            analytics.modelPerformance.length ? (
-              <div data-pdf-page-block>
-                <Panel title="Sales by Model">
+          <div data-pdf-page-block className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            {pdfExportTopModels ? (
+              analytics.modelPerformance.length ? (
+                <Panel title="Sales by Model" className="min-w-0 lg:col-span-6">
                   <SalesByModelChart items={analytics.modelPerformance.slice(0, 10)} limit="all" full={false} exportMode />
                 </Panel>
-              </div>
-            ) : null
-          ) : (
-            <Panel
-              title="Sales by Model"
-              expandable
-              actions={
-                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
-                  {([10, 20, "all"] as const).map((value) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant={modelLimit === value ? "default" : "ghost"}
-                      size="sm"
-                      className="h-7 px-2 text-[11px]"
-                      onClick={() => setModelLimit(value)}
-                    >
-                      {value === "all" ? "All Models" : `Top ${value} Models`}
-                    </Button>
-                  ))}
-                </div>
-              }
-            >
-              {(full: boolean) => (
-                <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
-              )}
+              ) : null
+            ) : (
+              <Panel
+                title="Sales by Model"
+                className="min-w-0 lg:col-span-6"
+                expandable
+                actions={
+                  <div className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                    {([10, 20, "all"] as const).map((value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={modelLimit === value ? "default" : "ghost"}
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => setModelLimit(value)}
+                      >
+                        {value === "all" ? "All Models" : `Top ${value} Models`}
+                      </Button>
+                    ))}
+                  </div>
+                }
+              >
+                {(full: boolean) => (
+                  <SalesByModelChart items={analytics.modelPerformance} limit={modelLimit} full={full} />
+                )}
+              </Panel>
+            )}
+            <Panel title="Model Wise" className="min-w-0 lg:col-span-6" expandable={!pdfExportTopModels}>
+              {(full: boolean) => <ModelWiseChart items={analytics.typePerformance} exportMode={pdfExportTopModels} />}
             </Panel>
-          )}
+          </div>
 
           <div data-pdf-exclude>
             <LinesTable
