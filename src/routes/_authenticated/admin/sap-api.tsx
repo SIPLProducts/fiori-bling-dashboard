@@ -919,7 +919,7 @@ function EndpointDetail({
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
   const isOpenSalesOrders = isOpenSalesOrdersEndpoint(form.name);
-  const requestDate = dateFromSapValue(payloadValueFromMap(payload, "fkdat")) ?? new Date();
+  const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
   const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
 
   function payloadValue(key: string): string {
