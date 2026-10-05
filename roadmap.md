@@ -36,7 +36,8 @@
 - [x] Restore the compact Open Sales Orders report to the supplied reference layout
 - [x] Point the Open Sales Orders launchpad action to its dedicated screenshot-matched dashboard
 - [x] Map BSARK into NEW/REPL, add its dynamic Sales Dashboard chart, and remove the Management Dashboard shortcut
-- [ ] Store Open_Sales_Orders in its own table, sync `fkdat` as today, and connect the live dashboard
+- [x] Store Open_Sales_Orders in its own table with atomic VBELN + POSNR replacement and scheduled current-date `fkdat`
+- [ ] Connect the Open Sales Orders dashboard to the verified live table
 - [x] Align Quality launchpad data with local by removing all retired modules and Sales cards
 - [x] Map SAP PCGRP1 into ZFISALES sub_group and backfill existing blank subgroup values
 - [x] Remove colored left borders from Sales Dashboard cards

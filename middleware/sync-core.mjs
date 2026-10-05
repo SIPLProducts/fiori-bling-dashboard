@@ -286,10 +286,14 @@ var snapshotUuid2 = () => {
 };
 function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
   const salesOrder = str2(pick(raw, ["VBELN", "vbeln", "salesOrder"]));
-  if (!salesOrder) return null;
+  const salesOrderItem = str2(pick(raw, ["POSNR", "posnr", "salesOrderItem"]));
+  if (!salesOrder || !salesOrderItem) return null;
   const rowHash = `sha256:${sha256(canonicalJson(raw))}`;
   const quantity = num2(pick(raw, ["KWMENG", "KWMENG_C", "quantity"]));
   const openQuantity = pick(raw, ["KWMENG_P", "KWMENG_PC", "OPEN_QTY", "openQuantity"]);
+  const normalizedOpenQuantity = openQuantity === "" ? quantity : num2(openQuantity);
+  const deliveredQuantity = pick(raw, ["RFMNG", "DELIVERED_QTY", "deliveredQuantity"]);
+  const pendingValue = pick(raw, ["P_VALUE", "openValue"]);
   return {
     record_key: rowHash,
     sync_scope_key: `endpoint:${sourceEndpoint}`,
@@ -298,7 +302,7 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     occurrence_no: 1,
     is_active_snapshot: false,
     sales_order: salesOrder,
-    sales_order_item: str2(pick(raw, ["POSNR", "posnr"])),
+    sales_order_item: salesOrderItem,
     preceding_document: str2(pick(raw, ["VGBEL", "VBELN_P"])),
     purchase_order: str2(pick(raw, ["BSTNK", "bstnk"])),
     order_type: str2(pick(raw, ["AUART", "auart"])),
@@ -309,9 +313,11 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     distribution_channel: str2(pick(raw, ["VTWEG", "vtweg"])),
     division: str2(pick(raw, ["SPART", "spart"])),
     plant: str2(pick(raw, ["WERKS", "werks"])),
+    plant_name: str2(pick(raw, ["WERKS_NAME", "werksName"])),
     sales_office: str2(pick(raw, ["VKBUR", "vkbur"])),
     sales_group: str2(pick(raw, ["VKGRP", "vkgrp"])),
     profit_center: str2(pick(raw, ["PRCTR", "prctr"])),
+    sales_rep_name: str2(pick(raw, ["NAME1_SE", "salesRepName"])),
     customer_sold_to: str2(pick(raw, ["KUNNR_SP", "KUNNR"])),
     customer_sold_to_name: str2(pick(raw, ["NAME1_SP", "NAME1"])),
     customer_bill_to: str2(pick(raw, ["KUNNR_BP"])),
@@ -321,15 +327,23 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     material: str2(pick(raw, ["MATNR", "matnr"])),
     material_description: str2(pick(raw, ["MAKTX", "maktx"])),
     material_type: str2(pick(raw, ["MTART", "mtart"])),
-    product_category: str2(pick(raw, ["BEZEI1", "TYPE"])),
-    region: str2(pick(raw, ["REGION", "BEZEI"])),
+    product_category: str2(pick(raw, ["BEZEI1"])),
+    model: str2(pick(raw, ["MODEL", "model"])),
+    product_range: str2(pick(raw, ["RANGE", "range"])),
+    product_type: str2(pick(raw, ["TYPE", "type"])),
+    region: str2(pick(raw, ["BEZEI_SP", "REGION", "BEZEI"])),
+    sales_zone: str2(pick(raw, ["BEZEI", "SALES_ZONE", "ZONE"])),
     country: str2(pick(raw, ["LANDX_SP", "LANDX_BP"])),
     sales_type: str2(pick(raw, ["VTEXT_DC", "SALE"])),
+    industry_description: str2(pick(raw, ["VTEXT_DI"])),
+    customer_group: str2(pick(raw, ["KDGRP_DESP", "KDGRP"])),
+    usage_description: str2(pick(raw, ["ABRVW_DESP", "ABRVW"])),
     quantity,
-    open_quantity: openQuantity === "" ? quantity : num2(openQuantity),
+    open_quantity: normalizedOpenQuantity,
+    delivered_quantity: deliveredQuantity === "" ? Math.max(0, quantity - normalizedOpenQuantity) : num2(deliveredQuantity),
     unit: str2(pick(raw, ["VRKME", "MEINS"])),
     currency: str2(pick(raw, ["WAERK"])),
-    open_value: num2(pick(raw, ["P_VALUE", "NETWR", "KWERT_INR"])),
+    open_value: num2(pendingValue === "" ? pick(raw, ["NETWR", "KWERT_INR"]) : pendingValue),
     days_open: Math.round(num2(pick(raw, ["DAYS"]))),
     delivery_status: str2(pick(raw, ["ABSTA"])),
     overall_status: str2(pick(raw, ["GBSTA"])),
@@ -339,7 +353,7 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
   };
 }
 function mapOpenSalesOrdersPayload(payload, sourceEndpoint, requestSnapshot) {
-  const syncedAt = (/* @__PURE__ */ new Date()).toISOString(), raws = extractRows(payload), syncScopeKey = buildSyncScopeKey(sourceEndpoint, requestSnapshot), snapshotId = snapshotUuid2(), occurrences = /* @__PURE__ */ new Map();
+  const syncedAt = (/* @__PURE__ */ new Date()).toISOString(), raws = extractRows(payload), syncScopeKey = buildSyncScopeKey(sourceEndpoint, requestSnapshot), snapshotId = snapshotUuid2(), businessKeys = /* @__PURE__ */ new Set();
   let invalid = 0, duplicates = 0;
   const rows = raws.flatMap((raw) => {
     const mapped = mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt);
@@ -347,12 +361,17 @@ function mapOpenSalesOrdersPayload(payload, sourceEndpoint, requestSnapshot) {
       invalid += 1;
       return [];
     }
-    const occurrenceNo = (occurrences.get(mapped.row_hash) ?? 0) + 1;
-    occurrences.set(mapped.row_hash, occurrenceNo);
-    if (occurrenceNo > 1) duplicates += 1;
-    return [{ ...mapped, record_key: `snapshot:${sha256(`${syncScopeKey}:${snapshotId}:${mapped.row_hash}:${occurrenceNo}`)}`, sync_scope_key: syncScopeKey, snapshot_id: snapshotId, occurrence_no: occurrenceNo }];
+    const businessKey = `${mapped.sales_order}\0${mapped.sales_order_item}`;
+    if (businessKeys.has(businessKey)) {
+      duplicates += 1;
+      return [];
+    }
+    businessKeys.add(businessKey);
+    return [{ ...mapped, record_key: `snapshot:${sha256(`${syncScopeKey}:${snapshotId}:${businessKey}`)}`, sync_scope_key: syncScopeKey, snapshot_id: snapshotId, occurrence_no: 1 }];
   });
-  return { received: raws.length, rows, skipped: invalid, invalid, duplicates, syncScopeKey, snapshotId };
+  if (invalid) throw new Error(`Open Sales Orders response contains ${invalid} row(s) without VBELN + POSNR`);
+  if (duplicates) throw new Error(`Open Sales Orders response contains ${duplicates} duplicate VBELN + POSNR key(s)`);
+  return { received: raws.length, rows, skipped: 0, invalid: 0, duplicates: 0, syncScopeKey, snapshotId };
 }
 
 // ../src/lib/sap-pull-shared.ts
@@ -487,6 +506,7 @@ export {
   extractEmbeddedBody,
   extractRows,
   formatBytes,
+  isOpenSalesOrdersEndpoint,
   keyValueObject,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,

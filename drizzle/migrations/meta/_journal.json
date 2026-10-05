@@ -8,6 +8,13 @@
       "when": 1791180782390,
       "tag": "0000_filter_net_sales_summary_by_posting_range",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791194215931,
+      "tag": "0001_strengthen_open_sales_orders_business_identity",
+      "breakpoints": true
     }
   ]
 }
