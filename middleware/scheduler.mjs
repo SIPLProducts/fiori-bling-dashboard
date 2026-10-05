@@ -14,9 +14,11 @@ import { createClient } from "@supabase/supabase-js";
 import WebSocket from "ws";
 import {
   mapPayload,
+  mapOpenSalesOrdersPayload,
   extractEmbeddedBody,
   salvageTruncatedArray,
   withEndpointDates,
+  isOpenSalesOrdersEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -174,6 +176,23 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isOpenSalesOrdersEndpoint(endpoint)) {
+      const mapped = mapOpenSalesOrdersPayload(payload, endpoint, requestSnapshot);
+      const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapped;
+      if (!rows.length) return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("open_sales_orders").insert(rows.slice(i, i + BATCH));
+        if (error) throw new Error(error.message);
+      }
+      const { data: replaced, error } = await db.rpc("activate_open_sales_orders_snapshot", {
+        _scope_key: syncScopeKey, _snapshot_id: snapshotId, _expected_count: rows.length,
+      });
+      if (error) {
+        await db.from("open_sales_orders").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
+        throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
+    }
     const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingRange } = mapPayload(
       payload,
       endpoint,

@@ -4,10 +4,12 @@
  * screen and by the scheduled 10-minute job.
  */
 import { mapPayload } from "./zfisales-sync.server";
+import { mapOpenSalesOrdersPayload } from "./open-sales-orders-map";
 import {
   extractEmbeddedBody,
   keyValueObject,
   salvageTruncatedArray,
+  isOpenSalesOrdersEndpoint,
   withEndpointDates,
 } from "./sap-pull-shared";
 
@@ -125,6 +127,47 @@ export async function storeZfisalesPayload(
   } catch (err) {
     await db.from("zfisales_detail").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "Snapshot write failed" });
+    throw err;
+  }
+}
+
+/** Stages and atomically replaces the complete current Open Sales Orders result. */
+export async function storeOpenSalesOrdersPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
+): Promise<SyncCounts> {
+  const db = await admin();
+  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapOpenSalesOrdersPayload(payload, endpointName, requestSnapshot);
+  const startedAt = new Date().toISOString();
+  const { data: run } = await db.from("sap_sync_runs").insert({
+    endpoint: endpointName, status: "running", started_at: startedAt, records_received: received,
+    records_skipped: skipped, records_invalid: invalid, sync_scope_key: syncScopeKey, snapshot_id: snapshotId,
+    response_bytes: metrics.responseBytes ?? 0, duration_ms: metrics.durationMs ?? 0,
+    ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+  }).select("id").single();
+  const finish = async (patch: Record<string, unknown>) => {
+    if (run?.id) await db.from("sap_sync_runs").update({ finished_at: new Date().toISOString(), ...patch }).eq("id", run.id);
+    await pruneRuns(endpointName);
+  };
+  if (!rows.length) {
+    await finish({ status: received ? "error" : "success", records_replaced: 0, error_message: received ? "No valid VBELN + POSNR rows — existing data left unchanged" : "SAP returned no rows — existing data left unchanged" });
+    return { received, stored: 0, replaced: 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
+  }
+  try {
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const { error } = await db.from("open_sales_orders").insert(rows.slice(i, i + BATCH) as never);
+      if (error) throw error;
+    }
+    const { data: replaced, error } = await db.rpc("activate_open_sales_orders_snapshot", { _scope_key: syncScopeKey, _snapshot_id: snapshotId, _expected_count: rows.length });
+    if (error) throw error;
+    await finish({ status: "success", records_stored: rows.length, records_replaced: replaced ?? 0, records_inserted: rows.length, records_updated: 0, error_message: `${rows.length} stored; ${replaced ?? 0} previous rows replaced` });
+    return { received, stored: rows.length, replaced: replaced ?? 0, skipped, invalid, duplicates, syncScopeKey, snapshotId, postingFrom: null, postingTo: null };
+  } catch (err) {
+    await db.from("open_sales_orders").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
+    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Open Sales Orders snapshot write failed" });
     throw err;
   }
 }
@@ -327,7 +370,7 @@ export async function pullSapEndpoint(
 
 
 
-  const counts = await storeZfisalesPayload(payload, endpointName, outbound, {
+  const counts = await (isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
     durationMs,
     responseBytes: bytes,
     httpStatus: response.status,

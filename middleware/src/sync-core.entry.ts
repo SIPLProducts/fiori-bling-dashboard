@@ -10,6 +10,7 @@ export {
   salvageTruncatedArray,
   withPostingDates,
   withEndpointDates,
+  isOpenSalesOrdersEndpoint,
   keyValueObject,
   formatBytes,
 } from "../../src/lib/sap-pull-shared";
