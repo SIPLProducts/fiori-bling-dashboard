@@ -110,3 +110,4 @@
 - [x] Place Sales by Model beside a Top 10 Type-based Model Wise bar chart in equal desktop columns and include both in PDF export.
 - [x] Rename Model Wise to Model Wise Type with Top 10/20/All screen controls while keeping PDF export at Top 10.
 - [x] Replace the Sales PDF posting-date range with the selected April–March ending-year FY label.
+- [x] Remove the duplicate Sales PDF tabs and arrange six management charts as three two-column PDF rows.
