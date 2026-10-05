@@ -518,14 +518,7 @@ function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone:
         </span>
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
-      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] text-muted-foreground">
-        <span>{summary.periodLabel}</span>
-        {!outside && summary.varianceAmount != null ? (
-          <span className="tabular font-medium" style={{ color: direction === "up" ? "var(--kpi-up)" : "var(--kpi-down)" }}>
-            {summary.varianceAmount >= 0 ? "+" : "−"}{CRORES(Math.abs(summary.varianceAmount))}
-          </span>
-        ) : null}
-      </div>
+      <p className="mt-2 text-[10px] text-muted-foreground">{summary.periodLabel}</p>
       {hasChartData ? <div className="mt-2 h-40 overflow-visible rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
@@ -695,37 +688,25 @@ function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
       </section>
     );
   }
-  const max = Math.max(1, ...summaries.flatMap((item) => [Math.abs(item.amount), Math.abs(item.baselineAmount ?? 0)]));
+  const max = Math.max(1, ...summaries.map((item) => Math.abs(item.amount)));
   const eligible = summaries.filter((item) => item.status !== "outside" && item.recordCount > 0);
   const comparable = eligible.filter((item) => item.varianceAmount != null);
   const strongest = [...eligible].sort((a, b) => b.amount - a.amount)[0];
   const best = [...comparable].sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0))[0];
   const weakest = [...comparable].sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))[0];
-  const averageVariance = comparable.length
-    ? comparable.reduce((sum, item) => sum + (item.varianceAmount ?? 0), 0) / comparable.length
-    : null;
-
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
       <section className="rounded-lg border border-border bg-card p-4 shadow-tile">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-border pb-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-card-foreground">Quarterly Trajectory &amp; Up/Down Variance Analysis</h3>
-            <p className="text-xs text-muted-foreground">Actual sales against the automatic comparison baseline</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 text-[10px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><span className="size-2 rounded-sm bg-primary" />Actual</span>
-            <span className="inline-flex items-center gap-1"><span className="h-0 w-3 border-t border-dashed border-muted-foreground" />Baseline</span>
-          </div>
+        <div className="border-b border-border pb-3">
+          <h3 className="truncate text-sm font-semibold text-card-foreground">Quarterly Trajectory &amp; Up/Down Variance Analysis</h3>
         </div>
         <div className="mt-4 space-y-4">
           {summaries.map((item, index) => {
             const color = KPI_TONES[(index + 1) % KPI_TONES.length];
             const outside = item.status === "outside";
             const actualWidth = outside ? 0 : Math.max(item.amount ? 3 : 0, Math.min(100, (Math.abs(item.amount) / max) * 100));
-            const baselineWidth = item.baselineAmount == null ? null : Math.min(100, (Math.abs(item.baselineAmount) / max) * 100);
             return (
-              <div key={item.quarter} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)_8rem] sm:items-center">
+              <div key={item.quarter} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center">
                 <div>
                   <p className="text-xs font-semibold text-card-foreground">Quarter {item.quarter.slice(1)}</p>
                   <p className="text-[10px] text-muted-foreground">{item.statusLabel || item.periodLabel}</p>
@@ -733,18 +714,10 @@ function QuarterAnalysis({ summaries }: { summaries: QuarterSummary[] }) {
                 <div className="relative h-6 overflow-hidden rounded-md bg-muted">
                   <span className="absolute inset-y-0 left-0 rounded-md" style={{ width: `${actualWidth}%`, background: color }} />
                   <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-primary-foreground">{outside ? "—" : CRORES(item.amount)}</span>
-                  {!outside && baselineWidth != null ? <span className="absolute inset-y-0 border-l-2 border-dashed border-foreground/60" style={{ left: `${baselineWidth}%` }} /> : null}
-                </div>
-                <div className="text-right text-xs font-semibold" style={{ color: item.varianceAmount == null ? "var(--color-muted-foreground)" : item.varianceAmount >= 0 ? "var(--kpi-up)" : "var(--kpi-down)" }}>
-                   {outside ? "Outside range" : item.varianceAmount == null ? "No baseline" : `${item.varianceAmount >= 0 ? "↑ +" : "↓ −"}${CRORES(Math.abs(item.varianceAmount))}`}
                 </div>
               </div>
             );
           })}
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
-          <span>{comparable.filter((item) => (item.varianceAmount ?? 0) > 0).length} quarters increased</span>
-          {averageVariance != null ? <span>Average variance: <strong className="text-foreground">{averageVariance >= 0 ? "+" : "−"}{CRORES(Math.abs(averageVariance))}</strong></span> : null}
         </div>
       </section>
       <section className="flex flex-col rounded-lg border border-border bg-card p-4 shadow-tile">
@@ -2106,7 +2079,7 @@ export function SdLiveDashboard() {
   const [filters, setFilters] = useState<SdFilters>(() => currentSdFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfExportAllModels, setPdfExportAllModels] = useState(false);
+  const [pdfExportTopModels, setPdfExportTopModels] = useState(false);
   // Shared drill-down: selecting a main group in either the treemap or the
   // bar chart updates both cards.
 
@@ -2235,10 +2208,10 @@ export function SdLiveDashboard() {
 
   const downloadDashboardPdf = async () => {
     setPdfBusy(true);
-    setPdfExportAllModels(true);
+    setPdfExportTopModels(true);
     try {
       await new Promise<void>((resolve) => {
-        const expectedCharts = Math.ceil(analytics.modelPerformance.length / 10);
+        const expectedCharts = analytics.modelPerformance.length ? 1 : 0;
         let frame = 0;
         const waitForModelCharts = () => {
           const charts = Array.from(
@@ -2266,7 +2239,7 @@ export function SdLiveDashboard() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to download the dashboard PDF");
     } finally {
-      setPdfExportAllModels(false);
+      setPdfExportTopModels(false);
       setPdfBusy(false);
     }
   };
@@ -3132,17 +3105,14 @@ export function SdLiveDashboard() {
             />
           </div>
 
-          {pdfExportAllModels ? (
-            Array.from({ length: Math.ceil(analytics.modelPerformance.length / 10) }, (_, page) => {
-              const models = analytics.modelPerformance.slice(page * 10, page * 10 + 10);
-              return (
-                <div key={`pdf-models-${page}`} data-pdf-page-block>
-                  <Panel title="Sales by Model (Amount & Per AH)">
-                    <SalesByModelChart items={models} limit="all" full={false} exportMode />
-                  </Panel>
-                </div>
-              );
-            })
+          {pdfExportTopModels ? (
+            analytics.modelPerformance.length ? (
+              <div data-pdf-page-block>
+                <Panel title="Sales by Model">
+                  <SalesByModelChart items={analytics.modelPerformance.slice(0, 10)} limit="all" full={false} exportMode />
+                </Panel>
+              </div>
+            ) : null
           ) : (
             <Panel
               title="Sales by Model (Amount & Per AH)"

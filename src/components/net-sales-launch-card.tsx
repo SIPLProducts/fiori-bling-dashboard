@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { currentFiscalYearRange } from "@/lib/sd-live";
+import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 const KPI_TONES = [
   "var(--kpi-1)",
@@ -38,8 +40,12 @@ function relativeUpdate(value: string | null): string {
 }
 
 async function fetchSummary(): Promise<Summary | null> {
+  const range = currentFiscalYearRange();
   const [{ data, error }, { data: run }] = await Promise.all([
-    supabase.rpc("net_sales_summary"),
+    supabase.rpc("net_sales_summary", {
+      _posting_from: range.from,
+      _posting_to: range.to,
+    }),
     supabase
       .from("sap_sync_runs")
       .select("finished_at")
@@ -71,10 +77,11 @@ async function fetchSummary(): Promise<Summary | null> {
 
 /** Launchpad replacement for the plain SD tile: live Net Sales card. */
 export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) {
+  const range = currentFiscalYearRange();
   const { data, isLoading } = useQuery({
-    queryKey: ["net-sales-summary"],
+    queryKey: ["net-sales-summary", range.from, range.to],
     queryFn: fetchSummary,
-    staleTime: 60_000,
+    ...STABLE_SALES_QUERY_OPTIONS,
   });
 
   const color = KPI_TONES[0];

@@ -19,6 +19,7 @@ describe("stable Sales report query policy", () => {
     expect(isStableSalesQuery(["management-sd-lines"])).toBe(true);
     expect(isStableSalesQuery(["zfisales", { fiscalYear: "2026" }])).toBe(true);
     expect(isStableSalesQuery(["sd-sales-kpi", { postingFrom: "2026-04-01" }])).toBe(true);
+    expect(isStableSalesQuery(["net-sales-summary", "2026-04-01", "2026-10-05"])).toBe(true);
     expect(isStableSalesQuery(["launchpad"])).toBe(false);
   });
 });

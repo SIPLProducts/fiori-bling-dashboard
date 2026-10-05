@@ -18,3 +18,4 @@
 - Keep Sales report datasets stable across tab and screen navigation; load newer committed snapshots only through the explicit Refresh action.
 - Store multiple daily SAP sync times as an `IST:HH:mm,...` schedule expression so self-hosted middleware and hosted scheduling share one backward-compatible field.
 - Give each coming-soon business screen a stable route and permission key backed by one shared placeholder component, so live reports can replace placeholders without changing access or navigation.
+- Scope launchpad sales totals to the same current April–March fiscal-year window as Sales reports, so entry-point cards and dashboards reconcile.

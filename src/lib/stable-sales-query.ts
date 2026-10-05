@@ -17,6 +17,7 @@ const STABLE_SALES_QUERY_ROOTS = new Set([
   "management-sd-lines",
   "zfisales",
   "sd-sales-kpi",
+  "net-sales-summary",
 ]);
 
 export function isStableSalesQuery(queryKey: readonly unknown[]) {

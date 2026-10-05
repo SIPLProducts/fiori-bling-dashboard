@@ -88,6 +88,7 @@
 - [x] Add dynamic intermediate Y-axis ticks and grouped monthly bars for two selected financial years
 - [x] Keep quarters visible when any selected fiscal year has data, leaving missing-year bars empty
 - [x] Hide monthly bar-top values for two-year quarter comparisons to prevent overlap
+- [x] Simplify quarter comparison visuals, export Top 10 Sales by Model, and align launchpad Net Sales to the current financial year
 - [x] Prevent quarter tooltips from clipping and use the latest selected year containing quarter data for card status
 - [x] Replace Leading Segment with Leading Main Group and add a monthly Revenue per AH detail popup
 - [x] Clarify Revenue per AH filter scope, select eligible months correctly, and add exact alert values with percentages
