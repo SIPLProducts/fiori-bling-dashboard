@@ -125,3 +125,4 @@
 - [x] Make Document Type multi-select with ZDOR, ZEOR, and ZSOR checked by default.
 - [x] Convert every Open Sales Orders list filter to checkbox multi-select while keeping non-document filters unrestricted by default.
 - [x] Replace the Open Sales Orders launchpad sample with a live current-financial-year count and latest update time.
+- [x] Show both the live Open Order Value and open order line count on the launchpad card.
