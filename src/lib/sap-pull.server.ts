@@ -139,7 +139,15 @@ export async function storeOpenSalesOrdersPayload(
   metrics: RunMetrics = {},
 ): Promise<SyncCounts> {
   const db = await admin();
-  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapOpenSalesOrdersPayload(payload, endpointName, requestSnapshot);
+  let mapped: ReturnType<typeof mapOpenSalesOrdersPayload>;
+  try {
+    mapped = mapOpenSalesOrdersPayload(payload, endpointName, requestSnapshot);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid Open Sales Orders response";
+    await logFailure(endpointName, message, requestSnapshot, metrics);
+    throw error;
+  }
+  const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapped;
   const startedAt = new Date().toISOString();
   const { data: run } = await db.from("sap_sync_runs").insert({
     endpoint: endpointName, status: "running", started_at: startedAt, records_received: received,
