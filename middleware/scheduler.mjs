@@ -16,7 +16,7 @@ import {
   mapPayload,
   extractEmbeddedBody,
   salvageTruncatedArray,
-  withPostingDates,
+  withEndpointDates,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -256,7 +256,13 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         username: systemRow?.username ?? undefined,
       });
 
-      const bodyText = withPostingDates(endpoint.body_template, endpoint.posting_range);
+      const bodyText = withEndpointDates(
+        endpoint.name,
+        endpoint.body_template,
+        endpoint.posting_range,
+        new Date(),
+        !manual,
+      );
       snapshot = {
         source: manual ? "middleware-manual" : "middleware-scheduler",
         systemKey: system.key,

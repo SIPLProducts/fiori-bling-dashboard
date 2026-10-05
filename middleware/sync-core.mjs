@@ -452,18 +452,26 @@ function withPostingDates(raw, range) {
   if ("BUDAT_T" in obj && !valid(obj["BUDAT_T"])) obj["BUDAT_T"] = sapDate(0);
   return JSON.stringify(obj);
 }
-function withOpenSalesOrdersDate(raw, now = /* @__PURE__ */ new Date()) {
+function withOpenSalesOrdersDate(raw, now = /* @__PURE__ */ new Date(), useCurrentDate = false) {
   if (!raw || !raw.trim()) return raw ?? void 0;
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
-    return JSON.stringify({ ...parsed, fkdat: sapDateOf(now) });
+    const obj = parsed;
+    const savedDate = String(obj["fkdat"] ?? "").trim();
+    return JSON.stringify({
+      ...obj,
+      fkdat: useCurrentDate || !/^\d{8}$/.test(savedDate) ? sapDateOf(now) : savedDate
+    });
   } catch {
     return raw;
   }
 }
-function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date()) {
-  return endpointName === "Open_Sales_Orders" ? withOpenSalesOrdersDate(raw, now) : withPostingDates(raw, range);
+function isOpenSalesOrdersEndpoint(endpointName) {
+  return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase() === "opensalesorders";
+}
+function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
+  return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }
 function keyValueObject(raw) {
   return Array.isArray(raw) ? Object.fromEntries(

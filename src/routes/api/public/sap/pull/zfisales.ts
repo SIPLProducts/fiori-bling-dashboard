@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/sap/pull/zfisales")({
         }
 
         const { pullSapEndpoint } = await import("@/lib/sap-pull.server");
-        const result = await pullSapEndpoint(endpointName);
+        const result = await pullSapEndpoint(endpointName, { scheduled: true });
         const status = result.status === "error" ? 502 : 200;
         return Response.json({ endpoint: endpointName, ...result }, { status });
       },

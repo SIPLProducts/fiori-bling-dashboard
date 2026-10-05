@@ -13,7 +13,7 @@ import {
   IS_STATIC_BUILD,
   keyValueObject,
   STATIC_MIDDLEWARE_BASE,
-  withPostingDates,
+  withEndpointDates,
   type PostingRange,
 } from "./sap-pull-shared";
 
@@ -677,7 +677,11 @@ export async function testSapEndpoint(endpoint: SapEndpoint, systems: SapSystem[
   await requireSuperAdmin();
   const query = Object.fromEntries(endpoint.query_params.map((row) => [row.key, row.value]));
   const headers = Object.fromEntries(endpoint.headers.map((row) => [row.key, row.value]));
-  let parsedBody: unknown = withPostingDates(endpoint.body_template, endpoint.posting_range) ?? undefined;
+  let parsedBody: unknown = withEndpointDates(
+    endpoint.name,
+    endpoint.body_template,
+    endpoint.posting_range,
+  ) ?? undefined;
   try {
     if (typeof parsedBody === "string") parsedBody = JSON.parse(parsedBody);
   } catch {

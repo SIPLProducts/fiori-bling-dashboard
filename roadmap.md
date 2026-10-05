@@ -112,3 +112,4 @@
 - [x] Replace the Sales PDF posting-date range with the selected April–March ending-year FY label.
 - [x] Remove the duplicate Sales PDF tabs and arrange six management charts as three two-column PDF rows.
 - [x] Align the Sales Dashboard title and boxed sales-type tabs in one PDF row without a lower divider.
+- [x] Replace Open Sales Orders posting-range controls with one editable Request Date mapped to `fkdat`, while scheduled runs use their current date.

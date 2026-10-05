@@ -8,7 +8,7 @@ import {
   extractEmbeddedBody,
   keyValueObject,
   salvageTruncatedArray,
-  withPostingDates,
+  withEndpointDates,
 } from "./sap-pull-shared";
 
 const BATCH = 500;
@@ -169,7 +169,10 @@ export type PullResult =
 
 
 /** Calls the middleware for the given endpoint and stores the response. */
-export async function pullSapEndpoint(endpointName: string): Promise<PullResult> {
+export async function pullSapEndpoint(
+  endpointName: string,
+  options: { scheduled?: boolean } = {},
+): Promise<PullResult> {
   if (await runInProgress(endpointName)) {
     const reason = "A sync is already running — this scheduled attempt was skipped";
     await logSkipped(endpointName, reason);
@@ -207,7 +210,13 @@ export async function pullSapEndpoint(endpointName: string): Promise<PullResult>
     authType: endpoint.auth_type,
     query: keyValueObject(endpoint.query_params),
     headers: keyValueObject(endpoint.headers),
-    body: withPostingDates(endpoint.body_template, endpoint.posting_range),
+    body: withEndpointDates(
+      endpoint.name,
+      endpoint.body_template,
+      endpoint.posting_range,
+      new Date(),
+      options.scheduled === true,
+    ),
   };
 
   const startedMs = Date.now();
