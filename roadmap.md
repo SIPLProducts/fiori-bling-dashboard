@@ -122,3 +122,4 @@
 - [x] Map Open Order Value from P_VALUE1, remove Average Days Open, and exclude the detailed table from PDF only.
 - [x] Show Open Orders and Partial Delivered as separate labeled bars in every Open Order Value Trend aging group.
 - [x] Place the Open Sales Orders PDF title on its own line between the repeating HBL header and summary tiles.
+- [x] Make Document Type multi-select with ZDOR, ZEOR, and ZSOR checked by default.
