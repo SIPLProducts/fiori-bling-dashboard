@@ -21,3 +21,4 @@
 - Scope launchpad sales totals to the same current April–March fiscal-year window as Sales reports, so entry-point cards and dashboards reconcile.
 - Derive Model Wise Type reporting from filtered ZFISALES `product_type` values, retain its complete amount ranking for screen controls, and limit PDF output to Top 10.
 - Label Sales PDF periods by the April–March ending year (for example, the 2026–27 selection is FY27), because financial reporting names the period by its closing year.
+- Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.

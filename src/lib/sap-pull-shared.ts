@@ -143,17 +143,34 @@ export function withPostingDates(raw: string | null | undefined, range?: string 
   return JSON.stringify(obj);
 }
 
-export function withOpenSalesOrdersDate(raw: string | null | undefined, now: Date = new Date()): string | undefined {
+export function withOpenSalesOrdersDate(
+  raw: string | null | undefined,
+  now: Date = new Date(),
+  useCurrentDate = false,
+): string | undefined {
   if (!raw || !raw.trim()) return raw ?? undefined;
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
-    return JSON.stringify({ ...(parsed as Record<string, unknown>), fkdat: sapDateOf(now) });
+    const obj = parsed as Record<string, unknown>;
+    const savedDate = String(obj["fkdat"] ?? "").trim();
+    return JSON.stringify({
+      ...obj,
+      fkdat: useCurrentDate || !/^\d{8}$/.test(savedDate) ? sapDateOf(now) : savedDate,
+    });
   } catch { return raw; }
 }
 
-export function withEndpointDates(endpointName: string, raw: string | null | undefined, range?: string | null, now = new Date()) {
-  return endpointName === "Open_Sales_Orders" ? withOpenSalesOrdersDate(raw, now) : withPostingDates(raw, range);
+export function withEndpointDates(
+  endpointName: string,
+  raw: string | null | undefined,
+  range?: string | null,
+  now = new Date(),
+  scheduled = false,
+) {
+  return endpointName === "Open_Sales_Orders"
+    ? withOpenSalesOrdersDate(raw, now, scheduled)
+    : withPostingDates(raw, range);
 }
 
 /** Turns the stored `[{key,value}]` rows into a plain object. */

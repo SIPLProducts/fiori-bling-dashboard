@@ -578,6 +578,14 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
  */
 function withDefaultDates(input: EndpointInput): EndpointInput {
   const payload = parsePayload(input.body_template) ?? {};
+  if (input.name === "Open_Sales_Orders") {
+    const fkdat = payload["fkdat"] ?? "";
+    if (/^\d{8}$/.test(fkdat)) return input;
+    return {
+      ...input,
+      body_template: JSON.stringify({ ...payload, fkdat: toSapDate(isoDaysAgo(0)) }, null, 2),
+    };
+  }
   const headerValue = (key: string) => input.headers.find((row) => row.key === key)?.value ?? "";
   const current = {
     BUDAT_F: payload["BUDAT_F"] || headerValue("BUDAT_F"),
@@ -885,6 +893,7 @@ function EndpointDetail({
   );
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
+  const isOpenSalesOrders = form.name === "Open_Sales_Orders";
 
   function payloadValue(key: string): string {
     return payload?.[key] ?? form.headers.find((row) => row.key === key)?.value ?? "";
@@ -1076,6 +1085,16 @@ function EndpointDetail({
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
             <div className="grid gap-4 md:grid-cols-3">
+              {isOpenSalesOrders ? (
+                <Field label="Request Date" hint="Sent as fkdat (YYYYMMDD).">
+                  <Input
+                    type="date"
+                    value={fromSapDate(payloadValue("fkdat")) || isoDaysAgo(0)}
+                    onChange={(event) => applyPayloadValues({ fkdat: toSapDate(event.target.value) })}
+                  />
+                </Field>
+              ) : (
+                <>
               <Field
                 label="Posting date range"
                 hint="Preset windows follow today on every sync; custom dates stay fixed."
@@ -1121,6 +1140,8 @@ function EndpointDetail({
                   }}
                 />
               </Field>
+                </>
+              )}
             </div>
 
             <Field label="Headers" hint="Optional HTTP headers sent with the request.">
@@ -1129,7 +1150,11 @@ function EndpointDetail({
 
             <Field
               label="Request payload"
-              hint="Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+              hint={
+                isOpenSalesOrders
+                  ? "Sent as the request body. fkdat stays in sync with the Request Date above."
+                  : "Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+              }
             >
               <Textarea
                 rows={10}
