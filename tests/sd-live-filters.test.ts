@@ -13,6 +13,7 @@ import {
   limitTypePerformance,
   loadConsistentPagedRows,
   qualifyingTotalAhRows,
+  shortFiscalYearLabel,
   type SdFilters,
   type SdLine,
 } from "../src/lib/sd-live";
@@ -122,6 +123,15 @@ describe("sales dashboard fiscal multi-select filters", () => {
     expect(fiscalQuarter("2026-03-31")).toBe("Q4");
     expect(fiscalYearForDate("2026-03-31")).toBe("2025");
     expect(fiscalYearForDate("2026-04-01")).toBe("2026");
+  });
+
+  test("names April–March financial years by their ending year", () => {
+    expect(shortFiscalYearLabel(fiscalYearForDate("2024-04-01"))).toBe("FY25");
+    expect(shortFiscalYearLabel(fiscalYearForDate("2025-04-01"))).toBe("FY26");
+    expect(shortFiscalYearLabel(fiscalYearForDate("2026-04-01"))).toBe("FY27");
+    expect(shortFiscalYearLabel(fiscalYearForDate("2027-04-01"))).toBe("FY28");
+    expect(shortFiscalYearLabel(fiscalYearForDate("2028-04-01"))).toBe("FY29");
+    expect(fiscalYearsForDateRange("2025-10-01", "2026-08-31").map(shortFiscalYearLabel)).toEqual(["FY26", "FY27"]);
   });
 
   test("uses OR within years and quarters and AND between filters", () => {

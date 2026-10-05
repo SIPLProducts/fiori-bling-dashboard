@@ -75,8 +75,10 @@ import {
   fetchSdLines,
   fiscalQuarter,
   fiscalYearForDate,
+  fiscalYearsForDateRange,
   limitModelPerformance,
   limitTypePerformance,
+  shortFiscalYearLabel,
   uniqueValues,
   type NamedTotal,
   type ModelPerformance,
@@ -2226,6 +2228,12 @@ export function SdLiveDashboard() {
     }),
     [all],
   );
+  const pdfFiscalYearLabel = useMemo(() => {
+    const fiscalYears = filters.fiscalYears.length
+      ? [...filters.fiscalYears].sort((a, b) => a.localeCompare(b))
+      : fiscalYearsForDateRange(filters.from || firstPostingDate, filters.to || effectiveFilters.to);
+    return fiscalYears.map(shortFiscalYearLabel).filter(Boolean).join(", ");
+  }, [effectiveFilters.to, filters.fiscalYears, filters.from, filters.to, firstPostingDate]);
 
   const set = (patch: Partial<SdFilters>) => setFilters((prev) => {
     const next = { ...prev, ...patch };
@@ -2418,7 +2426,7 @@ export function SdLiveDashboard() {
             <p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p>
           </div>
           <div className="shrink-0 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-right text-xs font-semibold text-foreground">
-            {reportDate(filters.from || firstPostingDate)} – {reportDate(effectiveFilters.to)}
+            {pdfFiscalYearLabel}
           </div>
         </div>
       ) : null}
