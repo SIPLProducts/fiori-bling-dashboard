@@ -23,4 +23,4 @@
 - Label Sales PDF periods by the April–March ending year (for example, the 2026–27 selection is FY27), because financial reporting names the period by its closing year.
 - Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
 - Persist Open Sales Orders as validated atomic snapshots keyed by active `VBELN + POSNR`, preserving typed reporting fields plus the complete raw SAP row, because missing orders must be removed without exposing partial syncs.
-- Keep the Open Sales Orders report as a filter-driven operational dashboard with document-type, aging, ranking, status, and paginated detail views using derived sample metrics until its dedicated live SAP table is connected.
+- Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.

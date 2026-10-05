@@ -1,6 +1,9 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type OpenSalesOrder = {
   order: string;
-  documentType: "ZDOR" | "ZEOR" | "ZSOR";
+  item: string;
+  documentType: string;
   customer: string;
   material: string;
   description: string;
@@ -25,47 +28,89 @@ export type OpenSalesOrder = {
   onTime: boolean;
 };
 
-const customers = ["Customer A", "Customer B", "Customer C", "Customer D", "Customer E", "Customer F"];
-const zones = ["North Zone", "South Zone", "West Zone", "East Zone", "Central Zone", "Others"];
-const profitCentres = ["PC - 101", "PC - 102", "PC - 103", "PC - 104", "PC - 105"];
-const mainGroups = ["Hardware", "Projects", "Charging", "Accessories", "Others"];
-const categories = ["Category A", "Category B", "Category C", "Category D", "Category E"];
-const models = ["Model Alpha", "Model Beta", "Model Gamma", "Model Delta", "Model Epsilon", "Model Zeta", "Model Eta", "Model Theta", "Model Iota", "Model Kappa", "Model Lambda", "Model Sigma"];
-const divisions = ["Industrial", "Consumer", "Infrastructure"];
-const documentTypes: OpenSalesOrder["documentType"][] = ["ZDOR", "ZEOR", "ZSOR"];
+type OpenSalesOrderRecord = {
+  sales_order: string;
+  sales_order_item: string | null;
+  order_type: string | null;
+  customer_sold_to: string | null;
+  customer_sold_to_name: string | null;
+  material: string | null;
+  material_description: string | null;
+  model: string | null;
+  product_range: string | null;
+  product_type: string | null;
+  division: string | null;
+  quantity: number | string | null;
+  open_quantity: number | string | null;
+  delivered_quantity: number | string | null;
+  open_value: number | string | null;
+  delivery_date: string | null;
+  order_date: string | null;
+  days_open: number | null;
+  sales_org: string | null;
+  distribution_channel: string | null;
+  sales_office: string | null;
+  sales_group: string | null;
+  sales_zone: string | null;
+  region: string | null;
+  sales_type: string | null;
+  profit_center: string | null;
+  product_category: string | null;
+  delivery_status: string | null;
+  overall_status: string | null;
+};
 
-export const OPEN_SALES_ORDERS: OpenSalesOrder[] = Array.from({ length: 72 }, (_, index) => {
-  const month = index % 13;
-  const orderDate = new Date(Date.UTC(2024, 3 + month, 2 + (index % 22)));
-  const deliveryDate = new Date(orderDate.getTime() + (16 + (index % 24)) * 86_400_000);
+const OPEN_ORDER_COLUMNS = "sales_order,sales_order_item,order_type,customer_sold_to,customer_sold_to_name,material,material_description,model,product_range,product_type,division,quantity,open_quantity,delivered_quantity,open_value,delivery_date,order_date,days_open,sales_org,distribution_channel,sales_office,sales_group,sales_zone,region,sales_type,profit_center,product_category,delivery_status,overall_status";
+const PAGE_SIZE = 1000;
+const text = (value: string | null | undefined, fallback = "Unassigned") => value?.trim() || fallback;
+const amount = (value: number | string | null) => Number(value) || 0;
+
+function toDashboardRow(row: OpenSalesOrderRecord): OpenSalesOrder {
+  const deliveryStatus = text(row.delivery_status, "");
+  const overallStatus = text(row.overall_status, "");
   return {
-    order: `SO-${4500001234 + index}`,
-    documentType: documentTypes[index % documentTypes.length] ?? "ZDOR",
-    customer: customers[index % customers.length] ?? "Customer A",
-    material: `MAT-${String(1001 + (index % 18)).padStart(4, "0")}`,
-    description: `Product ${String.fromCharCode(65 + (index % 12))}`,
-    model: models[index % models.length] ?? "Model Alpha",
-    division: divisions[index % divisions.length] ?? "Industrial",
-    quantity: 580 + ((index * 337) % 2_900),
-    openQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 1 : 0.58)),
-    deliveredQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 0 : 0.42)),
-    value: 1.2 + ((index * 73) % 540) / 100,
-    deliveryDate: deliveryDate.toISOString().slice(0, 10),
-    orderDate: orderDate.toISOString().slice(0, 10),
-    daysOpen: 24 + ((index * 37) % 760),
-    salesOrg: index % 3 === 0 ? "1000" : index % 3 === 1 ? "2000" : "3000",
-    channel: index % 3 === 0 ? "Direct" : index % 3 === 1 ? "Dealer" : "Projects",
-    office: ["Delhi", "Hyderabad", "Mumbai", "Chennai"][index % 4] ?? "Delhi",
-    salesGroup: ["Enterprise", "Retail", "OEM"][index % 3] ?? "Enterprise",
-    zone: zones[index % zones.length] ?? "North Zone",
-    salesType: ["Domestic", "Export", "Service"][index % 3] ?? "Domestic",
-    profitCentre: profitCentres[index % profitCentres.length] ?? "PC - 101",
-    mainGroup: mainGroups[index % mainGroups.length] ?? "Hardware",
-    category: categories[index % categories.length] ?? "Category A",
-    onTime: index % 9 !== 0 && index % 7 !== 0,
+    order: row.sales_order,
+    item: text(row.sales_order_item, ""),
+    documentType: text(row.order_type),
+    customer: text(row.customer_sold_to_name, text(row.customer_sold_to)),
+    material: text(row.material),
+    description: text(row.material_description, text(row.material)),
+    model: text(row.model, text(row.product_type, text(row.product_range))),
+    division: text(row.division),
+    quantity: amount(row.quantity),
+    openQuantity: amount(row.open_quantity),
+    deliveredQuantity: amount(row.delivered_quantity),
+    value: amount(row.open_value) / 10_000_000,
+    deliveryDate: text(row.delivery_date, ""),
+    orderDate: text(row.order_date, ""),
+    daysOpen: Math.max(0, Number(row.days_open) || 0),
+    salesOrg: text(row.sales_org),
+    channel: text(row.distribution_channel),
+    office: text(row.sales_office),
+    salesGroup: text(row.sales_group),
+    zone: text(row.sales_zone, text(row.region)),
+    salesType: text(row.sales_type),
+    profitCentre: text(row.profit_center),
+    mainGroup: text(row.product_range),
+    category: text(row.product_category),
+    onTime: deliveryStatus === "C" || overallStatus === "C",
   };
-});
+}
 
-export function getOpenSalesOrders() {
-  return Promise.resolve(OPEN_SALES_ORDERS);
+export async function getOpenSalesOrders() {
+  const records: OpenSalesOrderRecord[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("open_sales_orders")
+      .select(OPEN_ORDER_COLUMNS)
+      .eq("is_active_snapshot", true)
+      .order("sales_order", { ascending: true })
+      .order("sales_order_item", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw new Error(`Unable to load Open Sales Orders: ${error.message}`);
+    const page = (data ?? []) as unknown as OpenSalesOrderRecord[];
+    records.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return records.map(toDashboardRow);
 }

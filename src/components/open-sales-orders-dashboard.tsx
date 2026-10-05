@@ -11,6 +11,7 @@ import {
   Filter,
   IndianRupee,
   Package,
+  RefreshCw,
   RotateCcw,
   TriangleAlert,
   Truck,
@@ -38,6 +39,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -102,7 +104,7 @@ function percent(value: number, total: number) {
 }
 
 function periodChange(rows: OpenSalesOrder[], value: (row: OpenSalesOrder) => number) {
-  const ordered = [...rows].sort((a, b) => a.orderDate.localeCompare(b.orderDate));
+    const ordered = [...rows].sort((a, b) => a.orderDate.localeCompare(b.orderDate));
   const midpoint = Math.floor(ordered.length / 2);
   const previous = ordered.slice(0, midpoint).reduce((sum, row) => sum + value(row), 0);
   const current = ordered.slice(midpoint).reduce((sum, row) => sum + value(row), 0);
@@ -140,7 +142,15 @@ function StatusCard({ title, count, share, partial }: { title: string; count: nu
 }
 
 export function OpenSalesOrdersDashboard() {
-  const { data = [] } = useQuery({ queryKey: ["open-sales-orders-sample"], queryFn: getOpenSalesOrders, staleTime: Infinity });
+  const { data = [], error, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ["open-sales-orders-live"],
+    queryFn: getOpenSalesOrders,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -211,10 +221,20 @@ export function OpenSalesOrdersDashboard() {
 
   return (
     <div className="mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4">
-      <header className="px-1">
-        <h1 className="text-xl font-semibold text-foreground">Open Sales Orders</h1>
-        <p className="text-xs text-muted-foreground">Open order position, ageing, delivery status and sales-zone exposure</p>
+      <header className="flex items-start justify-between gap-3 px-1">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Open Sales Orders</h1>
+          <p className="text-xs text-muted-foreground">Open order position, ageing, delivery status and sales-zone exposure</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
+          const result = await refetch();
+          if (result.error) toast.error(result.error.message);
+          else toast.success("Open Sales Orders refreshed");
+        }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />{isFetching ? "Refreshing…" : "Refresh"}</Button>
       </header>
+
+      {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
+      {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
 
       <section className="rounded-md border border-border bg-card shadow-tile">
         <div className="flex min-h-11 items-center justify-between gap-3 px-4 py-2">
@@ -308,7 +328,7 @@ export function OpenSalesOrdersDashboard() {
         </div>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Customer", "Document Type", "Sales Zone", "Division", "Product", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={row.order} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={14} className="h-24 text-center text-muted-foreground">No open orders match the selected filters.</TableCell></TableRow>}</TableBody>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={14} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters."}</TableCell></TableRow>}</TableBody>
         </Table>
         <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3"><Button variant="outline" size="sm" aria-label="Previous table page" disabled={tablePage <= 1} onClick={() => setTablePage((page) => Math.max(1, page - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={tablePage >= tablePageCount} onClick={() => setTablePage((page) => Math.min(tablePageCount, page + 1))}>Next<ChevronRight /></Button></div>
       </section>
@@ -337,7 +357,9 @@ function StatusBadge({ partial }: { partial: boolean }) {
 }
 
 function displayDate(value: string) {
-  return format(new Date(`${value}T00:00:00`), "dd-MMM-yyyy");
+  if (!value) return "—";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MMM-yyyy");
 }
 
 function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "destructive"; label: string; value: string; detail: string }) {
