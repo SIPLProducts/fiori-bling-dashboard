@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { formatDateTimeISTLabel } from "@/lib/format";
 import {
   Activity,
@@ -20,6 +21,7 @@ import {
   Server,
   ShieldCheck,
   Trash2,
+  CalendarIcon,
   CalendarClock,
 } from "lucide-react";
 import {
@@ -196,8 +198,10 @@ import {
 } from "@/lib/sap-pull-shared";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -210,6 +214,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 /**
  * One toast that says which leg of portal -> middleware -> SAP was reached,
@@ -448,6 +453,22 @@ function fromSapDate(sap: string): string {
   const value = (sap ?? "").trim();
   if (!/^\d{8}$/.test(value)) return "";
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+}
+
+/** Parse a SAP date without UTC conversion so the selected local day is preserved. */
+function dateFromSapValue(sap: string): Date | undefined {
+  const iso = fromSapDate(sap);
+  if (!iso) return undefined;
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return undefined;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function sapValueFromDate(date: Date): string {
+  return `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
 }
 
 function isoDaysAgo(days: number): string {
@@ -898,9 +919,20 @@ function EndpointDetail({
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
   const isOpenSalesOrders = isOpenSalesOrdersEndpoint(form.name);
+  const requestDate = dateFromSapValue(payloadValueFromMap(payload, "fkdat")) ?? new Date();
+  const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
 
   function payloadValue(key: string): string {
     return payload?.[key] ?? form.headers.find((row) => row.key === key)?.value ?? "";
+  }
+
+  function updateOpenSalesOrdersDate(date: Date | undefined) {
+    if (!date) return;
+    if (parsePayload(form.body_template) === null) {
+      toast.error("Correct the request payload JSON before changing the Request Date");
+      return;
+    }
+    applyPayloadValues({ fkdat: sapValueFromDate(date) });
   }
 
   /** Write values into both the payload body and the matching header rows. */
@@ -1091,11 +1123,28 @@ function EndpointDetail({
             <div className="grid gap-4 md:grid-cols-3">
               {isOpenSalesOrders ? (
                 <Field label="Request Date" hint="Sent as fkdat (YYYYMMDD).">
-                  <Input
-                    type="date"
-                    value={fromSapDate(payloadValue("fkdat")) || isoDaysAgo(0)}
-                    onChange={(event) => applyPayloadValues({ fkdat: toSapDate(event.target.value) })}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        aria-label="Request Date"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="size-4" />
+                        {format(requestDate, "dd-MM-yyyy")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={requestDate}
+                        onSelect={updateOpenSalesOrdersDate}
+                        initialFocus
+                        className={cn("pointer-events-auto p-3")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </Field>
               ) : (
                 <>
@@ -1166,6 +1215,11 @@ function EndpointDetail({
                 value={form.body_template}
                 onChange={(e) => set("body_template", e.target.value)}
               />
+              {isOpenSalesOrders && payloadInvalid ? (
+                <p className="text-xs text-destructive">
+                  Request payload must be a valid JSON object before the Request Date can update fkdat.
+                </p>
+              ) : null}
               <PayloadFileInput onLoad={(raw) => set("body_template", raw)} />
             </Field>
 
