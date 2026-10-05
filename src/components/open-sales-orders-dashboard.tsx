@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Clock3,
   Download,
   FileText,
   FileSpreadsheet,
@@ -88,8 +87,8 @@ function Panel({ title, children, className = "" }: { title: string; children: R
   );
 }
 
-function SummaryCard({ label, value, delta, icon: Icon, tone, lowerIsBetter = false }: { label: string; value: string; delta: number; icon: ComponentType<{ className?: string }>; tone: Tone; lowerIsBetter?: boolean }) {
-  const positive = lowerIsBetter ? delta <= 0 : delta >= 0;
+function SummaryCard({ label, value, delta, icon: Icon, tone }: { label: string; value: string; delta: number; icon: ComponentType<{ className?: string }>; tone: Tone }) {
+  const positive = delta >= 0;
   const styles = TONE_STYLES[tone];
   return (
     <section className={`flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
