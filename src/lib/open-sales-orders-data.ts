@@ -1,8 +1,11 @@
 export type OpenSalesOrder = {
   order: string;
+  documentType: "ZDOR" | "ZEOR" | "ZSOR";
   customer: string;
   material: string;
   description: string;
+  model: string;
+  division: string;
   quantity: number;
   openQuantity: number;
   deliveredQuantity: number;
@@ -27,6 +30,9 @@ const zones = ["North Zone", "South Zone", "West Zone", "East Zone", "Central Zo
 const profitCentres = ["PC - 101", "PC - 102", "PC - 103", "PC - 104", "PC - 105"];
 const mainGroups = ["Hardware", "Projects", "Charging", "Accessories", "Others"];
 const categories = ["Category A", "Category B", "Category C", "Category D", "Category E"];
+const models = ["Model Alpha", "Model Beta", "Model Gamma", "Model Delta", "Model Epsilon", "Model Zeta", "Model Eta", "Model Theta", "Model Iota", "Model Kappa", "Model Lambda", "Model Sigma"];
+const divisions = ["Industrial", "Consumer", "Infrastructure"];
+const documentTypes: OpenSalesOrder["documentType"][] = ["ZDOR", "ZEOR", "ZSOR"];
 
 export const OPEN_SALES_ORDERS: OpenSalesOrder[] = Array.from({ length: 72 }, (_, index) => {
   const month = index % 13;
@@ -34,9 +40,12 @@ export const OPEN_SALES_ORDERS: OpenSalesOrder[] = Array.from({ length: 72 }, (_
   const deliveryDate = new Date(orderDate.getTime() + (16 + (index % 24)) * 86_400_000);
   return {
     order: `SO-${4500001234 + index}`,
+    documentType: documentTypes[index % documentTypes.length] ?? "ZDOR",
     customer: customers[index % customers.length] ?? "Customer A",
     material: `MAT-${String(1001 + (index % 18)).padStart(4, "0")}`,
     description: `Product ${String.fromCharCode(65 + (index % 12))}`,
+    model: models[index % models.length] ?? "Model Alpha",
+    division: divisions[index % divisions.length] ?? "Industrial",
     quantity: 580 + ((index * 337) % 2_900),
     openQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 1 : 0.58)),
     deliveredQuantity: Math.round((580 + ((index * 337) % 2_900)) * (index % 9 < 7 ? 0 : 0.42)),
