@@ -76,6 +76,7 @@ import {
   fiscalQuarter,
   fiscalYearForDate,
   limitModelPerformance,
+  limitTypePerformance,
   uniqueValues,
   type NamedTotal,
   type ModelPerformance,
@@ -2153,6 +2154,7 @@ export function SdLiveDashboard() {
   const [focus, setFocus] = useState<"revenue" | "customers" | null>(null);
   const [trendMode, setTrendMode] = useState<TrendMode>("Monthly");
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
+  const [typeLimit, setTypeLimit] = useState<ModelLimit>(10);
   const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
   const { data: lines, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sd-live-lines"],
@@ -3204,8 +3206,35 @@ export function SdLiveDashboard() {
                 )}
               </Panel>
             )}
-            <Panel title="Model Wise" className="min-w-0 lg:col-span-6" expandable={!pdfExportTopModels}>
-              {(full: boolean) => <ModelWiseChart items={analytics.typePerformance} exportMode={pdfExportTopModels} />}
+            <Panel
+              title="Model Wise Type"
+              className="min-w-0 lg:col-span-6"
+              expandable={!pdfExportTopModels}
+              actions={
+                pdfExportTopModels ? undefined : (
+                  <div className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                    {([10, 20, "all"] as const).map((value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={typeLimit === value ? "default" : "ghost"}
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => setTypeLimit(value)}
+                      >
+                        {value === "all" ? "All Types" : `Top ${value} Types`}
+                      </Button>
+                    ))}
+                  </div>
+                )
+              }
+            >
+              {(full: boolean) => (
+                <ModelWiseChart
+                  items={limitTypePerformance(analytics.typePerformance, pdfExportTopModels ? 10 : typeLimit)}
+                  exportMode={pdfExportTopModels}
+                />
+              )}
             </Panel>
           </div>
 

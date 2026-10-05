@@ -10,6 +10,7 @@ import {
   fiscalYearForDate,
   fiscalQuarter,
   limitModelPerformance,
+  limitTypePerformance,
   loadConsistentPagedRows,
   qualifyingTotalAhRows,
   type SdFilters,
@@ -603,7 +604,7 @@ describe("Sales by Model amount and per-AH analytics", () => {
 });
 
 describe("Model Wise Type analytics", () => {
-  test("groups Type values, retains counts and negatives, and limits the ranking to ten", () => {
+  test("groups Type values, retains counts and negatives, and supports Top 10, Top 20, and All limits", () => {
     const rows = Array.from({ length: 12 }, (_, index) => ({
       ...row("2026", `2026-04-${String(index + 1).padStart(2, "0")}`),
       productType: index === 11 ? "" : `Type ${index + 1}`,
@@ -613,17 +614,20 @@ describe("Model Wise Type analytics", () => {
 
     const analytics = buildSdAnalytics(rows);
 
-    expect(analytics.typePerformance).toHaveLength(10);
+    expect(analytics.typePerformance).toHaveLength(12);
     expect(analytics.typePerformance[0]).toEqual({
       type: "Type 1",
       totalAmount: 11_500_000,
       recordCount: 2,
       salesSharePct: (11_500_000 / 77_500_000) * 100,
     });
-    expect(analytics.typePerformance.some((item) => item.type === "Unassigned")).toBe(false);
+    expect(analytics.typePerformance.some((item) => item.type === "Unassigned")).toBe(true);
     expect(analytics.typePerformance.map((item) => item.totalAmount)).toEqual(
       [...analytics.typePerformance.map((item) => item.totalAmount)].sort((a, b) => b - a),
     );
+    expect(limitTypePerformance(analytics.typePerformance, 10)).toHaveLength(10);
+    expect(limitTypePerformance(analytics.typePerformance, 20)).toHaveLength(12);
+    expect(limitTypePerformance(analytics.typePerformance, "all")).toEqual(analytics.typePerformance);
   });
 
   test("groups blank Type values under Unassigned", () => {

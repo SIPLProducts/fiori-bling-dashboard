@@ -568,6 +568,10 @@ export function limitModelPerformance(items: ModelPerformance[], limit: 10 | 20 
   return limit === "all" ? items : items.slice(0, limit);
 }
 
+export function limitTypePerformance(items: TypePerformance[], limit: 10 | 20 | "all") {
+  return limit === "all" ? items : items.slice(0, limit);
+}
+
 function rank(map: Map<string, NamedTotal>, limit?: number): NamedTotal[] {
   const list = [...map.values()].sort((a, b) => b.value - a.value);
   return limit ? list.slice(0, limit) : list;
@@ -984,7 +988,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     topMaterials: rank(byMat, 10),
     topSalesEmployees: rank(byEmp, 10),
     modelPerformance,
-    typePerformance: rank(byProductType, 10).map((item) => ({
+    typePerformance: rank(byProductType).map((item) => ({
       type: item.name,
       totalAmount: item.value,
       recordCount: item.count,
