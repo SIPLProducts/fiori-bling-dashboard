@@ -24,4 +24,4 @@
 - Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
 - Persist Open Sales Orders as validated atomic snapshots keyed by active `VBELN + POSNR`, preserving typed reporting fields plus the complete raw SAP row, because missing orders must be removed without exposing partial syncs.
 - Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
-- Scope the Open Sales Orders launchpad count to active ZDOR, ZEOR, and ZSOR rows in the current April–March financial year, so it matches the report's opening view.
+- Scope the Open Sales Orders launchpad value and line count to active ZDOR, ZEOR, and ZSOR rows in the current April–March financial year, so it matches the report's opening view.
