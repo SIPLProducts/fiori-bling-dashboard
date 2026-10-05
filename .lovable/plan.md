@@ -2,13 +2,13 @@
 
 ## Detailed table
 - Add a **POSNR** column beside **Order No.**, using the stored sales-order item value.
-- Change the **Product** column to **Product Description** and display the material description instead of only the material code.
+- Keep **Product** for the material code and add a separate **Product Description** column beside it.
 - Keep pagination and horizontal scrolling intact.
 
 ## Excel download
 - Add a **Download Excel** button in the detailed-table header.
 - Export every currently filtered Open Sales Order row, not only the visible page.
-- Include the detailed table columns in their displayed order, including POSNR and Product Description.
+- Include the detailed table columns in their displayed order, including POSNR, Product, and Product Description.
 - Generate a formatted `.xlsx` workbook with clear headers, stable date/number formats, filters, and frozen headings.
 
 ## Dashboard PDF
@@ -19,7 +19,7 @@
 - Export dashboard sections as page-safe blocks so cards and charts are not cut across pages.
 
 ## Validation
-- Confirm POSNR and Product Description display correctly in the table.
+- Confirm POSNR, Product, and Product Description display correctly in the table.
 - Verify Excel includes all filtered rows and the correct columns, independent of table pagination.
 - Generate and visually inspect the PDF for repeated branding, omitted Smart Filters, complete charts/cards, readable labels, and clean page boundaries.
 - Check Refresh remains manual, filters still affect all outputs, and the preview build has no errors.
