@@ -467,8 +467,11 @@ function withOpenSalesOrdersDate(raw, now = /* @__PURE__ */ new Date(), useCurre
     return raw;
   }
 }
+function isOpenSalesOrdersEndpoint(endpointName) {
+  return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase() === "opensalesorders";
+}
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
-  return endpointName === "Open_Sales_Orders" ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
+  return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }
 function keyValueObject(raw) {
   return Array.isArray(raw) ? Object.fromEntries(
