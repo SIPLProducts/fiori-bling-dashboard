@@ -6,7 +6,7 @@ const payload = JSON.stringify({ fkdat: "20260921", BUDAT_F: "20260928", marker:
 
 describe("Open Sales Orders request date", () => {
   test("manual and Test requests retain the selected fkdat", () => {
-    const result = JSON.parse(withEndpointDates("Open_Sales_Orders", payload, "last7d", runDate) ?? "{}");
+    const result = JSON.parse(withEndpointDates("Open _Sales _Orders", payload, "last7d", runDate) ?? "{}");
     expect(result).toEqual({ fkdat: "20260921", BUDAT_F: "20260928", marker: "keep" });
   });
 

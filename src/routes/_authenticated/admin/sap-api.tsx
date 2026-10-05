@@ -189,7 +189,11 @@ import {
   type SapSystem,
   type TestResult,
 } from "@/lib/sap-api.functions";
-import { POSTING_RANGES, postingWindow } from "@/lib/sap-pull-shared";
+import {
+  POSTING_RANGES,
+  isOpenSalesOrdersEndpoint,
+  postingWindow,
+} from "@/lib/sap-pull-shared";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -578,7 +582,7 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
  */
 function withDefaultDates(input: EndpointInput): EndpointInput {
   const payload = parsePayload(input.body_template) ?? {};
-  if (input.name === "Open_Sales_Orders") {
+  if (isOpenSalesOrdersEndpoint(input.name)) {
     const fkdat = payload["fkdat"] ?? "";
     if (/^\d{8}$/.test(fkdat)) return input;
     return {
@@ -893,7 +897,7 @@ function EndpointDetail({
   );
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
-  const isOpenSalesOrders = form.name === "Open_Sales_Orders";
+  const isOpenSalesOrders = isOpenSalesOrdersEndpoint(form.name);
 
   function payloadValue(key: string): string {
     return payload?.[key] ?? form.headers.find((row) => row.key === key)?.value ?? "";

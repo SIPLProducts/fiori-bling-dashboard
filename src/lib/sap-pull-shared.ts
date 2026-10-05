@@ -161,6 +161,11 @@ export function withOpenSalesOrdersDate(
   } catch { return raw; }
 }
 
+/** Matches legacy spacing/underscore variants of the configured endpoint name. */
+export function isOpenSalesOrdersEndpoint(endpointName: string): boolean {
+  return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase() === "opensalesorders";
+}
+
 export function withEndpointDates(
   endpointName: string,
   raw: string | null | undefined,
@@ -168,7 +173,7 @@ export function withEndpointDates(
   now = new Date(),
   scheduled = false,
 ) {
-  return endpointName === "Open_Sales_Orders"
+  return isOpenSalesOrdersEndpoint(endpointName)
     ? withOpenSalesOrdersDate(raw, now, scheduled)
     : withPostingDates(raw, range);
 }
