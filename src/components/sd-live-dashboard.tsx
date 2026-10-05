@@ -2530,7 +2530,9 @@ export function SdLiveDashboard() {
                     key={preset.label}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => set(active ? { from: "", to: "" } : range)}
+                    onClick={() => set(active
+                      ? { from: "", to: "" }
+                      : { ...range, fiscalYears: [], quarters: [] })}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                       active
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
@@ -2559,7 +2561,12 @@ export function SdLiveDashboard() {
                   <MultiSelect
                     options={toOptions(opts.fiscalYears)}
                     selected={filters.fiscalYears}
-                    onChange={(fiscalYears) => set({ fiscalYears, quarters: fiscalYears.length ? filters.quarters : [] })}
+                    onChange={(fiscalYears) => set({
+                      fiscalYears,
+                      quarters: fiscalYears.length ? filters.quarters : [],
+                      from: "",
+                      to: "",
+                    })}
                     placeholder="All years"
                     emptyText="No years available"
                   />
@@ -2586,7 +2593,11 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.from}
                   max={filters.to || undefined}
-                  onChange={(e) => set({ from: e.target.value })}
+                  onChange={(e) => set({
+                    from: e.target.value,
+                    fiscalYears: [],
+                    quarters: [],
+                  })}
                   className="mt-1 h-9 w-full pr-2 font-normal text-foreground [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>
@@ -2596,7 +2607,11 @@ export function SdLiveDashboard() {
                   type="date"
                   value={filters.to}
                   min={filters.from || undefined}
-                  onChange={(e) => set({ to: e.target.value })}
+                  onChange={(e) => set({
+                    to: e.target.value,
+                    fiscalYears: [],
+                    quarters: [],
+                  })}
                   className="mt-1 h-9 w-full pr-2 font-normal text-foreground [&::-webkit-calendar-picker-indicator]:mr-0"
                 />
               </label>

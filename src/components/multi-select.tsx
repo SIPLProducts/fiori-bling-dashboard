@@ -1,6 +1,8 @@
-import { Check, ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, ChevronDown, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export type MultiSelectOption = { value: string; label: string };
 
@@ -19,8 +21,18 @@ export function MultiSelect({
   emptyText?: string;
   disabled?: boolean;
 }) {
+  const [search, setSearch] = useState("");
   const toggle = (value: string) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
+
+  const visibleOptions = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    if (!query) return options;
+    return options.filter((option) =>
+      option.label.toLocaleLowerCase().includes(query)
+      || option.value.toLocaleLowerCase().includes(query),
+    );
+  }, [options, search]);
 
   const label =
     selected.length === 0
@@ -43,11 +55,23 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="pointer-events-auto w-64 p-1">
+        <div className="relative mb-1 border-b border-border p-1 pb-2">
+          <Search className="pointer-events-none absolute left-3 top-3 size-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search values"
+            aria-label="Search dropdown values"
+            className="h-8 pl-8 text-sm"
+          />
+        </div>
         <div className="max-h-64 overflow-y-auto">
           {options.length === 0 ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">{emptyText}</p>
+          ) : visibleOptions.length === 0 ? (
+            <p className="px-2 py-3 text-sm text-muted-foreground">No matching values</p>
           ) : (
-            options.map((option) => {
+            visibleOptions.map((option) => {
               const active = selected.includes(option.value);
               return (
                 <button
