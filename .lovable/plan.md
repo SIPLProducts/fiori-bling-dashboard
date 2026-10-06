@@ -26,6 +26,11 @@ Preserve this order:
 - Keep ten detailed-table rows per page and every existing column. Preserve horizontal table scrolling instead of compressing columns into unreadable widths.
 - Keep filters expanded initially; retain the existing collapse control for additional space when desired.
 
+## Sales Document Type table colors
+- Apply the Net Sales table's existing color treatment to the Open Sales Orders detailed table, keyed by each row's Sales Document Type.
+- Verify and reuse the established color convention before implementation. Keep a neutral fallback for types without an established color; do not invent SAP descriptions or modify Net Sales.
+- Maintain readable text, Status badges, search, pagination, and every column. This is a screen presentation change; Excel contents and PDF exclusions stay unchanged.
+
 ## Readability and scope
 - Do not scale the entire page down, clip content, hide charts, introduce tabs, or impose a fixed height that conceals overflow.
 - Preserve summary tints, chart colors, all calculations, filters, defaults, stored data, manual refresh behavior, and export contents.
