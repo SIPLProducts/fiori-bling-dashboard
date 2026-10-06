@@ -140,6 +140,6 @@
 - [x] Make all Highest Value text and icons white and enclose the Quick View header and tiles in one border; verify screen and PDF.
 - [x] Add detailed-table Status and column search filters, export all matching rows, and move pagination below-left; verify filtering and download.
 - [x] Strengthen the three Open Sales Orders summary backgrounds to light 15% tints; verify screen and PDF.
-- [ ] Compact Open Sales Orders while retaining every section and readable charts; verify screen and PDF.
-- [ ] Apply Net Sales-style row tints by Sales Document Type to the Open Sales Orders table.
-- [ ] Deliver an image reference of the actual compact dashboard.
+- [x] Compact Open Sales Orders while retaining every section and readable charts; verify screen and PDF.
+- [x] Apply Net Sales-style row tints by Sales Document Type to the Open Sales Orders table.
+- [x] Deliver an image reference of the actual compact dashboard.
