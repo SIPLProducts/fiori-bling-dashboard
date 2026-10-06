@@ -345,6 +345,9 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </div>
         {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-6">
+          <FilterField label="Financial Year">
+            <MultiSelect bulkActions options={yearOptions} selected={years ?? yearOptions.map((option) => option.value)} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); if (next.length) setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
+          </FilterField>
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
