@@ -159,6 +159,8 @@
   --chart-label-strong: var(--foreground);
   --chart-tooltip-border: var(--border);
   --chart-emphasis: oklch(0.62 0.16 55);
+  --order-gradient-light-share: 64%;
+  --order-gradient-deep-share: 82%;
 }
 
 .pdf-export-theme {
@@ -348,3 +350,11 @@
 @media (max-width: 639px) {
   .orders-compact .order-aging-grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
 }
+
+/* Scoped chart heading accents, shared by screen and PDF themes. */
+.order-heading-divider { border-bottom-color: var(--border); }
+.order-heading-blue { border-bottom-color: var(--chart-1); }
+.order-heading-green { border-bottom-color: var(--success); }
+.order-heading-violet { border-bottom-color: var(--quick-view-violet); }
+.order-heading-amber { border-bottom-color: var(--warning); }
+.order-heading-teal { border-bottom-color: var(--kpi-2); }
