@@ -378,15 +378,15 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>
 
-      <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 72 + 120) } : undefined}>
+      <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
         <Panel title="Open Order Lines by Sales Zone">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
-            <div style={{ minWidth: Math.max(320, metrics.zones.length * 72 + 120) }}>
-              <ResponsiveContainer width="100%" height={340}>
-                <BarChart data={metrics.zones} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
+            <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
+              <ResponsiveContainer width="100%" height={380}>
+                <BarChart data={metrics.zones} barCategoryGap={8} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
-                  <XAxis type="category" dataKey="name" interval={0} height={76} tick={<SalesZoneAxisTick />} tickLine={false} />
+                  <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
                   <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
@@ -446,9 +446,7 @@ function FilterMultiSelect({ label, selected, options, onChange }: { label: stri
 function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value: string } }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <foreignObject x={-32} y={8} width={64} height={64}>
-        <div className="break-words text-center text-[10px] leading-3 text-muted-foreground">{payload?.value}</div>
-      </foreignObject>
+      <text transform="translate(0,12) rotate(-45)" textAnchor="end" className="fill-muted-foreground text-[10px]">{payload?.value}</text>
     </g>
   );
 }
