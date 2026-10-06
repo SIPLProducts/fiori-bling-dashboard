@@ -132,3 +132,4 @@
 - [x] Show Sales Zone order-line counts as vertical bars with names below and the numeric scale on the left, including all zones in PDF export.
 
 - [x] Compact Sales Zone bars and remove bar percentages; move the Open Orders/Partial Delivered/Quick View row immediately above the detailed table.
+- [ ] Further reduce Sales Zone bar gaps and rotate zone names 45° on screen and in PDF; verify readable, unclipped labels.
