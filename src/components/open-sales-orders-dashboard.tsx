@@ -381,7 +381,7 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 116) } : undefined}>
 
         <Panel title="Open Order Lines by Sales Zone">
-          <div className="overflow-x-auto">
+          <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 116) }}>
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={metrics.zones} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
