@@ -86,8 +86,7 @@ function Panel({ title, children, className = "" }: { title: string; children: R
   );
 }
 
-function SummaryCard({ label, value, delta, icon: Icon, tone }: { label: string; value: string; delta: number; icon: ComponentType<{ className?: string }>; tone: Tone }) {
-  const positive = delta >= 0;
+function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
   const styles = TONE_STYLES[tone];
   return (
     <section className={`flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
@@ -95,10 +94,6 @@ function SummaryCard({ label, value, delta, icon: Icon, tone }: { label: string;
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-card-foreground">{label}</p>
         <p className="mt-1 text-3xl font-semibold leading-none text-foreground tabular-nums">{value}</p>
-        <p className={`mt-3 text-xs font-semibold ${positive ? "text-success" : "text-destructive"}`}>
-          {delta >= 0 ? "▲" : "▼"} {delta >= 0 ? "+" : ""}{delta.toFixed(0)}%
-        </p>
-        <p className="text-[10px] text-muted-foreground">vs. last period</p>
       </div>
     </section>
   );
@@ -106,14 +101,6 @@ function SummaryCard({ label, value, delta, icon: Icon, tone }: { label: string;
 
 function percent(value: number, total: number) {
   return Math.round((value / Math.max(1, total)) * 100);
-}
-
-function periodChange(rows: OpenSalesOrder[], value: (row: OpenSalesOrder) => number) {
-    const ordered = [...rows].sort((a, b) => a.orderDate.localeCompare(b.orderDate));
-  const midpoint = Math.floor(ordered.length / 2);
-  const previous = ordered.slice(0, midpoint).reduce((sum, row) => sum + value(row), 0);
-  const current = ordered.slice(midpoint).reduce((sum, row) => sum + value(row), 0);
-  return previous ? ((current - previous) / previous) * 100 : 0;
 }
 
 type RankedItem = { name: string; value: number; quantity: number; count: number };
@@ -346,9 +333,9 @@ export function OpenSalesOrdersDashboard() {
       </div> : null}
 
       <div data-pdf-page-block className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} delta={periodChange(filteredData, () => 1)} icon={FileText} tone="primary" />
-        <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} delta={periodChange(filteredData, (row) => row.value)} icon={IndianRupee} tone="success" />
-        <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} delta={periodChange(filteredData, (row) => row.openQuantity)} icon={Package} tone="violet" />
+        <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} icon={FileText} tone="primary" />
+        <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
+        <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} icon={Package} tone="violet" />
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
