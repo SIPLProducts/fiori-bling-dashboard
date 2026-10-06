@@ -14,6 +14,7 @@ import {
   Package,
   RefreshCw,
   RotateCcw,
+  Search,
   TriangleAlert,
   Truck,
 } from "lucide-react";
@@ -44,6 +45,9 @@ import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { displayOpenOrderDate, filterOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -149,6 +153,8 @@ export function OpenSalesOrdersDashboard() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
+  const [tableStatus, setTableStatus] = useState<OpenOrderTableStatus>("all");
+  const [tableSearch, setTableSearch] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
   const [excelBusy, setExcelBusy] = useState(false);
   const tablePageSize = 10;
@@ -183,7 +189,7 @@ export function OpenSalesOrdersDashboard() {
   const activeFilterCount = Number(Boolean(dateRange?.from))
     + Number(filters.documentTypes.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, filters]);
+  useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
     setDateRange(undefined);
     setFilters({
@@ -230,8 +236,10 @@ export function OpenSalesOrdersDashboard() {
       highestQuantity: [...filteredData].sort((a, b) => b.openQuantity - a.openQuantity)[0],
     };
   }, [filteredData]);
-  const tablePageCount = Math.max(1, Math.ceil(filteredData.length / tablePageSize));
-  const tableRows = filteredData.slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize);
+  const tableData = useMemo(() => filterOpenOrderTable(filteredData, tableStatus, tableSearch), [filteredData, tableStatus, tableSearch]);
+  const tablePageCount = Math.max(1, Math.ceil(tableData.length / tablePageSize));
+  const currentTablePage = Math.min(tablePage, tablePageCount);
+  const tableRows = tableData.slice((currentTablePage - 1) * tablePageSize, currentTablePage * tablePageSize);
   const pdfDateLabel = dateRange?.from
     ? dateRange.to
       ? `${format(dateRange.from, "dd-MMM-yyyy")} – ${format(dateRange.to, "dd-MMM-yyyy")}`
@@ -257,13 +265,13 @@ export function OpenSalesOrdersDashboard() {
   };
 
   const downloadExcel = async () => {
-    if (!filteredData.length) {
+    if (!tableData.length) {
       toast.error("No filtered orders to export");
       return;
     }
     setExcelBusy(true);
     try {
-      await downloadOpenSalesOrdersExcel(filteredData);
+      await downloadOpenSalesOrdersExcel(tableData);
       toast.success("Open Sales Orders Excel downloaded");
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download Excel");
@@ -408,14 +416,18 @@ export function OpenSalesOrdersDashboard() {
 
       <section data-pdf-exclude className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(filteredData.length)} filtered orders</p></div>
-          <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Page {tablePage} of {tablePageCount}</span><Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !filteredData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button></div>
+          <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered orders</p></div>
+          <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
+            <div className="relative min-w-40 flex-1 xl:w-56"><Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Search detailed orders" placeholder="Search orders…" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} className="h-9 pl-9" /></div>
+            <Select value={tableStatus} onValueChange={(value) => { if (value === "all" || value === "open" || value === "partial") setTableStatus(value); }}><SelectTrigger aria-label="Filter orders by status" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Status: All</SelectItem><SelectItem value="open">Open</SelectItem><SelectItem value="partial">Partially Delivered</SelectItem></SelectContent></Select>
+            <Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !tableData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button>
+          </div>
         </div>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters."}</TableCell></TableRow>}</TableBody>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
         </Table>
-        <div data-pdf-exclude className="flex items-center justify-end gap-2 border-t border-border px-4 py-3"><Button variant="outline" size="sm" aria-label="Previous table page" disabled={tablePage <= 1} onClick={() => setTablePage((page) => Math.max(1, page - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={tablePage >= tablePageCount} onClick={() => setTablePage((page) => Math.min(tablePageCount, page + 1))}>Next<ChevronRight /></Button></div>
+        <div data-pdf-exclude className="flex flex-wrap items-center justify-start gap-2 border-t border-border px-4 py-3"><span className="mr-2 text-xs text-muted-foreground">Page {currentTablePage} of {tablePageCount}</span><Button variant="outline" size="sm" aria-label="Previous table page" disabled={currentTablePage <= 1} onClick={() => setTablePage(Math.max(1, currentTablePage - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={currentTablePage >= tablePageCount} onClick={() => setTablePage(Math.min(tablePageCount, currentTablePage + 1))}>Next<ChevronRight /></Button></div>
       </section>
     </div>
   );
@@ -458,13 +470,11 @@ function SalesZoneTooltip({ item }: { item: ZoneItem }) {
 }
 
 function StatusBadge({ partial }: { partial: boolean }) {
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold ${partial ? "bg-warning/20 text-warning-foreground" : "bg-primary/10 text-primary"}`}>{partial ? "Partially Delivered" : "Open"}</span>;
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold ${partial ? "bg-warning/20 text-warning-foreground" : "bg-primary/10 text-primary"}`}>{openOrderStatusLabel(partial ? 1 : 0)}</span>;
 }
 
 function displayDate(value: string) {
-  if (!value) return "—";
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MMM-yyyy");
+  return displayOpenOrderDate(value);
 }
 
 function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "warning" | "violet"; label: string; value: string; detail: string }) {

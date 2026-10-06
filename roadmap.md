@@ -138,3 +138,4 @@
 - [x] Extend Quick View header colors across each entire card body, preserving all content; verify screen, dark mode, and PDF.
 - [x] Add the reference grey Quick View header and white main values while retaining colored cards; verify screen and PDF.
 - [x] Make all Highest Value text and icons white and enclose the Quick View header and tiles in one border; verify screen and PDF.
+- [x] Add detailed-table Status and column search filters, export all matching rows, and move pagination below-left; verify filtering and download.
