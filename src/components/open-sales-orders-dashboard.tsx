@@ -48,6 +48,9 @@ import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { displayOpenOrderDate, filterOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
+
+const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -159,7 +162,12 @@ export function OpenSalesOrdersDashboard() {
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
+  const [years, setYears] = useState<string[] | null>(() => [currentFiscalYear()]);
+  const setDateRange = (range: DateRange | undefined) => {
+    setDateRangeState(range);
+    if (range?.from) setYears(null);
+  };
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
