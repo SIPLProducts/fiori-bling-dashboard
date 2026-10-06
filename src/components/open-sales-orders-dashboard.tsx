@@ -396,9 +396,9 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
-        <section className="min-w-0">
-          <h2 className="mb-2 rounded-t-md border border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
+        <section className="min-w-0 overflow-hidden rounded-md border border-border">
+          <h2 className="border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
+          <div className="grid gap-3 p-2 sm:grid-cols-3">
             <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
             <QuickItem icon={Box} tone="violet" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
@@ -470,7 +470,7 @@ function displayDate(value: string) {
 function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "warning" | "violet"; label: string; value: string; detail: string }) {
   const styles = {
     primary: { card: "border-primary bg-primary text-primary-foreground", icon: "bg-primary-foreground/15 text-primary-foreground" },
-    warning: { card: "border-warning bg-warning text-warning-foreground", icon: "bg-warning-foreground/15 text-warning-foreground" },
+    warning: { card: "border-warning bg-warning text-quick-view-value", icon: "bg-quick-view-value/15 text-quick-view-value" },
     violet: { card: "border-quick-view-violet bg-quick-view-violet text-primary-foreground", icon: "bg-primary-foreground/15 text-primary-foreground" },
   }[tone];
   return <div className={`min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
