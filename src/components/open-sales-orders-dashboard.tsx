@@ -397,7 +397,7 @@ export function OpenSalesOrdersDashboard() {
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0">
-          <h2 className="mb-2 text-sm font-semibold text-primary">Quick View</h2>
+          <h2 className="mb-2 rounded-t-md border border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
@@ -479,7 +479,7 @@ function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: Component
       <span className={`grid size-8 shrink-0 place-items-center rounded-full ${styles.icon}`}><Icon className="size-4" /></span>
       <div className="min-w-0">
         <p className="text-[10px] font-medium">{label}</p>
-        <p className="mt-0.5 break-words text-base font-semibold tabular-nums">{value}</p>
+        <p className="mt-0.5 break-words text-base font-semibold text-quick-view-value tabular-nums">{value}</p>
         <p className="mt-1 truncate text-[10px]" title={detail}>({detail})</p>
       </div>
     </div>
