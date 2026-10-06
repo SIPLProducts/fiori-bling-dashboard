@@ -396,12 +396,12 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
-        <section className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
-          <h2 className="bg-muted px-4 py-2 text-sm font-semibold text-primary">Quick View</h2>
-          <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <section className="min-w-0">
+          <h2 className="mb-2 text-sm font-semibold text-primary">Quick View</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
             <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
-            <QuickItem icon={TriangleAlert} tone="destructive" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
-            <QuickItem icon={Box} tone="primary" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
+            <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
+            <QuickItem icon={Box} tone="violet" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
           </div>
         </section>
       </div>
@@ -467,6 +467,21 @@ function displayDate(value: string) {
   return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MMM-yyyy");
 }
 
-function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "destructive"; label: string; value: string; detail: string }) {
-  return <div className="flex min-w-0 items-start gap-3 p-4"><span className={`grid size-10 shrink-0 place-items-center rounded-full ${tone === "destructive" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}><Icon className="size-5" /></span><div className="min-w-0"><p className="text-[10px] text-muted-foreground">{label}</p><p className="mt-0.5 text-base font-semibold text-card-foreground tabular-nums">{value}</p><p className="mt-1 truncate text-[10px] text-primary" title={detail}>({detail})</p></div></div>;
+function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "warning" | "violet"; label: string; value: string; detail: string }) {
+  const styles = {
+    primary: { card: "border-primary/20 border-l-primary bg-primary/10", icon: "bg-primary/15 text-primary" },
+    warning: { card: "border-warning/25 border-l-warning bg-warning/15", icon: "bg-warning/20 text-warning-foreground" },
+    violet: { card: "border-chart-5/20 border-l-chart-5 bg-chart-5/10", icon: "bg-chart-5/15 text-chart-5" },
+  }[tone];
+  return <div className={`min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
+    <h3 className="text-xs font-semibold text-card-foreground">{label}</h3>
+    <div className="mt-4 flex min-w-0 items-start gap-2">
+      <span className={`grid size-8 shrink-0 place-items-center rounded-full ${styles.icon}`}><Icon className="size-4" /></span>
+      <div className="min-w-0">
+        <p className="text-[10px] font-medium text-card-foreground">{label}</p>
+        <p className="mt-0.5 break-words text-base font-semibold text-card-foreground tabular-nums">{value}</p>
+        <p className="mt-1 truncate text-[10px] text-card-foreground" title={detail}>({detail})</p>
+      </div>
+    </div>
+  </div>;
 }
