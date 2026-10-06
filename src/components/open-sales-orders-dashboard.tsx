@@ -344,7 +344,7 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1600px]:grid-cols-7">
+        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
           <FilterField label="Financial Year">
             <MultiSelect bulkActions options={yearOptions} selected={years ?? yearOptions.map((option) => option.value)} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); if (next.length) setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
           </FilterField>
