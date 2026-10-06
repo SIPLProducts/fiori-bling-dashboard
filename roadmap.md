@@ -130,3 +130,5 @@
 - [x] Arrange Open Sales Orders customer, product, and model rankings in equal 4 + 4 + 4 desktop columns; remove Sales Type and add source-backed labels plus Select All/Deselect All.
 - [x] Rename Open Sales Orders report, status and item labels; remove subtitle; show division descriptions and preserve ERDAT-based date filtering.
 - [x] Show Sales Zone order-line counts as vertical bars with names below and the numeric scale on the left, including all zones in PDF export.
+
+- [ ] Compact Sales Zone bars and remove bar percentages; move the Open Orders/Partial Delivered/Quick View row immediately above the detailed table.
