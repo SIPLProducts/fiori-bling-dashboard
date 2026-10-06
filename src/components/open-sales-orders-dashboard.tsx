@@ -412,7 +412,7 @@ export function OpenSalesOrdersDashboard() {
 
       <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} color="var(--chart-1)" />
-        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} color="var(--chart-3)" />
+        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} color="var(--success)" />
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} color="var(--quick-view-violet)" />
       </div>
 
