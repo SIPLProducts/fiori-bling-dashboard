@@ -75,9 +75,9 @@ const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
 
 type Tone = "primary" | "success" | "violet" | "warning";
 const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
-  primary: { card: "border-primary/25 bg-primary/5", icon: "bg-primary text-primary-foreground" },
-  success: { card: "border-success/25 bg-success/5", icon: "bg-success text-success-foreground" },
-  violet: { card: "border-chart-5/25 bg-chart-5/5", icon: "bg-chart-5 text-primary-foreground" },
+  primary: { card: "border-primary/25 bg-primary/15", icon: "bg-primary text-primary-foreground" },
+  success: { card: "border-success/25 bg-success/15", icon: "bg-success text-success-foreground" },
+  violet: { card: "border-chart-5/25 bg-chart-5/15", icon: "bg-chart-5 text-primary-foreground" },
   warning: { card: "border-warning/30 bg-warning/5", icon: "bg-warning text-warning-foreground" },
 };
 
