@@ -191,7 +191,11 @@ export function OpenSalesOrdersDashboard() {
       documentTypes: current.documentTypes.filter((type) => options.documentType.includes(type)),
     }));
   }, [data.length, options.documentType]);
+  const yearOptions = useMemo(() => [...new Set(data.map((row) => row.orderDate ? fiscalYearForDate(row.orderDate) : "").filter(Boolean))]
+    .sort((a, b) => b.localeCompare(a))
+    .map((year) => ({ value: year, label: fyLabel(year) })), [data]);
   const filteredData = useMemo(() => data.filter((row) => {
+    if (years !== null && !years.includes(row.orderDate ? fiscalYearForDate(row.orderDate) : "")) return false;
     if (dateRange?.from || dateRange?.to) {
       if (!row.orderDate || !Number.isFinite(Date.parse(row.orderDate))) return false;
       if (dateRange.from && row.orderDate < format(dateRange.from, "yyyy-MM-dd")) return false;
@@ -203,13 +207,15 @@ export function OpenSalesOrdersDashboard() {
     if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
     if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
     return true;
-  }), [data, dateRange, filters]);
+  }), [data, dateRange, filters, years]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
+    + Number(years !== null)
     + Number(filters.documentTypes.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
+  useEffect(() => setTablePage(1), [dateRange, filters, years, tableStatus, tableSearch]);
   const resetFilters = () => {
-    setDateRange(undefined);
+    setDateRangeState(undefined);
+    setYears([currentFiscalYear()]);
     setFilters({
       ...EMPTY_FILTERS,
       documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
