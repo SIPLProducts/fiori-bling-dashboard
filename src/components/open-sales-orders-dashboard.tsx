@@ -348,15 +348,17 @@ export function OpenSalesOrdersDashboard() {
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type">
-          <div className="order-document-grid grid min-h-64 items-center gap-3 grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)]">
-            <div className="relative h-56">
-              <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="53%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-xl tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Total Orders</span></div>
+          <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
+          <div className="order-document-grid grid min-h-64 min-w-[380px] grid-cols-[128px_minmax(244px,1fr)] items-center gap-2">
+            <div className="order-document-donut relative h-56 w-32 shrink-0">
+              <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
             </div>
-            <div className="overflow-hidden rounded-md border border-border text-xs">
-              <div className="grid grid-cols-[minmax(0,1fr)_44px_72px_32px] bg-primary/5 px-3 py-2 font-semibold text-primary"><span>Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
-              {metrics.documentTypes.map((item, index) => <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_44px_72px_32px] items-center border-t border-border px-3 py-2"><span className="flex items-center gap-2 font-medium"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} />{item.name}</span><span className="text-right tabular-nums">{formatNumber(item.count)}</span><span className="text-right tabular-nums">{item.value.toFixed(2)}</span><span className="text-right tabular-nums">{percent(item.count, filteredData.length)}%</span></div>)}
+            <div className="min-w-0 overflow-hidden rounded-md border border-border text-xs text-card-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_44px_68px_36px] items-center gap-1 bg-primary/5 px-2 py-2 text-[11px] font-semibold text-primary"><span className="min-w-0">Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
+              {metrics.documentTypes.map((item, index) => <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_44px_68px_36px] items-center gap-1 border-t border-border px-2 py-2"><span className="flex min-w-0 items-center gap-1.5 font-medium"><span className="size-2 shrink-0 rounded-full" style={{ background: COLORS[index] }} />{item.name}</span><span className="text-right tabular-nums">{formatNumber(item.count)}</span><span className="text-right tabular-nums">{item.value.toFixed(2)}</span><span className="text-right tabular-nums">{percent(item.count, filteredData.length)}%</span></div>)}
             </div>
+          </div>
           </div>
         </Panel>
         <Panel title="Open Orders by Aging Bucket">
