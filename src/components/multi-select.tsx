@@ -13,6 +13,7 @@ export function MultiSelect({
   placeholder = "All",
   emptyText = "No values available",
   disabled = false,
+  bulkActions = false,
 }: {
   options: MultiSelectOption[];
   selected: string[];
@@ -20,6 +21,7 @@ export function MultiSelect({
   placeholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  bulkActions?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const toggle = (value: string) =>
@@ -65,6 +67,10 @@ export function MultiSelect({
             className="h-8 pl-8 text-sm"
           />
         </div>
+        {bulkActions ? <div className="mb-1 grid grid-cols-2 gap-1 border-b border-border pb-1">
+          <Button type="button" variant="ghost" size="sm" disabled={!options.length} onClick={() => onChange(options.map((option) => option.value))}>Select All</Button>
+          <Button type="button" variant="ghost" size="sm" disabled={!selected.length} onClick={() => onChange([])}>Deselect All</Button>
+        </div> : null}
         <div className="max-h-64 overflow-y-auto">
           {options.length === 0 ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">{emptyText}</p>
@@ -93,7 +99,7 @@ export function MultiSelect({
             })
           )}
         </div>
-        {selected.length > 0 ? (
+        {!bulkActions && selected.length > 0 ? (
           <button
             type="button"
             onClick={() => onChange([])}

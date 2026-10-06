@@ -43,7 +43,7 @@ import { toast } from "sonner";
 import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
-import { MultiSelect } from "@/components/multi-select";
+import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -52,23 +52,22 @@ const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
 
 type Filters = {
   documentTypes: string[];
-  customers: string[];
-  zones: string[];
-  salesTypes: string[];
-  products: string[];
-  divisions: string[];
+  customers: string[] | null;
+  zones: string[] | null;
+  products: string[] | null;
+  divisions: string[] | null;
 };
 
 const EMPTY_FILTERS: Filters = {
   documentTypes: DEFAULT_DOCUMENT_TYPES,
-  customers: [],
-  zones: [],
-  salesTypes: [],
-  products: [],
-  divisions: [],
+  customers: null,
+  zones: null,
+  products: null,
+  divisions: null,
 };
 
 const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
+const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
 
 type Tone = "primary" | "success" | "violet" | "warning";
 const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
@@ -168,9 +167,8 @@ export function OpenSalesOrdersDashboard() {
   const tablePageSize = 10;
   const options = useMemo(() => ({
     documentType: [...new Set(data.map((row) => row.documentType))].sort(),
-    customer: [...new Set(data.map((row) => row.customer))].sort(),
+    customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
-    salesType: [...new Set(data.map((row) => row.salesType))].sort(),
     product: [...new Set(data.map(productKey))].sort(),
     division: [...new Set(data.map((row) => row.division))].sort(),
   }), [data]);
@@ -187,16 +185,15 @@ export function OpenSalesOrdersDashboard() {
     if (dateRange?.from && rowDate < dateRange.from) return false;
     if (dateRange?.to && rowDate > dateRange.to) return false;
     if (!filters.documentTypes.includes(row.documentType)) return false;
-    if (filters.customers.length && !filters.customers.includes(row.customer)) return false;
-    if (filters.zones.length && !filters.zones.includes(row.zone)) return false;
-    if (filters.salesTypes.length && !filters.salesTypes.includes(row.salesType)) return false;
-    if (filters.products.length && !filters.products.includes(productKey(row))) return false;
-    if (filters.divisions.length && !filters.divisions.includes(row.division)) return false;
+    if (filters.customers !== null && !filters.customers.includes(customerKey(row))) return false;
+    if (filters.zones !== null && !filters.zones.includes(row.zone)) return false;
+    if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
+    if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
     return true;
   }), [data, dateRange, filters]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
     + Number(filters.documentTypes.length > 0)
-    + [filters.customers, filters.zones, filters.salesTypes, filters.products, filters.divisions].filter((values) => values.length > 0).length;
+    + [filters.customers, filters.zones, filters.products, filters.divisions].filter((values) => values !== null).length;
   useEffect(() => setTablePage(1), [dateRange, filters]);
   const resetFilters = () => {
     setDateRange(undefined);
@@ -320,7 +317,7 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
@@ -329,7 +326,6 @@ export function OpenSalesOrdersDashboard() {
           </FilterField>
           <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
-          <FilterMultiSelect label="Sales Type" selected={filters.salesTypes} options={options.salesType} onChange={(salesTypes) => setFilters((current) => ({ ...current, salesTypes }))} placeholder="All sales types" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
           <FilterField label="Document Type">
@@ -338,6 +334,7 @@ export function OpenSalesOrdersDashboard() {
               selected={filters.documentTypes}
               onChange={(documentTypes) => setFilters((current) => ({ ...current, documentTypes }))}
               placeholder="Select document types"
+              bulkActions
             />
           </FilterField>
         </div> : null}
@@ -400,7 +397,7 @@ export function OpenSalesOrdersDashboard() {
         </section>
       </div>
 
-      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 xl:grid-cols-3">
+      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} />
         <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} />
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
@@ -425,8 +422,9 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
   return <label className="min-w-0 space-y-1"><span className="block text-[10px] font-medium text-muted-foreground">{label}</span>{children}</label>;
 }
 
-function FilterMultiSelect({ label, selected, options, onChange, placeholder }: { label: string; selected: string[]; options: string[]; onChange: (value: string[]) => void; placeholder: string }) {
-  return <FilterField label={label}><MultiSelect options={options.map((option) => ({ value: option, label: option }))} selected={selected} onChange={onChange} placeholder={placeholder} /></FilterField>;
+function FilterMultiSelect({ label, selected, options, onChange }: { label: string; selected: string[] | null; options: string[] | MultiSelectOption[]; onChange: (value: string[]) => void; placeholder: string }) {
+  const choices = options.map((option) => typeof option === "string" ? { value: option, label: option } : option);
+  return <FilterField label={label}><MultiSelect bulkActions options={choices} selected={selected ?? choices.map((option) => option.value)} onChange={onChange} placeholder="No values selected" /></FilterField>;
 }
 
 function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {

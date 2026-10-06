@@ -127,3 +127,4 @@
 - [x] Replace the Open Sales Orders launchpad sample with a live current-financial-year count and latest update time.
 - [x] Show both the live Open Order Value and open order line count on the launchpad card.
 - [x] Add search to every Sales and Open Sales Orders dropdown, and make Year and Posting Dates reset each other.
+- [x] Arrange Open Sales Orders customer, product, and model rankings in equal 4 + 4 + 4 desktop columns; remove Sales Type and add source-backed labels plus Select All/Deselect All.
