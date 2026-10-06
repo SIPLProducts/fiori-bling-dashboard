@@ -381,7 +381,22 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="grid gap-4">
 
         <Panel title="Open Order Lines by Sales Zone">
-          <ResponsiveContainer width="100%" height={Math.max(280, metrics.zones.length * 27)}><BarChart data={metrics.zones} layout="vertical" margin={{ top: 8, right: 92, left: 22, bottom: 24 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} label={{ value: "Open Order Lines", position: "insideBottom", offset: -12, fontSize: 10 }} /><YAxis type="category" dataKey="name" width={88} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} /><Bar dataKey="count" name="Open Order Lines" radius={[0, 3, 3, 0]} isAnimationActive={false}>{metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}<LabelList dataKey="count" position="right" formatter={(value: number) => `${formatNumber(value)} lines (${percent(value, filteredData.length)}%)`} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer>
+          <div className="overflow-x-auto">
+            <div style={{ minWidth: Math.max(320, metrics.zones.length * 116) }}>
+              <ResponsiveContainer width="100%" height={340}>
+                <BarChart data={metrics.zones} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
+                  <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
+                  <XAxis type="category" dataKey="name" interval={0} height={76} tick={<SalesZoneAxisTick />} tickLine={false} />
+                  <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
+                  <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive={false}>
+                    {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}
+                    <LabelList dataKey="count" position="top" formatter={(value: number) => `${formatNumber(value)} (${percent(value, filteredData.length)}%)`} className="fill-foreground text-[10px] font-semibold" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </Panel>
       </div>
 
@@ -426,6 +441,16 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
 function FilterMultiSelect({ label, selected, options, onChange }: { label: string; selected: string[] | null; options: string[] | MultiSelectOption[]; onChange: (value: string[]) => void; placeholder: string }) {
   const choices = options.map((option) => typeof option === "string" ? { value: option, label: option } : option);
   return <FilterField label={label}><MultiSelect bulkActions options={choices} selected={selected ?? choices.map((option) => option.value)} onChange={onChange} placeholder="No values selected" /></FilterField>;
+}
+
+function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <foreignObject x={-53} y={8} width={106} height={64}>
+        <div className="break-words text-center text-[10px] leading-3 text-muted-foreground">{payload?.value}</div>
+      </foreignObject>
+    </g>
+  );
 }
 
 function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {
