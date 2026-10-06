@@ -378,7 +378,7 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>
 
-      <div data-pdf-page-block className="grid gap-4">
+      <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 116) } : undefined}>
 
         <Panel title="Open Order Lines by Sales Zone">
           <div className="overflow-x-auto">
