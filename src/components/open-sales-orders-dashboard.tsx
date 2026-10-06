@@ -128,9 +128,9 @@ function StatusCard({ title, count, share, partial }: { title: string; count: nu
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-card/20 ring-1 ring-card/35">
         {partial ? <Truck className="size-6" /> : <FileText className="size-6" />}
       </span>
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-medium">{title}</p>
-        <p className="mt-2 text-2xl font-semibold tabular-nums">{formatNumber(count)}</p>
+        <p className="order-status-count mt-2 text-2xl font-semibold tabular-nums">{formatNumber(count)}</p>
         <p className="text-sm">({share}%)</p>
       </div>
     </section>
@@ -407,8 +407,8 @@ export function OpenSalesOrdersDashboard() {
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
-          <h2 className="border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
-          <div className="grid gap-3 p-2 sm:grid-cols-3">
+          <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
+          <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-3">
             <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
             <QuickItem icon={Box} tone="violet" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
