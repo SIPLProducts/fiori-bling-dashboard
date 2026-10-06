@@ -149,3 +149,4 @@
 - [x] Give Customer/Product/Model ranking bars distinct colors and add header dividers to the six requested charts; verify screen and PDF.
 - [x] Add colored heading borders including Sales Zone, radiant fills to the three upper charts, and a clearly visible Reset button; verify screen and PDF.
 - [x] Add Date Range Clear and readable one-row/two-row Open Sales Orders Smart Filters; verify interaction and layout.
+- [x] Verify mutually exclusive Financial Year and Date Range selections, including cleared year checkboxes.

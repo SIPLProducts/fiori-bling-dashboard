@@ -346,7 +346,7 @@ export function OpenSalesOrdersDashboard() {
         </div>
         {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
           <FilterField label="Financial Year">
-            <MultiSelect bulkActions options={yearOptions} selected={years ?? yearOptions.map((option) => option.value)} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); if (next.length) setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
+            <MultiSelect bulkActions options={yearOptions} selected={years ?? (dateRange?.from || dateRange?.to ? [] : yearOptions.map((option) => option.value))} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
           </FilterField>
           <FilterField label="Date Range">
             <Popover>
