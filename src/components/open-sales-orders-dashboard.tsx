@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   Box,
   CalendarDays,
@@ -81,13 +81,21 @@ const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
   warning: { card: "border-warning/30 bg-warning/5", icon: "bg-warning text-warning-foreground" },
 };
 
-function Panel({ title, children, className = "", headerDivider = false }: { title: string; children: ReactNode; className?: string; headerDivider?: boolean }) {
+function Panel({ title, children, className = "", headerDivider = false, dividerColor = "neutral" }: { title: string; children: ReactNode; className?: string; headerDivider?: boolean; dividerColor?: "neutral" | "blue" | "green" | "violet" | "amber" | "teal" }) {
   return (
     <section className={`min-w-0 rounded-md border border-border bg-card p-4 shadow-tile order-panel ${className}`}>
-      <h2 className={`mb-2 text-[15px] font-semibold text-card-foreground ${headerDivider ? "border-b border-border pb-2" : ""}`}>{title}</h2>
+      <h2 className={`mb-2 text-[15px] font-semibold text-card-foreground ${headerDivider ? `order-heading-divider order-heading-${dividerColor} border-b-2 pb-2` : ""}`}>{title}</h2>
       {children}
     </section>
   );
+}
+
+function ChartGradients({ prefix, colors }: { prefix: string; colors: readonly string[] }) {
+  return <defs>{colors.map((color, index) => <linearGradient key={index} id={`${prefix}-${index}`} x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} />
+    <stop offset="45%" stopColor={color} />
+    <stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} />
+  </linearGradient>)}</defs>;
 }
 
 function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
@@ -145,6 +153,10 @@ function StatusCard({ title, count, value, share, partial }: { title: string; co
 
 export function OpenSalesOrdersDashboard() {
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const documentGradient = `${chartId}-document`;
+  const agingGradient = `${chartId}-aging`;
+  const trendGradient = `${chartId}-trend`;
   const { data = [], error, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["open-sales-orders-live"],
     queryFn: getOpenSalesOrders,
@@ -322,7 +334,7 @@ export function OpenSalesOrdersDashboard() {
             <span className="hidden text-[10px] text-muted-foreground sm:inline">{formatNumber(filteredData.length)} of {formatNumber(data.length)} orders</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
+            <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
@@ -360,11 +372,11 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <Panel title="Open Orders by Sales Document Type" headerDivider>
+        <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className="order-document-grid grid min-h-64 min-w-[380px] grid-cols-[128px_minmax(244px,1fr)] items-center gap-2">
             <div className="order-document-donut relative h-56 w-32 shrink-0">
-              <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%"><PieChart><ChartGradients prefix={documentGradient} colors={COLORS} /><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={`url(#${documentGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
             </div>
             <div className="min-w-0 overflow-hidden rounded-md border border-border text-xs text-card-foreground">
@@ -374,23 +386,23 @@ export function OpenSalesOrdersDashboard() {
           </div>
           </div>
         </Panel>
-        <Panel title="Open Orders by Aging Bucket" headerDivider>
+        <Panel title="Open Orders by Aging Bucket" headerDivider dividerColor="green">
           <div className="order-aging-grid grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
             <div className="relative h-56">
-              <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.buckets} dataKey="count" nameKey="name" innerRadius="54%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.buckets.map((bucket, index) => <Cell key={bucket.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%"><PieChart><ChartGradients prefix={agingGradient} colors={COLORS} /><Pie data={metrics.buckets} dataKey="count" nameKey="name" innerRadius="54%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.buckets.map((bucket, index) => <Cell key={bucket.name} fill={`url(#${agingGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-lg tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Orders</span></div>
             </div>
             <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-primary">({percent(bucket.count, filteredData.length)}%)</span></span></div>)}</div>
           </div>
         </Panel>
-        <Panel title="Open Order Value Trend" headerDivider>
-          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 205}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" fill="var(--kpi-1)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
+        <Panel title="Open Order Value Trend" headerDivider dividerColor="amber">
+          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 205}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><ChartGradients prefix={trendGradient} colors={["var(--kpi-1)", "var(--kpi-2)"]} /><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /><Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
 
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
-        <Panel title="Open Order Lines by Sales Zone">
+        <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
@@ -466,7 +478,7 @@ function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; 
 }
 
 function RankingPanel({ title, data, color }: { title: string; data: RankedItem[]; color: string }) {
-  return <Panel title={title} className="order-ranking" headerDivider>{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill={color} radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
+  return <Panel title={title} className="order-ranking" headerDivider dividerColor={color === "var(--success)" ? "green" : color === "var(--quick-view-violet)" ? "violet" : "blue"}>{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill={color} radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
 }
 
 function RankingAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) {
