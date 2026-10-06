@@ -170,7 +170,7 @@ export function OpenSalesOrdersDashboard() {
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
     product: [...new Set(data.map(productKey))].sort(),
-    division: [...new Set(data.map((row) => row.division))].sort(),
+    division: [...new Map(data.map((row) => [row.division, { value: row.division, label: row.industryDescription ? `${row.division} — ${row.industryDescription}` : row.division }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
   }), [data]);
   useEffect(() => {
     if (!data.length || documentTypeDefaultsInitialized.current) return;
@@ -181,9 +181,11 @@ export function OpenSalesOrdersDashboard() {
     }));
   }, [data.length, options.documentType]);
   const filteredData = useMemo(() => data.filter((row) => {
-    const rowDate = new Date(`${row.orderDate}T00:00:00`);
-    if (dateRange?.from && rowDate < dateRange.from) return false;
-    if (dateRange?.to && rowDate > dateRange.to) return false;
+    if (dateRange?.from || dateRange?.to) {
+      if (!row.orderDate || !Number.isFinite(Date.parse(row.orderDate))) return false;
+      if (dateRange.from && row.orderDate < format(dateRange.from, "yyyy-MM-dd")) return false;
+      if (dateRange.to && row.orderDate > format(dateRange.to, "yyyy-MM-dd")) return false;
+    }
     if (!filters.documentTypes.includes(row.documentType)) return false;
     if (filters.customers !== null && !filters.customers.includes(customerKey(row))) return false;
     if (filters.zones !== null && !filters.zones.includes(row.zone)) return false;
@@ -291,8 +293,7 @@ export function OpenSalesOrdersDashboard() {
       </div> : null}
       <header data-pdf-exclude className="flex items-start justify-between gap-3 px-1">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Open Sales Orders</h1>
-          <p className="text-xs text-muted-foreground">Open order position, ageing, delivery status and sales-zone exposure</p>
+          <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
         </div>
         <div className="flex items-center gap-2"><Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
           const result = await refetch();
@@ -328,7 +329,7 @@ export function OpenSalesOrdersDashboard() {
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
-          <FilterField label="Document Type">
+          <FilterField label="Sales Document Type">
             <MultiSelect
               options={options.documentType.map((type) => ({ value: type, label: type }))}
               selected={filters.documentTypes}
@@ -341,7 +342,7 @@ export function OpenSalesOrdersDashboard() {
       </section>
 
       {pdfBusy ? <div data-pdf-page-block className="border-b border-border bg-card px-4 py-2">
-        <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders</h2>
+        <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders Reports</h2>
       </div> : null}
 
       <div data-pdf-page-block className="grid gap-4 sm:grid-cols-3">
@@ -351,14 +352,14 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <Panel title="Open Orders by Document Type">
+        <Panel title="Open Orders by Sales Document Type">
           <div className="grid min-h-64 items-center gap-3 grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)]">
             <div className="relative h-56">
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="53%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-xl tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Total Orders</span></div>
             </div>
             <div className="overflow-hidden rounded-md border border-border text-xs">
-              <div className="grid grid-cols-[1fr_64px_92px_48px] bg-primary/5 px-3 py-2 font-semibold text-primary"><span>Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
+              <div className="grid grid-cols-[1fr_64px_92px_48px] bg-primary/5 px-3 py-2 font-semibold text-primary"><span>Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
               {metrics.documentTypes.map((item, index) => <div key={item.name} className="grid grid-cols-[1fr_64px_92px_48px] items-center border-t border-border px-3 py-2"><span className="flex items-center gap-2 font-medium"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} />{item.name}</span><span className="text-right tabular-nums">{formatNumber(item.count)}</span><span className="text-right tabular-nums">{item.value.toFixed(2)}</span><span className="text-right tabular-nums">{percent(item.count, filteredData.length)}%</span></div>)}
             </div>
           </div>
@@ -385,7 +386,7 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
-        <StatusCard title="Open Orders (Not Delivered)" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
+        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
           <h2 className="bg-muted px-4 py-2 text-sm font-semibold text-primary">Quick View</h2>
@@ -405,11 +406,11 @@ export function OpenSalesOrdersDashboard() {
 
       <section data-pdf-exclude className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(filteredData.length)} filtered orders</p></div>
+          <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(filteredData.length)} filtered orders</p></div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Page {tablePage} of {tablePageCount}</span><Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !filteredData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button></div>
         </div>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "POSNR", "Customer", "Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(tablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters."}</TableCell></TableRow>}</TableBody>
         </Table>
         <div data-pdf-exclude className="flex items-center justify-end gap-2 border-t border-border px-4 py-3"><Button variant="outline" size="sm" aria-label="Previous table page" disabled={tablePage <= 1} onClick={() => setTablePage((page) => Math.max(1, page - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={tablePage >= tablePageCount} onClick={() => setTablePage((page) => Math.min(tablePageCount, page + 1))}>Next<ChevronRight /></Button></div>

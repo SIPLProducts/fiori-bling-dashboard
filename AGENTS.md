@@ -27,3 +27,4 @@
 - Scope the Open Sales Orders launchpad value and line count to active ZDOR, ZEOR, and ZSOR rows in the current April–March financial year, so it matches the report's opening view.
 - Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
+- Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
