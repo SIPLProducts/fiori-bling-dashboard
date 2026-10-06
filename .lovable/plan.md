@@ -36,6 +36,7 @@ Preserve this order:
 - Keep a separate spacious PDF presentation where necessary so screen density changes do not clip exported charts or change the established PDF section order.
 - Validate with loaded data at the current 1114 × 677 preview size, standard desktop sizes, and a narrow screen. Check long names, dropdowns, chart labels, table controls, and PDF output.
 - Measure the final page height and report the actual reduction. A preliminary compact-layout estimate is approximately **1,700–2,100 pixels**, depending on width and label wrapping; this is a target, not a verified result.
+- After approval and implementation, provide an image reference captured from the actual updated dashboard. Preserve the current design rather than using the discarded visual concepts; label the image as a dashboard capture, not a single-screen fit.
 
 ## Acceptance criteria
 Every existing section remains on one continuous page, with less scrolling, no overlapping content, readable totals and labels, working table controls, and unchanged reporting results and exports.
