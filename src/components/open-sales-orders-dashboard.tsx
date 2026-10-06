@@ -261,7 +261,7 @@ export function OpenSalesOrdersDashboard() {
     ? dateRange.to
       ? `${format(dateRange.from, "dd-MMM-yyyy")} – ${format(dateRange.to, "dd-MMM-yyyy")}`
       : format(dateRange.from, "dd-MMM-yyyy")
-    : "All order dates";
+    : "";
 
   const downloadDashboardPdf = async () => {
     setPdfBusy(true);
@@ -301,7 +301,7 @@ export function OpenSalesOrdersDashboard() {
     <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "pdf-export-theme" : "orders-compact"}`}>
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
-        <p className="text-right text-xs font-semibold text-muted-foreground">{pdfDateLabel}</p>
+        {pdfDateLabel ? <p className="text-right text-xs font-semibold text-muted-foreground">{pdfDateLabel}</p> : null}
       </div> : null}
       <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
         <div className="min-w-0">
