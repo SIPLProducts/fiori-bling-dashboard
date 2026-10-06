@@ -81,10 +81,10 @@ const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
   warning: { card: "border-warning/30 bg-warning/5", icon: "bg-warning text-warning-foreground" },
 };
 
-function Panel({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
+function Panel({ title, children, className = "", headerDivider = false }: { title: string; children: ReactNode; className?: string; headerDivider?: boolean }) {
   return (
     <section className={`min-w-0 rounded-md border border-border bg-card p-4 shadow-tile order-panel ${className}`}>
-      <h2 className="mb-2 text-[15px] font-semibold text-card-foreground">{title}</h2>
+      <h2 className={`mb-2 text-[15px] font-semibold text-card-foreground ${headerDivider ? "border-b border-border pb-2" : ""}`}>{title}</h2>
       {children}
     </section>
   );
@@ -360,7 +360,7 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <Panel title="Open Orders by Sales Document Type">
+        <Panel title="Open Orders by Sales Document Type" headerDivider>
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className="order-document-grid grid min-h-64 min-w-[380px] grid-cols-[128px_minmax(244px,1fr)] items-center gap-2">
             <div className="order-document-donut relative h-56 w-32 shrink-0">
@@ -374,7 +374,7 @@ export function OpenSalesOrdersDashboard() {
           </div>
           </div>
         </Panel>
-        <Panel title="Open Orders by Aging Bucket">
+        <Panel title="Open Orders by Aging Bucket" headerDivider>
           <div className="order-aging-grid grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
             <div className="relative h-56">
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.buckets} dataKey="count" nameKey="name" innerRadius="54%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.buckets.map((bucket, index) => <Cell key={bucket.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
@@ -383,7 +383,7 @@ export function OpenSalesOrdersDashboard() {
             <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-primary">({percent(bucket.count, filteredData.length)}%)</span></span></div>)}</div>
           </div>
         </Panel>
-        <Panel title="Open Order Value Trend">
+        <Panel title="Open Order Value Trend" headerDivider>
           <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 205}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" fill="var(--kpi-1)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
@@ -411,9 +411,9 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} />
-        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} />
-        <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
+        <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} color="var(--chart-1)" />
+        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} color="var(--success)" />
+        <RankingPanel title="Open Orders by Model Wise" data={metrics.models} color="var(--quick-view-violet)" />
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
@@ -465,8 +465,8 @@ function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; 
   );
 }
 
-function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {
-  return <Panel title={title} className="order-ranking">{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
+function RankingPanel({ title, data, color }: { title: string; data: RankedItem[]; color: string }) {
+  return <Panel title={title} className="order-ranking" headerDivider>{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill={color} radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
 }
 
 function RankingAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) {
