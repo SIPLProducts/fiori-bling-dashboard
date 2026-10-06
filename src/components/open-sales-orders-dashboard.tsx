@@ -469,18 +469,18 @@ function displayDate(value: string) {
 
 function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: ComponentType<{ className?: string }>; tone: "primary" | "warning" | "violet"; label: string; value: string; detail: string }) {
   const styles = {
-    primary: { card: "border-primary/20 border-l-primary bg-primary/10", icon: "bg-primary/15 text-primary" },
-    warning: { card: "border-warning/25 border-l-warning bg-warning/15", icon: "bg-warning/20 text-warning-foreground" },
-    violet: { card: "border-quick-view-violet/20 border-l-quick-view-violet bg-quick-view-violet/10", icon: "bg-quick-view-violet/15 text-quick-view-violet" },
+    primary: { card: "border-primary bg-primary text-primary-foreground", icon: "bg-primary-foreground/15 text-primary-foreground" },
+    warning: { card: "border-warning bg-warning text-warning-foreground", icon: "bg-warning-foreground/15 text-warning-foreground" },
+    violet: { card: "border-quick-view-violet bg-quick-view-violet text-primary-foreground", icon: "bg-primary-foreground/15 text-primary-foreground" },
   }[tone];
   return <div className={`min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
-    <h3 className="text-xs font-semibold text-card-foreground">{label}</h3>
+    <h3 className="text-xs font-semibold">{label}</h3>
     <div className="mt-4 flex min-w-0 items-start gap-2">
       <span className={`grid size-8 shrink-0 place-items-center rounded-full ${styles.icon}`}><Icon className="size-4" /></span>
       <div className="min-w-0">
-        <p className="text-[10px] font-medium text-card-foreground">{label}</p>
-        <p className="mt-0.5 break-words text-base font-semibold text-card-foreground tabular-nums">{value}</p>
-        <p className="mt-1 truncate text-[10px] text-card-foreground" title={detail}>({detail})</p>
+        <p className="text-[10px] font-medium">{label}</p>
+        <p className="mt-0.5 break-words text-base font-semibold tabular-nums">{value}</p>
+        <p className="mt-1 truncate text-[10px]" title={detail}>({detail})</p>
       </div>
     </div>
   </div>;
