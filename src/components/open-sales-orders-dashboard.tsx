@@ -344,14 +344,19 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-6">
+        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1600px]:grid-cols-7">
           <FilterField label="Financial Year">
             <MultiSelect bulkActions options={yearOptions} selected={years ?? yearOptions.map((option) => option.value)} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); if (next.length) setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
           </FilterField>
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} className="pointer-events-auto p-3" /></PopoverContent>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} className="pointer-events-auto p-3" />
+                <div className="flex justify-end border-t border-border p-2">
+                  <Button type="button" variant="outline" size="sm" disabled={!dateRange?.from && !dateRange?.to} onClick={() => setDateRangeState(undefined)}>Clear</Button>
+                </div>
+              </PopoverContent>
             </Popover>
           </FilterField>
           <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
