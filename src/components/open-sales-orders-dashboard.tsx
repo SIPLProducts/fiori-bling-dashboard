@@ -48,6 +48,9 @@ import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { displayOpenOrderDate, filterOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
+
+const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -159,7 +162,12 @@ export function OpenSalesOrdersDashboard() {
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
+  const [years, setYears] = useState<string[] | null>(() => [currentFiscalYear()]);
+  const setDateRange = (range: DateRange | undefined) => {
+    setDateRangeState(range);
+    if (range?.from) setYears(null);
+  };
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
@@ -183,7 +191,11 @@ export function OpenSalesOrdersDashboard() {
       documentTypes: current.documentTypes.filter((type) => options.documentType.includes(type)),
     }));
   }, [data.length, options.documentType]);
+  const yearOptions = useMemo(() => [...new Set(data.map((row) => row.orderDate ? fiscalYearForDate(row.orderDate) : "").filter(Boolean))]
+    .sort((a, b) => b.localeCompare(a))
+    .map((year) => ({ value: year, label: fyLabel(year) })), [data]);
   const filteredData = useMemo(() => data.filter((row) => {
+    if (years !== null && !years.includes(row.orderDate ? fiscalYearForDate(row.orderDate) : "")) return false;
     if (dateRange?.from || dateRange?.to) {
       if (!row.orderDate || !Number.isFinite(Date.parse(row.orderDate))) return false;
       if (dateRange.from && row.orderDate < format(dateRange.from, "yyyy-MM-dd")) return false;
@@ -195,13 +207,15 @@ export function OpenSalesOrdersDashboard() {
     if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
     if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
     return true;
-  }), [data, dateRange, filters]);
+  }), [data, dateRange, filters, years]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
+    + Number(years !== null)
     + Number(filters.documentTypes.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
+  useEffect(() => setTablePage(1), [dateRange, filters, years, tableStatus, tableSearch]);
   const resetFilters = () => {
-    setDateRange(undefined);
+    setDateRangeState(undefined);
+    setYears([currentFiscalYear()]);
     setFilters({
       ...EMPTY_FILTERS,
       documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
@@ -331,6 +345,9 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </div>
         {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-6">
+          <FilterField label="Financial Year">
+            <MultiSelect bulkActions options={yearOptions} selected={years ?? yearOptions.map((option) => option.value)} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); if (next.length) setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
+          </FilterField>
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
