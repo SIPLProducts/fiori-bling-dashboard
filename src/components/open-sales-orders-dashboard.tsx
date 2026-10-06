@@ -471,7 +471,7 @@ function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: Component
   const styles = {
     primary: { card: "border-primary/20 border-l-primary bg-primary/10", icon: "bg-primary/15 text-primary" },
     warning: { card: "border-warning/25 border-l-warning bg-warning/15", icon: "bg-warning/20 text-warning-foreground" },
-    violet: { card: "border-chart-5/20 border-l-chart-5 bg-chart-5/10", icon: "bg-chart-5/15 text-chart-5" },
+    violet: { card: "border-quick-view-violet/20 border-l-quick-view-violet bg-quick-view-violet/10", icon: "bg-quick-view-violet/15 text-quick-view-violet" },
   }[tone];
   return <div className={`min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
     <h3 className="text-xs font-semibold text-card-foreground">{label}</h3>
