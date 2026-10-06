@@ -1,0 +1,1 @@
+DELETE FROM public.open_sales_orders WHERE sales_order IS NOT NULL;
