@@ -133,3 +133,4 @@
 
 - [x] Compact Sales Zone bars and remove bar percentages; move the Open Orders/Partial Delivered/Quick View row immediately above the detailed table.
 - [x] Further reduce Sales Zone bar gaps and rotate zone names 45° on screen and in PDF; verify readable, unclipped labels.
+- [x] Remove up/down percentages and last-period captions from the three Open Sales Orders summary tiles on screen and in PDF.
