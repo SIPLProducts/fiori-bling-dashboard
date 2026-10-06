@@ -40,6 +40,9 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-quick-view-violet: var(--quick-view-violet);
+  --color-quick-view-value: var(--quick-view-value);
+  --color-quick-view-header: var(--quick-view-header);
+  --color-quick-view-heading: var(--quick-view-heading);
   --color-gold: var(--gold);
   --color-ink: var(--ink);
   --color-ink-foreground: var(--ink-foreground);
@@ -96,6 +99,9 @@
   --warning: oklch(0.72 0.15 70);
   --warning-foreground: oklch(0.24 0.02 253);
   --quick-view-violet: oklch(0.55 0.16 305);
+  --quick-view-value: oklch(1 0 0);
+  --quick-view-header: oklch(0.94 0.005 247);
+  --quick-view-heading: oklch(0.548 0.163 254);
   --gold: oklch(0.72 0.15 70);
   --ink: oklch(0.25 0.04 250);
   --ink-foreground: oklch(0.98 0.002 247);
