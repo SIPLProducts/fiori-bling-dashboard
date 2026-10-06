@@ -135,3 +135,4 @@
 - [x] Further reduce Sales Zone bar gaps and rotate zone names 45° on screen and in PDF; verify readable, unclipped labels.
 - [x] Remove up/down percentages and last-period captions from the three Open Sales Orders summary tiles on screen and in PDF.
 - [x] Match Quick View to three separate blue, yellow, and violet reference cards; verify screen and PDF.
+- [x] Extend Quick View header colors across each entire card body, preserving all content; verify screen, dark mode, and PDF.
