@@ -8,9 +8,9 @@ import { useLaunchpad } from "@/lib/use-launchpad";
 export const Route = createFileRoute("/_authenticated/reports/sd/open-sales-orders")({
   head: () => ({
     meta: [
-      { title: "Open Sales Orders — Nexus" },
+      { title: "Open Sales Orders Reports — Nexus" },
       { name: "description", content: "Monitor open sales orders across regions, customers and products." },
-      { property: "og:title", content: "Open Sales Orders — Nexus" },
+      { property: "og:title", content: "Open Sales Orders Reports — Nexus" },
       { property: "og:description", content: "Open order values, quantities, trends and delivery insights." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -25,7 +25,7 @@ function OpenSalesOrdersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ShellBar title="Open Sales Orders" displayName={data?.profile?.display_name} screens={data?.screens} />
+      <ShellBar title="Open Sales Orders Reports" displayName={data?.profile?.display_name} screens={data?.screens} />
       <main className="p-2 sm:p-3">
         {!isLoading && !allowed ? <AccessDenied area="Open Sales Orders" /> : <OpenSalesOrdersDashboard />}
       </main>

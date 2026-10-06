@@ -10,10 +10,10 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
   sheet.columns = [
     { header: "#", key: "row", width: 7 },
     { header: "Order No.", key: "order", width: 16 },
-    { header: "POSNR", key: "item", width: 11 },
+    { header: "Line Item", key: "item", width: 11 },
     { header: "Preceding Document", key: "precedingDocument", width: 20 },
     { header: "Purchase Order", key: "purchaseOrder", width: 18 },
-    { header: "Document Type", key: "documentType", width: 17 },
+    { header: "Sales Document Type", key: "documentType", width: 17 },
     { header: "Order Date", key: "orderDate", width: 15 },
     { header: "Purchase Order Date", key: "purchaseOrderDate", width: 20 },
     { header: "Requested Date", key: "deliveryDate", width: 17 },
