@@ -1,0 +1,32 @@
+import { format } from "date-fns";
+import type { OpenSalesOrder } from "./open-sales-orders-data";
+
+export type OpenOrderTableStatus = "all" | "open" | "partial";
+
+export function openOrderStatusLabel(deliveredQuantity: number) {
+  return deliveredQuantity > 0 ? "Partially Delivered" : "Open";
+}
+
+export function displayOpenOrderDate(value: string) {
+  if (!value) return "—";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MMM-yyyy");
+}
+
+export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTableStatus, search: string) {
+  const query = search.trim().toLocaleLowerCase();
+  return rows.filter((row) => {
+    if (status === "partial" && row.deliveredQuantity <= 0) return false;
+    if (status === "open" && row.deliveredQuantity > 0) return false;
+    if (!query) return true;
+    const numbers = [row.daysOpen, row.openQuantity, row.deliveredQuantity];
+    const values = [
+      row.order, row.item, row.customer, row.documentType, row.zone.replace(" Zone", ""),
+      row.division, row.material, row.description, row.orderDate, row.deliveryDate,
+      displayOpenOrderDate(row.orderDate), displayOpenOrderDate(row.deliveryDate),
+      ...numbers.map(String), ...numbers.map((value) => Math.round(value).toLocaleString("en-IN")),
+      String(row.value), row.value.toFixed(2), openOrderStatusLabel(row.deliveredQuantity),
+    ];
+    return values.some((value) => value.toLocaleLowerCase().includes(query));
+  });
+}
