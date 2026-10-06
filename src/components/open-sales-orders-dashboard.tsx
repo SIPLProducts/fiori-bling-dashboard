@@ -122,7 +122,7 @@ function rankOrders(rows: OpenSalesOrder[], label: (row: OpenSalesOrder) => stri
   return [...grouped.values()].sort((left, right) => right.value - left.value).slice(0, 10);
 }
 
-function StatusCard({ title, count, share, partial }: { title: string; count: number; share: number; partial?: boolean }) {
+function StatusCard({ title, count, value, share, partial }: { title: string; count: number; value: number; share: number; partial?: boolean }) {
   return (
     <section className={`order-status flex min-h-28 items-center gap-4 rounded-md p-4 text-primary-foreground shadow-tile ${partial ? "bg-success" : "bg-primary"}`}>
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-card/20 ring-1 ring-card/35">
@@ -130,8 +130,14 @@ function StatusCard({ title, count, share, partial }: { title: string; count: nu
       </span>
       <div className="min-w-0">
         <p className="text-sm font-medium">{title}</p>
-        <p className="order-status-count mt-2 text-2xl font-semibold tabular-nums">{formatNumber(count)}</p>
-        <p className="text-sm">({share}%)</p>
+        <div className="order-status-count mt-2">
+          <p className="text-[10px] font-medium">Count</p>
+          <p className="text-xl font-semibold leading-tight tabular-nums">{formatNumber(count)} <span className="text-xs font-normal">({share}%)</span></p>
+        </div>
+        <div className="mt-1">
+          <p className="text-[10px] font-medium">Open Value (₹ Cr)</p>
+          <p className="break-words text-base font-semibold leading-tight tabular-nums">{formatCr(value)}</p>
+        </div>
       </div>
     </section>
   );
@@ -216,6 +222,11 @@ export function OpenSalesOrdersDashboard() {
     });
     const zones = [...zoneMap.values()].map((zone) => ({ ...zone, share: percent(zone.count, filteredData.length) })).sort((a, b) => b.count - a.count);
     const partialCount = filteredData.filter((row) => row.deliveredQuantity > 0).length;
+    const statusValues = filteredData.reduce((totals, row) => {
+      if (row.deliveredQuantity > 0) totals.partial += row.value;
+      else totals.open += row.value;
+      return totals;
+    }, { open: 0, partial: 0 });
     const documentTypes = [...new Set(filteredData.map((row) => row.documentType))].sort().map((name) => {
       const rows = filteredData.filter((row) => row.documentType === name);
       return { name, count: rows.length, value: rows.reduce((sum, row) => sum + row.value, 0) };
@@ -226,6 +237,8 @@ export function OpenSalesOrdersDashboard() {
       buckets,
       zones,
       partialCount,
+      partialOpenValue: statusValues.partial,
+      notDeliveredOpenValue: statusValues.open,
       documentTypes,
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
@@ -404,8 +417,8 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
-        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
-        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
+        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, filteredData.length)} />
+        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
           <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
           <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-3">
