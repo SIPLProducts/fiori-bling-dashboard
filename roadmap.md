@@ -146,4 +146,4 @@
 - [x] Place the Sales Document Type donut left and breakdown table right with readable center text; verify screen and PDF.
 - [x] Reduce Open Orders, Partial Delivered Orders, and Quick View screen-only spacing; verify readable content and unchanged PDF.
 - [x] Add filtered Count and Open Value to both order-status cards; verify reconciliation, empty filters, screen, and PDF.
-- [ ] Give Customer/Product/Model ranking bars distinct colors and add header dividers to the six requested charts; verify screen and PDF.
+- [x] Give Customer/Product/Model ranking bars distinct colors and add header dividers to the six requested charts; verify screen and PDF.
