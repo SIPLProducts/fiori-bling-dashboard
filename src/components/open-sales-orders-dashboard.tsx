@@ -378,26 +378,32 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>
 
-      <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 116) } : undefined}>
+      <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 72 + 120) } : undefined}>
 
         <Panel title="Open Order Lines by Sales Zone">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
-            <div style={{ minWidth: Math.max(320, metrics.zones.length * 116) }}>
+            <div style={{ minWidth: Math.max(320, metrics.zones.length * 72 + 120) }}>
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={metrics.zones} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
                   <XAxis type="category" dataKey="name" interval={0} height={76} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-                  <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive={false}>
+                  <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                     {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}
-                    <LabelList dataKey="count" position="top" formatter={(value: number) => `${formatNumber(value)} (${percent(value, filteredData.length)}%)`} className="fill-foreground text-[10px] font-semibold" />
+                    <LabelList dataKey="count" position="top" formatter={(value: number) => formatNumber(value)} className="fill-foreground text-[10px] font-semibold" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </Panel>
+      </div>
+
+      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
+        <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} />
+        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} />
+        <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
@@ -411,12 +417,6 @@ export function OpenSalesOrdersDashboard() {
             <QuickItem icon={Box} tone="primary" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
           </div>
         </section>
-      </div>
-
-      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} />
-        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} />
-        <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
       </div>
 
       <section data-pdf-exclude className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
@@ -446,7 +446,7 @@ function FilterMultiSelect({ label, selected, options, onChange }: { label: stri
 function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value: string } }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <foreignObject x={-53} y={8} width={106} height={64}>
+      <foreignObject x={-32} y={8} width={64} height={64}>
         <div className="break-words text-center text-[10px] leading-3 text-muted-foreground">{payload?.value}</div>
       </foreignObject>
     </g>
