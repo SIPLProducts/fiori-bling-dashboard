@@ -83,7 +83,7 @@ const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
 
 function Panel({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`min-w-0 rounded-md border border-border bg-card p-4 shadow-tile ${className}`}>
+    <section className={`min-w-0 rounded-md border border-border bg-card p-4 shadow-tile order-panel ${className}`}>
       <h2 className="mb-2 text-[15px] font-semibold text-card-foreground">{title}</h2>
       {children}
     </section>
@@ -93,7 +93,7 @@ function Panel({ title, children, className = "" }: { title: string; children: R
 function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
   const styles = TONE_STYLES[tone];
   return (
-    <section className={`flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
+    <section className={`order-summary flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
       <span className={`grid size-12 shrink-0 place-items-center rounded-full ${styles.icon}`}><Icon className="size-6" /></span>
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-card-foreground">{label}</p>
@@ -124,7 +124,7 @@ function rankOrders(rows: OpenSalesOrder[], label: (row: OpenSalesOrder) => stri
 
 function StatusCard({ title, count, share, partial }: { title: string; count: number; share: number; partial?: boolean }) {
   return (
-    <section className={`flex min-h-28 items-center gap-4 rounded-md p-4 text-primary-foreground shadow-tile ${partial ? "bg-success" : "bg-primary"}`}>
+    <section className={`order-status flex min-h-28 items-center gap-4 rounded-md p-4 text-primary-foreground shadow-tile ${partial ? "bg-success" : "bg-primary"}`}>
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-card/20 ring-1 ring-card/35">
         {partial ? <Truck className="size-6" /> : <FileText className="size-6" />}
       </span>
@@ -281,13 +281,13 @@ export function OpenSalesOrdersDashboard() {
   };
 
   return (
-    <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "pdf-export-theme" : ""}`}>
+    <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "pdf-export-theme" : "orders-compact"}`}>
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
         <p className="text-right text-xs font-semibold text-muted-foreground">{pdfDateLabel}</p>
       </div> : null}
-      <header data-pdf-exclude className="flex items-start justify-between gap-3 px-1">
-        <div>
+      <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
         </div>
         <div className="flex items-center gap-2"><Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
@@ -313,7 +313,7 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {filtersOpen ? <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-6">
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
@@ -348,19 +348,19 @@ export function OpenSalesOrdersDashboard() {
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type">
-          <div className="grid min-h-64 items-center gap-3 grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)]">
+          <div className="order-document-grid grid min-h-64 items-center gap-3 grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(120px,0.8fr)_minmax(0,1.2fr)]">
             <div className="relative h-56">
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="53%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-xl tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Total Orders</span></div>
             </div>
             <div className="overflow-hidden rounded-md border border-border text-xs">
-              <div className="grid grid-cols-[1fr_64px_92px_48px] bg-primary/5 px-3 py-2 font-semibold text-primary"><span>Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
-              {metrics.documentTypes.map((item, index) => <div key={item.name} className="grid grid-cols-[1fr_64px_92px_48px] items-center border-t border-border px-3 py-2"><span className="flex items-center gap-2 font-medium"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} />{item.name}</span><span className="text-right tabular-nums">{formatNumber(item.count)}</span><span className="text-right tabular-nums">{item.value.toFixed(2)}</span><span className="text-right tabular-nums">{percent(item.count, filteredData.length)}%</span></div>)}
+              <div className="grid grid-cols-[minmax(0,1fr)_44px_72px_32px] bg-primary/5 px-3 py-2 font-semibold text-primary"><span>Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span><span className="text-right">%</span></div>
+              {metrics.documentTypes.map((item, index) => <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_44px_72px_32px] items-center border-t border-border px-3 py-2"><span className="flex items-center gap-2 font-medium"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} />{item.name}</span><span className="text-right tabular-nums">{formatNumber(item.count)}</span><span className="text-right tabular-nums">{item.value.toFixed(2)}</span><span className="text-right tabular-nums">{percent(item.count, filteredData.length)}%</span></div>)}
             </div>
           </div>
         </Panel>
         <Panel title="Open Orders by Aging Bucket">
-          <div className="grid min-h-64 grid-cols-[minmax(145px,1fr)_minmax(150px,1fr)] items-center gap-3">
+          <div className="order-aging-grid grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
             <div className="relative h-56">
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={metrics.buckets} dataKey="count" nameKey="name" innerRadius="54%" outerRadius="82%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.buckets.map((bucket, index) => <Cell key={bucket.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-lg tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Orders</span></div>
@@ -369,7 +369,7 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </Panel>
         <Panel title="Open Order Value Trend">
-          <ResponsiveContainer width="100%" height={250}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" fill="var(--kpi-1)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 205}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} /><Bar name="Open Orders" dataKey="value" fill="var(--kpi-1)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill="var(--kpi-2)" radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
 
@@ -378,7 +378,7 @@ export function OpenSalesOrdersDashboard() {
         <Panel title="Open Order Lines by Sales Zone">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
-              <ResponsiveContainer width="100%" height={380}>
+              <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
                 <BarChart data={metrics.zones} barCategoryGap={8} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
@@ -401,7 +401,7 @@ export function OpenSalesOrdersDashboard() {
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} />
       </div>
 
-      <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.72fr_0.8fr_1.85fr]">
+      <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
@@ -425,7 +425,7 @@ export function OpenSalesOrdersDashboard() {
         </div>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} className="text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell>{row.documentType}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
         </Table>
         <div data-pdf-exclude className="flex flex-wrap items-center justify-start gap-2 border-t border-border px-4 py-3"><span className="mr-2 text-xs text-muted-foreground">Page {currentTablePage} of {tablePageCount}</span><Button variant="outline" size="sm" aria-label="Previous table page" disabled={currentTablePage <= 1} onClick={() => setTablePage(Math.max(1, currentTablePage - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={currentTablePage >= tablePageCount} onClick={() => setTablePage(Math.min(tablePageCount, currentTablePage + 1))}>Next<ChevronRight /></Button></div>
       </section>
@@ -451,7 +451,7 @@ function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; 
 }
 
 function RankingPanel({ title, data }: { title: string; data: RankedItem[] }) {
-  return <Panel title={title}>{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
+  return <Panel title={title} className="order-ranking">{data.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={data} layout="vertical" margin={{ top: 5, right: 52, left: 4, bottom: 5 }}><CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" tick={{ fontSize: 10 }} /><YAxis type="category" dataKey="name" width={142} tick={<RankingAxisTick />} axisLine={false} tickLine={false} /><Tooltip formatter={(value: number, name: string, item) => name === "Open Value" ? [formatCr(value), name] : [value, name]} content={({ active, payload }) => active && payload?.[0]?.payload ? <RankingTooltip item={payload[0].payload as RankedItem} /> : null} /><Bar dataKey="value" name="Open Value" fill="var(--kpi-1)" radius={[0, 3, 3, 0]} isAnimationActive={false}><LabelList dataKey="value" position="right" formatter={(value: number) => value.toFixed(1)} className="fill-foreground text-[10px] font-semibold" /></Bar></BarChart></ResponsiveContainer> : <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">No matching orders</div>}</Panel>;
 }
 
 function RankingAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) {
@@ -483,12 +483,12 @@ function QuickItem({ icon: Icon, tone, label, value, detail }: { icon: Component
     warning: { card: "border-warning bg-warning text-quick-view-value", icon: "bg-quick-view-value/15 text-quick-view-value" },
     violet: { card: "border-quick-view-violet bg-quick-view-violet text-primary-foreground", icon: "bg-primary-foreground/15 text-primary-foreground" },
   }[tone];
-  return <div className={`min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
+  return <div className={`order-quick min-h-32 min-w-0 rounded-md border border-l-4 p-3 shadow-tile ${styles.card}`}>
     <h3 className="text-xs font-semibold">{label}</h3>
     <div className="mt-4 flex min-w-0 items-start gap-2">
       <span className={`grid size-8 shrink-0 place-items-center rounded-full ${styles.icon}`}><Icon className="size-4" /></span>
       <div className="min-w-0">
-        <p className="text-[10px] font-medium">{label}</p>
+        <p className="order-quick-repeat text-[10px] font-medium">{label}</p>
         <p className="mt-0.5 break-words text-base font-semibold text-quick-view-value tabular-nums">{value}</p>
         <p className="mt-1 truncate text-[10px]" title={detail}>({detail})</p>
       </div>
