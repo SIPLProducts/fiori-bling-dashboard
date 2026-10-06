@@ -143,3 +143,4 @@
 - [x] Compact Open Sales Orders while retaining every section and readable charts; verify screen and PDF.
 - [x] Apply Net Sales-style row tints by Sales Document Type to the Open Sales Orders table.
 - [x] Deliver an image reference of the actual compact dashboard.
+- [ ] Place the Sales Document Type donut left and breakdown table right with readable center text; verify screen and PDF.
