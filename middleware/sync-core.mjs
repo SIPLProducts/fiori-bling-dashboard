@@ -293,7 +293,6 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
   const openQuantity = pick(raw, ["KWMENG_P", "KWMENG_PC", "OPEN_QTY", "openQuantity"]);
   const normalizedOpenQuantity = openQuantity === "" ? quantity : num2(openQuantity);
   const deliveredQuantity = pick(raw, ["RFMNG", "DELIVERED_QTY", "deliveredQuantity"]);
-  const pendingValue = pick(raw, ["P_VALUE", "openValue"]);
   return {
     record_key: rowHash,
     sync_scope_key: `endpoint:${sourceEndpoint}`,
@@ -343,7 +342,7 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     delivered_quantity: deliveredQuantity === "" ? Math.max(0, quantity - normalizedOpenQuantity) : num2(deliveredQuantity),
     unit: str2(pick(raw, ["VRKME", "MEINS"])),
     currency: str2(pick(raw, ["WAERK"])),
-    open_value: num2(pendingValue === "" ? pick(raw, ["NETWR", "KWERT_INR"]) : pendingValue),
+    open_value: num2(raw.NETWR),
     days_open: Math.round(num2(pick(raw, ["DAYS"]))),
     delivery_status: str2(pick(raw, ["ABSTA"])),
     overall_status: str2(pick(raw, ["GBSTA"])),
