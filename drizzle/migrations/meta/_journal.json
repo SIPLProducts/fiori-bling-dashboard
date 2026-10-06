@@ -15,6 +15,13 @@
       "when": 1791194215931,
       "tag": "0001_strengthen_open_sales_orders_business_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791304612065,
+      "tag": "0002_migration",
+      "breakpoints": true
     }
   ]
 }
