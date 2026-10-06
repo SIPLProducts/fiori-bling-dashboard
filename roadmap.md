@@ -137,3 +137,4 @@
 - [x] Match Quick View to three separate blue, yellow, and violet reference cards; verify screen and PDF.
 - [x] Extend Quick View header colors across each entire card body, preserving all content; verify screen, dark mode, and PDF.
 - [x] Add the reference grey Quick View header and white main values while retaining colored cards; verify screen and PDF.
+- [x] Make all Highest Value text and icons white and enclose the Quick View header and tiles in one border; verify screen and PDF.
