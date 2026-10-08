@@ -432,7 +432,7 @@ export function OpenSalesOrdersDashboard() {
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
                 <BarChart data={metrics.zones} barCategoryGap={8} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
-                  <XAxis type="category" dataKey="name" interval={0} height={116} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-muted-foreground text-[9px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
+                  <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
                   <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
@@ -522,7 +522,7 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
       <BarChart data={zones} barCategoryGap="15%" margin={{ top: 20, right: 2, left: 14, bottom: 0 }}>
         {OrderChartGradients({ id: gradient })}
         <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
-        <XAxis dataKey="name" interval={0} height={72} tick={<SalesZoneAxisTick />} tickLine={false} />
+        <XAxis dataKey="name" interval={0} height={72} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-muted-foreground text-[9px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
         <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />
         <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
         <Bar dataKey="count" name="Open Order Lines" radius={[2, 2, 0, 0]} barSize={barWidth} isAnimationActive={false}>
