@@ -16,7 +16,7 @@ export const defaultOpenOrderFilters = (): OpenOrderFilters => ({
 export const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
 export const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
 
-export function filterOpenOrders(rows: OpenSalesOrder[], filters: OpenOrderFilters, dates?: { from?: string; to?: string }) {
+export function filterOpenOrders(rows: OpenSalesOrder[], filters: OpenOrderFilters, dates?: { from?: string | undefined; to?: string | undefined }) {
   return rows.filter((row) => {
     if (dates?.from || dates?.to) {
       if (!row.orderDate || !Number.isFinite(Date.parse(row.orderDate))) return false;
