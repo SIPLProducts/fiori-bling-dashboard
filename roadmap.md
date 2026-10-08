@@ -156,3 +156,4 @@
 - [x] Add a screen-only Plant-wise Pending tile with filtered value, quantity, and line count; verify totals, Plant selection/empty/reset, and wide/narrow layout.
 - [x] Match Plant-wise Pending to grouped normalized bars and add five full-filtered table totals; verified filters, empty results, pagination, tooltips, wide/narrow layout, and focused tests.
 - [x] Replace Plant-wise Pending percentage ticks with clearly distinguished actual-value scales; verified actual axes, unchanged totals, wide/narrow rendering, and eight focused tests.
+- [x] Compact Plant-wise Pending without horizontal scrolling using value bars/count line and visible axes; verified all ten matching plants, quantity tooltips, unchanged totals, desktop/901px/wrapped mobile layouts, and eight tests.
