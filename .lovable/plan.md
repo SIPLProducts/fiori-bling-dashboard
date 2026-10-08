@@ -7,6 +7,7 @@ Both charts currently calculate a maximum number of bars from the available widt
 - Keep **Open Order Lines by Sales Zone** and **Plant-wise Pending** side by side on desktop.
 - Show every zone in one continuous chart and every plant in one continuous chart—remove the second chart row and repeated axes.
 - Fit categories by reducing bar widths and gaps dynamically. Retain the distinct radiant colors.
+- Reduce the spacing between plant bars and trim unused right-side plot space. Distribute all plants evenly across the single plot so the final plant does not occupy a separate, mostly empty row.
 - Use compact 45° zone labels; use plant codes below bars with full plant names in tooltips. Keep full zone names in tooltips too.
 - Keep actual-value/count labels above bars where they fit; use compact positioning to prevent overlap.
 - Keep each plot approximately 200px high, with no horizontal scrollbar.
@@ -19,4 +20,4 @@ Keep all zones and plants, filters, calculations, plant totals, tooltip values, 
 Remove width-based dataset chunking in the two screen charts. Calculate bar size and label space from the full category count. Keep the existing PDF Sales Zone rendering separate.
 
 ## Checks
-Verify at the current 901px preview width and at a wider desktop width that both cards remain side by side, each contains one chart row, every category remains present, and labels do not overlap. Check phone layout, gradient colors, tooltips and unchanged totals.
+Verify at the current 901px preview width and at a wider desktop width that both cards remain side by side, each contains one chart row, every category remains present, and labels do not overlap. Confirm tighter plant spacing and no excessive blank area after the final bar. Check phone layout, gradient colors, tooltips and unchanged totals.
