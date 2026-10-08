@@ -64,10 +64,13 @@ const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
   warning: { card: "border-warning/30 bg-warning/5", icon: "bg-warning text-warning-foreground" },
 };
 
-function Panel({ title, children, className = "", headerDivider = false, dividerColor = "neutral" }: { title: string; children: ReactNode; className?: string; headerDivider?: boolean; dividerColor?: "neutral" | "blue" | "green" | "violet" | "amber" | "teal" }) {
+function Panel({ title, children, className = "", headerDivider = false, dividerColor = "neutral", headerAside }: { title: string; children: ReactNode; className?: string; headerDivider?: boolean; dividerColor?: "neutral" | "blue" | "green" | "violet" | "amber" | "teal"; headerAside?: ReactNode }) {
   return (
     <section className={`min-w-0 rounded-md border border-border bg-card p-4 shadow-tile order-panel ${className}`}>
-      <h2 className={`mb-2 text-[15px] font-semibold text-card-foreground ${headerDivider ? `order-heading-divider order-heading-${dividerColor} border-b-2 pb-2` : ""}`}>{title}</h2>
+      <div className={`order-panel-header mb-2 grid min-w-0 items-center gap-2 ${headerAside ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-1"} ${headerDivider ? `order-heading-divider order-heading-${dividerColor} border-b-2 pb-2` : ""}`}>
+        <h2 className="min-w-0 text-[15px] font-semibold text-card-foreground">{title}</h2>
+        {headerAside}
+      </div>
       {children}
     </section>
   );
@@ -141,7 +144,7 @@ export function OpenSalesOrdersDashboard() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
   const [filters, setFilters] = useState<OpenOrderFilters>(defaultOpenOrderFilters);
   const documentTypeDefaultsInitialized = useRef(false);
@@ -284,18 +287,18 @@ export function OpenSalesOrdersDashboard() {
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
         </div>
-        <div className="flex items-center gap-2"><Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={async () => {
+         <div className="flex shrink-0 items-center gap-2"><Button type="button" variant="outline" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
           const result = await refetch();
           if (result.error) toast.error(result.error.message);
           else toast.success("Open Sales Orders refreshed");
-        }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />{isFetching ? "Refreshing…" : "Refresh"}</Button><Button type="button" variant="outline" size="sm" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" />{pdfBusy ? "Preparing…" : "PDF"}</Button></div>
+         }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><Button type="button" variant="outline" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
       </header>
 
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
       {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
 
       <section data-pdf-exclude className="order-filters rounded-md border border-border bg-card shadow-tile">
-        <div className="flex min-h-11 items-center justify-between gap-3 px-4 py-2">
+        <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <Filter className="size-4 shrink-0 text-primary" />
             <h2 className="text-sm font-semibold text-card-foreground">Smart Filters</h2>
@@ -304,10 +307,10 @@ export function OpenSalesOrdersDashboard() {
           </div>
           <div className="flex items-center gap-1">
             <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
-            <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
+            <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="open-order-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1800px]:grid-cols-7">
+        {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 min-[1800px]:grid-cols-7">
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
@@ -340,14 +343,14 @@ export function OpenSalesOrdersDashboard() {
         <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders Reports</h2>
       </div> : null}
 
-      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} icon={Package} tone="violet" />
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
 
-      <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
+      <div data-pdf-page-block className="order-overview-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className="order-document-grid grid min-h-64 min-w-[380px] grid-cols-[128px_minmax(244px,1fr)] items-center gap-2">
@@ -371,8 +374,8 @@ export function OpenSalesOrdersDashboard() {
             <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-primary">({percent(bucket.count, filteredData.length)}%)</span></span></div>)}</div>
           </div>
         </Panel>
-        <Panel title="Open Order Value Trend" headerDivider dividerColor="amber">
-          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 180}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /><Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
+        <Panel title="Open Order Value Trend" className="order-trend" headerDivider dividerColor="amber" headerAside={!pdfBusy ? <div className="order-trend-legend grid gap-1 text-[10px] text-muted-foreground"><span className="flex items-center gap-1"><span className="size-2 shrink-0 bg-primary" />Open Orders</span><span className="flex items-center gap-1"><span className="size-2 shrink-0 bg-chart-2" />Partial Delivered</span></div> : undefined}>
+          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 180}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
 
@@ -408,13 +411,13 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>}
 
-      <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
+      <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} color="var(--chart-1)" />
         <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} color="var(--success)" />
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} color="var(--quick-view-violet)" />
       </div>
 
-      <div data-pdf-page-block className="grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
+      <div data-pdf-page-block className="order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, filteredData.length)} />
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
@@ -427,14 +430,15 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <section data-pdf-exclude className="order-details overflow-hidden rounded-md border border-border bg-card shadow-tile">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered orders</p></div>
-          <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
-            <div className="relative min-w-40 flex-1 xl:w-56"><Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Search detailed orders" placeholder="Search orders…" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} className="h-9 pl-9" /></div>
-            <Select value={tableStatus} onValueChange={(value) => { if (value === "all" || value === "open" || value === "partial") setTableStatus(value); }}><SelectTrigger aria-label="Filter orders by status" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Status: All</SelectItem><SelectItem value="open">Open</SelectItem><SelectItem value="partial">Partially Delivered</SelectItem></SelectContent></Select>
+        <div className="order-details-header grid min-w-0 gap-2 border-b border-border px-4 py-3">
+          <div className="min-w-0"><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered orders</p></div>
+          <div className="order-table-controls grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <div className="order-table-search relative col-span-2 min-w-0"><Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Search detailed orders" placeholder="Search orders…" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} className="h-9 pl-9" /></div>
+            <Select value={tableStatus} onValueChange={(value) => { if (value === "all" || value === "open" || value === "partial") setTableStatus(value); }}><SelectTrigger aria-label="Filter orders by status" className="w-full min-w-0"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Status: All</SelectItem><SelectItem value="open">Open</SelectItem><SelectItem value="partial">Partially Delivered</SelectItem></SelectContent></Select>
             <Button data-pdf-exclude type="button" variant="outline" size="sm" disabled={excelBusy || !tableData.length} onClick={downloadExcel}><FileSpreadsheet className="size-4" />{excelBusy ? "Preparing…" : "Download Excel"}</Button>
           </div>
         </div>
+        <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={19} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
@@ -448,6 +452,7 @@ export function OpenSalesOrdersDashboard() {
             <TableCell />
           </TableRow></TableFooter>
         </Table>
+        </div>
         <div data-pdf-exclude className="flex flex-wrap items-center justify-start gap-2 border-t border-border px-4 py-3"><span className="mr-2 text-xs text-muted-foreground">Page {currentTablePage} of {tablePageCount}</span><Button variant="outline" size="sm" aria-label="Previous table page" disabled={currentTablePage <= 1} onClick={() => setTablePage(Math.max(1, currentTablePage - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={currentTablePage >= tablePageCount} onClick={() => setTablePage(Math.min(tablePageCount, currentTablePage + 1))}>Next<ChevronRight /></Button></div>
       </section>
     </div>

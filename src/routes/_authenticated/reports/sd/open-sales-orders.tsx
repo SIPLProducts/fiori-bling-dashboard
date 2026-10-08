@@ -8,9 +8,9 @@ import { useLaunchpad } from "@/lib/use-launchpad";
 export const Route = createFileRoute("/_authenticated/reports/sd/open-sales-orders")({
   head: () => ({
     meta: [
-      { title: "Open Sales Orders Reports — Nexus" },
+      { title: "Open Sales Orders Reports — HBL MIS Portal" },
       { name: "description", content: "Monitor open sales orders across regions, customers and products." },
-      { property: "og:title", content: "Open Sales Orders Reports — Nexus" },
+      { property: "og:title", content: "Open Sales Orders Reports — HBL MIS Portal" },
       { property: "og:description", content: "Open order values, quantities, trends and delivery insights." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

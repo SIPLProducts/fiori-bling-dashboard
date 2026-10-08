@@ -163,3 +163,5 @@
 - [x] Add Pending Orders Against AH beside Open Quantity; verified 130 distinct filtered orders, screen/PDF, narrow layouts, nine tests, and unchanged Quick View.
 - [x] Remove Open Orders Financial Year; verified all-date opening/Reset, 358 distinct AH orders, 1,174 Excel rows, PDF, narrow layouts, and 13 tests.
 - [x] Change Pending Orders Against AH to count every qualifying line with Total AH > 0; verified 859 on screen/PDF and in Excel, unchanged Quick View, narrow layouts, and 10 passing tests.
+- [x] Adapt every Open Sales Orders card to desktop, tablet, and phone widths; collapse Smart Filters, compact chart headers, and contain table scrolling without changing report calculations or downloads.
+- [x] Verify all eight chart/ranking panels, summary/status/Quick View cards, filters, pagination/search, Excel/PDF, and no page-width overflow at 1920/1440/1280/901/768/390/320px; 15 rule tests pass.
