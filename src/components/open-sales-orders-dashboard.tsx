@@ -48,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { displayOpenOrderDate, filterOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
+import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 
 const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
 
@@ -255,6 +256,7 @@ export function OpenSalesOrdersDashboard() {
     return {
       totalValue,
       totalQuantity,
+      plants: summarizePlantPending(filteredData),
       buckets,
       zones,
       partialCount,
@@ -435,6 +437,41 @@ export function OpenSalesOrdersDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        </Panel>
+      </div>
+
+      <div data-pdf-exclude>
+        <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
+          <div className="max-h-80 overflow-auto">
+            <table aria-label="Plant-wise Pending" className="w-full min-w-[560px] text-xs">
+              <thead className="sticky top-0 z-10 bg-card text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th scope="col" className="px-3 py-2 text-left font-semibold">Plant Code / Name</th>
+                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Pending Value (₹ Cr)</th>
+                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Pending Quantity</th>
+                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Open Order Lines</th>
+                </tr>
+              </thead>
+              <tbody className="text-card-foreground">
+                {metrics.plants.length ? metrics.plants.map((plant) => (
+                  <tr key={plant.code} className="border-b border-border/60">
+                    <th scope="row" className="px-3 py-2 text-left font-medium"><span className="font-semibold text-primary">{plant.code || "—"}</span>{plant.name ? ` — ${plant.name}` : !plant.code ? " Unassigned" : ""}</th>
+                    <td className="px-3 py-2 text-right tabular-nums">{plant.value.toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{plant.quantity.toLocaleString("en-IN", { maximumFractionDigits: 3 })}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatNumber(plant.count)}</td>
+                  </tr>
+                )) : <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">{isLoading ? "Loading plants…" : "No pending orders match the selected filters."}</td></tr>}
+              </tbody>
+              <tfoot className="sticky bottom-0 border-t-2 border-border bg-muted text-card-foreground">
+                <tr className="font-semibold">
+                  <th scope="row" className="px-3 py-2 text-left">Total</th>
+                  <td className="px-3 py-2 text-right tabular-nums">{metrics.totalValue.toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{metrics.totalQuantity.toLocaleString("en-IN", { maximumFractionDigits: 3 })}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatNumber(filteredData.length)}</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </Panel>
       </div>
