@@ -35,6 +35,6 @@
 - Keep ranking colors and chart-header dividers configurable through shared Open Orders presentation components so styling stays scoped to selected cards and consistent in PDF exports.
 
 - Group plants by code; fit all plant/zone categories in one width-aware row with compact bars and explicit-unit scales to avoid repeated plots. Share width/gradient helpers; keep zone PDF capture separate to preserve exports.
-- Sum complete table-filtered rows in a pure footer helper so pagination never changes totals.
+- Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations byte-for-byte into timestamped supabase/migrations files because self-hosted deployment consumes that directory.
