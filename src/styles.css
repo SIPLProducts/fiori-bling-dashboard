@@ -462,9 +462,11 @@
 .orders-compact .order-document-grid { min-width: 350px; grid-template-columns: 112px minmax(230px,1fr); }
 .orders-compact .order-document-donut { width: 112px; height: 160px; }
 .orders-compact .order-document-donut strong,
-.orders-compact .order-donut-total strong { font-size: 22px; font-weight: 700; line-height: 1.2; color: var(--card-foreground); }
+.orders-compact .order-donut-total strong { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--card-foreground); }
 .orders-compact .order-document-donut span,
-.orders-compact .order-donut-total span { font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--card-foreground); }
+.orders-compact .order-donut-total span { font-size: 10px; font-weight: 600; line-height: 1.2; color: var(--card-foreground); }
+.orders-compact .order-document-donut > .pointer-events-none,
+.orders-compact .order-donut-total { gap: 2px; }
 .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 32px 55px 30px; font-size: 11px; padding: 7px 4px; }
 .orders-compact .order-document-grid > div:last-child > div:first-child { font-size: 10px; }
 .orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 112px minmax(168px,1fr); overflow-x: auto; }
