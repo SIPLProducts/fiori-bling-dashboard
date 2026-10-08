@@ -152,3 +152,4 @@
 - [x] Verify mutually exclusive Financial Year and Date Range selections, including cleared year checkboxes.
 
 - [x] Remove Highest Quantity on screen/PDF and add shared Plant filtering, detailed-table column/search, and verify existing Excel Plant columns.
+- [x] Complete AH and Total AH storage/backfill, future SAP mapping, detailed table/search, Excel, middleware bundle, and verification; document separate Quality/Production deployment.

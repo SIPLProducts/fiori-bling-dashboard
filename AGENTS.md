@@ -35,3 +35,5 @@
 - Keep ranking colors and chart-header dividers configurable through shared Open Orders presentation components so styling stays scoped to selected cards and consistent in PDF exports.
 
 - Key Open Sales Orders Plant selections by stored plant code and reuse plant_name for labels, so same-name plants remain distinct and exports share dashboard filtering.
+- Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
+- Mirror Cloud-applied schema migrations byte-for-byte into timestamped supabase/migrations deployment files for self-hosted environments because their deployment process consumes that directory.
