@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { countPendingOrdersAgainstAh } from "../src/lib/open-sales-orders-table";
 
 describe("Pending Orders Against AH", () => {
-  test("counts distinct sales orders, not multiple qualifying lines", () => {
+  test("counts every qualifying line, including repeated sales orders", () => {
     expect(countPendingOrdersAgainstAh([
       { order: "100", totalAh: 10 },
       { order: "100", totalAh: 20 },
       { order: "200", totalAh: 5 },
-    ])).toBe(2);
+    ])).toBe(3);
   });
   test("requires Total AH strictly greater than zero, including positive decimals", () => {
     expect(countPendingOrdersAgainstAh([
