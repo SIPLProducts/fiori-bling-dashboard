@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Keep both overview donuts left with breakdown tables right, preserve the three-card desktop row, and put Sales Zone and Plant-wise Pending in separate full-width rows; verify layouts and exports.
+
 - [x] Show SAP document code/description combinations in Open Orders filters and descriptions in the card; verified seven-row exact selection/Excel, Reset to 1,174 rows and 859 AH lines, PDF, mobile and 13 tests.
 
 - [x] Treemap: uniform equal-size grid tiles, centered name/amount/%, keep drill-down
