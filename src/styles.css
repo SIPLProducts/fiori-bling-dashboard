@@ -509,7 +509,7 @@
 @media (min-width: 850px) and (max-height: 700px) {
   .open-orders-page > header { height: 40px; }
   .open-orders-page > main { padding: 4px 6px; }
-  .orders-compact { gap: 3px; padding-bottom: 4px; }
+  .orders-compact { gap: 2px; padding-bottom: 4px; }
   .orders-compact .gap-4 { gap: 3px; }
   .orders-compact > header { min-height: 24px; }
   .orders-compact > header button { height: 24px; font-size: 10px; padding: 0 6px; }
