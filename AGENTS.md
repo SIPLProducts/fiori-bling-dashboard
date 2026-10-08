@@ -32,7 +32,7 @@
 - Derive Open Sales Orders detailed-table status/search results through one frontend filter shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.
 - Keep Open Orders readable chart heights and responsive grids in the screen-only wrapper; preserve PDF geometry and calculations independently.
 - Keep overview donut/table tracks side by side with local overflow at narrow widths; isolate screen chart-row arrangement from PDF geometry to preserve readable totals and exports.
-- Share configurable ranking colors and heading dividers to scope Open Orders styling and preserve PDF consistency.
+- Share Open Orders colors/gradients across screen and PDF; use layout-only PDF safeguards to prevent palette drift.
 
 - Group plants by code; fit all plant/zone categories in one width-aware row with compact bars and explicit-unit scales to avoid repeated plots. Share width/gradient helpers; keep zone PDF capture separate to preserve exports.
 - Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
