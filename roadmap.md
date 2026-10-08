@@ -158,3 +158,5 @@
 - [x] Replace Plant-wise Pending percentage ticks with clearly distinguished actual-value scales; verified actual axes, unchanged totals, wide/narrow rendering, and eight focused tests.
 - [x] Compact Plant-wise Pending without horizontal scrolling using value bars/count line and visible axes; verified all ten matching plants, quantity tooltips, unchanged totals, desktop/901px/wrapped mobile layouts, and eight tests.
 - [ ] Apply denser dashboard, radiant plant/zone bars, no plant count line, paired charts; verify controls, exports, totals, and layouts.
+
+- [ ] Keep every zone and plant in one chart row; tighten plant gaps/right whitespace and verify desktop/phone layouts.

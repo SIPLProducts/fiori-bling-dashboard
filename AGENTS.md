@@ -34,7 +34,7 @@
 - Use stable side-by-side donut/table tracks with local overflow for the Open Orders document-type card, because readable center totals and business columns must not be compressed by dashboard breakpoints.
 - Keep ranking colors and chart-header dividers configurable through shared Open Orders presentation components so styling stays scoped to selected cards and consistent in PDF exports.
 
-- Aggregate plants by code; use value bars and width-aware rows with shared explicit-unit scales. Share width/gradient helpers with zones; keep zone PDF capture separate to preserve exports.
+- Aggregate plants by code; render all plant and zone categories in a single width-aware chart row with compact bars and explicit-unit scales, because repeated plot rows waste vertical space. Share width/gradient helpers; keep zone PDF capture separate to preserve exports.
 - Sum complete table-filtered rows in a pure footer helper so pagination never changes totals.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations byte-for-byte into timestamped supabase/migrations files because self-hosted deployment consumes that directory.
