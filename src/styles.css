@@ -314,26 +314,39 @@
 }
 
 /* Keep report density independent from the spacious PDF capture layout. */
-.orders-compact > :not(:last-child) { margin-bottom: 0.625rem; }
-.orders-compact .gap-4 { gap: 0.625rem; }
-.orders-compact .order-panel { padding: 0.75rem; }
-.orders-compact .order-summary { min-height: 5rem; padding: 0.75rem; align-items: center; }
+.orders-compact > :not(:last-child) { margin-bottom: 0.5rem; }
+.orders-compact .gap-4 { gap: 0.5rem; }
+.orders-compact .order-panel { padding: 0.5rem 0.625rem; }
+.orders-compact .order-panel > h2 { font-size: 12px; margin-bottom: 0.375rem; padding-bottom: 0.375rem; }
+.orders-compact > header h1 { font-size: 18px; }
+.orders-compact .order-summary { min-height: 4rem; padding: 0.5rem 0.625rem; align-items: center; }
 .orders-compact .order-summary > span { width: 2.5rem; height: 2.5rem; }
-.orders-compact .order-summary .text-3xl { font-size: 1.625rem; }
+.orders-compact .order-summary .text-3xl { font-size: 1.375rem; }
+.orders-compact .order-summary .text-sm { font-size: 12px; }
+.orders-compact .order-filters > div:first-child { min-height: 2.5rem; padding: 0.25rem 0.625rem; }
+.orders-compact [data-order-filters] { padding: 0.5rem 0.625rem; gap: 0.5rem; }
+.orders-compact [data-order-filters] button { height: 2rem; }
+.orders-compact .order-details > div:first-child,
+.orders-compact .order-details > div:last-child { padding: 0.5rem 0.625rem; }
+.orders-compact .order-details th { height: 2rem; }
+.orders-compact .order-details td { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+.orders-compact .order-details h2 { font-size: 12px; }
+.orders-compact .order-details input { font-size: 12px; }
+.orders-compact .order-details .order-detail-row { font-size: 11px; }
 .orders-compact .order-document-grid { min-height: 0; gap: 0.5rem; }
 .orders-compact .order-document-donut { height: 9.5rem; }
 .orders-compact .order-document-grid .py-2 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
 .orders-compact .order-document-grid .px-3 { padding-left: 0.5rem; padding-right: 0.5rem; }
-.orders-compact .order-aging-grid { min-height: 13rem; gap: 0.5rem; }
-.orders-compact .order-aging-grid .h-56 { height: 10rem; }
+.orders-compact .order-aging-grid { min-height: 11.25rem; gap: 0.5rem; }
+.orders-compact .order-aging-grid .h-56 { height: 8.75rem; }
 .orders-compact .order-aging-grid .py-3 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.orders-compact .order-status { min-height: 5.5rem; padding: 0.625rem; gap: 0.5rem; }
+.orders-compact .order-status { min-height: 5rem; padding: 0.5rem; gap: 0.5rem; }
 .orders-compact .order-status > span { width: 2rem; height: 2rem; }
 .orders-compact .order-status .text-2xl { font-size: 1.25rem; }
 .orders-compact .order-status-count { margin-top: 0.25rem; }
 .orders-compact .order-quick-header { padding: 0.375rem 0.75rem; }
 .orders-compact .order-quick-body { gap: 0.5rem; padding: 0.375rem; }
-.orders-compact .order-quick { min-height: 5.5rem; padding: 0.5rem; }
+.orders-compact .order-quick { min-height: 5rem; padding: 0.375rem; }
 .orders-compact .order-quick .mt-4 { margin-top: 0.375rem; }
 .orders-compact .order-quick-repeat { display: none; }
 .order-detail-row { --order-type-color: var(--border); background: color-mix(in oklab, var(--order-type-color) 8%, var(--card)); }
@@ -344,8 +357,11 @@
 .order-detail-row:hover { background: color-mix(in oklab, var(--order-type-color) 20%, var(--card)); }
 .order-document-cell { border-left: 3px solid var(--order-type-color); }
 .order-document-dot { background: var(--order-type-color); }
-@media (min-width: 1024px) {
-  .orders-compact .order-ranking .recharts-responsive-container { height: 270px !important; }
+@media (min-width: 850px) {
+  .orders-compact .grid.lg\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .orders-compact .grid.lg\:grid-cols-12 > * { grid-column: span 4; }
+  .orders-compact .order-ranking .recharts-responsive-container { height: 230px !important; }
+  .orders-compact .order-ranking .grid.h-\[300px\] { height: 230px; }
 }
 @media (max-width: 639px) {
   .orders-compact .order-aging-grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }

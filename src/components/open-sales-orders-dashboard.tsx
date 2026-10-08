@@ -49,6 +49,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
+import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
+import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
 
 const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
@@ -337,7 +339,7 @@ export function OpenSalesOrdersDashboard() {
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
       {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
 
-      <section data-pdf-exclude className="rounded-md border border-border bg-card shadow-tile">
+      <section data-pdf-exclude className="order-filters rounded-md border border-border bg-card shadow-tile">
         <div className="flex min-h-11 items-center justify-between gap-3 px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <Filter className="size-4 shrink-0 text-primary" />
@@ -417,10 +419,11 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </Panel>
         <Panel title="Open Order Value Trend" headerDivider dividerColor="amber">
-          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 205}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /><Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={pdfBusy ? 250 : 180}><BarChart data={metrics.buckets} barGap={4} margin={{ top: 22, right: 8, left: 0, bottom: 10 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} /><Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /><Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer>
         </Panel>
       </div>
 
+      {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
         <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
@@ -443,11 +446,14 @@ export function OpenSalesOrdersDashboard() {
         </Panel>
       </div>
 
-      <div data-pdf-exclude>
+      </> : <div className="order-paired-charts grid gap-4 min-[850px]:grid-cols-2" data-pdf-exclude>
+        <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
+          <CompactSalesZoneChart zones={metrics.zones} />
+        </Panel>
         <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
           <PlantPendingChart plants={metrics.plants} loading={isLoading} />
         </Panel>
-      </div>
+      </div>}
 
       <div data-pdf-page-block data-pdf-section-break className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} color="var(--chart-1)" />
@@ -467,7 +473,7 @@ export function OpenSalesOrdersDashboard() {
         </section>
       </div>
 
-      <section data-pdf-exclude className="overflow-hidden rounded-md border border-border bg-card shadow-tile">
+      <section data-pdf-exclude className="order-details overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered orders</p></div>
           <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
@@ -502,6 +508,32 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
 function FilterMultiSelect({ label, selected, options, onChange }: { label: string; selected: string[] | null; options: string[] | MultiSelectOption[]; onChange: (value: string[]) => void; placeholder: string }) {
   const choices = options.map((option) => typeof option === "string" ? { value: option, label: option } : option);
   return <FilterField label={label}><MultiSelect bulkActions options={choices} selected={selected ?? choices.map((option) => option.value)} onChange={onChange} placeholder="No values selected" /></FilterField>;
+}
+
+function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
+  const { ref, width } = useChartWidth();
+  const gradient = useId().replace(/:/g, "");
+  const capacity = Math.max(2, Math.floor((width - 58) / 42));
+  const rows: ZoneItem[][] = [];
+  for (let index = 0; index < zones.length; index += capacity) rows.push(zones.slice(index, index + capacity));
+  const maximum = plantChartMaximum(zones.map((zone) => zone.count));
+  return <div ref={ref} className="min-w-0" aria-label="Sales Zone chart">
+    <p className="text-[10px] font-medium text-muted-foreground">Open Order Lines</p>
+    {rows.map((data, rowIndex) => <div key={rowIndex} data-zone-chart-row><ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} barCategoryGap={6} margin={{ top: 20, right: 12, left: 8, bottom: 0 }}>
+        {OrderChartGradients({ id: `${gradient}-${rowIndex}` })}
+        <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
+        <XAxis dataKey="name" interval={0} height={72} tick={<SalesZoneAxisTick />} tickLine={false} />
+        <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />
+        <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
+        <Bar dataKey="count" name="Open Order Lines" radius={[2, 2, 0, 0]} maxBarSize={18} isAnimationActive={false}>
+          {data.map((zone, index) => <Cell key={zone.name} fill={`url(#${gradient}-${rowIndex}-${(rowIndex * capacity + index) % ORDER_CHART_COLORS.length})`} />)}
+          <LabelList dataKey="count" position="top" formatter={formatNumber} className="fill-foreground text-[10px] font-semibold" />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer></div>)}
+    {!zones.length ? <p className="py-6 text-center text-sm text-muted-foreground">No matching orders</p> : null}
+  </div>;
 }
 
 function SalesZoneAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value: string } }) {
