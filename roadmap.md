@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Show SAP document code/description combinations in Open Orders filters and descriptions in the card; verify exact selection, defaults, totals and exports.
+
 - [x] Treemap: uniform equal-size grid tiles, centered name/amount/%, keep drill-down
 - [x] Top customers: show 6, tighter bar rows
 - [x] Sales by Segment donut: show 6 segments
