@@ -189,6 +189,14 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.orders-pdf-export {
+  background: var(--card);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.orders-pdf-export [data-pdf-page-block],
+.orders-pdf-export [data-pdf-page-block] > *,
+.orders-pdf-export section,
 .pdf-export-theme [data-pdf-page-block],
 .pdf-export-theme [data-pdf-page-block] > *,
 .pdf-export-theme section {
@@ -196,6 +204,7 @@
   page-break-inside: avoid;
 }
 
+.orders-pdf-export [data-pdf-page-block],
 .pdf-export-theme [data-pdf-page-block] {
   overflow: visible;
 }

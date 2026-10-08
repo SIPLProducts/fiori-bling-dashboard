@@ -272,7 +272,7 @@ export function OpenSalesOrdersDashboard() {
   };
 
   return (
-    <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "pdf-export-theme" : "orders-compact"}`}>
+    <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "orders-pdf-export" : "orders-compact"}`}>
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
         {pdfDateLabel ? <p className="text-right text-xs font-semibold text-muted-foreground">{pdfDateLabel}</p> : null}
@@ -384,12 +384,13 @@ export function OpenSalesOrdersDashboard() {
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
                 <BarChart data={metrics.zones} barCategoryGap={8} margin={{ top: 28, right: 20, left: 20, bottom: 12 }}>
+                  {OrderChartGradients({ id: `${documentGradient}-pdf-zone` })}
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
                   <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
-                    {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={COLORS[index % COLORS.length]} />)}
+                    {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${documentGradient}-pdf-zone-${index % ORDER_CHART_COLORS.length})`} />)}
                     <LabelList dataKey="count" position="top" formatter={(value: number) => formatNumber(value)} className="fill-foreground text-[10px] font-semibold" />
                   </Bar>
                 </BarChart>
