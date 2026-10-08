@@ -33,6 +33,7 @@
 - Keep Open Orders readable chart heights and responsive grids in the screen-only wrapper; preserve PDF geometry and calculations independently.
 - Keep overview donut/table tracks side by side with local overflow at narrow widths; isolate screen chart-row arrangement from PDF geometry to preserve readable totals and exports.
 - Share Open Orders colors/gradients across screen and PDF; use layout-only PDF safeguards to prevent palette drift.
+- Manage appearance in the root ThemeProvider using semantic CSS tokens and browser storage; one shared state keeps navigation and chart exports consistent.
 
 - Group plants by code; fit all plant/zone categories in one width-aware row with compact bars and explicit-unit scales to avoid repeated plots. Share width/gradient helpers; keep zone PDF capture separate to preserve exports.
 - Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.

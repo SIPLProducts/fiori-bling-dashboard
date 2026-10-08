@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, Home, LogOut, Search, Settings, User } from "lucide-react";
+import { Bell, HelpCircle, Home, LogOut, Moon, Search, Settings, Sun, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/theme-provider";
 import { adminNavForScreens } from "@/lib/nav";
 import { supabase } from "@/integrations/supabase/client";
 import hblLogo from "@/assets/hbl-logo.png";
@@ -27,6 +29,7 @@ export function ShellBar({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { theme, toggleTheme } = useTheme();
 
   const adminItems = adminNavForScreens(screens);
 
@@ -54,6 +57,17 @@ export function ShellBar({
 
 
       <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          onClick={toggleTheme}
+          className="shrink-0 rounded-full text-shell-foreground hover:bg-shell-foreground/10 hover:text-shell-foreground"
+        >
+          {theme === "light" ? <Moon /> : <Sun />}
+        </Button>
         <Link
           to="/launchpad"
           aria-label="Home"
