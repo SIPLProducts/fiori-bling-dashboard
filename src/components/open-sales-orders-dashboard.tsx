@@ -47,7 +47,7 @@ import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
-import { customerKey, productKey, DEFAULT_DOCUMENT_TYPES, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
+import { customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
@@ -146,7 +146,7 @@ export function OpenSalesOrdersDashboard() {
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
-  const [filters, setFilters] = useState<OpenOrderFilters>(defaultOpenOrderFilters);
+  const [filters, setFilters] = useState<OpenOrderFilters>(() => defaultOpenOrderFilters());
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
   const [tableStatus, setTableStatus] = useState<OpenOrderTableStatus>("all");
@@ -155,7 +155,7 @@ export function OpenSalesOrdersDashboard() {
   const [excelBusy, setExcelBusy] = useState(false);
   const tablePageSize = 10;
   const options = useMemo(() => ({
-    documentType: [...new Set(data.map((row) => row.documentType))].sort(),
+    documentType: documentTypeOptions(data),
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
     plant: [...new Map(data.map((row) => [row.plant, { value: row.plant, label: [row.plant, row.plantName].filter(Boolean).join(" — ") || "Unassigned" }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
@@ -167,9 +167,9 @@ export function OpenSalesOrdersDashboard() {
     documentTypeDefaultsInitialized.current = true;
     setFilters((current) => ({
       ...current,
-      documentTypes: current.documentTypes.filter((type) => options.documentType.includes(type)),
+      documentTypes: defaultDocumentTypeKeys(data),
     }));
-  }, [data.length, options.documentType]);
+  }, [data]);
   const filteredData = useMemo(() => filterOpenOrders(data, filters, {
     from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
@@ -180,10 +180,7 @@ export function OpenSalesOrdersDashboard() {
   useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
     setDateRangeState(undefined);
-    setFilters({
-      ...defaultOpenOrderFilters(),
-      documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
-    });
+    setFilters(defaultOpenOrderFilters(data));
   };
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
@@ -209,10 +206,7 @@ export function OpenSalesOrdersDashboard() {
       else totals.open += row.value;
       return totals;
     }, { open: 0, partial: 0 });
-    const documentTypes = [...new Set(filteredData.map((row) => row.documentType))].sort().map((name) => {
-      const rows = filteredData.filter((row) => row.documentType === name);
-      return { name, count: rows.length, value: rows.reduce((sum, row) => sum + row.value, 0) };
-    });
+    const documentTypes = summarizeDocumentDescriptions(filteredData);
     return {
       totalValue,
       totalQuantity,
@@ -329,7 +323,7 @@ export function OpenSalesOrdersDashboard() {
           <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
           <FilterField label="Sales Document Type">
             <MultiSelect
-              options={options.documentType.map((type) => ({ value: type, label: type }))}
+              options={options.documentType}
               selected={filters.documentTypes}
               onChange={(documentTypes) => setFilters((current) => ({ ...current, documentTypes }))}
               placeholder="Select document types"
