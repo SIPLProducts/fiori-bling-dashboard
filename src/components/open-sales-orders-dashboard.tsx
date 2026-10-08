@@ -38,7 +38,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { toast } from "sonner";
 import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
@@ -46,9 +46,10 @@ import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { displayOpenOrderDate, filterOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
+import { PlantPendingChart } from "@/components/plant-pending-chart";
 
 const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
 
@@ -272,6 +273,7 @@ export function OpenSalesOrdersDashboard() {
     };
   }, [filteredData]);
   const tableData = useMemo(() => filterOpenOrderTable(filteredData, tableStatus, tableSearch), [filteredData, tableStatus, tableSearch]);
+  const tableTotals = useMemo(() => summarizeOpenOrderTable(tableData), [tableData]);
   const tablePageCount = Math.max(1, Math.ceil(tableData.length / tablePageSize));
   const currentTablePage = Math.min(tablePage, tablePageCount);
   const tableRows = tableData.slice((currentTablePage - 1) * tablePageSize, currentTablePage * tablePageSize);
@@ -443,36 +445,7 @@ export function OpenSalesOrdersDashboard() {
 
       <div data-pdf-exclude>
         <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
-          <div className="max-h-80 overflow-auto">
-            <table aria-label="Plant-wise Pending" className="w-full min-w-[560px] text-xs">
-              <thead className="sticky top-0 z-10 bg-card text-muted-foreground">
-                <tr className="border-b border-border">
-                  <th scope="col" className="px-3 py-2 text-left font-semibold">Plant Code / Name</th>
-                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Pending Value (₹ Cr)</th>
-                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Pending Quantity</th>
-                  <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-semibold">Open Order Lines</th>
-                </tr>
-              </thead>
-              <tbody className="text-card-foreground">
-                {metrics.plants.length ? metrics.plants.map((plant) => (
-                  <tr key={plant.code} className="border-b border-border/60">
-                    <th scope="row" className="px-3 py-2 text-left font-medium"><span className="font-semibold text-primary">{plant.code || "—"}</span>{plant.name ? ` — ${plant.name}` : !plant.code ? " Unassigned" : ""}</th>
-                    <td className="px-3 py-2 text-right tabular-nums">{plant.value.toFixed(2)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{plant.quantity.toLocaleString("en-IN", { maximumFractionDigits: 3 })}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatNumber(plant.count)}</td>
-                  </tr>
-                )) : <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">{isLoading ? "Loading plants…" : "No pending orders match the selected filters."}</td></tr>}
-              </tbody>
-              <tfoot className="sticky bottom-0 border-t-2 border-border bg-muted text-card-foreground">
-                <tr className="font-semibold">
-                  <th scope="row" className="px-3 py-2 text-left">Total</th>
-                  <td className="px-3 py-2 text-right tabular-nums">{metrics.totalValue.toFixed(2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{metrics.totalQuantity.toLocaleString("en-IN", { maximumFractionDigits: 3 })}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatNumber(filteredData.length)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <PlantPendingChart plants={metrics.plants} loading={isLoading} />
         </Panel>
       </div>
 
@@ -506,6 +479,15 @@ export function OpenSalesOrdersDashboard() {
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={19} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
+            <TableCell colSpan={13}>Total</TableCell>
+            <TableCell className="text-right tabular-nums">{tableTotals.openQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
+            <TableCell className="text-right tabular-nums">{tableTotals.deliveredQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
+            <TableCell className="text-right tabular-nums">{tableTotals.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
+            <TableCell className="text-right tabular-nums">{tableTotals.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
+            <TableCell className="text-right tabular-nums">{tableTotals.value.toFixed(2)}</TableCell>
+            <TableCell />
+          </TableRow></TableFooter>
         </Table>
         <div data-pdf-exclude className="flex flex-wrap items-center justify-start gap-2 border-t border-border px-4 py-3"><span className="mr-2 text-xs text-muted-foreground">Page {currentTablePage} of {tablePageCount}</span><Button variant="outline" size="sm" aria-label="Previous table page" disabled={currentTablePage <= 1} onClick={() => setTablePage(Math.max(1, currentTablePage - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={currentTablePage >= tablePageCount} onClick={() => setTablePage(Math.min(tablePageCount, currentTablePage + 1))}>Next<ChevronRight /></Button></div>
       </section>

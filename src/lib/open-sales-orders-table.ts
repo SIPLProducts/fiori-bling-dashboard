@@ -3,6 +3,16 @@ import type { OpenSalesOrder } from "./open-sales-orders-data";
 
 export type OpenOrderTableStatus = "all" | "open" | "partial";
 
+export function summarizeOpenOrderTable(rows: Pick<OpenSalesOrder, "openQuantity" | "deliveredQuantity" | "ah" | "totalAh" | "value">[]) {
+  return rows.reduce((totals, row) => ({
+    openQuantity: totals.openQuantity + row.openQuantity,
+    deliveredQuantity: totals.deliveredQuantity + row.deliveredQuantity,
+    ah: totals.ah + row.ah,
+    totalAh: totals.totalAh + row.totalAh,
+    value: totals.value + row.value,
+  }), { openQuantity: 0, deliveredQuantity: 0, ah: 0, totalAh: 0, value: 0 });
+}
+
 export function openOrderStatusLabel(deliveredQuantity: number) {
   return deliveredQuantity > 0 ? "Partially Delivered" : "Open";
 }
