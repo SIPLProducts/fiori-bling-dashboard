@@ -210,6 +210,10 @@
   overflow: visible;
 }
 
+.orders-pdf-export [data-pdf-page-block] {
+  background-color: var(--card);
+}
+
 @media print {
   @page {
     size: A4 landscape;
@@ -323,7 +327,7 @@
 
 .recharts-cartesian-axis-tick-value,
 .recharts-label {
-  fill: var(--chart-axis-label);
+  fill: var(--chart-axis-label) !important;
 }
 
 .recharts-default-tooltip {
