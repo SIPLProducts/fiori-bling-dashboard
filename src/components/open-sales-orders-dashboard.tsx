@@ -46,7 +46,7 @@ import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
@@ -259,6 +259,7 @@ export function OpenSalesOrdersDashboard() {
     return {
       totalValue,
       totalQuantity,
+      pendingOrdersAgainstAh: countPendingOrdersAgainstAh(filteredData),
       plants: summarizePlantPending(filteredData),
       buckets,
       zones,
@@ -388,10 +389,11 @@ export function OpenSalesOrdersDashboard() {
         <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders Reports</h2>
       </div> : null}
 
-      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-3">
+      <div data-pdf-page-block className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} icon={Package} tone="violet" />
+        <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
 
       <div data-pdf-page-block className="grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">

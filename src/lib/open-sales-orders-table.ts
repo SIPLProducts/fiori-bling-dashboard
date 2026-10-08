@@ -3,6 +3,10 @@ import type { OpenSalesOrder } from "./open-sales-orders-data";
 
 export type OpenOrderTableStatus = "all" | "open" | "partial";
 
+export function countPendingOrdersAgainstAh(rows: Pick<OpenSalesOrder, "order" | "totalAh">[]) {
+  return new Set(rows.filter((row) => row.totalAh > 0).map((row) => row.order)).size;
+}
+
 export function summarizeOpenOrderTable(rows: Pick<OpenSalesOrder, "openQuantity" | "deliveredQuantity" | "ah" | "totalAh" | "value">[]) {
   return rows.reduce((totals, row) => ({
     openQuantity: totals.openQuantity + row.openQuantity,
