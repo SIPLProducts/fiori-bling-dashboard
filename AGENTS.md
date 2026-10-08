@@ -33,3 +33,5 @@
 - Scope compact Open Sales Orders spacing to the screen-only wrapper and use document-type row attributes for semantic tints, keeping PDF geometry and reporting logic independent from presentation.
 - Use stable side-by-side donut/table tracks with local overflow for the Open Orders document-type card, because readable center totals and business columns must not be compressed by dashboard breakpoints.
 - Keep ranking colors and chart-header dividers configurable through shared Open Orders presentation components so styling stays scoped to selected cards and consistent in PDF exports.
+
+- Key Open Sales Orders Plant selections by stored plant code and reuse plant_name for labels, so same-name plants remain distinct and exports share dashboard filtering.

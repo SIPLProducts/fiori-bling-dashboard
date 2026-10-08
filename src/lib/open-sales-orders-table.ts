@@ -22,7 +22,7 @@ export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTa
     const numbers = [row.daysOpen, row.openQuantity, row.deliveredQuantity];
     const values = [
       row.order, row.item, row.customer, row.documentType, row.zone.replace(" Zone", ""),
-      row.division, row.material, row.description, row.orderDate, row.deliveryDate,
+      row.division, row.plant ?? "", row.plantName ?? "", row.material, row.description, row.orderDate, row.deliveryDate,
       displayOpenOrderDate(row.orderDate), displayOpenOrderDate(row.deliveryDate),
       ...numbers.map(String), ...numbers.map((value) => Math.round(value).toLocaleString("en-IN")),
       String(row.value), row.value.toFixed(2), openOrderStatusLabel(row.deliveredQuantity),
