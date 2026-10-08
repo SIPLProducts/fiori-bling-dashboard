@@ -161,4 +161,4 @@
 
 - [x] Keep every zone and plant in one chart row; tightened plant gaps/right whitespace; verified all 19 zones/10 plants, totals, pagination/search, Excel/PDF, and desktop/phone layouts.
 - [x] Add Pending Orders Against AH beside Open Quantity; verified 130 distinct filtered orders, screen/PDF, narrow layouts, nine tests, and unchanged Quick View.
-- [ ] Remove Open Orders Financial Year; default and Reset to all dates with three document types; verify 358 AH orders, dates, and exports.
+- [x] Remove Open Orders Financial Year; verified all-date opening/Reset, 358 distinct AH orders, 1,174 Excel rows, PDF, narrow layouts, and 13 tests.
