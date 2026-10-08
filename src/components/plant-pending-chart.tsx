@@ -29,11 +29,11 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
           <span className="text-chart-1">Value (₹ Cr)</span>
 
         </div>
-        <ResponsiveContainer width="100%" height={200}>
+        <div className="order-chart-canvas order-plant-canvas"><ResponsiveContainer width="100%" height="100%">
           <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
-            <XAxis dataKey="code" interval={0} height={48} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
+            <XAxis dataKey="code" interval={0} height={24} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = plants.find((item) => item.code === payload.value);
               const dense = slotWidth < 36;
               return <g transform={`translate(${x},${y})`}><text textAnchor={dense ? "end" : "middle"} transform={dense ? "translate(0,10) rotate(-45)" : "translate(0,12)"} className="fill-foreground text-[9px] font-semibold">{plant?.code || "—"}</text></g>;
@@ -48,7 +48,7 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
               <LabelList dataKey="value" position="top" angle={slotWidth < 30 ? -45 : 0} offset={6} formatter={(n: number) => n.toFixed(2)} className="fill-chart-1 text-[10px] font-medium" />
             </Bar>
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer></div>
       </div>
     </div> : <p className="py-6 text-center text-sm text-muted-foreground">{loading ? "Loading plants…" : "No pending orders match the selected filters."}</p>}
   </div>;

@@ -24,7 +24,7 @@ function OpenSalesOrdersPage() {
   const allowed = hasScreen(data?.screens, "sd.open-sales-orders");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="open-orders-page min-h-screen bg-background">
       <ShellBar title="Open Sales Orders Reports" displayName={data?.profile?.display_name} screens={data?.screens} />
       <main className="p-2 sm:p-3">
         {!isLoading && !allowed ? <AccessDenied area="Open Sales Orders" /> : <OpenSalesOrdersDashboard />}
