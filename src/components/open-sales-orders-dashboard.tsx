@@ -47,40 +47,15 @@ import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
-import { currentFiscalYear, fiscalYearForDate } from "@/lib/sd-live";
+import { customerKey, productKey, DEFAULT_DOCUMENT_TYPES, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
 
-const fyLabel = (year: string) => `FY ${year}–${String(Number(year) + 1).slice(-2)}`;
-
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
 const formatNumber = (value: number) => Math.round(value).toLocaleString("en-IN");
-const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
-
-type Filters = {
-  documentTypes: string[];
-  customers: string[] | null;
-  zones: string[] | null;
-  products: string[] | null;
-  divisions: string[] | null;
-  plants: string[] | null;
-};
-
-const EMPTY_FILTERS: Filters = {
-  documentTypes: DEFAULT_DOCUMENT_TYPES,
-  customers: null,
-  zones: null,
-  products: null,
-  divisions: null,
-  plants: null,
-};
-
-const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
-const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
-
 type Tone = "primary" | "success" | "violet" | "warning";
 const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
   primary: { card: "border-primary/25 bg-primary/15", icon: "bg-primary text-primary-foreground" },
@@ -168,12 +143,7 @@ export function OpenSalesOrdersDashboard() {
   });
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
-  const [years, setYears] = useState<string[] | null>(() => [currentFiscalYear()]);
-  const setDateRange = (range: DateRange | undefined) => {
-    setDateRangeState(range);
-    if (range?.from) setYears(null);
-  };
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<OpenOrderFilters>(defaultOpenOrderFilters);
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
   const [tableStatus, setTableStatus] = useState<OpenOrderTableStatus>("all");
@@ -197,34 +167,18 @@ export function OpenSalesOrdersDashboard() {
       documentTypes: current.documentTypes.filter((type) => options.documentType.includes(type)),
     }));
   }, [data.length, options.documentType]);
-  const yearOptions = useMemo(() => [...new Set(data.map((row) => row.orderDate ? fiscalYearForDate(row.orderDate) : "").filter(Boolean))]
-    .sort((a, b) => b.localeCompare(a))
-    .map((year) => ({ value: year, label: fyLabel(year) })), [data]);
-  const filteredData = useMemo(() => data.filter((row) => {
-    if (years !== null && !years.includes(row.orderDate ? fiscalYearForDate(row.orderDate) : "")) return false;
-    if (dateRange?.from || dateRange?.to) {
-      if (!row.orderDate || !Number.isFinite(Date.parse(row.orderDate))) return false;
-      if (dateRange.from && row.orderDate < format(dateRange.from, "yyyy-MM-dd")) return false;
-      if (dateRange.to && row.orderDate > format(dateRange.to, "yyyy-MM-dd")) return false;
-    }
-    if (!filters.documentTypes.includes(row.documentType)) return false;
-    if (filters.customers !== null && !filters.customers.includes(customerKey(row))) return false;
-    if (filters.zones !== null && !filters.zones.includes(row.zone)) return false;
-    if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
-    if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
-    if (filters.plants !== null && !filters.plants.includes(row.plant)) return false;
-    return true;
-  }), [data, dateRange, filters, years]);
+  const filteredData = useMemo(() => filterOpenOrders(data, filters, {
+    from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+  }), [data, dateRange, filters]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
-    + Number(years !== null)
     + Number(filters.documentTypes.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, filters, years, tableStatus, tableSearch]);
+  useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
     setDateRangeState(undefined);
-    setYears([currentFiscalYear()]);
     setFilters({
-      ...EMPTY_FILTERS,
+      ...defaultOpenOrderFilters(),
       documentTypes: DEFAULT_DOCUMENT_TYPES.filter((type) => options.documentType.includes(type)),
     });
   };
@@ -353,15 +307,12 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1800px]:grid-cols-8">
-          <FilterField label="Financial Year">
-            <MultiSelect bulkActions options={yearOptions} selected={years ?? (dateRange?.from || dateRange?.to ? [] : yearOptions.map((option) => option.value))} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
-          </FilterField>
+        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1800px]:grid-cols-7">
           <FilterField label="Date Range">
             <Popover>
               <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} className="pointer-events-auto p-3" />
+                <Calendar mode="range" selected={dateRange} onSelect={setDateRangeState} numberOfMonths={1} className="pointer-events-auto p-3" />
                 <div className="flex justify-end border-t border-border p-2">
                   <Button type="button" variant="outline" size="sm" disabled={!dateRange?.from && !dateRange?.to} onClick={() => setDateRangeState(undefined)}>Clear</Button>
                 </div>

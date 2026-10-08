@@ -24,9 +24,9 @@
 - Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
 - Persist Open Sales Orders as validated atomic snapshots keyed by active `VBELN + POSNR`, preserving typed reporting fields plus the complete raw SAP row, because missing orders must be removed without exposing partial syncs.
 - Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
-- Scope the Open Sales Orders launchpad value and line count to active ZDOR, ZEOR, and ZSOR rows in the current April–March financial year, so it matches the report's opening view.
+- Keep the Open Orders launchpad scoped to current-FY active ZDOR, ZEOR, and ZSOR rows independently of report date defaults.
 - Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
-- Display unrestricted Open Sales Orders years as unchecked while a Date Range is active, because date-only filtering must not appear as an explicit selection of every financial year.
+- Centralize Open Orders Smart Filters in a pure helper so default, Reset, and date boundaries stay testable across every report output.
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
 - Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
 - Derive Open Sales Orders detailed-table status/search results through one frontend filter shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.
