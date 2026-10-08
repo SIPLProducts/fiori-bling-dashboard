@@ -1,10 +1,12 @@
 # Plant visualization and detailed-table totals
 
 ## Plant-wise Pending
-- Replace the current numeric-only table with compact horizontal pending-value bars beside each plant’s code and name, retaining separate numeric columns for Pending Value (₹ Cr), Pending Quantity, and Open Order Lines.
-- Rank plants by pending value and keep every matching plant available through local scrolling. Use a truthful linear scale; keep numeric values readable even when smaller bars are tiny.
-- Retain the Total footer and shared Smart Filters. Keep this section screen-only, without changing PDF or Excel.
-- Preserve the existing Fiori colors, compact spacing, and colored heading divider; do not use the discarded design previews.
+- Match the attached screenshot with **grouped vertical bars**: three adjacent bars per plant for Pending Value (blue), Pending Quantity (teal), and Open Order Lines (orange), with a legend at the top-right and plant code/name below each group.
+- Use the reference’s normalized comparison: each measure’s largest matching plant is 100%, with other plants shown proportionally to that measure’s maximum. Label the vertical axis clearly as **Relative to Largest Plant (%)** so currency, quantity, and counts are not misleadingly mixed on one raw scale.
+- Show actual values on the bars and all three actual measures in tooltips, using ₹ Cr for value and unscaled numbers for quantity and lines. Keep small-value labels readable without artificially enlarging bars.
+- Keep every matching plant, ranked by pending value, with local horizontal scrolling when needed and no page overflow.
+- Replace the table’s Total footer with the reference’s three compact bottom summaries: Total Pending Value, Total Pending Quantity, and Total Open Order Lines.
+- Retain the title **Plant-wise Pending**, shared Smart Filters, existing compact Fiori styling, and colored heading divider. Keep this section screen-only, without changing PDF or Excel; use the attachment as a visual reference, not an embedded image.
 
 ## Detailed View totals
 - Add a clearly distinguished **Total** row at the bottom of the detailed table, immediately before pagination.
