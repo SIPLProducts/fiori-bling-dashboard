@@ -52,7 +52,7 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
       </div>
     </div> : <p className="py-6 text-center text-sm text-muted-foreground">{loading ? "Loading plants…" : "No pending orders match the selected filters."}</p>}
     <div className="mt-1 grid grid-cols-1 divide-y divide-border rounded-md border border-border bg-muted/40 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-      {measures.map((metric) => <div key={metric.key} className="px-2 py-1"><p className="text-[10px] text-muted-foreground">Total {metric.label}</p><p data-plant-total={metric.key} className={`mt-0.5 text-sm font-semibold tabular-nums ${metric.className}`}>{metric.key === "value" ? "₹ " : ""}{metric.format(plants.reduce((sum, plant) => sum + plant[metric.key], 0))}{metric.key === "value" ? " Cr" : ""}</p></div>
+      {measures.map((metric) => <div key={metric.key} className="px-2 py-1"><p className="text-[10px] text-muted-foreground">Total {metric.label}</p><p data-plant-total={metric.key} className={`mt-0.5 text-sm font-semibold tabular-nums ${metric.className}`}>{metric.key === "value" ? "₹ " : ""}{metric.format(plants.reduce((sum, plant) => sum + plant[metric.key], 0))}{metric.key === "value" ? " Cr" : ""}</p></div>)}
     </div>
   </div>;
 }
