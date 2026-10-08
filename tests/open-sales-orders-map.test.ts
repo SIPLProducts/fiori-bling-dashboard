@@ -7,6 +7,13 @@ const sample = [
 ];
 
 describe("Open Sales Orders mapping", () => {
+  test("maps unscaled SAP AH and TOT_AH including decimals and trailing minus", () => {
+    for (const [input, expected] of [["1234", 1234], ["1,234.567", 1234.567], ["12.5-", -12.5], ["", 0], [undefined, 0], ["invalid", 0]] as const) {
+      const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", AH: input, TOT_AH: input }], "Open_Sales_Orders").rows[0];
+      expect(row?.ah).toBe(expected);
+      expect(row?.total_ah).toBe(expected);
+    }
+  });
   test("maps the attached VBELN + POSNR keys and preserves the raw response", () => {
     const result = mapOpenSalesOrdersPayload(sample, "Open _Sales _Orders");
     expect(result.rows.map((row) => [row.sales_order, row.sales_order_item])).toEqual([["1027671", "150"], ["1027920", "50"]]);

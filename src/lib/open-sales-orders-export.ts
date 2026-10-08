@@ -48,6 +48,8 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     { header: "Ordered Qty", key: "quantity", width: 15 },
     { header: "Open Qty", key: "openQuantity", width: 15 },
     { header: "Delivered Qty", key: "deliveredQuantity", width: 16 },
+    { header: "AH", key: "ah", width: 16 },
+    { header: "Total AH", key: "totalAh", width: 18 },
     { header: "Unit", key: "unit", width: 10 },
     { header: "Currency", key: "currency", width: 11 },
     { header: "Open Value (₹ Cr)", key: "value", width: 19 },
@@ -96,6 +98,8 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     quantity: row.quantity,
     openQuantity: row.openQuantity,
     deliveredQuantity: row.deliveredQuantity,
+    ah: row.ah,
+    totalAh: row.totalAh,
     unit: row.unit,
     currency: row.currency,
     value: row.value,
@@ -120,6 +124,9 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
   for (const key of ["quantity", "openQuantity", "deliveredQuantity", "value"] as const) {
     const column = sheet.getColumn(key);
     column.numFmt = key === "value" ? "#,##0.00" : "#,##0.00;[Red](#,##0.00);-";
+  }
+  for (const key of ["ah", "totalAh"]) {
+    sheet.getColumn(key).numFmt = "#,##0.###############;(#,##0.###############);0";
   }
   const bytes = await workbook.xlsx.writeBuffer();
   const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });

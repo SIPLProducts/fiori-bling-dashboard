@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { OpenSalesOrder } from "../src/lib/open-sales-orders-data";
 import { filterOpenOrderTable } from "../src/lib/open-sales-orders-table";
 
-const base = { order: "1027671", item: "150", customer: "A K Steels", documentType: "ZDOR", zone: "South Zone", division: "10", plant: "1100", plantName: "Hyderabad Works", material: "8000000026", description: "Battery Pack", orderDate: "2026-04-15", deliveryDate: "2026-05-20", daysOpen: 174, openQuantity: 170480, deliveredQuantity: 0, value: 4.023 };
+const base = { order: "1027671", item: "150", customer: "A K Steels", documentType: "ZDOR", zone: "South Zone", division: "10", plant: "1100", plantName: "Hyderabad Works", material: "8000000026", description: "Battery Pack", orderDate: "2026-04-15", deliveryDate: "2026-05-20", daysOpen: 174, openQuantity: 170480, deliveredQuantity: 0, ah: 765.4321, totalAh: 98765.4321, value: 4.023 };
 const rows = Array.from({ length: 25 }, (_, index) => ({ ...base, order: String(1027671 + index), deliveredQuantity: index % 2 === 0 ? 0 : 20 }) as OpenSalesOrder);
 
 describe("Open Sales Orders table filters", () => {
@@ -17,6 +17,9 @@ describe("Open Sales Orders table filters", () => {
     }
   });
   test("combines search and status across rows beyond page one", () => {
+    for (const search of ["765.4321", "98765.4321", "98,765.4321"]) {
+      expect(filterOpenOrderTable(rows, "open", search)).toHaveLength(13);
+    }
     expect(filterOpenOrderTable(rows, "all", "1027695")).toHaveLength(1);
     expect(filterOpenOrderTable(rows, "partial", "partially delivered")).toHaveLength(12);
     expect(filterOpenOrderTable(rows, "open", "partially delivered")).toHaveLength(0);

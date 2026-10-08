@@ -31,6 +31,7 @@ export type Database = {
       }
       open_sales_orders: {
         Row: {
+          ah: number
           country: string | null
           created_at: string
           currency: string | null
@@ -86,11 +87,13 @@ export type Database = {
           source_endpoint: string
           sync_scope_key: string
           synced_at: string
+          total_ah: number
           unit: string | null
           updated_at: string
           usage_description: string | null
         }
         Insert: {
+          ah?: number
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -146,11 +149,13 @@ export type Database = {
           source_endpoint: string
           sync_scope_key: string
           synced_at?: string
+          total_ah?: number
           unit?: string | null
           updated_at?: string
           usage_description?: string | null
         }
         Update: {
+          ah?: number
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -206,6 +211,7 @@ export type Database = {
           source_endpoint?: string
           sync_scope_key?: string
           synced_at?: string
+          total_ah?: number
           unit?: string | null
           updated_at?: string
           usage_description?: string | null
