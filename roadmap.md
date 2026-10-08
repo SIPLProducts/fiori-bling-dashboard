@@ -168,4 +168,4 @@
 - [x] Fit all non-table Open Orders cards within the current desktop viewport by reducing fonts, chart height, and spacing; keep the three overview charts together and the trend legend on one line.
 - [x] Verify no removed cards, unchanged totals/exports, and desktop fit plus mobile usability.
 - [x] Restore readable chart heights, fonts and label spacing; verified all eight panels at 951/901px and phone widths, unchanged 859 AH count, filters/pagination, PDF/Excel downloads, and 15 passing tests.
-- [ ] Enlarge document-type/aging donut totals and keep the trend legend right-aligned on one line; verify desktop and phone views with unchanged totals.
+- [x] Enlarge document-type/aging donut totals and right-align the single-line trend legend; verified 1,174 totals, all eight panels, matching legend colors, and no page-width overflow at 949/1500/1920/768/390/320px with updated screenshots.
