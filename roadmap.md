@@ -155,3 +155,4 @@
 - [x] Complete AH and Total AH storage/backfill, future SAP mapping, detailed table/search, Excel, middleware bundle, and verification; document separate Quality/Production deployment.
 - [x] Add a screen-only Plant-wise Pending tile with filtered value, quantity, and line count; verify totals, Plant selection/empty/reset, and wide/narrow layout.
 - [x] Match Plant-wise Pending to grouped normalized bars and add five full-filtered table totals; verified filters, empty results, pagination, tooltips, wide/narrow layout, and focused tests.
+- [x] Replace Plant-wise Pending percentage ticks with clearly distinguished actual-value scales; verified actual axes, unchanged totals, wide/narrow rendering, and eight focused tests.
