@@ -30,7 +30,7 @@
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
 - Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
 - Derive Open Sales Orders detailed-table status/search results through one frontend filter shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.
-- Keep Open Orders responsive grids and local table scrolling in the screen-only wrapper; preserve PDF geometry and calculations independently.
+- Keep Open Orders readable chart heights and responsive grids in the screen-only wrapper; preserve PDF geometry and calculations independently.
 - Use stable side-by-side donut/table tracks with local overflow for the Open Orders document-type card, because readable center totals and business columns must not be compressed by dashboard breakpoints.
 - Share configurable ranking colors and heading dividers to scope Open Orders styling and preserve PDF consistency.
 

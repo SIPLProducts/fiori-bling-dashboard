@@ -167,3 +167,4 @@
 - [x] Verify all eight chart/ranking panels, summary/status/Quick View cards, filters, pagination/search, Excel/PDF, and no page-width overflow at 1920/1440/1280/901/768/390/320px; 15 rule tests pass.
 - [x] Fit all non-table Open Orders cards within the current desktop viewport by reducing fonts, chart height, and spacing; keep the three overview charts together and the trend legend on one line.
 - [x] Verify no removed cards, unchanged totals/exports, and desktop fit plus mobile usability.
+- [x] Restore readable chart heights, fonts and label spacing; verified all eight panels at 951/901px and phone widths, unchanged 859 AH count, filters/pagination, PDF/Excel downloads, and 15 passing tests.
