@@ -33,17 +33,17 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
           <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
-            <XAxis dataKey="code" interval={0} height={24} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
+            <XAxis dataKey="code" interval={0} height={48} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = plants.find((item) => item.code === payload.value);
               const dense = slotWidth < 36;
-              return <g transform={`translate(${x},${y})`}><text textAnchor={dense ? "end" : "middle"} transform={dense ? "translate(0,10) rotate(-45)" : "translate(0,12)"} className="fill-foreground text-[9px] font-semibold">{plant?.code || "—"}</text></g>;
+              return <g transform={`translate(${x},${y})`}><text textAnchor={dense ? "end" : "middle"} transform={dense ? "translate(0,10) rotate(-45)" : "translate(0,12)"} className="fill-foreground text-[11px] font-semibold">{plant?.code || "—"}</text></g>;
             }} />
             <YAxis yAxisId="value" domain={[0, maxima.value]} ticks={[0, 0.25, 0.5, 0.75, 1].map((part) => part * maxima.value)} width={48} tick={{ fontSize: 10, fill: "var(--chart-1)" }} tickFormatter={numeric} tickLine={false} axisLine={{ stroke: "var(--chart-axis-label)" }} />
             <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
               const plant = payload?.[0]?.payload as PlantPending | undefined;
               return active && plant ? <div className="max-w-64 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><p className="mb-1 font-semibold">{plant.code || "—"} — {plant.name || "Unassigned"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
             }} />
-            <Bar yAxisId="value" dataKey="value" name="Pending Value (₹ Cr)" fill="var(--chart-1)" barSize={barWidth} radius={[2, 2, 0, 0]} isAnimationActive={false}>
+            <Bar yAxisId="value" dataKey="value" name="Pending Value (₹ Cr)" fill="var(--chart-1)" barSize={barWidth} minPointSize={2} radius={[2, 2, 0, 0]} isAnimationActive={false}>
               {plants.map((plant, index) => <Cell key={plant.code} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}
               <LabelList dataKey="value" position="top" angle={slotWidth < 30 ? -45 : 0} offset={6} formatter={(n: number) => n.toFixed(2)} className="fill-chart-1 text-[10px] font-medium" />
             </Bar>

@@ -477,15 +477,15 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
   return <div ref={ref} className="min-w-0" aria-label="Sales Zone chart">
     <p className="text-[10px] font-medium text-muted-foreground">Open Order Lines</p>
     <div data-zone-chart-row className="order-chart-canvas order-zone-canvas"><ResponsiveContainer width="100%" height="100%">
-      <BarChart data={zones} barCategoryGap="15%" margin={{ top: 20, right: 2, left: 14, bottom: 0 }}>
+      <BarChart data={zones} barCategoryGap="15%" margin={{ top: 34, right: 10, left: 24, bottom: 6 }}>
         {OrderChartGradients({ id: gradient })}
         <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
-        <XAxis dataKey="name" interval={0} height={32} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-muted-foreground text-[9px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
+        <XAxis dataKey="name" interval={0} height={76} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-foreground text-[11px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
         <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />
         <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-        <Bar dataKey="count" name="Open Order Lines" radius={[2, 2, 0, 0]} barSize={barWidth} isAnimationActive={false}>
+        <Bar dataKey="count" name="Open Order Lines" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
           {zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}
-          <LabelList dataKey="count" position="top" formatter={formatNumber} className="fill-foreground text-[10px] font-semibold" />
+          <LabelList dataKey="count" position="top" angle={slotWidth < 30 ? -45 : 0} offset={8} formatter={formatNumber} className="fill-foreground text-[11px] font-semibold" />
         </Bar>
       </BarChart>
     </ResponsiveContainer></div>
