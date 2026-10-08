@@ -153,4 +153,4 @@
 
 - [x] Remove Highest Quantity on screen/PDF and add shared Plant filtering, detailed-table column/search, and verify existing Excel Plant columns.
 - [x] Complete AH and Total AH storage/backfill, future SAP mapping, detailed table/search, Excel, middleware bundle, and verification; document separate Quality/Production deployment.
-- [ ] Add a screen-only Plant-wise Pending tile with filtered value, quantity, and line count; verify totals and layout.
+- [x] Add a screen-only Plant-wise Pending tile with filtered value, quantity, and line count; verify totals, Plant selection/empty/reset, and wide/narrow layout.
