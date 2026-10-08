@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
-  Box,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -63,6 +62,7 @@ type Filters = {
   zones: string[] | null;
   products: string[] | null;
   divisions: string[] | null;
+  plants: string[] | null;
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -71,6 +71,7 @@ const EMPTY_FILTERS: Filters = {
   zones: null,
   products: null,
   divisions: null,
+  plants: null,
 };
 
 const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
@@ -180,6 +181,7 @@ export function OpenSalesOrdersDashboard() {
     documentType: [...new Set(data.map((row) => row.documentType))].sort(),
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
+    plant: [...new Map(data.map((row) => [row.plant, { value: row.plant, label: [row.plant, row.plantName].filter(Boolean).join(" — ") || "Unassigned" }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
     product: [...new Set(data.map(productKey))].sort(),
     division: [...new Map(data.map((row) => [row.division, { value: row.division, label: row.industryDescription ? `${row.division} — ${row.industryDescription}` : row.division }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
   }), [data]);
@@ -206,12 +208,13 @@ export function OpenSalesOrdersDashboard() {
     if (filters.zones !== null && !filters.zones.includes(row.zone)) return false;
     if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
     if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
+    if (filters.plants !== null && !filters.plants.includes(row.plant)) return false;
     return true;
   }), [data, dateRange, filters, years]);
   const activeFilterCount = Number(Boolean(dateRange?.from))
     + Number(years !== null)
     + Number(filters.documentTypes.length > 0)
-    + [filters.customers, filters.zones, filters.products, filters.divisions].filter((values) => values !== null).length;
+    + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
   useEffect(() => setTablePage(1), [dateRange, filters, years, tableStatus, tableSearch]);
   const resetFilters = () => {
     setDateRangeState(undefined);
@@ -264,7 +267,6 @@ export function OpenSalesOrdersDashboard() {
       notDeliveredCount: filteredData.length - partialCount,
       longest: [...filteredData].sort((a, b) => b.daysOpen - a.daysOpen)[0],
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
-      highestQuantity: [...filteredData].sort((a, b) => b.openQuantity - a.openQuantity)[0],
     };
   }, [filteredData]);
   const tableData = useMemo(() => filterOpenOrderTable(filteredData, tableStatus, tableSearch), [filteredData, tableStatus, tableSearch]);
@@ -344,7 +346,7 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+        {filtersOpen ? <div data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4 min-[1800px]:grid-cols-8">
           <FilterField label="Financial Year">
             <MultiSelect bulkActions options={yearOptions} selected={years ?? (dateRange?.from || dateRange?.to ? [] : yearOptions.map((option) => option.value))} onChange={(next) => { setYears(next.length === yearOptions.length ? null : next); setDateRangeState(undefined); }} placeholder="No years selected" emptyText="No years available" />
           </FilterField>
@@ -363,6 +365,7 @@ export function OpenSalesOrdersDashboard() {
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
+          <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
           <FilterField label="Sales Document Type">
             <MultiSelect
               options={options.documentType.map((type) => ({ value: type, label: type }))}
@@ -447,10 +450,9 @@ export function OpenSalesOrdersDashboard() {
         <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, filteredData.length)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
           <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
-          <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-3">
+          <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-2">
             <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
-            <QuickItem icon={Box} tone="violet" label="Highest Quantity" value={formatNumber(metrics.highestQuantity?.openQuantity ?? 0)} detail={`Product: ${metrics.highestQuantity?.material ?? "—"}`} />
           </div>
         </section>
       </div>
@@ -465,8 +467,8 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </div>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={16} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={17} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
         </Table>
         <div data-pdf-exclude className="flex flex-wrap items-center justify-start gap-2 border-t border-border px-4 py-3"><span className="mr-2 text-xs text-muted-foreground">Page {currentTablePage} of {tablePageCount}</span><Button variant="outline" size="sm" aria-label="Previous table page" disabled={currentTablePage <= 1} onClick={() => setTablePage(Math.max(1, currentTablePage - 1))}><ChevronLeft />Previous</Button><Button variant="outline" size="sm" aria-label="Next table page" disabled={currentTablePage >= tablePageCount} onClick={() => setTablePage(Math.min(tablePageCount, currentTablePage + 1))}>Next<ChevronRight /></Button></div>
       </section>
