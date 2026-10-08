@@ -451,6 +451,8 @@
 .order-zone-canvas { height: 270px; }
 .order-plant-canvas { height: 250px; }
 .orders-compact .order-trend-legend { display: flex; flex-wrap: nowrap; justify-self: end; gap: 10px; font-size: 11px; line-height: 1.4; }
+.order-trend-open-marker { background: var(--kpi-1); }
+.order-trend-partial-marker { background: var(--kpi-2); }
 .orders-compact .order-trend .order-panel-header { grid-template-columns: minmax(0,1fr) auto; align-items: center; }
 .orders-compact .order-panel .recharts-text,
 .orders-compact .order-panel .recharts-label-list text { font-size: 11px; }
