@@ -151,4 +151,4 @@
 - [x] Add Date Range Clear and readable one-row/two-row Open Sales Orders Smart Filters; verify interaction and layout.
 - [x] Verify mutually exclusive Financial Year and Date Range selections, including cleared year checkboxes.
 
-- [ ] Remove Highest Quantity on screen/PDF and add shared Plant filtering, detailed-table column/search, and verify existing Excel Plant columns.
+- [x] Remove Highest Quantity on screen/PDF and add shared Plant filtering, detailed-table column/search, and verify existing Excel Plant columns.
