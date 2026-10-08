@@ -521,7 +521,7 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
     <p className="text-[10px] font-medium text-muted-foreground">Open Order Lines</p>
     {rows.map((data, rowIndex) => <div key={rowIndex} data-zone-chart-row><ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} barCategoryGap={6} margin={{ top: 20, right: 12, left: 8, bottom: 0 }}>
-        <OrderChartGradients id={`${gradient}-${rowIndex}`} />
+        {OrderChartGradients({ id: `${gradient}-${rowIndex}` })}
         <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
         <XAxis dataKey="name" interval={0} height={72} tick={<SalesZoneAxisTick />} tickLine={false} />
         <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />

@@ -32,7 +32,7 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
         </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data} barCategoryGap="25%" margin={{ top: 22, right: 4, left: 4, bottom: 0 }}>
-            <OrderChartGradients id={`${gradient}-${rowIndex}`} />
+            {OrderChartGradients({ id: `${gradient}-${rowIndex}` })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
             <XAxis dataKey="code" interval={0} height={48} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = data.find((item) => item.code === payload.value);
