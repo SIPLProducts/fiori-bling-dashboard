@@ -321,6 +321,21 @@
   }
 }
 
+.recharts-cartesian-axis-tick-value,
+.recharts-label {
+  fill: var(--chart-axis-label);
+}
+
+.recharts-default-tooltip {
+  background-color: var(--popover) !important;
+  border-color: var(--chart-tooltip-border) !important;
+  color: var(--popover-foreground) !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--popover-foreground);
+}
+
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
