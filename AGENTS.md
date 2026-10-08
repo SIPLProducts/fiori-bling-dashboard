@@ -34,6 +34,7 @@
 - Use stable side-by-side donut/table tracks with local overflow for the Open Orders document-type card, because readable center totals and business columns must not be compressed by dashboard breakpoints.
 - Keep ranking colors and chart-header dividers configurable through shared Open Orders presentation components so styling stays scoped to selected cards and consistent in PDF exports.
 
-- Key Plant filters and Plant-wise Pending by plant code with plant_name labels; aggregate shared Smart-Filtered rows in a pure helper so same-name plants stay distinct and totals reconcile.
+- Key plants by code with name labels and aggregate Smart-Filtered rows in a pure helper; a dedicated chart independently normalizes measures while labeling actual values, avoiding mixed-unit scales.
+- Sum complete table-filtered rows in a pure footer helper so pagination never changes totals.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
-- Mirror Cloud-applied schema migrations byte-for-byte into timestamped supabase/migrations deployment files for self-hosted environments because their deployment process consumes that directory.
+- Mirror Cloud migrations byte-for-byte into timestamped supabase/migrations files because self-hosted deployment consumes that directory.
