@@ -445,142 +445,52 @@
 .order-heading-amber { border-bottom-color: var(--warning); }
 .order-heading-teal { border-bottom-color: var(--kpi-2); }
 
-/* All non-table cards fit compact desktop screens; exports and phones stay independent. */
+/* Screen charts keep readable plot areas; PDF capture uses its separate theme. */
+.order-trend-canvas { height: 200px; }
+.order-ranking-canvas { height: 280px; }
+.order-zone-canvas { height: 270px; }
+.order-plant-canvas { height: 250px; }
+.orders-compact .order-trend-legend { display: flex; flex-wrap: nowrap; gap: 10px; font-size: 11px; }
+.orders-compact .order-trend .order-panel-header { grid-template-columns: minmax(0,1fr); }
+.orders-compact .order-panel .recharts-text,
+.orders-compact .order-panel .recharts-label-list text { font-size: 11px; }
+.orders-compact .order-ranking foreignObject div { font-size: 11px; line-height: 20px; }
+.orders-compact .order-ranking .order-chart-canvas { height: 280px !important; }
+.orders-compact .order-trend .order-chart-canvas { height: 200px !important; }
+.orders-compact .order-document-grid { min-width: 320px; grid-template-columns: 90px minmax(220px,1fr); }
+.orders-compact .order-document-donut { width: 90px; height: 160px; }
+.orders-compact .order-document-donut strong { font-size: 18px; }
+.orders-compact .order-document-donut span { font-size: 9px; }
+.orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 32px 55px 30px; font-size: 11px; padding: 7px 4px; }
+.orders-compact .order-document-grid > div:last-child > div:first-child { font-size: 10px; }
+.orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 90px minmax(0,1fr); }
+.orders-compact .order-aging-grid .h-56 { height: 160px; }
+.orders-compact .order-aging-grid .text-xs { font-size: 11px; }
+.orders-compact .order-aging-grid .py-3 { padding: 8px 0; }
+.orders-compact .order-quick { min-height: 90px; }
+.orders-compact .order-quick-body { align-items: stretch; }
+.orders-compact .order-status { min-height: 120px; }
 @media (min-width: 850px) {
-  .orders-compact { display: flex; flex-direction: column; gap: 4px; }
+  .orders-compact { display: flex; flex-direction: column; gap: 8px; }
   .orders-compact > * { width: 100%; margin: 0 !important; }
-  .orders-compact .gap-4 { gap: 4px; }
-  .orders-compact .order-panel { padding: 4px 6px; }
-  .orders-compact .order-panel-header { margin-bottom: 3px; padding-bottom: 3px; gap: 3px; }
-  .orders-compact .order-panel-header h2 { font-size: 12px; line-height: 1.15; }
-  .orders-compact > header h1 { font-size: 16px; }
-  .orders-compact .order-summary { min-height: 42px; padding: 4px 6px; gap: 6px; }
-  .orders-compact .order-summary > span { width: 28px; height: 28px; }
-  .orders-compact .order-summary svg { width: 16px; height: 16px; }
-  .orders-compact .order-summary .text-sm { font-size: 10px; line-height: 1.15; }
-  .orders-compact .order-summary .text-3xl { font-size: 20px; margin-top: 3px; }
-  .orders-compact .order-overview-row { grid-template-columns: minmax(0,1.2fr) minmax(0,0.9fr) minmax(0,1fr); }
-  .orders-compact .order-overview-row > :last-child,
-  .orders-compact .order-ranking-row > :last-child { grid-column: auto; }
-  .orders-compact .order-trend .order-panel-header { grid-template-columns: minmax(0,1fr); }
-  .orders-compact .order-trend-legend { display: flex; gap: 8px; white-space: nowrap; font-size: 9px; }
-  .orders-compact .order-document-grid { min-width: 0; grid-template-columns: 76px minmax(0,1fr); gap: 4px; }
-  .orders-compact .order-document-donut { width: 76px; height: 108px; }
-  .orders-compact .order-document-donut strong { font-size: 16px; }
-  .orders-compact .order-document-donut span { font-size: 8px; }
-  .orders-compact .order-document-grid > div:last-child { font-size: 9px; }
-  .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 30px 47px 26px; padding: 3px 3px; gap: 2px; font-size: 9px; }
-  .orders-compact .order-document-grid > div:last-child > div:first-child { font-size: 8px; }
-  .orders-compact .order-aging-grid { height: 108px; min-height: 0; grid-template-columns: 80px minmax(0,1fr); gap: 4px; }
-  .orders-compact .order-aging-grid .h-56 { height: 104px; }
-  .orders-compact .order-aging-grid .text-lg { font-size: 16px; }
-  .orders-compact .order-aging-grid .text-xs { font-size: 9px; }
-  .orders-compact .order-aging-grid .py-3 { padding: 4px 0; gap: 3px; }
-  .orders-compact .order-trend .order-chart-canvas { height: 94px !important; }
+  .orders-compact .gap-4 { gap: 8px; }
+  .orders-compact .order-panel { padding: 10px 8px; }
+  .orders-compact .order-panel-header { margin-bottom: 8px; padding-bottom: 6px; gap: 6px; }
+  .orders-compact .order-panel-header h2 { font-size: 14px; line-height: 1.3; }
+  .orders-compact .order-overview-row { grid-template-columns: minmax(0,1.2fr) minmax(0,0.9fr) minmax(0,1fr); align-items: stretch; }
+  .orders-compact .order-overview-row > :last-child { grid-column: auto; }
+  .orders-compact .order-ranking-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .orders-compact .order-ranking-row > :last-child { grid-column: 1 / -1; }
   .orders-compact .order-paired-charts { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .orders-compact .order-paired-charts .order-chart-canvas { height: 122px !important; }
+  .orders-compact .order-paired-charts .order-zone-canvas { height: 270px !important; }
+  .orders-compact .order-paired-charts .order-plant-canvas { height: 250px !important; }
+}
+@media (min-width: 1200px) {
   .orders-compact .order-ranking-row { grid-template-columns: repeat(3,minmax(0,1fr)); }
-  .orders-compact .order-ranking .order-chart-canvas,
-  .orders-compact .order-ranking .grid.h-\[300px\] { height: 160px !important; }
-  .orders-compact .order-status-row { grid-template-columns: 0.75fr 0.85fr 1.9fr; }
-  .orders-compact .order-status-row > :last-child { grid-column: auto; }
-  .orders-compact .order-status { min-height: 64px; padding: 4px 6px; gap: 5px; }
-  .orders-compact .order-status .text-sm { font-size: 11px; }
-  .orders-compact .order-status .text-xl { font-size: 16px; }
-  .orders-compact .order-status .text-base { font-size: 13px; }
-  .orders-compact .order-status p { margin-top: 0; }
-  .orders-compact .order-status > span { width: 24px; height: 24px; }
-  .orders-compact .order-status > span svg { width: 14px; height: 14px; }
-  .orders-compact .order-quick-header { padding: 2px 6px; font-size: 11px; line-height: 1.2; }
-  .orders-compact .order-quick-body { padding: 3px; gap: 4px; }
-  .orders-compact .order-quick { min-height: 45px; padding: 3px 5px; }
-  .orders-compact .order-quick h3 { font-size: 10px; }
-  .orders-compact .order-quick .mt-4 { margin-top: 2px; gap: 4px; }
-  .orders-compact .order-quick .text-base { font-size: 13px; }
-  .orders-compact .order-quick .text-\[10px\] { font-size: 9px; }
-  .orders-compact .order-quick .size-8 { width: 20px; height: 20px; }
-  .orders-compact .order-quick .mt-1 { margin-top: 1px; }
-  .orders-compact .order-panel .recharts-text,
-  .orders-compact .order-panel .recharts-label,
-  .orders-compact .order-panel .recharts-label-list text { font-size: 9px; }
-  .orders-compact .order-ranking foreignObject div { font-size: 9px; }
-  .orders-compact .order-details { margin-top: 4px !important; }
+  .orders-compact .order-ranking-row > :last-child { grid-column: auto; }
 }
-@media (min-width: 850px) and (max-height: 700px) {
-  .open-orders-page > header { height: 40px; }
-  .open-orders-page > main { padding: 4px 6px; }
-  .orders-compact { gap: 2px; padding-bottom: 4px; }
-  .orders-compact .gap-4 { gap: 3px; }
-  .orders-compact > header { min-height: 24px; }
-  .orders-compact > header button { height: 24px; font-size: 10px; padding: 0 6px; }
-  .orders-compact .order-filters > div:first-child { min-height: 24px; padding: 0 6px; }
-  .orders-compact .order-filters > div:first-child h2 { font-size: 11px; }
-  .orders-compact .order-filters > div:first-child button { height: 24px; width: auto; padding: 0 5px; font-size: 10px; }
-  .orders-compact .order-filters > div:first-child button svg { width: 12px; height: 12px; }
-  .orders-compact .order-summary { min-height: 40px; }
-  .orders-compact .order-summary .text-3xl { font-size: 18px; }
-  .orders-compact .order-panel-header h2 { font-size: 11px; }
-  .orders-compact .order-document-donut { height: 83px; }
-  .orders-compact .order-aging-grid { height: 83px; }
-  .orders-compact .order-aging-grid .h-56 { height: 80px; }
-  .orders-compact .order-trend .order-chart-canvas { height: 68px !important; }
-  .orders-compact .order-paired-charts .order-chart-canvas { height: 76px !important; }
-  .orders-compact .order-ranking .order-chart-canvas,
-  .orders-compact .order-ranking .grid.h-\[300px\] { height: 112px !important; }
-  .orders-compact .order-ranking foreignObject div { font-size: 8px; }
-  .orders-compact .order-panel .recharts-text,
-  .orders-compact .order-panel .recharts-label,
-  .orders-compact .order-panel .recharts-label-list text { font-size: 8px; }
-  .orders-compact .order-status { min-height: 58px; }
-  .orders-compact .order-status .text-\[10px\] { font-size: 8px; }
-  .orders-compact .order-status .mt-1 { margin-top: 1px; }
-  .orders-compact .order-status-count { margin-top: 1px; }
-}
-
-.order-trend-canvas { height: 180px; }
-.order-ranking-canvas { height: 300px; }
-.order-zone-canvas, .order-plant-canvas { height: 200px; }
-@media (min-width:850px) and (max-height:700px) {
-  .orders-compact .order-overview-row { align-items: stretch; }
-  .orders-compact .order-document-donut { height: 64px; }
-  .orders-compact .order-aging-grid { height: 64px; }
-  .orders-compact .order-aging-grid .h-56 { height: 62px; }
-  .orders-compact .order-aging-grid .py-3 { padding: 2px 0; }
-  .orders-compact .order-aging-grid .text-xs { font-size: 8px; }
-  .orders-compact .order-trend .order-chart-canvas { height: 50px !important; }
-  .orders-compact .order-paired-charts .order-chart-canvas { height: 52px !important; }
-  .orders-compact .order-ranking .order-chart-canvas { height: 92px !important; }
-  .orders-compact .order-ranking .order-panel-header { margin-bottom: 1px; padding-bottom: 2px; }
-}
-@media (min-width:850px) {
-  .orders-compact > :not(:last-child) { margin-block: 0 !important; }
-}
-@media (min-width:850px) and (max-height:700px) {
-  .orders-compact .order-ranking .order-chart-canvas { height: 110px !important; }
-  .orders-compact .order-ranking foreignObject { overflow: visible; }
-}
-@media (min-width:850px) and (max-height:700px) {
-  .orders-compact .order-document-donut { height: 62px; }
-  .orders-compact .order-document-donut strong { font-size: 12px; }
-  .orders-compact .order-document-donut span { font-size: 6px; }
-  .orders-compact .order-document-grid > div:last-child > div { padding-top: 1px; padding-bottom: 1px; }
-  .orders-compact .order-aging-grid { height: 62px; }
-  .orders-compact .order-aging-grid .text-lg { font-size: 12px; }
-  .orders-compact .order-aging-grid .py-3 { padding: 0; line-height: 1.1; }
-  .orders-compact .order-trend .order-chart-canvas { height: 42px !important; }
-  .orders-compact .order-paired-charts .order-chart-canvas { height: 48px !important; }
-  .orders-compact .order-ranking .order-chart-canvas { height: 98px !important; }
-  .orders-compact .order-panel-header { margin-bottom: 1px; padding-bottom: 1px; }
-  .orders-compact .order-panel { padding-top: 2px; padding-bottom: 2px; }
-  .orders-compact .order-status-row { font-size: 9px; }
-}
-@media (min-width:850px) and (max-height:700px) {
-  .orders-compact .order-ranking foreignObject div { font-size: 7px; line-height: 7px; transform: translateY(6px); }
-  .orders-compact .order-ranking .recharts-label-list text { font-size: 7px; }
-  .orders-compact .order-status { min-height: 52px; }
-  .orders-compact .order-status .text-xl { font-size: 14px; line-height: 1.1; }
-  .orders-compact .order-status .text-base { font-size: 12px; line-height: 1.1; }
-  .orders-compact .order-quick { min-height: 40px; }
-  .orders-compact .order-quick .text-base { font-size: 12px; }
-  .orders-compact .order-quick .mt-4 { margin-top: 0; }
+@media (max-width: 639px) {
+  .orders-compact .order-panel-header h2 { font-size: 14px; }
+  .orders-compact .order-zone-canvas { height: 290px; }
+  .orders-compact .order-plant-canvas { height: 260px; }
 }
