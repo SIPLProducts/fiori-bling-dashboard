@@ -20,21 +20,21 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
       {measures.map((metric) => <span key={metric.key} className={`flex items-center gap-2 ${metric.className}`}><span className="size-2.5 rounded-sm bg-current" />{metric.label}</span>)}
     </div>
     {plants.length ? <div className="overflow-x-auto">
-      <div style={{ minWidth: Math.max(620, plants.length * 155 + 90) }}>
+      <div style={{ minWidth: Math.max(620, plants.length * 140 + 90) }}>
         <ResponsiveContainer width="100%" height={330}>
-          <BarChart data={data} barGap={3} barCategoryGap="24%" margin={{ top: 24, right: 22, left: 22, bottom: 8 }}>
+          <BarChart data={data} barGap={3} barCategoryGap="24%" margin={{ top: 48, right: 22, left: 22, bottom: 8 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
             <XAxis dataKey="code" interval={0} height={64} tick={({ x, y, payload }) => {
               const plant = data.find((item) => item.code === payload.value);
               return <g transform={`translate(${x},${y})`}><text textAnchor="middle" y={12} className="fill-foreground text-[11px] font-semibold">{plant?.code || "—"}</text><foreignObject x={-70} y={18} width={140} height={38}><div className="text-center text-[10px] leading-4 text-muted-foreground" title={plant?.name}>{plant?.name || "Unassigned"}</div></foreignObject></g>;
             }} tickLine={false} />
             <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(n) => `${n}%`} tick={{ fontSize: 10 }} width={52} label={{ value: "Relative to Largest Plant (%)", angle: -90, position: "insideLeft", fontSize: 10, fill: "var(--chart-axis-label)" }} />
-            <Tooltip content={({ active, payload }) => {
+            <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
               const plant = payload?.[0]?.payload as PlantPending | undefined;
               return active && plant ? <div className="rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-tile"><p className="mb-2 font-semibold">{plant.code || "—"} — {plant.name || "Unassigned"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
             }} />
-            {measures.map((metric) => <Bar key={metric.key} dataKey={`${metric.key}Relative`} name={metric.label} fill={metric.color} maxBarSize={27} radius={[2, 2, 0, 0]} isAnimationActive={false}>
-              <LabelList dataKey={metric.key} position="top" formatter={metric.format} className={`${metric.className} fill-current text-[9px] font-medium`} />
+            {measures.map((metric, index) => <Bar key={metric.key} dataKey={`${metric.key}Relative`} name={metric.label} fill={metric.color} maxBarSize={27} radius={[2, 2, 0, 0]} isAnimationActive={false}>
+              <LabelList dataKey={metric.key} position="top" offset={6 + index * 12} formatter={metric.format} className={`${metric.className} fill-current text-[9px] font-medium`} />
             </Bar>)}
           </BarChart>
         </ResponsiveContainer>
