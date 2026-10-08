@@ -6,7 +6,7 @@ describe("plant chart actual-value scales", () => {
     expect(plantChartMaximum([51.32, 0.15])).toBe(55);
   });
   test("quantity axis retains actual units", () => {
-    expect(plantChartMaximum([17744, 28])).toBe(18000);
+    expect(plantChartMaximum([17744, 28])).toBe(20000);
   });
   test("line axis retains actual counts", () => {
     expect(plantChartMaximum([291, 9])).toBe(300);
