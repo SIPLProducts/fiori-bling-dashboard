@@ -54,7 +54,7 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
               return active && plant ? <div className="rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-tile"><p className="mb-2 font-semibold">{plant.code || "—"} — {plant.name || "Unassigned"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
             }} />
             {measures.map((metric, index) => <Bar key={metric.key} yAxisId={metric.key} dataKey={metric.key} name={metric.label} fill={metric.color} maxBarSize={27} radius={[2, 2, 0, 0]} isAnimationActive={false}>
-              <LabelList dataKey={metric.key} position="top" offset={6 + index * 12} formatter={metric.format} className={`${metric.className} fill-current text-[9px] font-medium`} />
+              <LabelList dataKey={metric.key} position="top" offset={6 + index * 24} formatter={metric.format} className={`${metric.className} fill-current text-[9px] font-medium`} />
             </Bar>)}
           </BarChart>
         </ResponsiveContainer>
