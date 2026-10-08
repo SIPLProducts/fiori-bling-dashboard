@@ -459,17 +459,19 @@
 .orders-compact .order-ranking foreignObject div { font-size: 11px; line-height: 20px; }
 .orders-compact .order-ranking .order-chart-canvas { height: 280px !important; }
 .orders-compact .order-trend .order-chart-canvas { height: 200px !important; }
-.orders-compact .order-document-grid { min-width: 392px; grid-template-columns: 140px minmax(244px,1fr); }
-.orders-compact .order-document-donut { width: 140px; height: 180px; }
+.orders-compact .order-document-grid { min-width: 350px; grid-template-columns: 112px minmax(230px,1fr); }
+.orders-compact .order-document-donut { width: 112px; height: 160px; }
 .orders-compact .order-document-donut strong,
 .orders-compact .order-donut-total strong { font-size: 22px; font-weight: 700; line-height: 1.2; color: var(--card-foreground); }
 .orders-compact .order-document-donut span,
 .orders-compact .order-donut-total span { font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--card-foreground); }
 .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 32px 55px 30px; font-size: 11px; padding: 7px 4px; }
 .orders-compact .order-document-grid > div:last-child > div:first-child { font-size: 10px; }
-.orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 140px minmax(0,1fr); }
-.orders-compact .order-aging-grid .h-56 { height: 180px; }
-.orders-compact .order-aging-donut { width: 140px; }
+.orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 112px minmax(168px,1fr); overflow-x: auto; }
+.orders-compact .order-aging-grid .h-56 { height: 160px; }
+.orders-compact .order-aging-donut { width: 112px; }
+.orders-compact .order-aging-breakdown-row { display: grid; grid-template-columns: minmax(0,1fr) 38px 32px; align-items: center; gap: 4px; padding: 9px 5px; font-size: 11px; }
+.orders-compact .order-aging-breakdown-row:first-child { font-size: 10px; }
 .orders-compact .order-aging-grid .text-xs { font-size: 11px; }
 .orders-compact .order-aging-grid .py-3 { padding: 8px 0; }
 .orders-compact .order-quick { min-height: 90px; }
@@ -487,7 +489,7 @@
   .orders-compact .order-overview-row > .order-panel { container-type: inline-size; }
   .orders-compact .order-ranking-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .orders-compact .order-ranking-row > :last-child { grid-column: 1 / -1; }
-  .orders-compact .order-paired-charts { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .orders-compact .order-paired-charts { grid-template-columns: minmax(0,1fr); }
   .orders-compact .order-paired-charts .order-zone-canvas { height: 270px !important; }
   .orders-compact .order-paired-charts .order-plant-canvas { height: 250px !important; }
 }
@@ -500,11 +502,6 @@
   .orders-compact .order-overview-row > :last-child { grid-column: auto; }
 }
 @container (max-width: 399px) {
-  .orders-compact .order-document-grid { min-width: 0; grid-template-columns: minmax(0,1fr); gap: 8px; }
-  .orders-compact .order-document-donut { justify-self: center; height: 140px; }
-  .orders-compact .order-document-grid > div:last-child { width: 100%; }
-  .orders-compact .order-aging-grid { height: auto; grid-template-columns: minmax(0,1fr); gap: 8px; }
-  .orders-compact .order-aging-grid .h-56 { height: 140px; justify-self: center; }
   .orders-compact .order-trend .order-panel-header { grid-template-columns: minmax(0,1fr); }
   .orders-compact .order-trend .order-chart-canvas { height: 260px !important; }
 }
