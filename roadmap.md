@@ -5,7 +5,7 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
-- [ ] Show SAP document code/description combinations in Open Orders filters and descriptions in the card; verify exact selection, defaults, totals and exports.
+- [x] Show SAP document code/description combinations in Open Orders filters and descriptions in the card; verified seven-row exact selection/Excel, Reset to 1,174 rows and 859 AH lines, PDF, mobile and 13 tests.
 
 - [x] Treemap: uniform equal-size grid tiles, centered name/amount/%, keep drill-down
 - [x] Top customers: show 6, tighter bar rows

@@ -26,7 +26,7 @@
 - Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
 - Keep the Open Orders launchpad scoped to current-FY active ZDOR, ZEOR, and ZSOR rows independently of report date defaults.
 - Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
-- Centralize Open Orders filters and document code/description keys in pure helpers; reuse stored sales_type descriptions so selections and card totals reconcile.
+- Use pure Open Orders filter/code-description helpers and stored sales_type descriptions so selections and totals reconcile.
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
 - Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
 - Derive Open Sales Orders detailed-table status/search results through one frontend filter shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.
