@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Align Open Orders creation-date label, current-FY opening/Reset and launchpad; show verified IST successful-sync times on both reports/cards, excluded from PDFs.
+
 - [x] Include Plant-wise Pending in PDF and verify screen-matching colors in both modes; checked all four pages, unchanged 1,174/859 counts and six passing tests.
 
 - [x] Add and verify persistent portal-wide light/dark mode with a top-bar switch, readable charts, and unchanged exports.
