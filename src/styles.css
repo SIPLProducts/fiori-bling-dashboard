@@ -218,6 +218,10 @@
   background-color: var(--order-export-summary-surface, var(--background));
 }
 
+.orders-pdf-export .recharts-cartesian-axis text {
+  fill: var(--chart-axis-label) !important;
+}
+
 @media print {
   @page {
     size: A4 landscape;
