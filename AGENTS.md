@@ -39,4 +39,4 @@
 - Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
-- Resolve report sync times by mapped endpoint and successful runs; exclude timestamps from PDF.
+- Read mapped successful sync times; omit them from PDF.
