@@ -280,7 +280,7 @@ export function OpenSalesOrdersDashboard() {
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
       </div> : null}
-      <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
+      {!pdfBusy ? <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
           <p className="mt-1 text-xs text-muted-foreground" data-pdf-exclude>{lastSyncedLabel(lastSynced)}</p>
@@ -291,7 +291,7 @@ export function OpenSalesOrdersDashboard() {
           if (result.error) toast.error(result.error.message);
           else toast.success("Open Sales Orders refreshed");
          }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><Button type="button" variant="outline" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
-      </header>
+      </header> : null}
 
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
       {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
