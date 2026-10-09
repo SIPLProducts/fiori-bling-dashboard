@@ -5,7 +5,7 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
-- [ ] Keep Last synced screen-only during Open Orders PDF generation and verify all downloaded pages.
+- [x] Keep Last synced screen-only during Open Orders PDF generation; unmounted screen header during capture, visually checked all four fresh pages with no sync labels or clipping, confirmed successful download and clean preview.
 
 - [x] Remove Open Orders period beside Refresh; preserved filter logic and period-free PDF header, verified header at 901/390/320px without overflow, successful PDF download, no runtime errors and clean preview.
 
