@@ -249,6 +249,7 @@ export function OpenSalesOrdersDashboard() {
         blockSelector: "[data-pdf-page-block]",
         sectionBreakSelector: "[data-pdf-section-break]",
         footerText: "HBL Confidential — Internal Use Only",
+        preserveComputedChartColors: true,
       });
       toast.success("Open Sales Orders PDF downloaded");
     } catch (downloadError) {
