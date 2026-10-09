@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [x] Include Plant-wise Pending in PDF and verify screen-matching colors in both modes; checked all four pages, unchanged 1,174/859 counts and six passing tests.
+
 - [x] Add and verify persistent portal-wide light/dark mode with a top-bar switch, readable charts, and unchanged exports.
 
 - [x] Keep both overview donuts left with breakdown tables right and local overflow, preserve the three-card desktop row, and put Sales Zone and Plant-wise Pending in separate full-width rows; verified 949/1280/390/320px, unchanged 1,174/859 counts, PDF/Excel downloads, 13 tests and clean preview.

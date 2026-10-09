@@ -238,19 +238,24 @@ export function OpenSalesOrdersDashboard() {
     : "";
 
   const downloadDashboardPdf = async () => {
+    const screenBackground = window.getComputedStyle(document.documentElement).getPropertyValue("--background");
+    dashboardRef.current?.style.setProperty("--order-export-summary-surface", screenBackground);
     setPdfBusy(true);
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
       await exportDashboardPdf(dashboardRef.current, "open-sales-orders.pdf", "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
         blockSelector: "[data-pdf-page-block]",
         sectionBreakSelector: "[data-pdf-section-break]",
         footerText: "HBL Confidential — Internal Use Only",
+        preserveComputedChartColors: true,
       });
       toast.success("Open Sales Orders PDF downloaded");
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download the PDF");
     } finally {
+      dashboardRef.current?.style.removeProperty("--order-export-summary-surface");
       setPdfBusy(false);
     }
   };
@@ -397,6 +402,12 @@ export function OpenSalesOrdersDashboard() {
               </ResponsiveContainer>
             </div>
           </div>
+        </Panel>
+      </div>
+
+      <div data-pdf-page-block>
+        <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
+          <PlantPendingChart plants={metrics.plants} loading={isLoading} pdf />
         </Panel>
       </div>
 

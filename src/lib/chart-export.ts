@@ -134,6 +134,7 @@ export async function exportDashboardPdf(
     blockSelector?: string;
     sectionBreakSelector?: string;
     footerText?: string;
+    preserveComputedChartColors?: boolean;
   },
 ) {
   if (!container) throw new Error("Dashboard is not available yet");
@@ -152,9 +153,26 @@ export async function exportDashboardPdf(
       );
   if (!blocks.length) throw new Error("No dashboard sections are available for export");
 
-  const capture = (element: HTMLElement) => {
+  const capture = async (element: HTMLElement) => {
+    const restorations: Array<() => void> = [];
+    if (options?.preserveComputedChartColors) {
+      for (const node of element.querySelectorAll<SVGElement>("svg, svg *")) {
+        const previous = node.getAttribute("style");
+        const computed = window.getComputedStyle(node);
+        const colors = ["fill", "stroke", "stop-color", "stop-opacity", "fill-opacity", "stroke-opacity"]
+          .map((property) => [property, computed.getPropertyValue(property)] as const);
+        for (const [property, value] of colors) {
+          if (value) node.style.setProperty(property, value, "important");
+        }
+        restorations.push(() => {
+          if (previous === null) node.removeAttribute("style");
+          else node.setAttribute("style", previous);
+        });
+      }
+    }
     const background = window.getComputedStyle(element).backgroundColor;
-    return toCanvas(element, {
+    try {
+      return await toCanvas(element, {
       backgroundColor:
         background && background !== "rgba(0, 0, 0, 0)" && background !== "transparent"
           ? background
@@ -163,7 +181,10 @@ export async function exportDashboardPdf(
       pixelRatio: 2,
       skipFonts: true,
       filter: (node) => !(node instanceof HTMLElement && node.matches(excludeSelector)),
-    });
+      });
+    } finally {
+      restorations.forEach((restore) => restore());
+    }
   };
 
   const headerCanvas = headerElement

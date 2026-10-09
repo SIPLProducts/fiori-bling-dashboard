@@ -33,9 +33,9 @@
 - Keep Open Orders readable chart heights and responsive grids in the screen-only wrapper; preserve PDF geometry and calculations independently.
 - Keep overview donut/table tracks side by side with local overflow at narrow widths; isolate screen chart-row arrangement from PDF geometry to preserve readable totals and exports.
 - Share Open Orders colors/gradients across screen and PDF; use layout-only PDF safeguards to prevent palette drift.
-- Root ThemeProvider shares appearance.
+- Root ThemeProvider shares appearance across exports.
 
-- Group plants by code; fit all plant/zone categories in one width-aware row with compact bars and explicit-unit scales to avoid repeated plots. Share width/gradient helpers; keep zone PDF capture separate to preserve exports.
+- Group plants by code; fit plant/zone categories in one width-aware row with explicit-unit scales. Share gradients; use fixed PDF chart heights to avoid clipped exports.
 - Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
