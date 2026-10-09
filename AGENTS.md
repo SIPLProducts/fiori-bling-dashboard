@@ -36,7 +36,7 @@
 - Root ThemeProvider shares appearance across exports.
 
 - Group plants by code; fit plant/zone categories in one width-aware row with explicit-unit scales. Share gradients; use fixed PDF chart heights to avoid clipped exports.
-- Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
+- Use pure helpers for table and launchpad totals, counts and breakdowns; isolate pagination and test reconciliation.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
 - Read mapped successful sync times; omit them from PDF.
