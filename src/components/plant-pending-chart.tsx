@@ -12,7 +12,7 @@ const measures = [
   { key: "count", label: "Open Order Lines", color: "var(--chart-4)", className: "text-chart-4", format: numeric },
 ] as const;
 
-export function PlantPendingChart({ plants, loading }: { plants: PlantPending[]; loading: boolean }) {
+export function PlantPendingChart({ plants, loading, pdf = false }: { plants: PlantPending[]; loading: boolean; pdf?: boolean }) {
   const maxima = useMemo(() => ({
     value: plantChartMaximum(plants.map((plant) => plant.value)),
     quantity: plantChartMaximum(plants.map((plant) => plant.quantity)),
@@ -29,7 +29,7 @@ export function PlantPendingChart({ plants, loading }: { plants: PlantPending[];
           <span className="text-chart-1">Value (₹ Cr)</span>
 
         </div>
-        <div className="order-chart-canvas order-plant-canvas"><ResponsiveContainer width="100%" height="100%">
+        <div className={pdf ? "h-[300px]" : "order-chart-canvas order-plant-canvas"}><ResponsiveContainer width="100%" height="100%">
           <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />

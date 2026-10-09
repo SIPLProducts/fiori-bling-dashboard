@@ -214,6 +214,10 @@
   background-color: var(--card);
 }
 
+.orders-pdf-export .order-summary-row[data-pdf-page-block] {
+  background-color: var(--order-export-summary-surface, var(--background));
+}
+
 @media print {
   @page {
     size: A4 landscape;
