@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useReportSync } from "@/lib/use-report-sync";
+import { lastSyncedLabel } from "@/lib/report-sync-time";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Area,
@@ -2158,6 +2160,7 @@ export function SdLiveDashboard() {
   const [modelLimit, setModelLimit] = useState<ModelLimit>(10);
   const [typeLimit, setTypeLimit] = useState<ModelLimit>(10);
   const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
+  const { data: lastSynced, refetch: refetchSync } = useReportSync("net-sales");
   const { data: lines, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sd-live-lines"],
     queryFn: fetchSdLines,
@@ -2436,6 +2439,7 @@ export function SdLiveDashboard() {
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Sales Dashboard</h2>
           <p className="text-sm text-muted-foreground">Executive Overview</p>
+          <p data-pdf-exclude className="mt-1 text-xs text-muted-foreground">{lastSyncedLabel(lastSynced)}</p>
         </div>
         <div data-pdf-exclude className="flex max-w-full flex-wrap items-center gap-2">
           <span className="hidden h-9 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 text-sm text-primary shadow-tile sm:inline-flex">
@@ -2445,7 +2449,10 @@ export function SdLiveDashboard() {
           <Button variant="outline" size="sm" className="h-9" onClick={() => setShowFilters((v) => !v)}>
             <Filter className="mr-1 size-4" /> Filters
           </Button>
-          <SalesRefreshButton refreshing={isFetching} onRefresh={refetch} />
+          <SalesRefreshButton refreshing={isFetching} onRefresh={async () => {
+            const [result] = await Promise.all([refetch(), refetchSync()]);
+            return result;
+          }} />
           <Button
             variant="outline"
             size="sm"

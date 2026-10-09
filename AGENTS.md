@@ -24,7 +24,7 @@
 - Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
 - Store atomic Open Orders snapshots by active `VBELN + POSNR`, with typed fields and raw SAP rows, so missing orders vanish without partial syncs.
 - Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
-- Keep the Open Orders launchpad scoped to current-FY active ZDOR, ZEOR, and ZSOR rows independently of report date defaults.
+- Share India-local FY bounds for Open Orders opening/Reset and launchpad so totals reconcile.
 - Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
 - Use pure Open Orders filter/code-description helpers and stored sales_type descriptions so selections and totals reconcile.
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
@@ -39,3 +39,4 @@
 - Use pure helpers for full table totals and filtered order counts to isolate pagination and test metrics.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
+- Read mapped successful sync times; omit them from PDF.

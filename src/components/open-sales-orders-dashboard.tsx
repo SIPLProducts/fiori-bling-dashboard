@@ -52,6 +52,9 @@ import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
+import { currentReportDateRange } from "@/lib/report-period";
+import { useReportSync } from "@/lib/use-report-sync";
+import { lastSyncedLabel } from "@/lib/report-sync-time";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -145,7 +148,8 @@ export function OpenSalesOrdersDashboard() {
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
+  const { data: lastSynced, refetch: refetchSync } = useReportSync("open-sales-orders");
+  const [dateRange, setDateRangeState] = useState<DateRange | undefined>(() => currentReportDateRange());
   const [filters, setFilters] = useState<OpenOrderFilters>(() => defaultOpenOrderFilters());
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
@@ -179,7 +183,7 @@ export function OpenSalesOrdersDashboard() {
     + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
   useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
-    setDateRangeState(undefined);
+    setDateRangeState(currentReportDateRange());
     setFilters(defaultOpenOrderFilters(data));
   };
   const metrics = useMemo(() => {
@@ -285,9 +289,10 @@ export function OpenSalesOrdersDashboard() {
       <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
+          <p className="mt-1 text-xs text-muted-foreground" data-pdf-exclude>{lastSyncedLabel(lastSynced)}</p>
         </div>
          <div className="flex shrink-0 items-center gap-2"><Button type="button" variant="outline" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
-          const result = await refetch();
+           const [result] = await Promise.all([refetch(), refetchSync()]);
           if (result.error) toast.error(result.error.message);
           else toast.success("Open Sales Orders refreshed");
          }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><Button type="button" variant="outline" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
@@ -305,14 +310,14 @@ export function OpenSalesOrdersDashboard() {
             <span className="hidden text-[10px] text-muted-foreground sm:inline">{formatNumber(filteredData.length)} of {formatNumber(data.length)} orders</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
+            <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={isLoading || activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
             <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="open-order-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
         {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 min-[1800px]:grid-cols-7">
           <FilterField label="Date Range">
             <Popover>
-              <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd-MM-yyyy")} – ${format(dateRange.to, "dd-MM-yyyy")}` : format(dateRange.from, "dd-MM-yyyy") : "All dates"}</span></Button></PopoverTrigger>
+              <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd.MM.yyyy")} – ${format(dateRange.to, "dd.MM.yyyy")}` : format(dateRange.from, "dd.MM.yyyy") : "All dates"}</span></Button></PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar mode="range" selected={dateRange} onSelect={setDateRangeState} numberOfMonths={1} className="pointer-events-auto p-3" />
                 <div className="flex justify-end border-t border-border p-2">
@@ -449,7 +454,7 @@ export function OpenSalesOrdersDashboard() {
         </div>
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Order Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={19} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
             <TableCell colSpan={13}>Total</TableCell>
