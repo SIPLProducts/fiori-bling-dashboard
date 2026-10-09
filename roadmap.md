@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [x] Add Open Sales Orders launchpad description bars with count/value; verified 314 lines/₹51.65 Cr, description totals, both modes at 1280/901/768/390/320px, details link, eight tests and clean preview.
+
 - [x] Align Open Orders creation-date label, current-FY opening/Reset and launchpad; verified 314 lines/₹51.65 Cr, IST successful-sync display (Net Sales unavailable without a successful run), Clear/Reset, phone layout, Excel, four PDF pages with no sync labels or clipping, 18 tests and clean preview.
 
 - [x] Include Plant-wise Pending in PDF and verify screen-matching colors in both modes; checked all four pages, unchanged 1,174/859 counts and six passing tests.
