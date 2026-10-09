@@ -2,24 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentFiscalYearRange } from "@/lib/sd-live";
+import { currentReportPeriod, reportPeriodLabel } from "@/lib/report-period";
+import { useReportSync } from "@/lib/use-report-sync";
+import { DEFAULT_DOCUMENT_TYPES } from "@/lib/open-sales-orders-filters";
+import { lastSyncedLabel } from "@/lib/report-sync-time";
 
-const DEFAULT_DOCUMENT_TYPES = ["ZDOR", "ZEOR", "ZSOR"];
 
 type Summary = { count: number; openValue: number; lastUpdatedAt: string | null };
-
-function relativeUpdate(value: string | null): string {
-  if (!value) return "Update time unavailable";
-  const elapsed = Date.now() - new Date(value).getTime();
-  if (!Number.isFinite(elapsed) || elapsed < 0) return "Updated just now";
-  const minutes = Math.floor(elapsed / 60_000);
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} min${minutes === 1 ? "" : "s"} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Updated ${hours} hr${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
-}
 
 async function fetchSummary(from: string, to: string): Promise<Summary> {
   const pageSize = 1_000;
@@ -49,7 +38,7 @@ async function fetchSummary(from: string, to: string): Promise<Summary> {
 }
 
 export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactNode }) {
-  const range = currentFiscalYearRange();
+  const range = currentReportPeriod();
   const { data, isLoading } = useQuery({
     queryKey: ["open-sales-orders-launch-summary", range.from, range.to],
     queryFn: () => fetchSummary(range.from, range.to),
@@ -59,6 +48,8 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  const { data: lastSynced } = useReportSync("open-sales-orders");
 
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
@@ -72,11 +63,11 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><ShoppingCart className="size-[18px]" /></span>
       </div>
-      <div className="h-8" />
+      <p className="mt-3 text-xs font-semibold text-primary">Current FY Orders</p>
       <p className="mt-auto truncate text-[10px] font-medium text-foreground">{data.count.toLocaleString("en-IN")} open order lines</p>
-      <p className="mt-1 truncate text-[10px] text-muted-foreground">Current financial year</p>
-      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
-        <span className="truncate" title={data.lastUpdatedAt ? new Date(data.lastUpdatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : undefined}>{relativeUpdate(data.lastUpdatedAt)}</span>
+      <p className="mt-1 text-[10px] text-muted-foreground">{reportPeriodLabel(range)}</p>
+      <div className="mt-3 grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
+        <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
         <Link to="/reports/sd/open-sales-orders" aria-label="Open Open Sales Orders details" className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
           View details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />

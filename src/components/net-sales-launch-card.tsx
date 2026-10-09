@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentFiscalYearRange } from "@/lib/sd-live";
+import { currentReportPeriod } from "@/lib/report-period";
+import { useReportSync } from "@/lib/use-report-sync";
+import { lastSyncedLabel } from "@/lib/report-sync-time";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 const KPI_TONES = [
@@ -26,36 +28,13 @@ function compact(value: number) {
 
 type Summary = { total: number; shares: { name: string; value: number }[]; lastUpdatedAt: string | null };
 
-function relativeUpdate(value: string | null): string {
-  if (!value) return "Update time unavailable";
-  const elapsed = Date.now() - new Date(value).getTime();
-  if (!Number.isFinite(elapsed) || elapsed < 0) return "Updated just now";
-  const minutes = Math.floor(elapsed / 60_000);
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} min${minutes === 1 ? "" : "s"} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Updated ${hours} hr${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
-}
-
 async function fetchSummary(): Promise<Summary | null> {
-  const range = currentFiscalYearRange();
-  const [{ data, error }, { data: run }] = await Promise.all([
+  const range = currentReportPeriod();
+  const { data, error } = await
     supabase.rpc("net_sales_summary", {
       _posting_from: range.from,
       _posting_to: range.to,
-    }),
-    supabase
-      .from("sap_sync_runs")
-      .select("finished_at")
-      .eq("endpoint", "Sales_Reports_KPI")
-      .eq("status", "success")
-      .not("finished_at", "is", null)
-      .order("finished_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+    });
   if (error || !data?.length) return null;
   const byType = new Map<string, number>();
   let total = 0;
@@ -71,19 +50,20 @@ async function fetchSummary(): Promise<Summary | null> {
   return {
     total,
     shares: names.map((name) => ({ name, value: byType.get(name) ?? 0 })),
-    lastUpdatedAt: run?.finished_at ?? null,
+    lastUpdatedAt: null,
   };
 }
 
 /** Launchpad replacement for the plain SD tile: live Net Sales card. */
 export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) {
-  const range = currentFiscalYearRange();
+  const range = currentReportPeriod();
   const { data, isLoading } = useQuery({
     queryKey: ["net-sales-summary", range.from, range.to],
     queryFn: fetchSummary,
     ...STABLE_SALES_QUERY_OPTIONS,
   });
 
+  const { data: lastSynced } = useReportSync("net-sales");
   const color = KPI_TONES[0];
 
   if (isLoading) {
@@ -137,8 +117,8 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
-        <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
-          <span className="truncate" title={data.lastUpdatedAt ? new Date(data.lastUpdatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : undefined}>{relativeUpdate(data.lastUpdatedAt)}</span>
+        <div className="mt-auto grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
+          <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
           <Link
             to="/reports/module/$module"
             params={{ module: "sd" }}
