@@ -39,4 +39,4 @@
 - Use pure helpers for table and launchpad totals, counts and breakdowns; isolate pagination and test reconciliation.
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
-- Read mapped successful sync times; omit them from PDF.
+- Read mapped successful sync times; omit them from PDF and unmount the Open Orders screen-only header during capture so sync metadata cannot enter exported visuals.
