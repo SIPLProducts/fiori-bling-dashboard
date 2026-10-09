@@ -5,7 +5,7 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
-- [ ] Highlight selected Open Orders period left of Refresh; omit period from PDF and verify screen/PDF.
+- [ ] Remove Open Orders period beside Refresh and from PDF; preserve Smart Filters dates and verify header alignment.
 
 - [x] Add Open Sales Orders launchpad description bars with count/value; verified 314 lines/₹51.65 Cr, description totals, both modes at 1280/901/768/390/320px, details link, eight tests and clean preview.
 

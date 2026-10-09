@@ -52,7 +52,7 @@ import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
-import { currentReportDateRange, currentReportPeriod, reportPeriodLabel } from "@/lib/report-period";
+import { currentReportDateRange } from "@/lib/report-period";
 import { useReportSync } from "@/lib/use-report-sync";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
 
@@ -235,16 +235,6 @@ export function OpenSalesOrdersDashboard() {
   const tablePageCount = Math.max(1, Math.ceil(tableData.length / tablePageSize));
   const currentTablePage = Math.min(tablePage, tablePageCount);
   const tableRows = tableData.slice((currentTablePage - 1) * tablePageSize, currentTablePage * tablePageSize);
-  const currentPeriod = currentReportPeriod();
-  const selectedPeriodLabel = dateRange?.from
-    && format(dateRange.from, "yyyy-MM-dd") === currentPeriod.from
-    && dateRange.to && format(dateRange.to, "yyyy-MM-dd") === currentPeriod.to
-    ? reportPeriodLabel(currentPeriod)
-    : dateRange?.from
-    ? dateRange.to
-      ? `${format(dateRange.from, "dd.MM.yyyy")} – ${format(dateRange.to, "dd.MM.yyyy")}`
-      : format(dateRange.from, "dd.MM.yyyy")
-    : "All dates";
 
   const downloadDashboardPdf = async () => {
     const screenBackground = window.getComputedStyle(document.documentElement).getPropertyValue("--background");
@@ -290,15 +280,12 @@ export function OpenSalesOrdersDashboard() {
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div>
       </div> : null}
-      <header data-pdf-exclude className="grid grid-cols-1 items-center gap-3 px-1 min-[850px]:grid-cols-[minmax(0,1fr)_auto]">
+      <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
           <p className="mt-1 text-xs text-muted-foreground" data-pdf-exclude>{lastSyncedLabel(lastSynced)}</p>
         </div>
          <div className="flex min-w-0 items-center justify-end gap-2">
-          <div aria-label="Selected report period" className="flex min-w-0 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-2 text-[11px] font-semibold leading-snug text-primary">
-            <CalendarDays className="size-3.5 shrink-0" /><span>{selectedPeriodLabel}</span>
-          </div>
           <Button type="button" variant="outline" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
            const [result] = await Promise.all([refetch(), refetchSync()]);
           if (result.error) toast.error(result.error.message);
