@@ -9,39 +9,25 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep ZTBN source-aligned by `source_row_no`; disable scheduled sync until a dedicated SAP mapper exists because its 261-column format differs from sales.
-- Present ZTBN reporting through a paginated, horizontally scrollable TBN view because the source has 261 business columns and cannot fit a fixed dashboard grid.
-- Treat `public.ztbn` as the sole TBN dashboard source and refresh its cached dashboard/table queries through one cleaned-up Realtime subscription, with periodic refresh as a connection fallback.
-- Compose dashboard PDFs from separately captured visual rows, with repeatable headers and numbered footers, because arbitrary image slicing clips cards.
-- Default Sales reports to the current April–March fiscal year while allowing explicit shared or URL date selections to override it, so opening totals are current and drill-down context is preserved.
-- Activate ZFISALES snapshots by their validated Posting Date range under an advisory lock, preserving existing active rows when SAP returns no usable data or staging fails.
-- Keep Sales report datasets stable across tab and screen navigation; load newer committed snapshots only through the explicit Refresh action.
-- Store multiple daily SAP sync times as an `IST:HH:mm,...` schedule expression so self-hosted middleware and hosted scheduling share one backward-compatible field.
-- Give coming-soon screens stable routes and permission keys with a shared placeholder, so replacements preserve access and navigation.
-- Scope launchpad sales totals to the same current April–March fiscal-year window as Sales reports, so entry-point cards and dashboards reconcile.
-- Derive Model Wise Type reporting from filtered ZFISALES `product_type` values, retain its complete amount ranking for screen controls, and limit PDF output to Top 10.
-- Label Sales PDF periods by the April–March ending year (for example, the 2026–27 selection is FY27), because financial reporting names the period by its closing year.
-- Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
-- Store atomic Open Orders snapshots by active `VBELN + POSNR`, with typed fields and raw SAP rows, so missing orders vanish without partial syncs.
-- Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
-- Use one pure Open Orders date-mode boundary helper; launchpad retains India-local FY bounds so only the active mode filters.
-- Use desktop-only filter placement and equal label tracks to align dates without mobile gaps.
-- Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
-- Use pure Open Orders filter/code-description helpers and stored sales_type descriptions so selections and totals reconcile.
-- Reuse stored distribution_channel and sales_type for independent channel filtering and labels, accepting S_VTWEG before legacy VTWEG in the shared mapper, so existing and future snapshots work without raw-row display reads.
-- Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
-- Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
-- Derive Open Sales Orders detailed-table status/search results and creation-date ordering through pure helpers shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.
-- Keep Open Orders readable chart heights and responsive grids in the screen-only wrapper; preserve PDF geometry and calculations independently.
-- Keep overview donut/table tracks side by side with local overflow at narrow widths; isolate screen chart-row arrangement from PDF geometry to preserve readable totals and exports.
-- Share Open Orders colors/gradients across screen and PDF; use layout-only PDF safeguards to prevent palette drift.
-- Root ThemeProvider shares appearance across exports.
-
-- Group plants by code; fit plant/zone categories in one width-aware row with explicit-unit scales. Share gradients; use fixed PDF chart heights to avoid clipped exports.
-- Use pure helpers for table and launchpad totals, counts and breakdowns; isolate pagination and test reconciliation.
-- Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
+- Keep ZTBN source-aligned, paginated and horizontally scrollable; disable scheduled sync pending its dedicated SAP mapper.
+- Read TBN exclusively from public.ztbn; refresh through one cleaned-up Realtime subscription with periodic fallback.
+- Capture PDFs by visual rows with repeated headers/numbered footers; preserve screen colors and independent PDF geometry. Exclude sync metadata and unmount the Open Orders screen header during capture.
+- Default Sales and Net Sales launchpad to the current April–March FY; explicit shared/URL dates override reports. Name PDFs by the FY ending year.
+- Activate validated ZFISALES snapshots under an advisory lock by Posting Date range; never replace active rows on empty or failed staging.
+- Keep Sales/Open Orders datasets stable across navigation; refresh only explicitly.
+- Store multiple sync times in backward-compatible IST:HH:mm,... expressions.
+- Give coming-soon screens stable routes and permission keys through a shared placeholder.
+- Derive Model Wise Type from filtered product_type; retain full ranking on screen and export Top 10.
+- Manual/test Open Orders requests use saved fkdat; scheduled requests use today's local date.
+- Activate Open Orders atomically by VBELN + POSNR; retain typed fields and complete raw rows. Read every active paginated row.
+- Use a pure active date-mode boundary helper; Open Orders launchpad reads all active rows without date/document-type restrictions to cover the complete snapshot.
+- Align filters through desktop-only placement and equal label tracks. Bulk selection is opt-in; null means unrestricted and [] means none.
+- Use pure source-backed filter/code-description helpers; keep customer identity by sold-to code. Map S_VTWEG before VTWEG; reuse stored channel/sales_type and industry_description for labels.
+- Share pure detailed-table status/search/date-sort helpers with pagination and Excel; table-only controls must not affect dashboard totals.
+- Keep readable responsive screen charts and side-by-side donut/table tracks with local overflow; preserve independent PDF sizing.
+- Root ThemeProvider shares appearance with exports; use shared colors and gradients.
+- Group plants by code; fit plant/zone categories in width-aware rows with explicit-unit scales and fixed PDF heights.
+- Use pure helpers for launchpad/table totals and filtered exact-text LD status aggregates; capture LD chart separately in PDF to avoid crowding existing cards.
+- Persist AH and monetary/status fields as typed columns alongside raw SAP rows; include them in report queries/search/exports. Use typed monetary source everywhere; open_value is a compatibility mirror.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
-- Read mapped successful sync times; omit them from PDF and unmount the Open Orders screen-only header during capture so sync metadata cannot enter exported visuals.
-
-- Store new Open Orders monetary/status fields alongside the complete raw row; use the typed monetary source for all report and launchpad values and retain open_value only as a compatibility mirror, so sync paths and exports reconcile.
-- Retire absent SAP business mappings additively with deprecation comments, preserving internal sync columns and harmless key aliases because deployed installations may still use older payload spellings.
+- Retire absent SAP business mappings additively with deprecation comments; preserve internal sync fields and harmless older key aliases.

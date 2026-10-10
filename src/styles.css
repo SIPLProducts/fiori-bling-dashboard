@@ -411,6 +411,9 @@
 .orders-compact .order-ranking-row { grid-template-columns: minmax(0, 1fr); }
 .orders-compact .order-overview-row > *,
 .orders-compact .order-ranking-row > * { grid-column: auto; }
+@media (min-width: 640px) and (max-width: 849px) {
+  .orders-compact .order-overview-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .orders-compact .order-trend .order-chart-canvas { height: 180px !important; }
 .orders-compact .order-table-scroll > div { max-height: 246px; overflow: auto; overscroll-behavior: contain; }
 .orders-compact .order-table-scroll { min-width: 0; outline-offset: -2px; }
@@ -494,6 +497,7 @@
 
 /* Screen charts keep readable plot areas; PDF capture uses its separate theme. */
 .order-trend-canvas { height: 200px; }
+.order-ld-canvas { height: 260px; min-width: 0; }
 .order-ranking-canvas { height: 280px; }
 .order-zone-canvas { height: 270px; }
 .order-plant-canvas { height: 250px; }
@@ -533,7 +537,8 @@
   .orders-compact .order-panel { padding: 10px 8px; }
   .orders-compact .order-panel-header { margin-bottom: 8px; padding-bottom: 6px; gap: 6px; }
   .orders-compact .order-panel-header h2 { font-size: 14px; line-height: 1.3; }
-  .orders-compact .order-overview-row { grid-template-columns: repeat(3,minmax(0,1fr)); align-items: stretch; }
+  .orders-compact .order-overview-row { grid-template-columns: repeat(4,minmax(0,1fr)); align-items: stretch; }
+  .orders-compact .order-overview-row > .order-panel { grid-column: auto; }
   .orders-compact .order-overview-row > :last-child { grid-column: auto; }
   .orders-compact .order-overview-row > .order-panel { container-type: inline-size; }
   .orders-compact .order-ranking-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -547,7 +552,7 @@
   .orders-compact .order-ranking-row > :last-child { grid-column: auto; }
 }
 @media (min-width: 1500px) {
-  .orders-compact .order-overview-row { grid-template-columns: minmax(420px,1.1fr) minmax(330px,0.9fr) minmax(440px,1.15fr); }
+  .orders-compact .order-overview-row { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .orders-compact .order-overview-row > :last-child { grid-column: auto; }
 }
 @container (max-width: 399px) {

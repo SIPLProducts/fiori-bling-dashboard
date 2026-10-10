@@ -37,3 +37,16 @@ test("missing descriptions use document codes and zero totals have safe widths",
   ]);
   expect(summarizeLaunchOrders([])).toEqual({ count: 0, openValue: 0, breakdown: [] });
 });
+
+test("all-date totals include older FY and nonpreset document types", () => {
+  const rows = [
+    { order_date: "2024-04-01", sales_type: "Older", order_type: "ZNEW", kwert_inr: 10_000_000 },
+    { order_date: "2026-10-10", sales_type: "Domestic", order_type: "ZDOR", kwert_inr: 2_572_907.4 },
+    { order_date: null, sales_type: "Undated", order_type: "OTHER", kwert_inr: 0 },
+  ];
+  const summary = summarizeLaunchOrders(rows);
+  expect(summary.count).toBe(3);
+  expect(summary.openValue).toBe(12_572_907.4);
+  expect(summary.breakdown.reduce((sum, group) => sum + group.count, 0)).toBe(3);
+  expect(summary.breakdown.reduce((sum, group) => sum + group.value, 0)).toBe(12_572_907.4);
+});
