@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [x] Remove default Open Orders dates; verified independent From/To, Clear/Reset, three summary tiles, descending creation-date details/1,174-row Excel, four-page PDF without Open Quantity or sync metadata, no overflow at 900/390/320px, 17 passing tests, and clean preview.
+
 - [x] Keep Last synced screen-only during Open Orders PDF generation; unmounted screen header during capture, visually checked all four fresh pages with no sync labels or clipping, confirmed successful download and clean preview.
 
 - [x] Remove Open Orders period beside Refresh; preserved filter logic and period-free PDF header, verified header at 901/390/320px without overflow, successful PDF download, no runtime errors and clean preview.
