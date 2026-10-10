@@ -16,7 +16,7 @@ export function channelOptions(rows: OpenSalesOrder[]) {
   return [...new Map(rows.map((row) => [row.channel, { value: row.channel, label: channelLabel(row) }])).values()].sort((a, b) => a.value.localeCompare(b.value));
 }
 export type OpenOrderDateMode = "single" | "range";
-export function activeOpenOrderDates(mode: OpenOrderDateMode, single?: string, range?: { from?: string; to?: string }) {
+export function activeOpenOrderDates(mode: OpenOrderDateMode, single?: string, range?: { from?: string | undefined; to?: string | undefined }) {
   return mode === "single" ? { from: single, to: single } : { from: range?.from, to: range?.to };
 }
 export const documentTypeDescription = (row: OpenSalesOrder) => {
