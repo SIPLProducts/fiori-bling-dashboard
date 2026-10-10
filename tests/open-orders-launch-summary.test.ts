@@ -3,9 +3,9 @@ import { summarizeLaunchOrders } from "../src/lib/open-orders-launch-summary";
 
 test("every supplied order line counts and shared descriptions combine across codes", () => {
   const summary = summarizeLaunchOrders([
-    { sales_type: "Domestic Sales", order_type: "ZDOR", open_value: 100 },
-    { sales_type: "Domestic Sales", order_type: "ZSOR", open_value: "250" },
-    { sales_type: "Export Sales", order_type: "ZEOR", open_value: 150 },
+    { sales_type: "Domestic Sales", order_type: "ZDOR", kwert_inr: 100 },
+    { sales_type: "Domestic Sales", order_type: "ZSOR", kwert_inr: "250" },
+    { sales_type: "Export Sales", order_type: "ZEOR", kwert_inr: 150 },
   ]);
   expect(summary.count).toBe(3);
   expect(summary.openValue).toBe(500);
@@ -17,7 +17,7 @@ test("every supplied order line counts and shared descriptions combine across co
 
 test("top three plus Others preserves every count and stored value", () => {
   const summary = summarizeLaunchOrders([500, 400, 300, 200, 100].map((value, i) => ({
-    sales_type: `Type ${i}`, order_type: "ZDOR", open_value: value,
+    sales_type: `Type ${i}`, order_type: "ZDOR", kwert_inr: value,
   })));
   expect(summary.breakdown.map((group) => group.name)).toEqual(["Type 0", "Type 1", "Type 2", "Others"]);
   expect(summary.breakdown[3]?.count).toBe(2);
@@ -28,8 +28,8 @@ test("top three plus Others preserves every count and stored value", () => {
 
 test("missing descriptions use document codes and zero totals have safe widths", () => {
   const summary = summarizeLaunchOrders([
-    { sales_type: "Unassigned", order_type: "ZDOR", open_value: 0 },
-    { sales_type: " ", order_type: "ZSOR", open_value: null },
+    { sales_type: "Unassigned", order_type: "ZDOR", kwert_inr: 0 },
+    { sales_type: " ", order_type: "ZSOR", kwert_inr: null },
   ]);
   expect(summary.breakdown).toEqual([
     { name: "ZDOR", count: 1, value: 0, share: 0 },

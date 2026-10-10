@@ -1,5 +1,5 @@
 export type LaunchOrderRow = {
-  open_value: number | string | null;
+  kwert_inr: number | string | null;
   sales_type: string | null;
   order_type: string | null;
 };
@@ -12,7 +12,7 @@ export function summarizeLaunchOrders(rows: LaunchOrderRow[]) {
   for (const row of rows) {
     const description = row.sales_type?.trim();
     const name = description && description !== "Unassigned" ? description : row.order_type || "Unassigned";
-    const parsed = Number(row.open_value ?? 0);
+    const parsed = Number(row.kwert_inr ?? 0);
     const value = Number.isFinite(parsed) ? parsed : 0;
     const group = groups.get(name) ?? { name, count: 0, value: 0, share: 0 };
     group.count += 1;

@@ -42,3 +42,6 @@
 - Persist Open Sales Orders AH measures as typed numeric columns alongside raw SAP rows and include them in the report query, table search, and export so existing and future snapshots agree.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
 - Read mapped successful sync times; omit them from PDF and unmount the Open Orders screen-only header during capture so sync metadata cannot enter exported visuals.
+
+- Store new Open Orders monetary/status fields alongside the complete raw row; use the typed monetary source for all report and launchpad values and retain open_value only as a compatibility mirror, so sync paths and exports reconcile.
+- Retire absent SAP business mappings additively with deprecation comments, preserving internal sync columns and harmless key aliases because deployed installations may still use older payload spellings.
