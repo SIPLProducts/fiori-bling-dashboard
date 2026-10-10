@@ -51,6 +51,8 @@ export type Database = {
           id: string
           industry_description: string | null
           is_active_snapshot: boolean
+          kwert_inr: number
+          ld_status: string | null
           material: string | null
           material_description: string | null
           material_type: string | null
@@ -113,6 +115,8 @@ export type Database = {
           id?: string
           industry_description?: string | null
           is_active_snapshot?: boolean
+          kwert_inr?: number
+          ld_status?: string | null
           material?: string | null
           material_description?: string | null
           material_type?: string | null
@@ -175,6 +179,8 @@ export type Database = {
           id?: string
           industry_description?: string | null
           is_active_snapshot?: boolean
+          kwert_inr?: number
+          ld_status?: string | null
           material?: string | null
           material_description?: string | null
           material_type?: string | null
