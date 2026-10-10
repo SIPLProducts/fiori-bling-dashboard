@@ -57,6 +57,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     { header: "Currency", key: "currency", width: 11 },
     { header: "Open Value (₹ Cr)", key: "value", width: 19 },
     { header: "Days Open", key: "daysOpen", width: 13 },
+    { header: "LD_STATUS", key: "ldStatus", width: 14 },
     { header: "Delivery Status", key: "deliveryStatus", width: 18 },
     { header: "Overall Status", key: "overallStatus", width: 18 },
   ];
@@ -108,6 +109,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     currency: row.currency,
     value: row.value,
     daysOpen: row.daysOpen,
+    ldStatus: row.ldStatus ?? "",
     deliveryStatus: row.deliveryStatus,
     overallStatus: row.overallStatus,
   }));

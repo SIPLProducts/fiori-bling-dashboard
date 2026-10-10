@@ -30,6 +30,7 @@ export type OpenSalesOrder = {
   unit: string;
   currency: string;
   value: number;
+  ldStatus?: string;
   deliveryDate: string;
   orderDate: string;
   daysOpen: number;
@@ -84,11 +85,11 @@ type OpenSalesOrderRecord = {
   total_ah: number | string | null;
   unit: string | null;
   currency: string | null;
-  open_value: number | string | null;
+  kwert_inr: number | string | null;
+  ld_status: string | null;
   delivery_date: string | null;
   order_date: string | null;
   days_open: number | null;
-  sales_org: string | null;
   distribution_channel: string | null;
   plant: string | null;
   plant_name: string | null;
@@ -108,7 +109,7 @@ type OpenSalesOrderRecord = {
   overall_status: string | null;
 };
 
-const OPEN_ORDER_COLUMNS = "id,updated_at,sales_order,sales_order_item,preceding_document,purchase_order,order_type,order_date,purchase_order_date,delivery_date,sales_org,distribution_channel,division,plant,plant_name,sales_office,sales_group,profit_center,sales_rep_name,customer_sold_to,customer_sold_to_name,customer_bill_to,customer_bill_to_name,customer_ship_to,customer_ship_to_name,material,material_description,material_type,product_category,model,product_range,product_type,region,sales_zone,country,sales_type,industry_description,customer_group,usage_description,quantity,open_quantity,delivered_quantity,ah,total_ah,unit,currency,open_value,days_open,delivery_status,overall_status";
+const OPEN_ORDER_COLUMNS = "id,updated_at,sales_order,sales_order_item,preceding_document,purchase_order,order_type,order_date,purchase_order_date,delivery_date,distribution_channel,division,plant,plant_name,sales_office,sales_group,profit_center,sales_rep_name,customer_sold_to,customer_sold_to_name,customer_bill_to,customer_bill_to_name,customer_ship_to,customer_ship_to_name,material,material_description,material_type,product_category,model,product_range,product_type,region,sales_zone,country,sales_type,industry_description,customer_group,usage_description,quantity,open_quantity,delivered_quantity,ah,total_ah,unit,currency,kwert_inr,ld_status,days_open,delivery_status,overall_status";
 const PAGE_SIZE = 1000;
 const text = (value: string | null | undefined, fallback = "Unassigned") => value?.trim() || fallback;
 const amount = (value: number | string | null) => Number(value) || 0;
@@ -144,11 +145,12 @@ function toDashboardRow(row: OpenSalesOrderRecord): OpenSalesOrder {
     totalAh: amount(row.total_ah),
     unit: text(row.unit, ""),
     currency: text(row.currency, ""),
-    value: amount(row.open_value) / 10_000_000,
+    value: amount(row.kwert_inr) / 10_000_000,
+    ldStatus: row.ld_status ?? "",
     deliveryDate: text(row.delivery_date, ""),
     orderDate: text(row.order_date, ""),
     daysOpen: Math.max(0, Number(row.days_open) || 0),
-    salesOrg: text(row.sales_org),
+    salesOrg: "Unassigned",
     channel: text(row.distribution_channel),
     plant: text(row.plant, ""),
     plantName: text(row.plant_name, ""),

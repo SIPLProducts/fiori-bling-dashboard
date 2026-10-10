@@ -18,7 +18,7 @@ async function fetchSummary(from: string, to: string): Promise<Summary> {
   const allRows: LaunchOrderRow[] = [];
 
   while (true) {
-    const result = await supabase.from("open_sales_orders").select("open_value,sales_type,order_type")
+    const result = await supabase.from("open_sales_orders").select("kwert_inr,sales_type,order_type")
       .eq("is_active_snapshot", true)
       .gte("order_date", from)
       .lte("order_date", to)
@@ -38,7 +38,7 @@ async function fetchSummary(from: string, to: string): Promise<Summary> {
 export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const range = currentReportPeriod();
   const { data, isLoading } = useQuery({
-    queryKey: ["open-sales-orders-launch-summary", "description-bars-v1", range.from, range.to],
+    queryKey: ["open-sales-orders-launch-summary", "kwert-inr-description-bars-v2", range.from, range.to],
     queryFn: () => fetchSummary(range.from, range.to),
     staleTime: Infinity,
     gcTime: Infinity,
