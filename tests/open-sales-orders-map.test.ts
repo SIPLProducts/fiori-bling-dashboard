@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { mapOpenSalesOrdersPayload } from "../src/lib/open-sales-orders-map";
+import uploadedSample from "./fixtures/open-orders-124-keys.json";
 
 const sample = [
   { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE1: "10683424.19", NETWR: "999", KWERT_INR: "10558830.00", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
@@ -7,6 +8,15 @@ const sample = [
 ];
 
 describe("Open Sales Orders mapping", () => {
+  test("all 124 keys in each uploaded sample record are preserved", () => {
+    const rows = mapOpenSalesOrdersPayload(uploadedSample, "Open_Sales_Orders").rows;
+    expect(rows).toHaveLength(3);
+    rows.forEach((row, i) => {
+      expect(Object.keys(row.raw)).toHaveLength(124);
+      expect(row.raw).toEqual(uploadedSample[i]);
+    });
+    expect(rows.map(row => row.kwert_inr)).toEqual([10558830, 61500, 555000]);
+  });
   test("stores S_VTWEG and VTEXT_DC with legacy and lowercase compatibility", () => {
     for (const fields of [{ S_VTWEG: "02", VTEXT_DC: "Export Sales", VTWEG: "01" }, { s_vtweg: "02", vtext_dc: "Export Sales" }, { VTWEG: "02", VTEXT_DC: "Export Sales" }]) {
       const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", ...fields }], "Open_Sales_Orders").rows[0];
