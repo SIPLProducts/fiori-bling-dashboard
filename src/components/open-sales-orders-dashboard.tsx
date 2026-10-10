@@ -340,7 +340,7 @@ export function OpenSalesOrdersDashboard() {
               </Popover>)}
             </div>)}
           </div>
-          <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
+          <div className="min-w-0 min-[900px]:col-start-1"><FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" /></div>
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
@@ -477,7 +477,7 @@ export function OpenSalesOrdersDashboard() {
 }
 
 function FilterField({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="min-w-0 space-y-1"><span className="block text-[10px] font-medium text-muted-foreground">{label}</span>{children}</label>;
+  return <label className="block min-w-0 space-y-1"><span className="flex h-8 items-center text-[10px] font-medium text-muted-foreground">{label}</span>{children}</label>;
 }
 
 function FilterMultiSelect({ label, selected, options, onChange }: { label: string; selected: string[] | null; options: string[] | MultiSelectOption[]; onChange: (value: string[]) => void; placeholder: string }) {
