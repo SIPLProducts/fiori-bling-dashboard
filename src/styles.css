@@ -373,6 +373,7 @@
   .orders-compact [data-order-filters] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .orders-compact [data-order-filters] button { height: 2rem; }
+.orders-compact [data-order-filters] > div > div:first-child:has([aria-label="Date selection mode"]) { height: 2rem; flex-wrap: nowrap; }
 .orders-compact .order-details > div:first-child,
 .orders-compact .order-details > div:last-child { padding: 0.5rem 0.625rem; }
 .orders-compact .order-details th { height: 2rem; }

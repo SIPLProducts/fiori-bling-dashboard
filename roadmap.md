@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Move Customer to the second desktop filter row and align Date Range with the other controls; verify desktop, tablet and phone layouts.
+
 - [x] Remove Distribution Channel dropdown and hidden channel restrictions; verified seven filters, description-only table cells, unchanged 1,174/859 totals, date modes/Reset, Excel/PDF downloads, 15 passing tests and no overflow at 901/390/320px.
 
 - [x] Add Distribution Channel filters/table/Excel, reorder Smart Filters, dotted dates and Single/From–To modes; verified channel options, date-mode switching, 22-row filtered Excel/PDF, Reset to 1,174 rows, shared mapper, 27 passing tests, clean preview and no overflow at 901/390/320px.
