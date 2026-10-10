@@ -411,6 +411,9 @@
 .orders-compact .order-ranking-row { grid-template-columns: minmax(0, 1fr); }
 .orders-compact .order-overview-row > *,
 .orders-compact .order-ranking-row > * { grid-column: auto; }
+@media (min-width: 640px) and (max-width: 849px) {
+  .orders-compact .order-overview-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .orders-compact .order-trend .order-chart-canvas { height: 180px !important; }
 .orders-compact .order-table-scroll > div { max-height: 246px; overflow: auto; overscroll-behavior: contain; }
 .orders-compact .order-table-scroll { min-width: 0; outline-offset: -2px; }

@@ -4,16 +4,16 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nexus — SAP Procurement Analytics Portal" },
+      { title: "HBL MIS Portal — Sign In" },
       {
         name: "description",
         content:
-          "A Fiori-inspired analytics portal for SAP procurement: launchpad tiles, spend dashboards, purchase order and supplier reports.",
+          "Access HBL MIS sales, open orders and financial reporting.",
       },
-      { property: "og:title", content: "Nexus — SAP Procurement Analytics Portal" },
+      { property: "og:title", content: "HBL MIS Portal — Sign In" },
       {
         property: "og:description",
-        content: "Launchpad tiles, spend dashboards and supplier scorecards on top of your SAP data.",
+        content: "Access HBL MIS sales, open orders and financial reporting.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
