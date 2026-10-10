@@ -10,7 +10,7 @@
 - Replace NETWR with **KWERT_INR** as the source for the **Open Order Value** tile and the detailed-table **Open Value (₹ Cr)** column.
 - Use the same source for value totals, charts, rankings, launchpad summaries, Excel and PDF so they reconcile.
 - Store the original rupee amount and divide by **10,000,000** only for Crore display. Do not multiply by quantities or fall back to NETWR/P_VALUE1.
-- Preserve LD_STATUS exactly as SAP supplies it; do not reinterpret it as Open/Partially Delivered or add a new visible status control in this change.
+- Preserve LD_STATUS exactly as SAP supplies it: **"N" stays "N" and "Y" stays "Y"**. Do not convert it to a boolean, reinterpret it as Open/Partially Delivered, or add a new visible status control in this change.
 
 ## Clear old data and resync
 - After the schema and updated mapping are ready, **delete the existing Open Sales Orders records**, as requested. This affects only `open_sales_orders`, not Net Sales, TBN, settings or sync history.
@@ -24,5 +24,5 @@
 
 ## Validation
 - Test the sample amounts **10,558,830**, **61,500**, and **555,000**; their total must be **11,175,330 rupees / 1.117533 Crore**.
-- Test LD_STATUS = **N**, mixed-case key compatibility, numeric normalization, zero/missing KWERT_INR without NETWR fallback, and preservation of all supplied fields.
+- Test both LD_STATUS = **N** and **Y**, mixed-case key compatibility, numeric normalization, zero/missing KWERT_INR without NETWR fallback, and preservation of all supplied fields.
 - Verify empty report behavior after cleanup, unchanged date/filter behavior, and consistent table/export value calculations using fixtures. Live totals and newly stored LD_STATUS can be verified after your fresh sync.
