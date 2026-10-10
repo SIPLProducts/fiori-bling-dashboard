@@ -29,9 +29,14 @@ describe("Open Sales Orders table filters", () => {
     expect(filterOpenOrderTable(rows, "partial", "")).toHaveLength(12);
   });
   test("searches every displayed data field with formatted and raw values", () => {
-    for (const search of ["150", "a k STEELS", "zdor", "South", "10", "1100", "hyderabad", "8000000026", "battery", "2026-04-15", "15-Apr-2026", "20-May-2026", "174", "170480", "1,70,480", "4.02", "4.023", "Open"]) {
+    for (const search of ["150", "a k STEELS", "zdor", "South", "10", "1100", "hyderabad", "8000000026", "battery", "2026-04-15", "15.04.2026", "20.05.2026", "174", "170480", "1,70,480", "4.02", "4.023", "Open"]) {
       expect(filterOpenOrderTable(rows, "open", search)).toHaveLength(13);
     }
+  });
+  test("channel code and description participate in detailed search", () => {
+    const records = [{ ...base, channel: "02", salesType: "Export Sales" }] as OpenSalesOrder[];
+    expect(filterOpenOrderTable(records, "all", "02 — Export Sales")).toHaveLength(1);
+    expect(filterOpenOrderTable(records, "all", "Domestic Sales")).toHaveLength(0);
   });
   test("combines search and status across rows beyond page one", () => {
     for (const search of ["765.4321", "98765.4321", "98,765.4321"]) {

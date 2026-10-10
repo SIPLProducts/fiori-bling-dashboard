@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Add Distribution Channel filters/table/Excel, reorder Smart Filters, dotted dates and Single/From–To modes; verify shared mapper, report and exports.
+
 - [x] Remove default Open Orders dates; verified independent From/To, Clear/Reset, three summary tiles, descending creation-date details/1,174-row Excel, four-page PDF without Open Quantity or sync metadata, no overflow at 900/390/320px, 17 passing tests, and clean preview.
 
 - [x] Keep Last synced screen-only during Open Orders PDF generation; unmounted screen header during capture, visually checked all four fresh pages with no sync labels or clipping, confirmed successful download and clean preview.

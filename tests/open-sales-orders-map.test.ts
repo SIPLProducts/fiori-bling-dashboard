@@ -7,6 +7,13 @@ const sample = [
 ];
 
 describe("Open Sales Orders mapping", () => {
+  test("stores S_VTWEG and VTEXT_DC with legacy and lowercase compatibility", () => {
+    for (const fields of [{ S_VTWEG: "02", VTEXT_DC: "Export Sales", VTWEG: "01" }, { s_vtweg: "02", vtext_dc: "Export Sales" }, { VTWEG: "02", VTEXT_DC: "Export Sales" }]) {
+      const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", ...fields }], "Open_Sales_Orders").rows[0];
+      expect(row?.distribution_channel).toBe("02");
+      expect(row?.sales_type).toBe("Export Sales");
+    }
+  });
   test("maps unscaled SAP AH and TOT_AH including decimals and trailing minus", () => {
     for (const [input, expected] of [["1234", 1234], ["1,234.567", 1234.567], ["12.5-", -12.5], ["", 0], [undefined, 0], ["invalid", 0]] as const) {
       const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", AH: input, TOT_AH: input }], "Open_Sales_Orders").rows[0];
