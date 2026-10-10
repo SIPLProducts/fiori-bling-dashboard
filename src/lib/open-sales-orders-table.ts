@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import type { OpenSalesOrder } from "./open-sales-orders-data";
+import { channelLabel } from "./open-sales-orders-filters";
 
 export type OpenOrderTableStatus = "all" | "open" | "partial";
 
@@ -38,7 +39,7 @@ export function openOrderStatusLabel(deliveredQuantity: number) {
 export function displayOpenOrderDate(value: string) {
   if (!value) return "—";
   const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MMM-yyyy");
+  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd.MM.yyyy");
 }
 
 export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTableStatus, search: string) {
@@ -50,6 +51,7 @@ export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTa
     const numbers = [row.daysOpen, row.openQuantity, row.deliveredQuantity, row.ah, row.totalAh];
     const values = [
       row.order, row.item, row.customer, row.documentType, row.zone.replace(" Zone", ""),
+      row.channel ?? "", row.salesType ?? "", channelLabel(row),
       row.division, row.plant ?? "", row.plantName ?? "", row.material, row.description, row.orderDate, row.deliveryDate,
       displayOpenOrderDate(row.orderDate), displayOpenOrderDate(row.deliveryDate),
       ...numbers.map(String), ...numbers.map((value) => Math.round(value).toLocaleString("en-IN")),

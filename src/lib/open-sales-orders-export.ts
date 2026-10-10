@@ -1,4 +1,6 @@
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
+import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
+import { channelDescription } from "@/lib/open-sales-orders-filters";
 
 export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
   const { default: ExcelJS } = await import("exceljs");
@@ -18,6 +20,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     { header: "Purchase Order Date", key: "purchaseOrderDate", width: 20 },
     { header: "Requested Date", key: "deliveryDate", width: 17 },
     { header: "Distribution Channel", key: "channel", width: 21 },
+    { header: "Distribution Channel Description", key: "channelDescription", width: 32 },
     { header: "Division", key: "division", width: 13 },
     { header: "Plant", key: "plant", width: 13 },
     { header: "Plant Name", key: "plantName", width: 25 },
@@ -64,10 +67,11 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
     precedingDocument: row.precedingDocument,
     purchaseOrder: row.purchaseOrder,
     documentType: row.documentType,
-    orderDate: row.orderDate,
-    purchaseOrderDate: row.purchaseOrderDate,
-    deliveryDate: row.deliveryDate,
+    orderDate: displayOpenOrderDate(row.orderDate),
+    purchaseOrderDate: displayOpenOrderDate(row.purchaseOrderDate),
+    deliveryDate: displayOpenOrderDate(row.deliveryDate),
     channel: row.channel,
+    channelDescription: channelDescription(row),
     division: row.division,
     plant: row.plant,
     plantName: row.plantName,

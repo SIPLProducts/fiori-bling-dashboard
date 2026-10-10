@@ -8,7 +8,17 @@ export type OpenOrderFilters = {
   products: string[] | null;
   divisions: string[] | null;
   plants: string[] | null;
+  channels: string[] | null;
 };
+export const channelDescription = (row: OpenSalesOrder) => row.salesType?.trim() && row.salesType !== "Unassigned" ? row.salesType.trim() : row.channel;
+export const channelLabel = (row: OpenSalesOrder) => [row.channel, channelDescription(row)].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index).join(" — ");
+export function channelOptions(rows: OpenSalesOrder[]) {
+  return [...new Map(rows.map((row) => [row.channel, { value: row.channel, label: channelLabel(row) }])).values()].sort((a, b) => a.value.localeCompare(b.value));
+}
+export type OpenOrderDateMode = "single" | "range";
+export function activeOpenOrderDates(mode: OpenOrderDateMode, single?: string, range?: { from?: string | undefined; to?: string | undefined }) {
+  return mode === "single" ? { from: single, to: single } : { from: range?.from, to: range?.to };
+}
 export const documentTypeDescription = (row: OpenSalesOrder) => {
   const description = row.salesType?.trim();
   return description && description !== "Unassigned" ? description : row.documentType;
@@ -36,7 +46,7 @@ export function summarizeDocumentDescriptions(rows: OpenSalesOrder[]) {
 }
 export const defaultOpenOrderFilters = (rows?: OpenSalesOrder[]): OpenOrderFilters => ({
   documentTypes: rows ? defaultDocumentTypeKeys(rows) : [...DEFAULT_DOCUMENT_TYPES],
-  customers: null, zones: null, products: null, divisions: null, plants: null,
+  customers: null, zones: null, products: null, divisions: null, plants: null, channels: null,
 });
 export const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
 export const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
@@ -54,6 +64,7 @@ export function filterOpenOrders(rows: OpenSalesOrder[], filters: OpenOrderFilte
     if (filters.products !== null && !filters.products.includes(productKey(row))) return false;
     if (filters.divisions !== null && !filters.divisions.includes(row.division)) return false;
     if (filters.plants !== null && !filters.plants.includes(row.plant)) return false;
+    if (filters.channels != null && !filters.channels.includes(row.channel)) return false;
     return true;
   });
 }

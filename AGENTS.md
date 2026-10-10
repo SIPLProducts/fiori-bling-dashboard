@@ -24,9 +24,10 @@
 - Send the saved `fkdat` for Open Sales Orders tests and manual syncs, but replace it with the current local date for scheduled syncs, because administrators need reproducible manual requests and rolling daily automation.
 - Store atomic Open Orders snapshots by active `VBELN + POSNR`, with typed fields and raw SAP rows, so missing orders vanish without partial syncs.
 - Drive the Open Sales Orders report from active `open_sales_orders` snapshots, loading every paginated row and refreshing only on explicit user action so all filters, metrics, charts, rankings, and details reconcile.
-- Keep Open Orders report date boundaries independent and optional, while the launchpad retains India-local FY bounds, so report-wide exploration does not change entry-point FY totals.
+- Resolve Open Orders Single and optional From–To date modes through one pure active-boundary helper, while the launchpad retains India-local FY bounds, so only the active report mode filters records.
 - Keep Open Sales Orders bulk selection opt-in on the shared MultiSelect; use null for unrestricted filters and empty arrays for explicit no-selection so other reports retain their existing semantics.
 - Use pure Open Orders filter/code-description helpers and stored sales_type descriptions so selections and totals reconcile.
+- Reuse stored distribution_channel and sales_type for independent channel filtering and labels, accepting S_VTWEG before legacy VTWEG in the shared mapper, so existing and future snapshots work without raw-row display reads.
 - Key Open Sales Orders customer filters by sold-to code with source-backed display labels so same-name customers stay distinct.
 - Reuse the stored industry_description mapped from VTEXT_DI for Open Sales Orders division labels, avoiding a larger raw-response fetch for display-only descriptions.
 - Derive Open Sales Orders detailed-table status/search results and creation-date ordering through pure helpers shared by pagination, counts, and Excel export, so table-only controls stay consistent without changing dashboard metrics.

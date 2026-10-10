@@ -43,10 +43,11 @@ import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
-import { customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
+import { activeOpenOrderDates, channelLabel, channelOptions, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
@@ -148,6 +149,8 @@ export function OpenSalesOrdersDashboard() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync("open-sales-orders");
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
+  const [dateMode, setDateMode] = useState<OpenOrderDateMode>("range");
+  const [singleDate, setSingleDate] = useState<Date>();
   const [filters, setFilters] = useState<OpenOrderFilters>(() => defaultOpenOrderFilters());
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
@@ -158,6 +161,7 @@ export function OpenSalesOrdersDashboard() {
   const tablePageSize = 10;
   const options = useMemo(() => ({
     documentType: documentTypeOptions(data),
+    channel: channelOptions(data),
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
     plant: [...new Map(data.map((row) => [row.plant, { value: row.plant, label: [row.plant, row.plantName].filter(Boolean).join(" — ") || "Unassigned" }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
@@ -172,16 +176,19 @@ export function OpenSalesOrdersDashboard() {
       documentTypes: defaultDocumentTypeKeys(data),
     }));
   }, [data]);
-  const filteredData = useMemo(() => filterOpenOrders(data, filters, {
+  const activeDates = activeOpenOrderDates(dateMode, singleDate ? format(singleDate, "yyyy-MM-dd") : undefined, {
     from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
-  }), [data, dateRange, filters]);
-  const activeFilterCount = Number(Boolean(dateRange?.from || dateRange?.to))
+  });
+  const filteredData = useMemo(() => filterOpenOrders(data, filters, activeDates), [data, filters, activeDates.from, activeDates.to]);
+  const activeFilterCount = Number(Boolean(activeDates.from || activeDates.to))
     + Number(filters.documentTypes.length > 0)
-    + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
+    + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants, filters.channels].filter((values) => values !== null).length;
+  useEffect(() => setTablePage(1), [dateRange, singleDate, dateMode, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
     setDateRangeState(undefined);
+    setSingleDate(undefined);
+    setDateMode("range");
     setFilters(defaultOpenOrderFilters(data));
   };
   const metrics = useMemo(() => {
@@ -308,7 +315,20 @@ export function OpenSalesOrdersDashboard() {
           </div>
         </div>
         {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 min-[1800px]:grid-cols-7">
-          <FilterField label="Date Range">
+          <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
+          <FilterMultiSelect label="Distribution Channel" selected={filters.channels} options={options.channel} onChange={(channels) => setFilters((current) => ({ ...current, channels }))} placeholder="All channels" />
+          <FilterField label="Sales Document Type">
+            <MultiSelect
+              options={options.documentType}
+              selected={filters.documentTypes}
+              onChange={(documentTypes) => setFilters((current) => ({ ...current, documentTypes }))}
+              placeholder="Select document types"
+              bulkActions
+            />
+          </FilterField>
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-1"><span className="text-[10px] font-medium text-muted-foreground">Date Range</span><ToggleGroup type="single" value={dateMode} onValueChange={(value) => { if (value === "single" || value === "range") setDateMode(value); }} aria-label="Date selection mode" className="gap-0"><ToggleGroupItem value="single" aria-label="Single date mode" className="h-6 px-2 text-[10px]">Single</ToggleGroupItem><ToggleGroupItem value="range" aria-label="From–To date mode" className="h-6 px-2 text-[10px]">From–To</ToggleGroupItem></ToggleGroup></div>
+            {dateMode === "single" ? <Popover><PopoverTrigger asChild><Button type="button" variant="outline" aria-label="Select single date" className="h-9 w-full justify-start text-xs font-normal"><CalendarDays className="size-3.5" />{singleDate ? format(singleDate, "dd.MM.yyyy") : "Select date"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={singleDate} onSelect={setSingleDate} className="pointer-events-auto p-3" /><div className="flex justify-end border-t border-border p-2"><Button type="button" variant="outline" size="sm" disabled={!singleDate} onClick={() => setSingleDate(undefined)}>Clear</Button></div></PopoverContent></Popover> : (
             <div className="flex min-w-0 items-center gap-1">
               {(["from", "to"] as const).map((boundary) => <Popover key={boundary}>
                 <PopoverTrigger asChild><Button type="button" variant="outline" aria-label={boundary === "from" ? "Select From date" : "Select To date"} className="h-9 min-w-0 flex-1 justify-start px-2 text-left text-xs font-normal"><CalendarDays className="size-3.5 shrink-0" /><span className="truncate">{dateRange?.[boundary] ? format(dateRange[boundary], "dd.MM.yyyy") : boundary === "from" ? "From" : "To"}</span></Button></PopoverTrigger>
@@ -320,22 +340,12 @@ export function OpenSalesOrdersDashboard() {
                   </div>
                 </PopoverContent>
               </Popover>)}
-            </div>
-          </FilterField>
+            </div>)}
+          </div>
           <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
-          <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
-          <FilterField label="Sales Document Type">
-            <MultiSelect
-              options={options.documentType}
-              selected={filters.documentTypes}
-              onChange={(documentTypes) => setFilters((current) => ({ ...current, documentTypes }))}
-              placeholder="Select document types"
-              bulkActions
-            />
-          </FilterField>
         </div> : null}
       </section>
 
@@ -449,10 +459,10 @@ export function OpenSalesOrdersDashboard() {
         </div>
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={19} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{channelLabel(row)}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
-            <TableCell colSpan={13}>Total</TableCell>
+            <TableCell colSpan={14}>Total</TableCell>
             <TableCell className="text-right tabular-nums">{tableTotals.openQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
             <TableCell className="text-right tabular-nums">{tableTotals.deliveredQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
             <TableCell className="text-right tabular-nums">{tableTotals.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>

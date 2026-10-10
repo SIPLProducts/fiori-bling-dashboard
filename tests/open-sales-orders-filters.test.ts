@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { defaultOpenOrderFilters, filterOpenOrders } from "../src/lib/open-sales-orders-filters";
+import { activeOpenOrderDates, channelOptions, defaultOpenOrderFilters, filterOpenOrders } from "../src/lib/open-sales-orders-filters";
 import { countPendingOrdersAgainstAh } from "../src/lib/open-sales-orders-table";
 import type { OpenSalesOrder } from "../src/lib/open-sales-orders-data";
 
@@ -15,6 +15,21 @@ test("unrestricted opening and Reset retain exactly ZDOR ZEOR ZSOR", () => {
   expect(defaultOpenOrderFilters().documentTypes).toEqual(["ZDOR", "ZEOR", "ZSOR"]);
   expect(filterOpenOrders(rows, defaultOpenOrderFilters()).map((row) => row.order)).toEqual(["1", "2", "3", "5"]);
   expect(countPendingOrdersAgainstAh(filterOpenOrders(rows, defaultOpenOrderFilters()))).toBe(4);
+});
+test("channel defaults, selections, and empty selection retain independent document filters", () => {
+  const data = [{ ...rows[0], channel: "01", salesType: "Domestic Sales" }, { ...rows[1], channel: "02", salesType: "Export Sales" }, { ...rows[3], channel: "01", salesType: "Domestic Sales" }] as OpenSalesOrder[];
+  expect(channelOptions(data)).toEqual([{ value: "01", label: "01 — Domestic Sales" }, { value: "02", label: "02 — Export Sales" }]);
+  expect(defaultOpenOrderFilters().channels).toBe(null);
+  expect(filterOpenOrders(data, { ...defaultOpenOrderFilters(), channels: ["01"] }).map((row) => row.order)).toEqual(["1"]);
+  expect(filterOpenOrders(data, { ...defaultOpenOrderFilters(), channels: [] })).toHaveLength(0);
+  expect(filterOpenOrders(data, defaultOpenOrderFilters())).toHaveLength(2);
+});
+test("single date matches exactly and only the active date mode filters", () => {
+  const range = { from: "2024-03-31", to: "2025-04-01" };
+  expect(filterOpenOrders(rows, defaultOpenOrderFilters(), activeOpenOrderDates("single", "2026-10-08", range)).map((row) => row.order)).toEqual(["3"]);
+  expect(filterOpenOrders(rows, defaultOpenOrderFilters(), activeOpenOrderDates("range", "2026-10-08", range)).map((row) => row.order)).toEqual(["1", "2"]);
+  expect(filterOpenOrders(rows, defaultOpenOrderFilters(), activeOpenOrderDates("single", undefined, range))).toHaveLength(4);
+  expect(filterOpenOrders(rows, defaultOpenOrderFilters(), activeOpenOrderDates("range"))).toHaveLength(4);
 });
 test("From alone is an inclusive lower creation-date boundary", () => {
   expect(filterOpenOrders(rows, defaultOpenOrderFilters(), { from: "2025-04-01" }).map((row) => row.order)).toEqual(["2", "3"]);
