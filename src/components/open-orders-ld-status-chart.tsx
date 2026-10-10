@@ -15,7 +15,7 @@ export function OpenOrdersLdStatusChart({ data, pdf = false }: { data: ReturnTyp
         </linearGradient>)}</defs>
         <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
         <XAxis dataKey="status" tick={{ fill: 'var(--card-foreground)', fontSize: 12 }} />
-        <YAxis width={55} domain={[0, (maximum: number) => maximum > 0 ? maximum * 1.15 : 1]} tick={{ fill: 'var(--card-foreground)', fontSize: 10 }} label={{ value: 'Value (₹ Cr)', angle: -90, position: 'insideLeft', fill: 'var(--card-foreground)', fontSize: 10 }} />
+        <YAxis width={55} domain={[0, (maximum: number) => maximum > 0 ? Math.ceil(maximum * 1.15) : 1]} tickFormatter={(value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 1 })} tick={{ fill: 'var(--card-foreground)', fontSize: 10 }} label={{ value: 'Value (₹ Cr)', angle: -90, position: 'insideLeft', fill: 'var(--card-foreground)', fontSize: 10 }} />
         <Tooltip content={({ active, payload }) => {
           const row = payload?.[0]?.payload as typeof data[number] | undefined;
           return active && row ? <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><strong>LD Status: {row.status}</strong><p>{row.count.toLocaleString('en-IN')} order lines</p><p>{formatValue(row.value)}</p></div> : null;
