@@ -10,7 +10,6 @@ import {
   FileSpreadsheet,
   Filter,
   IndianRupee,
-  Package,
   RefreshCw,
   RotateCcw,
   Search,
@@ -46,13 +45,12 @@ import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
-import { currentReportDateRange } from "@/lib/report-period";
 import { useReportSync } from "@/lib/use-report-sync";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
 
@@ -149,7 +147,7 @@ export function OpenSalesOrdersDashboard() {
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync("open-sales-orders");
-  const [dateRange, setDateRangeState] = useState<DateRange | undefined>(() => currentReportDateRange());
+  const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
   const [filters, setFilters] = useState<OpenOrderFilters>(() => defaultOpenOrderFilters());
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
@@ -178,12 +176,12 @@ export function OpenSalesOrdersDashboard() {
     from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   }), [data, dateRange, filters]);
-  const activeFilterCount = Number(Boolean(dateRange?.from))
+  const activeFilterCount = Number(Boolean(dateRange?.from || dateRange?.to))
     + Number(filters.documentTypes.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
   useEffect(() => setTablePage(1), [dateRange, filters, tableStatus, tableSearch]);
   const resetFilters = () => {
-    setDateRangeState(currentReportDateRange());
+    setDateRangeState(undefined);
     setFilters(defaultOpenOrderFilters(data));
   };
   const metrics = useMemo(() => {
@@ -230,7 +228,7 @@ export function OpenSalesOrdersDashboard() {
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
     };
   }, [filteredData]);
-  const tableData = useMemo(() => filterOpenOrderTable(filteredData, tableStatus, tableSearch), [filteredData, tableStatus, tableSearch]);
+  const tableData = useMemo(() => sortOpenOrdersByCreationDate(filterOpenOrderTable(filteredData, tableStatus, tableSearch)), [filteredData, tableStatus, tableSearch]);
   const tableTotals = useMemo(() => summarizeOpenOrderTable(tableData), [tableData]);
   const tablePageCount = Math.max(1, Math.ceil(tableData.length / tablePageSize));
   const currentTablePage = Math.min(tablePage, tablePageCount);
@@ -311,15 +309,18 @@ export function OpenSalesOrdersDashboard() {
         </div>
         {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 min-[1800px]:grid-cols-7">
           <FilterField label="Date Range">
-            <Popover>
-              <PopoverTrigger asChild><Button variant="outline" className="h-9 w-full justify-start px-3 text-left text-xs font-normal"><CalendarDays className="size-3.5" /><span className="truncate">{dateRange?.from ? dateRange.to ? `${format(dateRange.from, "dd.MM.yyyy")} – ${format(dateRange.to, "dd.MM.yyyy")}` : format(dateRange.from, "dd.MM.yyyy") : "All dates"}</span></Button></PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="range" selected={dateRange} onSelect={setDateRangeState} numberOfMonths={1} className="pointer-events-auto p-3" />
-                <div className="flex justify-end border-t border-border p-2">
-                  <Button type="button" variant="outline" size="sm" disabled={!dateRange?.from && !dateRange?.to} onClick={() => setDateRangeState(undefined)}>Clear</Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <div className="flex min-w-0 items-center gap-1">
+              {(["from", "to"] as const).map((boundary) => <Popover key={boundary}>
+                <PopoverTrigger asChild><Button type="button" variant="outline" aria-label={boundary === "from" ? "Select From date" : "Select To date"} className="h-9 min-w-0 flex-1 justify-start px-2 text-left text-xs font-normal"><CalendarDays className="size-3.5 shrink-0" /><span className="truncate">{dateRange?.[boundary] ? format(dateRange[boundary], "dd.MM.yyyy") : boundary === "from" ? "From" : "To"}</span></Button></PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateRange?.[boundary]} onSelect={(date) => setDateRangeState((current) => ({ from: current?.from, to: current?.to, [boundary]: date }))} disabled={boundary === "from" && dateRange?.to ? { after: dateRange.to } : boundary === "to" && dateRange?.from ? { before: dateRange.from } : undefined} className="pointer-events-auto p-3" />
+                  <div className="flex justify-end gap-2 border-t border-border p-2">
+                    <Button type="button" variant="outline" size="sm" disabled={!dateRange?.[boundary]} onClick={() => setDateRangeState((current) => ({ from: current?.from, to: current?.to, [boundary]: undefined }))}>Clear {boundary === "from" ? "From" : "To"}</Button>
+                    <Button type="button" variant="outline" size="sm" disabled={!dateRange?.from && !dateRange?.to} onClick={() => setDateRangeState(undefined)}>Clear</Button>
+                  </div>
+                </PopoverContent>
+              </Popover>)}
+            </div>
           </FilterField>
           <FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" />
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
@@ -342,10 +343,9 @@ export function OpenSalesOrdersDashboard() {
         <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders Reports</h2>
       </div> : null}
 
-      <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-3">
         <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label="Open Quantity" value={formatNumber(metrics.totalQuantity)} icon={Package} tone="violet" />
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
 

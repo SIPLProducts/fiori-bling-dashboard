@@ -3,6 +3,20 @@ import type { OpenSalesOrder } from "./open-sales-orders-data";
 
 export type OpenOrderTableStatus = "all" | "open" | "partial";
 
+export function sortOpenOrdersByCreationDate(rows: OpenSalesOrder[]) {
+  const timestamp = (value: string) => {
+    const parsed = value ? Date.parse(value) : NaN;
+    return Number.isFinite(parsed) ? parsed : -Infinity;
+  };
+  return [...rows].sort((a, b) => {
+    const left = timestamp(a.orderDate);
+    const right = timestamp(b.orderDate);
+    if (left !== right) return left > right ? -1 : 1;
+    return a.order.localeCompare(b.order, undefined, { numeric: true })
+      || a.item.localeCompare(b.item, undefined, { numeric: true });
+  });
+}
+
 export function countPendingOrdersAgainstAh(rows: Pick<OpenSalesOrder, "order" | "totalAh">[]) {
   return rows.filter((row) => row.totalAh > 0).length;
 }

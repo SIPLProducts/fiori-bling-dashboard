@@ -1,11 +1,28 @@
 import { describe, expect, test } from "bun:test";
 import type { OpenSalesOrder } from "../src/lib/open-sales-orders-data";
-import { filterOpenOrderTable } from "../src/lib/open-sales-orders-table";
+import { filterOpenOrderTable, sortOpenOrdersByCreationDate } from "../src/lib/open-sales-orders-table";
 
 const base = { order: "1027671", item: "150", customer: "A K Steels", documentType: "ZDOR", zone: "South Zone", division: "10", plant: "1100", plantName: "Hyderabad Works", material: "8000000026", description: "Battery Pack", orderDate: "2026-04-15", deliveryDate: "2026-05-20", daysOpen: 174, openQuantity: 170480, deliveredQuantity: 0, ah: 765.4321, totalAh: 98765.4321, value: 4.023 };
 const rows = Array.from({ length: 25 }, (_, index) => ({ ...base, order: String(1027671 + index), deliveredQuantity: index % 2 === 0 ? 0 : 20 }) as OpenSalesOrder);
 
 describe("Open Sales Orders table filters", () => {
+  test("creation dates descend before pagination without mutating source rows", () => {
+    const unsorted = Array.from({ length: 25 }, (_, index) => ({ ...base, order: String(index + 1), orderDate: `2026-04-${String(index + 1).padStart(2, "0")}` }) as OpenSalesOrder);
+    const sorted = sortOpenOrdersByCreationDate(unsorted);
+    expect(sorted.slice(0, 10).map((row) => row.order)).toEqual(["25", "24", "23", "22", "21", "20", "19", "18", "17", "16"]);
+    expect(sorted.slice(10, 12).map((row) => row.order)).toEqual(["15", "14"]);
+    expect(unsorted[0].order).toBe("1");
+  });
+  test("missing and invalid creation dates sort last with stable numeric order and item ties", () => {
+    const input = [
+      { ...base, order: "1", orderDate: "" },
+      { ...base, order: "2", orderDate: "invalid" },
+      { ...base, order: "10", item: "10" },
+      { ...base, order: "3", item: "20" },
+      { ...base, order: "3", item: "2" },
+    ] as OpenSalesOrder[];
+    expect(sortOpenOrdersByCreationDate(input).map((row) => `${row.order}:${row.item}`)).toEqual(["3:2", "3:20", "10:10", "1:150", "2:150"]);
+  });
   test("filters statuses without dropping or changing all rows", () => {
     expect(filterOpenOrderTable(rows, "all", "")).toHaveLength(25);
     expect(filterOpenOrderTable(rows, "open", "")).toHaveLength(13);
