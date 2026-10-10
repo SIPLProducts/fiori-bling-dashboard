@@ -59,13 +59,13 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><ShoppingCart className="size-[18px]" /></span>
       </div>
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className="text-[11px] font-semibold text-primary">Total Open Orders</p>
-        <p className="text-[11px] font-medium text-foreground tabular-nums">{data.count.toLocaleString("en-IN")} open order lines</p>
+        <p className="text-[9px] font-semibold text-primary">Total Open Orders</p>
+        <p className="text-[9px] font-medium text-foreground tabular-nums">{data.count.toLocaleString("en-IN")} open order lines</p>
       </div>
       <div className="my-3 space-y-2.5">
         {data.breakdown.map((group, index) => (
           <div key={group.name}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[11px] leading-snug">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[9px] leading-snug">
               <span className="min-w-0 font-medium text-foreground">{group.name}</span>
               <span className="flex flex-wrap gap-x-2 text-muted-foreground tabular-nums">
                 <span>{group.count.toLocaleString("en-IN")} lines</span>
