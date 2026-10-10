@@ -54,6 +54,8 @@ import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
 import { useReportSync } from "@/lib/use-report-sync";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
+import { summarizeLdStatus } from "@/lib/open-orders-ld-status";
+import { OpenOrdersLdStatusChart } from "@/components/open-orders-ld-status-chart";
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
@@ -226,6 +228,7 @@ export function OpenSalesOrdersDashboard() {
       partialOpenValue: statusValues.partial,
       notDeliveredOpenValue: statusValues.open,
       documentTypes,
+      ldStatuses: summarizeLdStatus(filteredData),
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
       models: rankOrders(filteredData, (row) => row.model),
@@ -357,7 +360,7 @@ export function OpenSalesOrdersDashboard() {
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
 
-      <div data-pdf-page-block className="order-overview-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
+      <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className="order-document-grid grid min-h-64 min-w-[380px] grid-cols-[128px_minmax(244px,1fr)] items-center gap-2">
@@ -387,7 +390,9 @@ export function OpenSalesOrdersDashboard() {
         <Panel title="Open Order Value Trend" className="order-trend" headerDivider dividerColor="amber" headerAside={!pdfBusy ? <div className="order-trend-legend flex items-center gap-2 text-[11px] text-card-foreground"><span className="flex items-center gap-1 whitespace-nowrap"><span className="order-trend-open-marker size-2 shrink-0" />Open Orders</span><span className="flex items-center gap-1 whitespace-nowrap"><span className="order-trend-partial-marker size-2 shrink-0" />Partial Delivered</span></div> : undefined}>
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={18} tick={{ fontSize: 10 }} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open Orders", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open Orders" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
+        {!pdfBusy ? <Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
       </div>
+      {pdfBusy ? <div data-pdf-page-block><Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
       {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>

@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentReportPeriod, reportPeriodLabel } from "@/lib/report-period";
 import { useReportSync } from "@/lib/use-report-sync";
-import { DEFAULT_DOCUMENT_TYPES } from "@/lib/open-sales-orders-filters";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
 import { summarizeLaunchOrders, type LaunchOrderRow } from "@/lib/open-orders-launch-summary";
 
@@ -12,7 +10,7 @@ const BAR_TONES = ["var(--kpi-1)", "var(--kpi-2)", "var(--kpi-3)", "var(--kpi-4)
 const formatValue = (value: number) => `₹${(value / 10_000_000).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
 type Summary = ReturnType<typeof summarizeLaunchOrders>;
 
-async function fetchSummary(from: string, to: string): Promise<Summary> {
+async function fetchSummary(): Promise<Summary> {
   const pageSize = 1_000;
   let page = 0;
   const allRows: LaunchOrderRow[] = [];
@@ -20,9 +18,6 @@ async function fetchSummary(from: string, to: string): Promise<Summary> {
   while (true) {
     const result = await supabase.from("open_sales_orders").select("kwert_inr,sales_type,order_type")
       .eq("is_active_snapshot", true)
-      .gte("order_date", from)
-      .lte("order_date", to)
-      .in("order_type", DEFAULT_DOCUMENT_TYPES)
       .order("id", { ascending: true })
       .range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
@@ -36,10 +31,9 @@ async function fetchSummary(from: string, to: string): Promise<Summary> {
 }
 
 export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactNode }) {
-  const range = currentReportPeriod();
   const { data, isLoading } = useQuery({
-    queryKey: ["open-sales-orders-launch-summary", "kwert-inr-description-bars-v2", range.from, range.to],
-    queryFn: () => fetchSummary(range.from, range.to),
+    queryKey: ["open-sales-orders-launch-summary", "kwert-inr-all-active-v3"],
+    queryFn: fetchSummary,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
@@ -53,7 +47,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
   if (!data) return <>{fallback}</>;
 
   return (
-    <section aria-label="Open Sales Orders current financial year" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
+    <section aria-label="Open Sales Orders all dates" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-1) 28%, var(--color-border))",
       background: "linear-gradient(160deg, color-mix(in oklab, var(--kpi-1) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)",
     }}>
@@ -65,7 +59,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><ShoppingCart className="size-[18px]" /></span>
       </div>
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className="text-[11px] font-semibold text-primary">Current FY Orders</p>
+        <p className="text-[11px] font-semibold text-primary">Total Open Orders</p>
         <p className="text-[11px] font-medium text-foreground tabular-nums">{data.count.toLocaleString("en-IN")} open order lines</p>
       </div>
       <div className="my-3 space-y-2.5">
@@ -84,7 +78,6 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
           </div>
         ))}
       </div>
-      <p className="mt-auto text-[10px] text-muted-foreground">{reportPeriodLabel(range)}</p>
       <div className="mt-3 grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
         <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
         <Link to="/reports/sd/open-sales-orders" aria-label="Open Open Sales Orders details" className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">

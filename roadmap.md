@@ -5,6 +5,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [ ] Add filtered LD Status Y/N fourth overview chart and PDF block; show all-active launchpad totals without FY caption; verify tests, layouts and downloads.
+
 - [x] Store KWERT_INR and exact LD_STATUS N/Y; switched report/launchpad values, updated three-record/124-key SAP sample, deprecated absent VKORG, mirrored migration, rebuilt middleware, provided cleanup/deployment files, and verified empty report with no runtime errors and 31 passing tests. Fresh live amounts/status await user-run SAP sync; self-hosted deployment awaits operator.
 
 - [x] Move Customer to the second desktop filter row and align Date Range with the other controls; verified both date modes, equal control alignment at 901/1280px, tablet/phone layouts at 768/390/320px, no overflow and clean preview.
