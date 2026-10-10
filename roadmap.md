@@ -5,7 +5,7 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
-- [ ] Add Distribution Channel filters/table/Excel, reorder Smart Filters, dotted dates and Single/From–To modes; verify shared mapper, report and exports.
+- [x] Add Distribution Channel filters/table/Excel, reorder Smart Filters, dotted dates and Single/From–To modes; verified channel options, date-mode switching, 22-row filtered Excel/PDF, Reset to 1,174 rows, shared mapper, 27 passing tests, clean preview and no overflow at 901/390/320px.
 
 - [x] Remove default Open Orders dates; verified independent From/To, Clear/Reset, three summary tiles, descending creation-date details/1,174-row Excel, four-page PDF without Open Quantity or sync metadata, no overflow at 900/390/320px, 17 passing tests, and clean preview.
 
