@@ -369,6 +369,9 @@
 .orders-compact .order-summary .text-sm { font-size: 12px; }
 .orders-compact .order-filters > div:first-child { min-height: 2.5rem; padding: 0.25rem 0.625rem; }
 .orders-compact [data-order-filters] { padding: 0.5rem 0.625rem; gap: 0.5rem; }
+@media (min-width: 900px) {
+  .orders-compact [data-order-filters] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 .orders-compact [data-order-filters] button { height: 2rem; }
 .orders-compact .order-details > div:first-child,
 .orders-compact .order-details > div:last-child { padding: 0.5rem 0.625rem; }
