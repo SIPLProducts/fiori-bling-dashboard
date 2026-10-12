@@ -295,6 +295,7 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
   const deliveredQuantity = pick(raw, ["RFMNG", "DELIVERED_QTY", "deliveredQuantity"]);
   const kwertInr = num2(pick(raw, ["KWERT_INR", "kwert_inr"]));
   const bValue = num2(pick(raw, ["B_VALUE", "b_value"]));
+  const pValue1 = num2(pick(raw, ["P_VALUE1", "p_value1"]));
   const ldStatus = pick(raw, ["LD_STATUS", "LD_Status", "ld_status"]);
   return {
     record_key: rowHash,
@@ -348,8 +349,9 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     currency: str2(pick(raw, ["WAERK"])),
     kwert_inr: kwertInr,
     b_value: bValue,
+    p_value1: pValue1,
     ld_status: ldStatus === "" ? null : String(ldStatus),
-    open_value: bValue,
+    open_value: pValue1,
     days_open: Math.round(num2(pick(raw, ["DAYS"]))),
     delivery_status: str2(pick(raw, ["ABSTA"])),
     overall_status: str2(pick(raw, ["GBSTA"])),
