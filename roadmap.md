@@ -1,3 +1,4 @@
+- [ ] Reverse LD colors, rank document descriptions by value, and pair default Top 10 zone/plant charts with explicit-filter expansion; verify tests, layouts and PDF.
 - [x] Match the TBN dashboard to the supplied compact CFO management layout using source-backed measures only
 - [x] Remove the TBN AI assistant and its dashboard action
 - [x] Add chart data-point drill-downs showing the exact contributing TBN GL entries

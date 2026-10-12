@@ -33,3 +33,7 @@ test("missing SAP descriptions fall back to the document code", () => {
 test("deselecting all combinations produces no rows", () => {
   expect(filterOpenOrders(rows, { ...defaultOpenOrderFilters(rows), documentTypes: [] })).toEqual([]);
 });
+test("document descriptions rank by summed value descending, with name ties", () => {
+  expect(summarizeDocumentDescriptions(rows).map(group => group.name)).toEqual(["Domestic Sales", "Export Sales", "SEZ Sales", "Deemed Export Sales"]);
+  expect(summarizeDocumentDescriptions([{documentType: "ZDOR", salesType: "Z", value: 2}, {documentType: "ZDOR", salesType: "A", value: 2}] as OpenSalesOrder[]).map(group => group.name)).toEqual(["A", "Z"]);
+});

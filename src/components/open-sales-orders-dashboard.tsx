@@ -48,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
+import { selectOpenOrderChartGroups } from "@/lib/open-orders-chart-selection";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
@@ -237,6 +238,8 @@ export function OpenSalesOrdersDashboard() {
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
     };
   }, [filteredData]);
+  const screenZones = selectOpenOrderChartGroups(metrics.zones, filters);
+  const screenPlants = selectOpenOrderChartGroups(metrics.plants, filters);
   const tableData = useMemo(() => sortOpenOrdersByCreationDate(filterOpenOrderTable(filteredData, tableStatus, tableSearch)), [filteredData, tableStatus, tableSearch]);
   const tableTotals = useMemo(() => summarizeOpenOrderTable(tableData), [tableData]);
   const tablePageCount = Math.max(1, Math.ceil(tableData.length / tablePageSize));
@@ -426,10 +429,10 @@ export function OpenSalesOrdersDashboard() {
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
         <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
-          <CompactSalesZoneChart zones={metrics.zones} />
+          <CompactSalesZoneChart zones={screenZones} />
         </Panel>
         <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
-          <PlantPendingChart plants={metrics.plants} loading={isLoading} />
+          <PlantPendingChart plants={screenPlants} loading={isLoading} />
         </Panel>
       </div>}
 

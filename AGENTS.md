@@ -31,3 +31,5 @@
 - Persist AH and monetary/status fields as typed columns alongside raw SAP rows; include them in report queries/search/exports. Use typed monetary source everywhere; open_value is a compatibility mirror.
 - Mirror Cloud migrations in timestamped supabase/migrations for self-hosted deployment.
 - Retire absent SAP business mappings additively with deprecation comments; preserve internal sync fields and harmless older key aliases.
+
+- Keep chart-only group selection in a pure helper after full filtered aggregation; totals and PDF retain full groups to avoid truncating report data.
