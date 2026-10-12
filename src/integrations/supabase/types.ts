@@ -32,6 +32,7 @@ export type Database = {
       open_sales_orders: {
         Row: {
           ah: number
+          b_value: number
           country: string | null
           created_at: string
           currency: string | null
@@ -96,6 +97,7 @@ export type Database = {
         }
         Insert: {
           ah?: number
+          b_value?: number
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -160,6 +162,7 @@ export type Database = {
         }
         Update: {
           ah?: number
+          b_value?: number
           country?: string | null
           created_at?: string
           currency?: string | null

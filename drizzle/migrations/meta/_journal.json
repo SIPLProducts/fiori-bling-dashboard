@@ -36,6 +36,13 @@
       "when": 1791649144325,
       "tag": "0004_open_orders_kwert_inr_ld_status",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791788709638,
+      "tag": "0005_open_orders_b_value_source",
+      "breakpoints": true
     }
   ]
 }
