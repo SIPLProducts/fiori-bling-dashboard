@@ -543,9 +543,9 @@
   .orders-compact .order-overview-row > .order-panel { container-type: inline-size; }
   .orders-compact .order-ranking-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .orders-compact .order-ranking-row > :last-child { grid-column: 1 / -1; }
-  .orders-compact .order-paired-charts { grid-template-columns: minmax(0,1fr); }
+  .orders-compact .order-paired-charts { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: stretch; }
   .orders-compact .order-paired-charts .order-zone-canvas { height: 270px !important; }
-  .orders-compact .order-paired-charts .order-plant-canvas { height: 250px !important; }
+  .orders-compact .order-paired-charts .order-plant-canvas { height: 270px !important; }
 }
 @media (min-width: 1200px) {
   .orders-compact .order-ranking-row { grid-template-columns: repeat(3,minmax(0,1fr)); }

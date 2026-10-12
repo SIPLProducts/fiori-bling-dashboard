@@ -42,7 +42,7 @@ export function summarizeDocumentDescriptions(rows: OpenSalesOrder[]) {
     group.value += row.value;
     groups.set(name, group);
   }
-  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return [...groups.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
 }
 export const defaultOpenOrderFilters = (rows?: OpenSalesOrder[]): OpenOrderFilters => ({
   documentTypes: rows ? defaultDocumentTypeKeys(rows) : [...DEFAULT_DOCUMENT_TYPES],

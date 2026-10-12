@@ -6,3 +6,5 @@ export function summarizeLdStatus(rows: Pick<OpenSalesOrder, 'value' | 'ldStatus
     return { status, count: matching.length, value: matching.reduce((sum, row) => sum + row.value, 0) };
   });
 }
+
+export const ldStatusColorRole = (status: "Y" | "N") => status === "Y" ? "destructive" : "success";
