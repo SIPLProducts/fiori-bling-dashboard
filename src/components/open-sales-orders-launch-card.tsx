@@ -16,7 +16,7 @@ async function fetchSummary(): Promise<Summary> {
   const allRows: LaunchOrderRow[] = [];
 
   while (true) {
-    const result = await supabase.from("open_sales_orders").select("b_value,sales_type,order_type")
+    const result = await supabase.from("open_sales_orders").select("p_value1,sales_type,order_type")
       .eq("is_active_snapshot", true)
       .order("id", { ascending: true })
       .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -32,7 +32,7 @@ async function fetchSummary(): Promise<Summary> {
 
 export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["open-sales-orders-launch-summary", "b-value-all-active-v4"],
+    queryKey: ["open-sales-orders-launch-summary", "p-value1-all-active-v5"],
     queryFn: fetchSummary,
     staleTime: Infinity,
     gcTime: Infinity,

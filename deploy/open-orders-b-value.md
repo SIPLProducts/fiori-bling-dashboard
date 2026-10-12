@@ -1,5 +1,7 @@
 # Open Sales Orders: B_VALUE monetary source
 
+Superseded by `deploy/open-orders-p-value1.md`. Deploy the later P_VALUE1 migration and updated application/middleware after this historical migration.
+
 Open Value now reads SAP `B_VALUE` in rupees. Screen, launchpad, charts, table, Excel and PDF divide by 10,000,000 only when displaying Crores. `KWERT_INR` remains saved separately; there is no fallback to it or NETWR. LD_STATUS is unchanged.
 
 ## Quality / Production installation

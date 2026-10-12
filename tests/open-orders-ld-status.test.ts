@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { summarizeLdStatus, ldStatusColorRole } from '../src/lib/open-orders-ld-status';
-test('Y and N sum their own B_VALUE-derived values and count matching lines', () => {
+test('Y and N sum their own P_VALUE1-derived values and count matching lines', () => {
   expect(summarizeLdStatus([{ ldStatus: 'Y', value: 2572907.4 / 10_000_000 }, { ldStatus: 'Y', value: 1 }, { ldStatus: 'N', value: 2 }, { ldStatus: 'N', value: 0 }])).toEqual([{ status: 'Y', count: 2, value: 1.25729074 }, { status: 'N', count: 2, value: 2 }]);
 });
 test('missing or nonexact statuses do not become Y or N; zero categories remain', () => {

@@ -38,30 +38,30 @@ describe("Open Sales Orders mapping", () => {
     expect(result.rows[0]?.raw).toEqual(sample[0]);
   });
 
-  test("normalizes quantities, dates, descriptions and uses B_VALUE without quantity scaling", () => {
+  test("normalizes quantities, dates, descriptions and uses P_VALUE1 without quantity scaling", () => {
     const row = mapOpenSalesOrdersPayload(sample.slice(0, 1), "Open _Sales _Orders").rows[0];
     expect(row?.order_date).toBe("2017-07-18");
     expect(row?.quantity).toBe(703922);
     expect(row?.open_quantity).toBe(170480);
     expect(row?.delivered_quantity).toBe(533442);
-    expect(row?.open_value).toBe(8001630);
+    expect(row?.open_value).toBe(10683424.19);
     expect(row?.b_value).toBe(8001630);
     expect(row?.kwert_inr).toBe(10558830);
     expect(row?.plant_name).toBe("HBL NCPP-SHPT");
   });
 
-  test("sample B_VALUE values reconcile to rupees and Crores", () => {
-    const rows = mapOpenSalesOrdersPayload([10558830, 61500, 555000].map((value, i) => ({ VBELN: "1", POSNR: i + 1, B_VALUE: value, KWERT_INR: value, NETWR: 999, KWMENG_P: 20 })), "Open_Sales_Orders").rows;
+  test("sample P_VALUE1 values reconcile to rupees and Crores", () => {
+    const rows = mapOpenSalesOrdersPayload([10558830, 61500, 555000].map((value, i) => ({ VBELN: "1", POSNR: i + 1, P_VALUE1: value, B_VALUE: 99, KWERT_INR: value, NETWR: 999, KWMENG_P: 20 })), "Open_Sales_Orders").rows;
     expect(rows.map(row => row.kwert_inr)).toEqual([10558830, 61500, 555000]);
     const total = rows.reduce((sum, row) => sum + row.open_value, 0);
     expect(total).toBe(11175330);
     expect(total / 10000000).toBe(1.117533);
   });
 
-  test("zero or missing KWERT_INR never falls back to NETWR or pending values", () => {
+  test("zero or missing KWERT_INR remains independent of P_VALUE1", () => {
     for (const KWERT_INR of [undefined, null, "", "0.00", "invalid"]) {
       const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", KWERT_INR, NETWR: 900, P_VALUE1: 500, P_VALUE: 600 }], "Open_Sales_Orders").rows[0];
-      expect(row?.open_value).toBe(0);
+      expect(row?.open_value).toBe(500);
       expect(row?.kwert_inr).toBe(0);
     }
   });
@@ -73,15 +73,16 @@ describe("Open Sales Orders mapping", () => {
     }
   });
 
-  test("B_VALUE is the sole Open Value source and retains KWERT_INR separately", () => {
-    const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", B_VALUE: 8001630, KWERT_INR: 10558830, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
+  test("P_VALUE1 is the sole Open Value source and retains B_VALUE and KWERT_INR separately", () => {
+    const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", P_VALUE1: 10683424.19, B_VALUE: 8001630, KWERT_INR: 10558830, NETWR: 999, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
     expect(row?.b_value).toBe(8001630);
-    expect(row?.open_value).toBe(8001630);
+    expect(row?.open_value).toBe(10683424.19);
+    expect(row?.p_value1).toBe(10683424.19);
     expect(row?.kwert_inr).toBe(10558830);
   });
-  test("missing, zero and invalid B_VALUE do not fall back to other monetary fields", () => {
-    for (const B_VALUE of [undefined, null, "", 0, "invalid"]) {
-      const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", B_VALUE, KWERT_INR: 999, NETWR: 900 }], "Open_Sales_Orders").rows[0];
+  test("missing, zero and invalid P_VALUE1 do not fall back to other monetary fields", () => {
+    for (const P_VALUE1 of [undefined, null, "", 0, "invalid"]) {
+      const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", P_VALUE1, B_VALUE: 500, KWERT_INR: 999, NETWR: 900 }], "Open_Sales_Orders").rows[0];
       expect(row?.open_value).toBe(0);
       expect(row?.kwert_inr).toBe(999);
     }
@@ -91,6 +92,16 @@ describe("Open Sales Orders mapping", () => {
       for (const [input, expected] of [["1,234.50", 1234.5], ["12.5-", -12.5]] as const) {
         const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", [key]: input, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
         expect(row?.b_value).toBe(expected);
+      }
+    }
+  });
+  test("P_VALUE1 aliases normalize rupees without quantity scaling", () => {
+    for (const key of ["P_VALUE1", "p_value1"]) {
+      for (const [input, expected] of [[" 1,234.50", 1234.5], ["12.5-", -12.5], ["0", 0]] as const) {
+        const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", [key]: input, B_VALUE: 999, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
+        expect(row?.p_value1).toBe(expected);
+        expect(row?.open_value).toBe(expected);
+        expect(row?.b_value).toBe(999);
       }
     }
   });
