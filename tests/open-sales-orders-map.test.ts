@@ -3,7 +3,7 @@ import { mapOpenSalesOrdersPayload } from "../src/lib/open-sales-orders-map";
 import uploadedSample from "./fixtures/open-orders-124-keys.json";
 
 const sample = [
-  { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE1: "10683424.19", NETWR: "999", KWERT_INR: "10558830.00", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
+  { VBELN: "1027671", POSNR: 150, ERDAT: "2017-07-18", KWMENG: "703922.000", KWMENG_P: "170480", RFMNG: 533442, P_VALUE1: "10683424.19", NETWR: "999", KWERT_INR: "10558830.00", B_VALUE: "8001630.00", WERKS_NAME: "HBL NCPP-SHPT", marker: "preserved" },
   { VBELN: "1027920", POSNR: 50, ERDAT: "2017-07-21", KWMENG: "1.000", KWMENG_P: "1.000", NETWR: "0.00" },
 ];
 
@@ -16,6 +16,7 @@ describe("Open Sales Orders mapping", () => {
       expect(row.raw).toEqual(uploadedSample[i]);
     });
     expect(rows.map(row => row.kwert_inr)).toEqual([10558830, 61500, 555000]);
+    expect(rows.map(row => row.b_value)).toEqual([8001630, 61200, 502350]);
   });
   test("stores S_VTWEG and VTEXT_DC with legacy and lowercase compatibility", () => {
     for (const fields of [{ S_VTWEG: "02", VTEXT_DC: "Export Sales", VTWEG: "01" }, { s_vtweg: "02", vtext_dc: "Export Sales" }, { VTWEG: "02", VTEXT_DC: "Export Sales" }]) {
@@ -37,19 +38,20 @@ describe("Open Sales Orders mapping", () => {
     expect(result.rows[0]?.raw).toEqual(sample[0]);
   });
 
-  test("normalizes quantities, dates, descriptions and uses KWERT_INR without quantity scaling", () => {
+  test("normalizes quantities, dates, descriptions and uses B_VALUE without quantity scaling", () => {
     const row = mapOpenSalesOrdersPayload(sample.slice(0, 1), "Open _Sales _Orders").rows[0];
     expect(row?.order_date).toBe("2017-07-18");
     expect(row?.quantity).toBe(703922);
     expect(row?.open_quantity).toBe(170480);
     expect(row?.delivered_quantity).toBe(533442);
-    expect(row?.open_value).toBe(10558830);
+    expect(row?.open_value).toBe(8001630);
+    expect(row?.b_value).toBe(8001630);
     expect(row?.kwert_inr).toBe(10558830);
     expect(row?.plant_name).toBe("HBL NCPP-SHPT");
   });
 
-  test("sample KWERT_INR values reconcile to rupees and Crores", () => {
-    const rows = mapOpenSalesOrdersPayload([10558830, 61500, 555000].map((value, i) => ({ VBELN: "1", POSNR: i + 1, KWERT_INR: value, NETWR: 999, KWMENG_P: 20 })), "Open_Sales_Orders").rows;
+  test("sample B_VALUE values reconcile to rupees and Crores", () => {
+    const rows = mapOpenSalesOrdersPayload([10558830, 61500, 555000].map((value, i) => ({ VBELN: "1", POSNR: i + 1, B_VALUE: value, KWERT_INR: value, NETWR: 999, KWMENG_P: 20 })), "Open_Sales_Orders").rows;
     expect(rows.map(row => row.kwert_inr)).toEqual([10558830, 61500, 555000]);
     const total = rows.reduce((sum, row) => sum + row.open_value, 0);
     expect(total).toBe(11175330);
@@ -71,6 +73,27 @@ describe("Open Sales Orders mapping", () => {
     }
   });
 
+  test("B_VALUE is the sole Open Value source and retains KWERT_INR separately", () => {
+    const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", B_VALUE: 8001630, KWERT_INR: 10558830, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
+    expect(row?.b_value).toBe(8001630);
+    expect(row?.open_value).toBe(8001630);
+    expect(row?.kwert_inr).toBe(10558830);
+  });
+  test("missing, zero and invalid B_VALUE do not fall back to other monetary fields", () => {
+    for (const B_VALUE of [undefined, null, "", 0, "invalid"]) {
+      const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", B_VALUE, KWERT_INR: 999, NETWR: 900 }], "Open_Sales_Orders").rows[0];
+      expect(row?.open_value).toBe(0);
+      expect(row?.kwert_inr).toBe(999);
+    }
+  });
+  test("B_VALUE numeric aliases preserve rupees without quantity scaling", () => {
+    for (const key of ["B_VALUE", "b_value"]) {
+      for (const [input, expected] of [["1,234.50", 1234.5], ["12.5-", -12.5]] as const) {
+        const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", [key]: input, KWMENG: 100 }], "Open_Sales_Orders").rows[0];
+        expect(row?.b_value).toBe(expected);
+      }
+    }
+  });
   test("LD_STATUS N remains exact text", () => {
     const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", LD_STATUS: "N", extra: "retained" }], "Open_Sales_Orders").rows[0];
     expect(row?.ld_status).toBe("N");

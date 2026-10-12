@@ -33,3 +33,5 @@
 - Retire absent SAP business mappings additively with deprecation comments; preserve internal sync fields and harmless older key aliases.
 
 - Keep chart-only group selection in a pure helper after full filtered aggregation; totals and PDF retain full groups to avoid truncating report data.
+
+- Switch monetary-source versions in report query keys when the source changes so cached pre-change values cannot survive navigation.

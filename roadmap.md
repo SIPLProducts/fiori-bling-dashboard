@@ -1,3 +1,4 @@
+- [x] Switch all Open Value displays to typed B_VALUE, backfill saved SAP rows, retain KWERT_INR, mirror migration and rebuild middleware; verified 40-row 2.286261413 Cr report/launchpad/Excel, fresh PDF, 24 passing tests and clean preview. Self-hosted Quality/Production deployment requires operator.
 - [x] Reverse LD colors, rank document descriptions by value, and pair default Top 10 zone/plant charts with explicit-filter expansion; 16 tests pass, signed-in 40-row charts verified at 951/1280/768/390px, Sales Zone selection/Reset verified, five-page PDF with red Y/green N checked, preview build clean.
 - [x] Match the TBN dashboard to the supplied compact CFO management layout using source-backed measures only
 - [x] Remove the TBN AI assistant and its dashboard action
