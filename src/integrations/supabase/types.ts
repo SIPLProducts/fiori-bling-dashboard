@@ -64,6 +64,7 @@ export type Database = {
           order_date: string | null
           order_type: string | null
           overall_status: string | null
+          p_value1: number
           plant: string | null
           plant_name: string | null
           preceding_document: string | null
@@ -129,6 +130,7 @@ export type Database = {
           order_date?: string | null
           order_type?: string | null
           overall_status?: string | null
+          p_value1?: number
           plant?: string | null
           plant_name?: string | null
           preceding_document?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           order_date?: string | null
           order_type?: string | null
           overall_status?: string | null
+          p_value1?: number
           plant?: string | null
           plant_name?: string | null
           preceding_document?: string | null

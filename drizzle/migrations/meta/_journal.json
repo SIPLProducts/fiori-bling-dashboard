@@ -43,6 +43,13 @@
       "when": 1791788709638,
       "tag": "0005_open_orders_b_value_source",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791790423401,
+      "tag": "0006_open_orders_p_value1_source",
+      "breakpoints": true
     }
   ]
 }
