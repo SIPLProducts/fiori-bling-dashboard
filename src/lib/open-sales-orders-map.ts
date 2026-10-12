@@ -21,6 +21,7 @@ export function mapOpenSalesOrderRow(raw: Raw, sourceEndpoint: string, syncedAt:
   const deliveredQuantity = pick(raw, ["RFMNG", "DELIVERED_QTY", "deliveredQuantity"]);
   const kwertInr = num(pick(raw, ["KWERT_INR", "kwert_inr"]));
   const bValue = num(pick(raw, ["B_VALUE", "b_value"]));
+  const pValue1 = num(pick(raw, ["P_VALUE1", "p_value1"]));
   const ldStatus = pick(raw, ["LD_STATUS", "LD_Status", "ld_status"]);
   return {
     record_key: rowHash, sync_scope_key: `endpoint:${sourceEndpoint}`, snapshot_id: "00000000-0000-4000-8000-000000000000", row_hash: rowHash, occurrence_no: 1, is_active_snapshot: false,
@@ -30,7 +31,7 @@ export function mapOpenSalesOrderRow(raw: Raw, sourceEndpoint: string, syncedAt:
     customer_sold_to: str(pick(raw, ["KUNNR_SP", "KUNNR"])), customer_sold_to_name: str(pick(raw, ["NAME1_SP", "NAME1"])), customer_bill_to: str(pick(raw, ["KUNNR_BP"])), customer_bill_to_name: str(pick(raw, ["NAME1_BP"])), customer_ship_to: str(pick(raw, ["KUNNR_SH"])), customer_ship_to_name: str(pick(raw, ["NAME1_SH"])),
     material: str(pick(raw, ["MATNR", "matnr"])), material_description: str(pick(raw, ["MAKTX", "maktx"])), material_type: str(pick(raw, ["MTART", "mtart"])), product_category: str(pick(raw, ["BEZEI1"])), model: str(pick(raw, ["MODEL", "model"])), product_range: str(pick(raw, ["RANGE", "range"])), product_type: str(pick(raw, ["TYPE", "type"])), region: str(pick(raw, ["BEZEI_SP", "REGION", "BEZEI"])), sales_zone: str(pick(raw, ["BEZEI", "SALES_ZONE", "ZONE"])), country: str(pick(raw, ["LANDX_SP", "LANDX_BP"])), sales_type: str(pick(raw, ["VTEXT_DC", "vtext_dc", "SALE"])), industry_description: str(pick(raw, ["VTEXT_DI"])), customer_group: str(pick(raw, ["KDGRP_DESP", "KDGRP"])), usage_description: str(pick(raw, ["ABRVW_DESP", "ABRVW"])),
     ah: num(pick(raw, ["AH", "ah"])), total_ah: num(pick(raw, ["TOT_AH", "tot_ah"])),
-    quantity, open_quantity: normalizedOpenQuantity, delivered_quantity: deliveredQuantity === "" ? Math.max(0, quantity - normalizedOpenQuantity) : num(deliveredQuantity), unit: str(pick(raw, ["VRKME", "MEINS"])), currency: str(pick(raw, ["WAERK"])), kwert_inr: kwertInr, b_value: bValue, ld_status: ldStatus === "" ? null : String(ldStatus), open_value: bValue, days_open: Math.round(num(pick(raw, ["DAYS"]))), delivery_status: str(pick(raw, ["ABSTA"])), overall_status: str(pick(raw, ["GBSTA"])), raw, source_endpoint: sourceEndpoint, synced_at: syncedAt,
+    quantity, open_quantity: normalizedOpenQuantity, delivered_quantity: deliveredQuantity === "" ? Math.max(0, quantity - normalizedOpenQuantity) : num(deliveredQuantity), unit: str(pick(raw, ["VRKME", "MEINS"])), currency: str(pick(raw, ["WAERK"])), kwert_inr: kwertInr, b_value: bValue, p_value1: pValue1, ld_status: ldStatus === "" ? null : String(ldStatus), open_value: pValue1, days_open: Math.round(num(pick(raw, ["DAYS"]))), delivery_status: str(pick(raw, ["ABSTA"])), overall_status: str(pick(raw, ["GBSTA"])), raw, source_endpoint: sourceEndpoint, synced_at: syncedAt,
   };
 }
 

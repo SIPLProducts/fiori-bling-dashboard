@@ -141,7 +141,7 @@ export function OpenSalesOrdersDashboard() {
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data = [], error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["open-sales-orders-live", "b-value-v1"],
+    queryKey: ["open-sales-orders-live", "p-value1-v1"],
     queryFn: getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
