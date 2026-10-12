@@ -3,9 +3,9 @@ import { summarizeLaunchOrders } from "../src/lib/open-orders-launch-summary";
 
 test("every supplied order line counts and shared descriptions combine across codes", () => {
   const summary = summarizeLaunchOrders([
-    { sales_type: "Domestic Sales", order_type: "ZDOR", kwert_inr: 100 },
-    { sales_type: "Domestic Sales", order_type: "ZSOR", kwert_inr: "250" },
-    { sales_type: "Export Sales", order_type: "ZEOR", kwert_inr: 150 },
+    { sales_type: "Domestic Sales", order_type: "ZDOR", b_value: 100 },
+    { sales_type: "Domestic Sales", order_type: "ZSOR", b_value: "250" },
+    { sales_type: "Export Sales", order_type: "ZEOR", b_value: 150 },
   ]);
   expect(summary.count).toBe(3);
   expect(summary.openValue).toBe(500);
@@ -17,7 +17,7 @@ test("every supplied order line counts and shared descriptions combine across co
 
 test("top three plus Others preserves every count and stored value", () => {
   const summary = summarizeLaunchOrders([500, 400, 300, 200, 100].map((value, i) => ({
-    sales_type: `Type ${i}`, order_type: "ZDOR", kwert_inr: value,
+    sales_type: `Type ${i}`, order_type: "ZDOR", b_value: value,
   })));
   expect(summary.breakdown.map((group) => group.name)).toEqual(["Type 0", "Type 1", "Type 2", "Others"]);
   expect(summary.breakdown[3]?.count).toBe(2);
@@ -28,8 +28,8 @@ test("top three plus Others preserves every count and stored value", () => {
 
 test("missing descriptions use document codes and zero totals have safe widths", () => {
   const summary = summarizeLaunchOrders([
-    { sales_type: "Unassigned", order_type: "ZDOR", kwert_inr: 0 },
-    { sales_type: " ", order_type: "ZSOR", kwert_inr: null },
+    { sales_type: "Unassigned", order_type: "ZDOR", b_value: 0 },
+    { sales_type: " ", order_type: "ZSOR", b_value: null },
   ]);
   expect(summary.breakdown).toEqual([
     { name: "ZDOR", count: 1, value: 0, share: 0 },
@@ -40,9 +40,9 @@ test("missing descriptions use document codes and zero totals have safe widths",
 
 test("all-date totals include older FY and nonpreset document types", () => {
   const rows = [
-    { order_date: "2024-04-01", sales_type: "Older", order_type: "ZNEW", kwert_inr: 10_000_000 },
-    { order_date: "2026-10-10", sales_type: "Domestic", order_type: "ZDOR", kwert_inr: 2_572_907.4 },
-    { order_date: null, sales_type: "Undated", order_type: "OTHER", kwert_inr: 0 },
+    { order_date: "2024-04-01", sales_type: "Older", order_type: "ZNEW", b_value: 10_000_000 },
+    { order_date: "2026-10-10", sales_type: "Domestic", order_type: "ZDOR", b_value: 2_572_907.4 },
+    { order_date: null, sales_type: "Undated", order_type: "OTHER", b_value: 0 },
   ];
   const summary = summarizeLaunchOrders(rows);
   expect(summary.count).toBe(3);
