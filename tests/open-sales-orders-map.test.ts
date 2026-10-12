@@ -58,10 +58,10 @@ describe("Open Sales Orders mapping", () => {
     expect(total / 10000000).toBe(1.117533);
   });
 
-  test("zero or missing KWERT_INR never falls back to NETWR or pending values", () => {
+  test("zero or missing KWERT_INR remains independent of P_VALUE1", () => {
     for (const KWERT_INR of [undefined, null, "", "0.00", "invalid"]) {
       const row = mapOpenSalesOrdersPayload([{ VBELN: "1", POSNR: "10", KWERT_INR, NETWR: 900, P_VALUE1: 500, P_VALUE: 600 }], "Open_Sales_Orders").rows[0];
-      expect(row?.open_value).toBe(0);
+      expect(row?.open_value).toBe(500);
       expect(row?.kwert_inr).toBe(0);
     }
   });

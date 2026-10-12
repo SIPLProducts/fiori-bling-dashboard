@@ -35,3 +35,4 @@
 - Keep chart-only group selection in a pure helper after full filtered aggregation; totals and PDF retain full groups to avoid truncating report data.
 
 - Switch monetary-source versions in report query keys when the source changes so cached pre-change values cannot survive navigation.
+- Backfill new typed SAP monetary columns from raw rows with the mapper's numeric normalization before switching reads; retain earlier columns independently to support additive deployment.
