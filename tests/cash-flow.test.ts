@@ -35,7 +35,7 @@ describe("Cash Flow sample calculations", () => {
   });
 });
 import { mapZcashRow as mapRow, cashTotals as totalsOf } from "../src/lib/cash-flow.ts";
-test("ZCASH_FLOW rows map and total using SAP NET", () => {
+it("ZCASH_FLOW rows map and total using SAP NET", () => {
   const a = mapRow({ id: "1", plant: "1000", profit_center: "COFF100001", profit_center_name: "CORPORATE PC", gl_code: "0026350500", gl_name: "ADV", profit_center_group: "ALLOCATION", classification: "X", nature: "INVESTMENTS", debit: "63651273.00", credit: 0, net: 63651273, collection_disbursement: "INVESTMENTS" });
   const b = mapRow({ ...{ id: "2", plant: "1100", profit_center: "P", profit_center_name: null, gl_code: "G", gl_name: null, profit_center_group: null, classification: null, nature: null, collection_disbursement: null }, debit: 10, credit: 30, net: -20 });
   const t = totalsOf([a, b]);
