@@ -7,6 +7,7 @@ The transaction table box is capped at about 110px tall on desktop (about 90px o
 - Remove the height cap and inner vertical scroll from the ledger table.
 - By default the table shows all 10 rows of the page plus the Total row. Choosing 50, 100 or 500 per page makes the ledger card taller to fit those rows, and the page scrolls normally.
 - Horizontal scroll for wide columns stays. Everything else (compact fonts, filters in one row, charts) stays the same.
+- Remove the bottom row "Data source: SAP ZCASH_FLOW · HBL MIS Portal".
 
 Because of this, the page will scroll down to reach the full table, so "fit on one screen" only applies to the cards above it.
 
