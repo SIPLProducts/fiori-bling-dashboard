@@ -19,6 +19,8 @@ import {
   salvageTruncatedArray,
   withEndpointDates,
   isOpenSalesOrdersEndpoint,
+  mapZcashFlowPayload,
+  isZcashFlowEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -176,6 +178,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isZcashFlowEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapZcashFlowPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("zcash_flow").upsert(rows.slice(i, i + BATCH), { onConflict: "profit_center,plant,gl_code" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "zcash_flow", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isOpenSalesOrdersEndpoint(endpoint)) {
       const mapped = mapOpenSalesOrdersPayload(payload, endpoint, requestSnapshot);
       const { received, rows, skipped, invalid, duplicates, syncScopeKey, snapshotId } = mapped;

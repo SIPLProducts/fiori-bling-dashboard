@@ -37,3 +37,4 @@
 - Switch monetary-source versions in report query keys when the source changes so cached pre-change values cannot survive navigation.
 - Backfill new typed SAP monetary columns from raw rows with the mapper's numeric normalization before switching reads; retain earlier columns independently to support additive deployment.
 - Keep Cash Flow sample transactions and pure aggregation in one browser-safe module so filters, charts, totals and full-ledger exports share the same data without claiming a live SAP connection.
+- Upsert ZCASH_FLOW rows on Profit Center + Plant + GL Code without snapshots, since SAP returns current balances per account.

@@ -880,6 +880,72 @@ export type Database = {
         }
         Relationships: []
       }
+      zcash_flow: {
+        Row: {
+          classification: string | null
+          collection_disbursement: string | null
+          created_at: string
+          credit: number
+          debit: number
+          gl_code: string
+          gl_name: string | null
+          group_name: string | null
+          id: string
+          nature: string | null
+          net: number
+          plant: string
+          profit_center: string
+          profit_center_group: string | null
+          profit_center_name: string | null
+          raw: Json
+          source_endpoint: string
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          classification?: string | null
+          collection_disbursement?: string | null
+          created_at?: string
+          credit?: number
+          debit?: number
+          gl_code?: string
+          gl_name?: string | null
+          group_name?: string | null
+          id?: string
+          nature?: string | null
+          net?: number
+          plant?: string
+          profit_center?: string
+          profit_center_group?: string | null
+          profit_center_name?: string | null
+          raw?: Json
+          source_endpoint?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          classification?: string | null
+          collection_disbursement?: string | null
+          created_at?: string
+          credit?: number
+          debit?: number
+          gl_code?: string
+          gl_name?: string | null
+          group_name?: string | null
+          id?: string
+          nature?: string | null
+          net?: number
+          plant?: string
+          profit_center?: string
+          profit_center_group?: string | null
+          profit_center_name?: string | null
+          raw?: Json
+          source_endpoint?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       zfisales_detail: {
         Row: {
           ah: number
