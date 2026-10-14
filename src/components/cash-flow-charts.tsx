@@ -25,7 +25,7 @@ export function CashTrendPanel({ rows, quarterly, onChange }: { rows: CashTransa
   const data = cashTrend(rows, quarterly); const split = Math.ceil(data.length / 2);
   return <section className="cash-panel cash-trend"><div className="cash-panel-heading"><h2>Credit vs Debit Trend</h2><label className="flex items-center gap-1.5 text-[10px]">Monthly / Quarterly<Switch aria-label="Quarterly trend" checked={quarterly} onCheckedChange={onChange} className="h-4 w-7 [&>span]:size-3 [&>span]:data-[state=checked]:translate-x-3" /></label></div>
     <div className="cash-trend-tracks"><div className="cash-canvas"><TrendTrack data={data.slice(0, split)} /></div><div className="cash-canvas"><TrendTrack data={data.slice(split)} /></div></div>
-    <div className="cash-legend"><span><i className="cash-dot-teal" />Credits</span><span><i className="cash-dot-orange" />Debits</span><span className="text-muted-foreground">Amount (₹ Cr)</span></div>
+    <div className="cash-legend"><span><i style={{ background: legendGradient("var(--chart-2)") }} />Credits</span><span><i style={{ background: legendGradient("var(--cash-orange)") }} />Debits</span><span className="text-muted-foreground">Amount (₹ Cr)</span></div>
   </section>;
 }
 const top = (items: { name: string; value: number }[], limit: number) => {
