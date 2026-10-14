@@ -581,7 +581,7 @@
 .cash-filters button { height: 32px; font-size: 12px; padding: 0 9px; }
 .cash-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
 .cash-kpi, .cash-panel { border-radius: 8px; background: var(--card); box-shadow: var(--shadow-tile); border: 1px solid var(--border); min-width: 0; }
-.cash-kpi { min-height: 104px; padding: 12px 14px; }
+.cash-kpi { min-height: 0; padding: 10px 14px; }
 .cash-kpi-net { border-color: var(--primary); background: color-mix(in oklab,var(--primary) 5%,var(--card)); position: relative; }
 .cash-kpi h2 { font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; min-height: 23px; }
 .cash-kpi-line { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
