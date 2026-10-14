@@ -21,6 +21,6 @@ function CashFlowPage() {
   const { data, isLoading } = useLaunchpad();
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "fi.cash-flow");
   return <div className="cash-screen min-h-screen"><ShellBar title="Cash Flow" displayName={data?.profile?.display_name} screens={data?.screens} />
-    {isLoading ? <p className="p-8 text-muted-foreground">Loading Cash Flow…</p> : !allowed ? <AccessDenied area="Cash Flow" /> : <CashFlowDashboard />}
+    {isLoading ? <p className="p-8 text-muted-foreground">Loading Cash Flow…</p> : !allowed ? <AccessDenied area="Cash Flow" /> : <CashFlowDashboard canSync={!!data?.isSuperAdmin} />}
   </div>;
 }
