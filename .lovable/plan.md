@@ -1,7 +1,7 @@
-# Cash Flow Screen: Button Tooltips, Colored Table Rows, Radiant Charts
+# Cash Flow Screen: Button Tooltips, Colored Table Rows, Radiant Charts, Page-Size Selector
 
 ## Goal
-Make the Cash Flow screen match the polish of the other report screens: hover tooltips on every button, colored/striped ledger rows, and radiant gradient chart fills.
+Make the Cash Flow screen match the polish of the other report screens: hover tooltips on every button, colored/striped ledger rows, radiant gradient chart fills, and a records-per-page selector.
 
 ## 1. Button tooltips (hover descriptions)
 Add a native `title` attribute (same approach used on the Open Orders screen) to every button in `src/components/cash-flow-dashboard.tsx`:
