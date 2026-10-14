@@ -7,7 +7,8 @@ The portal reloads data whenever the login service reports "signed in". That sig
 Fix:
 - Reload data only when a **different user** signs in or the user signs out. Coming back to the tab or a background session renewal does nothing.
 - The launchpad stops reloading when the tab gets focus.
-- Data changes only after you click Refresh (or Sync, for admins). Sign out and sign in still load fresh data.
+- Data changes only after you click Refresh (or Sync, for admins). Nothing refreshes on its own: no timers, no reload on tab focus, no background renewal. Sign out and sign in still load fresh data.
+- This rule is saved permanently, so later changes keep data refreshing on Refresh click only.
 - TBN keeps its existing live updates. That screen was built to update live, so it stays as it is.
 
 ## 2. Cash Flow card on the launchpad
