@@ -1,0 +1,88 @@
+export type CashTransaction = {
+  id: string; date: string; plant: string; profitCentre: string; glCode: string;
+  pcGroup: string; classification: string; nature: string; year: string; quarter: string;
+  credit: number; debit: number;
+};
+export const CASH_FILTERS = [
+  ["plant", "Plant"], ["profitCentre", "Profit Centre (PC)"], ["glCode", "GL Code"],
+  ["pcGroup", "PC Group"], ["classification", "Classification"], ["nature", "Nature"],
+  ["year", "Year"], ["quarter", "Quarter"],
+] as const;
+export type CashFilterKey = typeof CASH_FILTERS[number][0];
+export type CashFilters = Partial<Record<CashFilterKey, string>>;
+export const CRORE = 10_000_000;
+const centres = ["PC-East", "PC-South", "PC-West", "PC-Central"];
+const groups = ["Corporate", "Retail", "Logistics"];
+const classifications = ["Operating", "Investing", "Financing"];
+
+function createSamples(): CashTransaction[] {
+  const rows: CashTransaction[] = [];
+  for (let month = 0; month < 12; month++) {
+    for (let gl = 0; gl < 185; gl++) {
+      const type = gl % 3;
+      rows.push({
+        id: `${month}-${gl}`, date: `2026-${String(month + 1).padStart(2, "0")}-${String(gl % 27 + 1).padStart(2, "0")}`,
+        plant: `PL-${String(gl % 42 + 1).padStart(2, "0")}`, profitCentre: centres[gl % 4] ?? "PC-East",
+        glCode: `GL-${41002 + gl}`, pcGroup: groups[type] ?? "Corporate",
+        classification: classifications[type] ?? "Operating", nature: ["Revenue", "Machinery", "Borrowing"][type] ?? "Revenue",
+        year: "2026", quarter: `Q${Math.floor(month / 3) + 1}`,
+        credit: gl % 5 === 0 ? 0 : (gl % 13 + 5) * (month % 5 + 7),
+        debit: gl % 7 === 0 ? 0 : (gl % 11 + 4) * ((month + 2) % 5 + 5),
+      });
+    }
+  }
+  const credits = rows.reduce((sum, row) => sum + row.credit, 0);
+  const debits = rows.reduce((sum, row) => sum + row.debit, 0);
+  return rows.map(row => ({ ...row, credit: row.credit / credits * 4892.4 * CRORE, debit: row.debit / debits * 3651.55 * CRORE }));
+}
+export const CASH_SAMPLE_ROWS = createSamples();
+export function filterCashRows(rows: CashTransaction[], filters: CashFilters) {
+  return rows.filter(row => CASH_FILTERS.every(([key]) => !filters[key] || row[key] === filters[key]));
+}
+export function searchCashLedger(rows: CashTransaction[], search: string) {
+  const term = search.trim().toLowerCase();
+  return rows.filter(row => !term || Object.values(row).some(value => String(value).toLowerCase().includes(term)));
+}
+export function cashTotals(rows: CashTransaction[]) {
+  const credit = rows.reduce((sum, row) => sum + row.credit, 0);
+  const debit = rows.reduce((sum, row) => sum + row.debit, 0);
+  return { credit, debit, net: credit - debit, plants: new Set(rows.map(row => row.plant)).size, gls: new Set(rows.map(row => row.glCode)).size };
+}
+export function cashTrend(rows: CashTransaction[], quarterly: boolean) {
+  const map = new Map<string, { name: string; credit: number; debit: number; net: number }>();
+  for (const row of rows) {
+    const key = quarterly ? `${row.year}-${row.quarter}` : row.date.slice(0, 7);
+    const name = quarterly ? row.quarter : new Date(`${key}-01T00:00:00Z`).toLocaleString("en", { month: "short", timeZone: "UTC" });
+    const entry = map.get(key) ?? { name, credit: 0, debit: 0, net: 0 };
+    entry.credit += row.credit / CRORE; entry.debit += row.debit / CRORE;
+    entry.net = entry.credit - entry.debit; map.set(key, entry);
+  }
+  return [...map].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
+}
+export function cashPlantGroups(rows: CashTransaction[]) {
+  const map = new Map<string, Record<string, number | string>>();
+  rows.forEach(row => {
+    const entry = map.get(row.plant) ?? { name: row.plant };
+    entry[row.profitCentre] = Number(entry[row.profitCentre] ?? 0) + row.credit / CRORE;
+    map.set(row.plant, entry);
+  });
+  return [...map.values()];
+}
+export function cashComposition(rows: CashTransaction[], key: "classification" | "pcGroup") {
+  const map = new Map<string, number>();
+  rows.forEach(row => map.set(row[key], (map.get(row[key]) ?? 0) + (row.credit + row.debit) / CRORE));
+  return [...map].map(([name, value]) => ({ name, value }));
+}
+export async function downloadCashLedger(rows: CashTransaction[]) {
+  const { Workbook } = await import("exceljs");
+  const workbook = new Workbook();
+  const sheet = workbook.addWorksheet("Cash Flow — Sample Data");
+  sheet.addRow(["Plant", "Profit Centre", "PC Group", "GL Code", "Classification", "Nature", "Credit (₹)", "Debit (₹)", "Net Balance", "Date"]);
+  rows.forEach(row => sheet.addRow([row.plant, row.profitCentre, row.pcGroup, row.glCode, row.classification, row.nature, row.credit, row.debit, row.credit - row.debit, row.date]));
+  sheet.columns.forEach(column => { column.width = 22; });
+  [7, 8, 9].forEach(index => { sheet.getColumn(index).numFmt = '#,##0.00;[Red]-#,##0.00'; });
+  const buffer = await workbook.xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const link = document.createElement("a"); link.href = url; link.download = "Cash-Flow-Sample-Report.xlsx"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
