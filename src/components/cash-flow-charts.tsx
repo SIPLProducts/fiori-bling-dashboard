@@ -2,15 +2,23 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Res
 import { CRORE, cashTrend, type CashTransaction } from "@/lib/cash-flow";
 import { Switch } from "@/components/ui/switch";
 const colors = ["var(--primary)", "var(--chart-2)", "var(--cash-orange)", "var(--cash-sage)", "var(--chart-4)", "var(--chart-5)"];
+const gradientStops = (color: string) => [
+  { offset: "0%", stopColor: `color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))` },
+  { offset: "45%", stopColor: color },
+  { offset: "100%", stopColor: `color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))` },
+];
+const gradientDef = (id: string, color: string) => <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">{gradientStops(color).map(stop => <stop key={stop.offset} {...stop} />)}</linearGradient>;
+const legendGradient = (color: string) => `linear-gradient(180deg, ${gradientStops(color)[0].stopColor}, ${color} 55%, ${gradientStops(color)[2].stopColor})`;
 export function CashSpark({ rows, field = "net", positive = false }: { rows: CashTransaction[]; field?: "net" | "credit"; positive?: boolean }) {
   return <div className="cash-spark"><ResponsiveContainer width="100%" height="100%"><AreaChart data={cashTrend(rows, false)}><Area type="monotone" dataKey={field} stroke={positive ? "var(--success)" : "var(--primary)"} fill={positive ? "var(--success)" : "var(--primary)"} fillOpacity={0.12} strokeWidth={2} isAnimationActive={false} /></AreaChart></ResponsiveContainer></div>;
 }
 function TrendTrack({ data }: { data: ReturnType<typeof cashTrend> }) {
   return <ResponsiveContainer width="100%" height="100%"><BarChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 0 }} barGap={3}>
+    <defs>{gradientDef("cashTrendGradient-0", "var(--chart-2)")}{gradientDef("cashTrendGradient-1", "var(--cash-orange)")}</defs>
     <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" tickLine={false} axisLine={{ stroke: "var(--border)" }} fontSize={10} />
     <YAxis tickLine={false} axisLine={false} width={43} fontSize={10} tickFormatter={value => Number(value).toFixed(0)} />
     <Tooltip formatter={value => [`₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`]} />
-    <Bar name="Credits" dataKey="credit" fill="var(--chart-2)" maxBarSize={14} isAnimationActive={false} /><Bar name="Debits" dataKey="debit" fill="var(--cash-orange)" maxBarSize={14} isAnimationActive={false} />
+    <Bar name="Credits" dataKey="credit" fill="url(#cashTrendGradient-0)" maxBarSize={14} isAnimationActive={false} /><Bar name="Debits" dataKey="debit" fill="url(#cashTrendGradient-1)" maxBarSize={14} isAnimationActive={false} />
   </BarChart></ResponsiveContainer>;
 }
 export function CashTrendPanel({ rows, quarterly, onChange }: { rows: CashTransaction[]; quarterly: boolean; onChange: (value: boolean) => void }) {
