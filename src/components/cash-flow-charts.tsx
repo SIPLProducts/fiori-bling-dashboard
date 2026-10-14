@@ -1,7 +1,7 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { cashComposition, cashPlantGroups, cashTrend, type CashTransaction } from "@/lib/cash-flow";
+import { CRORE, cashTrend, type CashTransaction } from "@/lib/cash-flow";
 import { Switch } from "@/components/ui/switch";
-const colors = ["var(--primary)", "var(--chart-2)", "var(--cash-orange)", "var(--cash-sage)"];
+const colors = ["var(--primary)", "var(--chart-2)", "var(--cash-orange)", "var(--cash-sage)", "var(--chart-4)", "var(--chart-5)"];
 export function CashSpark({ rows, field = "net", positive = false }: { rows: CashTransaction[]; field?: "net" | "credit"; positive?: boolean }) {
   return <div className="cash-spark"><ResponsiveContainer width="100%" height="100%"><AreaChart data={cashTrend(rows, false)}><Area type="monotone" dataKey={field} stroke={positive ? "var(--success)" : "var(--primary)"} fill={positive ? "var(--success)" : "var(--primary)"} fillOpacity={0.12} strokeWidth={2} isAnimationActive={false} /></AreaChart></ResponsiveContainer></div>;
 }
