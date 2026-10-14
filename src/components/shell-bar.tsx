@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, Home, LogOut, Moon, Search, Settings, Sun, User } from "lucide-react";
+import { Bell, Home, LogOut, Maximize, Minimize, Moon, Settings, Sun, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { adminNavForScreens } from "@/lib/nav";
@@ -30,6 +31,19 @@ export function ShellBar({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, toggleTheme } = useTheme();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fsSupported, setFsSupported] = useState(false);
+  useEffect(() => {
+    setFsSupported(Boolean(document.fullscreenEnabled));
+    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    sync();
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  function toggleFullscreen() {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void document.documentElement.requestFullscreen().catch(() => {});
+  }
 
   const adminItems = adminNavForScreens(screens);
 
@@ -68,6 +82,19 @@ export function ShellBar({
         >
           {theme === "light" ? <Moon /> : <Sun />}
         </Button>
+        {fsSupported ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+            title={isFullscreen ? "Exit full screen" : "Full screen"}
+            onClick={toggleFullscreen}
+            className="shrink-0 rounded-full text-shell-foreground hover:bg-shell-foreground/10 hover:text-shell-foreground"
+          >
+            {isFullscreen ? <Minimize /> : <Maximize />}
+          </Button>
+        ) : null}
         <Link
           to="/launchpad"
           aria-label="Home"
@@ -76,13 +103,6 @@ export function ShellBar({
         >
           <Home className="size-[18px]" />
         </Link>
-        <button
-          type="button"
-          aria-label="Search"
-          className={`${launchpad ? "hidden" : ""} rounded-full p-2 transition-colors hover:bg-shell-foreground/10`}
-        >
-          <Search className="size-[18px]" />
-        </button>
         <button
           type="button"
           aria-label="Notifications"
@@ -97,13 +117,6 @@ export function ShellBar({
             <span className="hidden sm:inline">Settings</span>
           </button>
         ) : null}
-        <button
-          type="button"
-          aria-label="Help"
-          className="hidden rounded-full p-2 transition-colors hover:bg-shell-foreground/10 sm:inline-flex"
-        >
-          <HelpCircle className="size-[18px]" />
-        </button>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account"
