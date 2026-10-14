@@ -5,6 +5,7 @@
  */
 import { mapPayload } from "./zfisales-sync.server";
 import { mapOpenSalesOrdersPayload } from "./open-sales-orders-map";
+import { isZcashFlowEndpoint, mapZcashFlowPayload } from "./zcash-flow-map";
 import {
   extractEmbeddedBody,
   keyValueObject,
@@ -176,6 +177,39 @@ export async function storeOpenSalesOrdersPayload(
   } catch (err) {
     await db.from("open_sales_orders").delete().eq("snapshot_id", snapshotId).eq("is_active_snapshot", false);
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "Open Sales Orders snapshot write failed" });
+    throw err;
+  }
+}
+
+/** Inserts or updates ZCASHFLOWN rows on Profit Center + Plant + GL Code. */
+export async function storeZcashFlowPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
+): Promise<SyncCounts> {
+  const db = await admin();
+  const { received, rows, invalid, duplicates } = mapZcashFlowPayload(payload, endpointName);
+  const { data: run } = await db.from("sap_sync_runs").insert({
+    endpoint: endpointName, status: "running", started_at: new Date().toISOString(), records_received: received,
+    records_invalid: invalid, response_bytes: metrics.responseBytes ?? 0, duration_ms: metrics.durationMs ?? 0,
+    ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+  }).select("id").single();
+  const finish = async (patch: Record<string, unknown>) => {
+    if (run?.id) await db.from("sap_sync_runs").update({ finished_at: new Date().toISOString(), ...patch }).eq("id", run.id);
+    await pruneRuns(endpointName);
+  };
+  const base = { received, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "zcash_flow", snapshotId: "", postingFrom: null, postingTo: null };
+  try {
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const { error } = await db.from("zcash_flow").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "profit_center,plant,gl_code" });
+      if (error) throw error;
+    }
+    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated` : "SAP returned no rows — existing data left unchanged" });
+    return { ...base, stored: rows.length };
+  } catch (err) {
+    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Cash flow write failed" });
     throw err;
   }
 }
@@ -378,7 +412,7 @@ export async function pullSapEndpoint(
 
 
 
-  const counts = await (isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
+  const counts = await (isZcashFlowEndpoint(endpointName) ? storeZcashFlowPayload : isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
     durationMs,
     responseBytes: bytes,
     httpStatus: response.status,

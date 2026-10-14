@@ -382,9 +382,93 @@ function mapOpenSalesOrdersPayload(payload, sourceEndpoint, requestSnapshot) {
   return { received: raws.length, rows, skipped: 0, invalid: 0, duplicates: 0, syncScopeKey, snapshotId };
 }
 
+// ../src/lib/zcash-flow-map.ts
+function isZcashFlowEndpoint(endpointName) {
+  const n = endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n === "zcashflow" || n === "zcashflown";
+}
+function pick2(raw, keys) {
+  for (const k of keys) if (raw[k] !== void 0 && raw[k] !== null) return raw[k];
+  const lower = new Map(Object.keys(raw).map((k) => [k.toLowerCase(), k]));
+  for (const k of keys) {
+    const real = lower.get(k.toLowerCase());
+    if (real && raw[real] !== void 0 && raw[real] !== null) return raw[real];
+  }
+  return void 0;
+}
+function text(v) {
+  if (v === void 0 || v === null) return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function cashNum(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (v === void 0 || v === null) return 0;
+  let s = String(v).trim().replace(/,/g, "");
+  if (!s) return 0;
+  if (s.endsWith("-")) s = "-" + s.slice(0, -1);
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function plantOf(raw) {
+  const p = pick2(raw, ["PLANT"]);
+  if (p && typeof p === "object" && !Array.isArray(p)) {
+    return text(pick2(p, ["WERKS"])) ?? "";
+  }
+  return text(p) ?? text(pick2(raw, ["WERKS"])) ?? "";
+}
+function extractCashRows(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    if (obj["ERROR_CODE"] !== void 0 || obj["MESSAGE"] !== void 0 && !Array.isArray(obj["data"])) {
+      return [];
+    }
+    for (const key of ["data", "DATA", "results", "items", "value"]) {
+      if (Array.isArray(obj[key])) return extractCashRows(obj[key]);
+    }
+  }
+  return [];
+}
+function mapZcashFlowPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractCashRows(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const profit_center = text(pick2(raw, ["PROFIT_CENTER"])) ?? "";
+    const gl_code = text(pick2(raw, ["GL_CODE"])) ?? "";
+    const plant = plantOf(raw);
+    if (!profit_center && !gl_code) {
+      invalid++;
+      continue;
+    }
+    byKey.set(`${profit_center}|${plant}|${gl_code}`, {
+      profit_center,
+      plant,
+      gl_code,
+      profit_center_name: text(pick2(raw, ["PROFIT_CENTER_NAME"])),
+      group_name: text(pick2(raw, ["GROUP_NAME"])),
+      gl_name: text(pick2(raw, ["GL_NAME"])),
+      classification: text(pick2(raw, ["CLASSIFICATION"])),
+      nature: text(pick2(raw, ["NATURE"])),
+      profit_center_group: text(pick2(raw, ["PROFIT_CENTER_GROUP"])),
+      debit: cashNum(pick2(raw, ["DEBIT"])),
+      credit: cashNum(pick2(raw, ["CREDIT"])),
+      net: cashNum(pick2(raw, ["NET"])),
+      collection_disbursement: text(pick2(raw, ["COLLECTION_DISBURSEMENT"])),
+      raw,
+      source_endpoint: endpointName,
+      synced_at: syncedAt
+    });
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text) {
-  const trimmed = text.trimStart();
+function salvageTruncatedArray(text2) {
+  const trimmed = text2.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -419,11 +503,11 @@ function salvageTruncatedArray(text) {
     return null;
   }
 }
-function extractEmbeddedBody(text) {
+function extractEmbeddedBody(text2) {
   const marker = '"body":"';
-  const start = text.indexOf(marker);
+  const start = text2.indexOf(marker);
   if (start < 0) return null;
-  const raw = text.slice(start + marker.length);
+  const raw = text2.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -515,11 +599,13 @@ export {
   extractRows,
   formatBytes,
   isOpenSalesOrdersEndpoint,
+  isZcashFlowEndpoint,
   keyValueObject,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,
   mapPayload,
   mapRow,
+  mapZcashFlowPayload,
   postingDateRange,
   salvageTruncatedArray,
   sha256,
