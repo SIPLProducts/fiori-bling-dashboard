@@ -28,7 +28,7 @@ export const CASH_FILTERS = [
   ["year", "Year"], ["quarter", "Quarter"],
 ] as const;
 export type CashFilterKey = typeof CASH_FILTERS[number][0];
-export type CashFilters = Partial<Record<CashFilterKey, string>>;
+export type CashFilters = Partial<Record<CashFilterKey, string[] | null>>;
 export const CRORE = 10_000_000;
 const centres = ["PC-East", "PC-South", "PC-West", "PC-Central"];
 const groups = ["Corporate", "Retail", "Logistics"];
@@ -56,7 +56,12 @@ function createSamples(): CashTransaction[] {
 }
 export const CASH_SAMPLE_ROWS = createSamples();
 export function filterCashRows(rows: CashTransaction[], filters: CashFilters) {
-  return rows.filter(row => CASH_FILTERS.every(([key]) => !filters[key] || row[key] === filters[key]));
+  return rows.filter(row => CASH_FILTERS.every(([key]) => {
+    const selected = filters[key];
+    if (!selected) return true; // null/undefined = unrestricted
+    if (!selected.length) return false; // empty array = none selected
+    return selected.includes(row[key]);
+  }));
 }
 export function searchCashLedger(rows: CashTransaction[], search: string) {
   const term = search.trim().toLowerCase();
