@@ -7,7 +7,7 @@ import { lastSyncedLabel } from "@/lib/report-sync-time";
 
 const fmt = (value: number) => `₹${(value / CRORE).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
 const LABELS = { credit: "Credit", debit: "Debit", net: "Net" } as const;
-const TONES = { credit: "oklch(0.59 0.07 157)", debit: "oklch(0.68 0.18 38)", net: "var(--kpi-1)" } as const;
+const TONES = { credit: "var(--cash-sage)", debit: "var(--cash-orange)", net: "var(--kpi-1)" } as const;
 
 /** Shares the Cash Flow screen's cached dataset, so it changes only after Refresh/Sync there. */
 export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) {
@@ -18,7 +18,7 @@ export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) 
   const netTone = s.net < 0 ? "var(--destructive)" : TONES.net;
 
   return (
-    <section aria-label="Cash Flow summary" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
+    <section aria-label="Cash Flow summary" className="cash-launch flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-2) 28%, var(--color-border))",
       background: "linear-gradient(160deg, color-mix(in oklab, var(--kpi-2) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)",
     }}>
