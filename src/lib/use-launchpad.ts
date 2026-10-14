@@ -8,5 +8,7 @@ export function useLaunchpad() {
     queryKey: ["launchpad"],
     queryFn: () => fetchLaunchpad(),
     staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

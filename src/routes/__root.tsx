@@ -143,14 +143,26 @@ function RootComponent() {
     const boot = document.getElementById("app-boot");
     if (boot) boot.style.display = "none";
 
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") {
-        queryClient.invalidateQueries({
-          predicate: (query) => !isStableSalesQuery(query.queryKey),
-        });
+    // Reload only when the signed-in user actually changes. Supabase re-emits
+    // SIGNED_IN on tab focus/session recovery; those must not refresh reports.
+    let lastUserId: string | null | undefined;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const userId = session?.user?.id ?? null;
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") { lastUserId = userId; return; }
+      if (event === "SIGNED_OUT") {
+        lastUserId = null;
+        router.invalidate();
+        queryClient.clear();
+        return;
       }
+      if (event !== "SIGNED_IN" && event !== "USER_UPDATED") return;
+      if (userId === lastUserId) return;
+      const switchedUser = lastUserId != null;
+      lastUserId = userId;
+      router.invalidate();
+      queryClient.invalidateQueries({
+        predicate: (query) => switchedUser || !isStableSalesQuery(query.queryKey),
+      });
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);

@@ -570,6 +570,8 @@
 }
 
 /* Cash Flow reference palette stays local and inherits the portal theme. */
+.cash-launch { --cash-orange: oklch(0.68 0.18 38); --cash-sage: oklch(0.59 0.07 157); }
+.dark .cash-launch { --cash-orange: oklch(0.75 0.15 38); --cash-sage: oklch(0.72 0.08 157); }
 .cash-screen { --cash-orange: oklch(0.68 0.18 38); --cash-sage: oklch(0.59 0.07 157); --cash-canvas: oklch(0.935 0.024 250); background: var(--cash-canvas); }
 .dark .cash-screen { --cash-canvas: var(--background); --cash-orange: oklch(0.75 0.15 38); --cash-sage: oklch(0.72 0.08 157); }
 .cash-dashboard { max-width: 1600px; margin: auto; padding: 18px 28px 12px; }

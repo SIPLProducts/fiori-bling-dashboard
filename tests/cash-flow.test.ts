@@ -52,3 +52,13 @@ it("ledger totals sum every row, not just one page", () => {
   const rows = Array.from({ length: 10 }, (_, i) => ({ ...base, id: String(i), credit: 100, debit: 40, net: 60 }));
   expect(ledgerTotals(rows)).toEqual({ credit: 1000, debit: 400, net: 600 });
 });
+describe("Cash Flow launchpad summary", () => {
+  it("sums signed credit, debit and net with bar shares relative to the largest", async () => {
+    const { summarizeCashLaunch } = await import("../src/lib/cash-flow");
+    const base = { id: "", date: "", plant: "1000", profitCentre: "", glCode: "", pcGroup: "", classification: "", nature: "", year: "", quarter: "" };
+    const s = summarizeCashLaunch([{ ...base, glCode: "A", credit: -300, debit: 100, net: -400 }, { ...base, plant: "1100", glCode: "B", credit: -100, debit: 300, net: -400 }]);
+    expect(s.credit).toBe(-400); expect(s.debit).toBe(400); expect(s.net).toBe(-800);
+    expect(s.records).toBe(2); expect(s.plants).toBe(2);
+    expect(s.bars.map(b => b.share)).toEqual([50, 50, 100]);
+  });
+});

@@ -109,3 +109,10 @@ export async function downloadCashLedger(rows: CashTransaction[]) {
 export function cashLedgerTotals(rows: CashTransaction[]) {
   return rows.reduce((t, r) => ({ credit: t.credit + r.credit, debit: t.debit + r.debit, net: t.net + rowNet(r) }), { credit: 0, debit: 0, net: 0 });
 }
+/** Launchpad summary: signed Credit/Debit/Net totals with bar shares relative to the largest magnitude. */
+export function summarizeCashLaunch(rows: CashTransaction[]) {
+  const t = cashTotals(rows);
+  const max = Math.max(Math.abs(t.credit), Math.abs(t.debit), Math.abs(t.net)) || 1;
+  const bars = (["credit", "debit", "net"] as const).map(key => ({ key, value: t[key], share: Math.abs(t[key]) / max * 100 }));
+  return { ...t, records: rows.length, bars };
+}
