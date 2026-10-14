@@ -2,7 +2,26 @@ export type CashTransaction = {
   id: string; date: string; plant: string; profitCentre: string; glCode: string;
   pcGroup: string; classification: string; nature: string; year: string; quarter: string;
   credit: number; debit: number;
+  profitCentreName?: string; glName?: string; net?: number; collectionDisbursement?: string;
 };
+export type ZcashFlowDbRow = {
+  id: string; plant: string | null; profit_center: string | null; profit_center_name: string | null;
+  gl_code: string | null; gl_name: string | null; profit_center_group: string | null;
+  classification: string | null; nature: string | null; debit: number | string | null;
+  credit: number | string | null; net: number | string | null; collection_disbursement: string | null;
+};
+const n = (v: unknown) => { const x = Number(v ?? 0); return Number.isFinite(x) ? x : 0; };
+/** Converts a stored ZCASH_FLOW row; SAP sends no date, so year/quarter stay empty. */
+export function mapZcashRow(r: ZcashFlowDbRow): CashTransaction {
+  return {
+    id: r.id, date: "", year: "", quarter: "",
+    plant: r.plant ?? "", profitCentre: r.profit_center ?? "", profitCentreName: r.profit_center_name ?? "",
+    glCode: r.gl_code ?? "", glName: r.gl_name ?? "", pcGroup: r.profit_center_group ?? "",
+    classification: r.classification ?? "", nature: r.nature ?? "",
+    credit: n(r.credit), debit: n(r.debit), net: n(r.net), collectionDisbursement: r.collection_disbursement ?? "",
+  };
+}
+export const rowNet = (r: CashTransaction) => r.net ?? r.credit - r.debit;
 export const CASH_FILTERS = [
   ["plant", "Plant"], ["profitCentre", "Profit Centre (PC)"], ["glCode", "GL Code"],
   ["pcGroup", "PC Group"], ["classification", "Classification"], ["nature", "Nature"],
@@ -46,11 +65,12 @@ export function searchCashLedger(rows: CashTransaction[], search: string) {
 export function cashTotals(rows: CashTransaction[]) {
   const credit = rows.reduce((sum, row) => sum + row.credit, 0);
   const debit = rows.reduce((sum, row) => sum + row.debit, 0);
-  return { credit, debit, net: credit - debit, plants: new Set(rows.map(row => row.plant)).size, gls: new Set(rows.map(row => row.glCode)).size };
+  return { credit, debit, net: rows.reduce((sum, row) => sum + rowNet(row), 0), plants: new Set(rows.map(row => row.plant)).size, gls: new Set(rows.map(row => row.glCode)).size };
 }
 export function cashTrend(rows: CashTransaction[], quarterly: boolean) {
   const map = new Map<string, { name: string; credit: number; debit: number; net: number }>();
   for (const row of rows) {
+    if (!row.date) continue;
     const key = quarterly ? `${row.year}-${row.quarter}` : row.date.slice(0, 7);
     const name = quarterly ? row.quarter : new Date(`${key}-01T00:00:00Z`).toLocaleString("en", { month: "short", timeZone: "UTC" });
     const entry = map.get(key) ?? { name, credit: 0, debit: 0, net: 0 };
@@ -76,13 +96,13 @@ export function cashComposition(rows: CashTransaction[], key: "classification" |
 export async function downloadCashLedger(rows: CashTransaction[]) {
   const { Workbook } = await import("exceljs");
   const workbook = new Workbook();
-  const sheet = workbook.addWorksheet("Cash Flow — Sample Data");
-  sheet.addRow(["Plant", "Profit Centre", "PC Group", "GL Code", "Classification", "Nature", "Credit (₹)", "Debit (₹)", "Net Balance", "Date"]);
-  rows.forEach(row => sheet.addRow([row.plant, row.profitCentre, row.pcGroup, row.glCode, row.classification, row.nature, row.credit, row.debit, row.credit - row.debit, row.date]));
+  const sheet = workbook.addWorksheet("Cash Flow");
+  sheet.addRow(["Plant", "Profit Centre", "Profit Centre Name", "PC Group", "GL Code", "GL Name", "Classification", "Nature", "Collection/Disbursement", "Credit (₹)", "Debit (₹)", "Net Balance"]);
+  rows.forEach(row => sheet.addRow([row.plant, row.profitCentre, row.profitCentreName ?? "", row.pcGroup, row.glCode, row.glName ?? "", row.classification, row.nature, row.collectionDisbursement ?? "", row.credit, row.debit, rowNet(row)]));
   sheet.columns.forEach(column => { column.width = 22; });
-  [7, 8, 9].forEach(index => { sheet.getColumn(index).numFmt = '#,##0.00;[Red]-#,##0.00'; });
+  [10, 11, 12].forEach(index => { sheet.getColumn(index).numFmt = '#,##0.00;[Red]-#,##0.00'; });
   const buffer = await workbook.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-  const link = document.createElement("a"); link.href = url; link.download = "Cash-Flow-Sample-Report.xlsx"; link.click();
+  const link = document.createElement("a"); link.href = url; link.download = "Cash-Flow-Report.xlsx"; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
