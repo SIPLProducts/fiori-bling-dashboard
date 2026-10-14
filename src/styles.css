@@ -581,7 +581,7 @@
 .cash-sample { background: var(--accent); color: var(--accent-foreground); border-radius: 4px; padding: 5px 12px; font-size: 12px; white-space: nowrap; }
 .cash-filter-card { margin-bottom: 14px; }
 @media (min-width: 768px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .cash-filters button { font-size: 12px; }
 .cash-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
 .cash-kpi, .cash-panel { border-radius: 8px; background: var(--card); box-shadow: var(--shadow-tile); border: 1px solid var(--border); min-width: 0; }
@@ -671,3 +671,5 @@
 @media (min-width: 900px) { .cash-table-scroll { max-height: max(110px, calc(100vh - 620px)); } }
 @media (min-width: 900px) { .cash-chart-row { grid-template-columns: 1.4fr 1fr 1fr; } .cash-trend { grid-column: auto; } .cash-kpi { padding: 5px 10px; } .cash-kpi strong, .cash-kpi:last-child strong { font-size: 17px; } .cash-dashboard { padding: 6px 14px 4px; } }
 @media (min-width: 900px) and (max-height: 600px) { .cash-header p { display: none; } .cash-chart-row > .cash-panel { max-height: 170px; } .cash-canvas { height: 110px; } .cash-nature-body { height: 140px; } .cash-donut { height: 80px; } .cash-footer { display: none; } .cash-table-scroll { max-height: max(90px, calc(100vh - 470px)); } }
+.cash-filters label > span:first-child { height: 16px; }
+.cash-filters label > * + * { margin-top: 2px !important; }
