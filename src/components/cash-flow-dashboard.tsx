@@ -13,6 +13,7 @@ import { CashNaturePanel, CashPlantPanel, CashSpark, CashTrendPanel } from "@/co
 import { CASH_FILTERS, CRORE, rowNet, cashTotals, cashLedgerTotals, cashTrend, downloadCashLedger, filterCashRows, searchCashLedger, type CashFilters } from "@/lib/cash-flow";
 const number = (value: number) => value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const money = (value: number) => `₹${number(value / CRORE)} Cr`;
+const classColorIndex = (classification: string) => { let hash = 0; for (const ch of classification) hash = (hash * 31 + ch.charCodeAt(0)) % 5; return hash; };
 export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const [syncing, setSyncing] = useState(false);
   const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10);
