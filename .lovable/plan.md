@@ -1,7 +1,7 @@
-# Cash Flow Screen: Button Tooltips, Colored Table Rows, Radiant Charts
+# Cash Flow Screen: Button Tooltips, Colored Table Rows, Radiant Charts, Page-Size Selector
 
 ## Goal
-Make the Cash Flow screen match the polish of the other report screens: hover tooltips on every button, colored/striped ledger rows, and radiant gradient chart fills.
+Make the Cash Flow screen match the polish of the other report screens: hover tooltips on every button, colored/striped ledger rows, radiant gradient chart fills, and a records-per-page selector.
 
 ## 1. Button tooltips (hover descriptions)
 Add a native `title` attribute (same approach used on the Open Orders screen) to every button in `src/components/cash-flow-dashboard.tsx`:
@@ -10,6 +10,7 @@ Add a native `title` attribute (same approach used on the Open Orders screen) to
 - **Sync button** — "Sync ZCASH_FLOW data from SAP"
 - **Download Report** — "Download the filtered ledger as an Excel file"
 - **Pagination buttons** (First / Previous / Next / Last page) — describe each action
+- **Records-per-page selector** (see section 4) — "Rows to show per page"
 
 Existing `aria-label`s are kept; `title` adds the visible hover tooltip.
 
@@ -29,6 +30,11 @@ Update `src/components/cash-flow-charts.tsx` to use gradient fills like the Open
 - Add `<defs><linearGradient>` per series (light top → color mid → deep bottom using `color-mix` with existing theme tokens)
 - Apply gradients to the Plant & Profit Centre bars, Nature donut slices, and Credit vs Debit Trend bars
 - Keep tooltips, labels, totals and legend behavior unchanged
+
+## 4. Records-per-page selector
+- Add a small dropdown in the ledger pagination bar with options **10, 50, 100, 500**; default **10** rows per page.
+- Changing the selection resets to page 1 and re-slices the filtered ledger; totals and search behavior stay unchanged.
+- Page count ("of N") recalculates from the chosen size.
 
 ## Technical details
 - Files touched: `src/components/cash-flow-dashboard.tsx`, `src/components/cash-flow-charts.tsx`, `src/styles.css`
