@@ -850,3 +850,10 @@ const runEndpointSyncServer = createServerFn({ method: "POST" })
     };
   });
 
+
+/** Runs one named endpoint sync (Sharvi Admin only), same path as SAP API Settings. */
+export async function runNamedEndpointSync(endpointName: string): Promise<SyncRunResult> {
+  return IS_STATIC_BUILD
+    ? runEndpointSyncBrowser(endpointName)
+    : (runEndpointSyncServer({ data: { endpointName } }) as Promise<SyncRunResult>);
+}

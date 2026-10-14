@@ -105,4 +105,7 @@ export async function downloadCashLedger(rows: CashTransaction[]) {
   const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
   const link = document.createElement("a"); link.href = url; link.download = "Cash-Flow-Report.xlsx"; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}/** Sums every filtered/searched ledger row, independent of pagination. */
+export function cashLedgerTotals(rows: CashTransaction[]) {
+  return rows.reduce((t, r) => ({ credit: t.credit + r.credit, debit: t.debit + r.debit, net: t.net + rowNet(r) }), { credit: 0, debit: 0, net: 0 });
 }

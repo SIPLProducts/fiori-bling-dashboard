@@ -10,6 +10,9 @@ export const cashFlowQueryOptions = () =>
     queryKey: ["zcash-flow", "v1"],
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    gcTime: Infinity,
     queryFn: async (): Promise<{ rows: CashTransaction[]; syncedAt: string | null }> => {
       const rows: CashTransaction[] = [];
       let syncedAt: string | null = null;

@@ -45,3 +45,10 @@ it("ZCASH_FLOW rows map and total using SAP NET", () => {
   expect(t.plants).toBe(2);
   expect(a.year).toBe("");
 });
+
+import { cashLedgerTotals as ledgerTotals } from "../src/lib/cash-flow";
+it("ledger totals sum every row, not just one page", () => {
+  const base = { id: "", date: "", plant: "", profitCentre: "", glCode: "", pcGroup: "", classification: "", nature: "", year: "", quarter: "" };
+  const rows = Array.from({ length: 10 }, (_, i) => ({ ...base, id: String(i), credit: 100, debit: 40, net: 60 }));
+  expect(ledgerTotals(rows)).toEqual({ credit: 1000, debit: 400, net: 600 });
+});
