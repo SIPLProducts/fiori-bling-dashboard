@@ -12,10 +12,17 @@ describe("Cash Flow sample calculations", () => {
     expect(cashTotals(CASH_SAMPLE_ROWS).gls).toBe(185);
   });
   it("intersects plant and quarter filters", () => {
-    const rows = filterCashRows(CASH_SAMPLE_ROWS, { plant: "PL-01", quarter: "Q1" });
+    const rows = filterCashRows(CASH_SAMPLE_ROWS, { plant: ["PL-01"], quarter: ["Q1"] });
     expect(rows).toHaveLength(15);
     expect(rows.every(row => row.plant === "PL-01" && row.quarter === "Q1")).toBe(true);
-    expect(filterCashRows(CASH_SAMPLE_ROWS, { plant: "absent" })).toHaveLength(0);
+    expect(filterCashRows(CASH_SAMPLE_ROWS, { plant: ["absent"] })).toHaveLength(0);
+  });
+  it("multi-select filter unions selected values and empty array selects none", () => {
+    const both = filterCashRows(CASH_SAMPLE_ROWS, { plant: ["PL-01", "PL-02"] });
+    const union = filterCashRows(CASH_SAMPLE_ROWS, { plant: ["PL-01"] }).length + filterCashRows(CASH_SAMPLE_ROWS, { plant: ["PL-02"] }).length;
+    expect(both).toHaveLength(union);
+    expect(filterCashRows(CASH_SAMPLE_ROWS, { plant: [] })).toHaveLength(0);
+    expect(filterCashRows(CASH_SAMPLE_ROWS, { plant: null })).toHaveLength(CASH_SAMPLE_ROWS.length);
   });
   it("retains totals in monthly and quarterly grouping", () => {
     const monthly = cashTrend(CASH_SAMPLE_ROWS, false);
@@ -25,7 +32,7 @@ describe("Cash Flow sample calculations", () => {
     expect(monthly.reduce((sum, row) => sum + row.debit, 0)).toBeCloseTo(3651.55, 6);
   });
   it("selects all searched rows for export independent of pagination", () => {
-    const rows = searchCashLedger(filterCashRows(CASH_SAMPLE_ROWS, { plant: "PL-01" }), "GL-41002");
+    const rows = searchCashLedger(filterCashRows(CASH_SAMPLE_ROWS, { plant: ["PL-01"] }), "GL-41002");
     expect(rows).toHaveLength(12);
     expect(rows.every(row => row.glCode === "GL-41002")).toBe(true);
   });

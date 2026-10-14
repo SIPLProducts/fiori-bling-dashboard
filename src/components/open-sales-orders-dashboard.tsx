@@ -42,7 +42,8 @@ import { toast } from "sonner";
 import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
-import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
+import { FilterField, FilterMultiSelect } from "@/components/filter-multi-select";
+import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -484,14 +485,6 @@ export function OpenSalesOrdersDashboard() {
   );
 }
 
-function FilterField({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="block min-w-0 space-y-1"><span className="flex h-8 items-center text-[10px] font-medium text-muted-foreground">{label}</span>{children}</label>;
-}
-
-function FilterMultiSelect({ label, selected, options, onChange }: { label: string; selected: string[] | null; options: string[] | MultiSelectOption[]; onChange: (value: string[]) => void; placeholder: string }) {
-  const choices = options.map((option) => typeof option === "string" ? { value: option, label: option } : option);
-  return <FilterField label={label}><MultiSelect bulkActions options={choices} selected={selected ?? choices.map((option) => option.value)} onChange={onChange} placeholder="No values selected" /></FilterField>;
-}
 
 function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
   const { ref, width } = useChartWidth();
