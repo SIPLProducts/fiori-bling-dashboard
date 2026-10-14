@@ -33,7 +33,7 @@ const top = (items: { name: string; value: number }[], limit: number) => {
   const rest = sorted.slice(limit).reduce((sum, item) => sum + item.value, 0);
   return rest > 0 ? [...sorted.slice(0, limit), { name: "Others", value: rest }] : sorted;
 };
-const palette = (i: number) => colors[i % colors.length];
+const palette = (i: number) => colors[i % colors.length] ?? colors[0]!;
 export function CashPlantPanel({ rows }: { rows: CashTransaction[] }) {
   const map = new Map<string, { name: string; Credits: number; Debits: number }>();
   rows.forEach(row => { const e = map.get(row.plant || "—") ?? { name: row.plant || "—", Credits: 0, Debits: 0 }; e.Credits += Math.abs(row.credit) / CRORE; e.Debits += Math.abs(row.debit) / CRORE; map.set(e.name, e); });
