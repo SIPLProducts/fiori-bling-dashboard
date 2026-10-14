@@ -22,7 +22,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const query = useQuery(cashFlowQueryOptions()); const all = query.data?.rows ?? [];
   const filterDefs = CASH_FILTERS.filter(([key]) => key !== "year" && key !== "quarter");
   const nameOf = (key: string, value: string) => { const r = all.find(x => (x as Record<string, unknown>)[key] === value); return key === "profitCentre" && r?.profitCentreName ? `${value} — ${r.profitCentreName}` : key === "glCode" && r?.glName ? `${value} — ${r.glName}` : value; };
-  const optionsFor = (key: string) => [...new Set(all.map(row => row[key]).filter(Boolean))].sort().map(value => ({ value, label: nameOf(key, value) }));
+  const optionsFor = (key: string) => [...new Set(all.map(row => (row as unknown as Record<string, string>)[key]).filter(Boolean))].sort().map(value => ({ value, label: nameOf(key, value) }));
   const activeFilterCount = filterDefs.filter(([key]) => filters[key] != null).length;
   const resetFilters = () => { setFilters({}); setPage(1); };
   const rows = useMemo(() => filterCashRows(all, filters), [all, filters]); const totals = cashTotals(rows);

@@ -43,6 +43,7 @@ import hblLogo from "@/assets/hbl-logo.png";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { downloadOpenSalesOrdersExcel } from "@/lib/open-sales-orders-export";
 import { FilterField, FilterMultiSelect } from "@/components/filter-multi-select";
+import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
