@@ -38,8 +38,19 @@ export function ShellBar({
     const sync = () => setIsFullscreen(Boolean(document.fullscreenElement));
     sync();
     document.addEventListener("fullscreenchange", sync);
+    // Report screens open in full mode when reached through a click (e.g. a
+    // launchpad tile). Hard page loads have no user activation, so full screen
+    // is silently skipped there — browsers require a gesture for it.
+    if (
+      !launchpad &&
+      document.fullscreenEnabled &&
+      !document.fullscreenElement &&
+      navigator.userActivation?.isActive
+    ) {
+      void document.documentElement.requestFullscreen().catch(() => {});
+    }
     return () => document.removeEventListener("fullscreenchange", sync);
-  }, []);
+  }, [launchpad]);
   function toggleFullscreen() {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     else void document.documentElement.requestFullscreen().catch(() => {});
