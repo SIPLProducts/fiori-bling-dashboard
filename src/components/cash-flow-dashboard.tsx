@@ -15,14 +15,14 @@ const number = (value: number) => value.toLocaleString("en-IN", { minimumFractio
 const money = (value: number) => `₹${number(value / CRORE)} Cr`;
 export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const [syncing, setSyncing] = useState(false);
-  const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10);
   const [quarterly, setQuarterly] = useState(false); const [history, setHistory] = useState(false); const [downloading, setDownloading] = useState(false); const [downloadError, setDownloadError] = useState("");
   const query = useQuery(cashFlowQueryOptions()); const all = query.data?.rows ?? [];
   const filterDefs = CASH_FILTERS.filter(([key]) => key !== "year" && key !== "quarter");
   const nameOf = (key: string, value: string) => { const r = all.find(x => (x as Record<string, unknown>)[key] === value); return key === "profitCentre" && r?.profitCentreName ? `${value} — ${r.profitCentreName}` : key === "glCode" && r?.glName ? `${value} — ${r.glName}` : value; };
   const rows = useMemo(() => filterCashRows(all, filters), [all, filters]); const totals = cashTotals(rows);
-  const ledger = useMemo(() => searchCashLedger(rows, search), [rows, search]); const pages = Math.max(1, Math.ceil(ledger.length / 4));
-  const currentPage = Math.min(page, pages); const visible = ledger.slice((currentPage - 1) * 4, currentPage * 4);
+  const ledger = useMemo(() => searchCashLedger(rows, search), [rows, search]); const pages = Math.max(1, Math.ceil(ledger.length / pageSize));
+  const currentPage = Math.min(page, pages); const visible = ledger.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   async function sync() { setSyncing(true); try { const r = await runNamedEndpointSync("ZCASH_FLOW"); if (r.status === "error") toast.error(r.message || "ZCASH_FLOW sync failed"); else { toast.success(r.received ? `Synced — ${r.received.toLocaleString("en-IN")} received, ${(r.stored ?? r.inserted).toLocaleString("en-IN")} stored` : (r.message || "No data returned — existing data unchanged")); await query.refetch(); } } catch (e) { toast.error(e instanceof Error ? e.message : "ZCASH_FLOW sync failed"); } finally { setSyncing(false); } }
   const ledgerSum = cashLedgerTotals(ledger);
   async function download() { setDownloading(true); setDownloadError(""); try { await downloadCashLedger(ledger); } catch { setDownloadError("Could not download the report. Please try again."); } finally { setDownloading(false); } }
