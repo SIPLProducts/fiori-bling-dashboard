@@ -568,6 +568,14 @@ function parseZcash(raw: string): ZcashPayload | null {
   }
 }
 
+function assertZcashRequired(name: string, path: string, body: string) {
+  if (!isZcashFlowName(name) && !isZcashFlowName(path)) return;
+  const p = parseZcash(body);
+  if (!p) throw new Error("Request payload must be a valid JSON object");
+  if (!p.company_code.trim()) throw new Error("Company Code is required");
+  if (!/^\d{4}$/.test(p.fiscal_year)) throw new Error("Fiscal Year is required (4 digits)");
+}
+
 function ChipInput({ values, onChange, placeholder }: { values: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [draft, setDraft] = useState("");
   const add = () => {
@@ -1073,7 +1081,10 @@ function EndpointDetail({
 
 
   const saveMutation = useMutation({
-    mutationFn: async () => (id ? updateSapEndpoint(id, form) : createSapEndpoint(form)),
+    mutationFn: async () => {
+      assertZcashRequired(form.name, form.endpoint_path, form.body_template);
+      return id ? updateSapEndpoint(id, form) : createSapEndpoint(form);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
       toast.success(id ? "Endpoint updated" : "Endpoint created");
@@ -1087,6 +1098,7 @@ function EndpointDetail({
   const testMutation = useMutation({
     mutationFn: async () => {
       if (!stored) throw new Error("Save the endpoint before testing it");
+      assertZcashRequired(form.name, form.endpoint_path, form.body_template);
       return testSapEndpoint(stored, systems);
     },
     onSuccess: (result) => {

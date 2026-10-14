@@ -30,3 +30,9 @@ describe("Open Sales Orders request date", () => {
     expect(result["fkdat"]).toBe("20260921");
   });
 });
+describe("ZCASH_FLOW request payload", () => {
+  test("is sent exactly as saved, without BUDAT dates", () => {
+    const body = '{"company_code":"1000","fiscal_year":"2026","profit_center":[],"plant":[],"posting_date":{}}';
+    expect(withEndpointDates("ZCASH_FLOW", body, "last7d", runDate, true)).toBe(body);
+  });
+});
