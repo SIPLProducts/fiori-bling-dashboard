@@ -9,7 +9,7 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
-- [ ] Build and verify the reference-matched Cash Flow sample dashboard, working filters, history, ledger pagination and Excel download in both themes and responsive sizes.
+- [x] Build the reference-matched Cash Flow sample dashboard; verified Financial Accounting navigation, filters, monthly/quarterly charts, history, table search/pagination, complete 12-row filtered Excel, light/dark layouts at 1280/951/768/390px, six passing calculation tests and clean preview.
 
 - [x] Added filtered LD Status Y/N fourth desktop chart and separate PDF block; all-active launchpad totals without FY caption. Verified 951/1280/768/390px without overflow, 1,174 lines/₹279.53 Cr, 18 passing tests, fresh five-page PDF, and clean preview.
 
