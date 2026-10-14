@@ -17,11 +17,14 @@ const money = (value: number) => `₹${number(value / CRORE)} Cr`;
 const classColorIndex = (classification: string) => { let hash = 0; for (const ch of classification) hash = (hash * 31 + ch.charCodeAt(0)) % 5; return hash; };
 export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const [syncing, setSyncing] = useState(false);
-  const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10);
+  const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10); const [filtersOpen, setFiltersOpen] = useState(true);
   const [quarterly, setQuarterly] = useState(false); const [history, setHistory] = useState(false); const [downloading, setDownloading] = useState(false); const [downloadError, setDownloadError] = useState("");
   const query = useQuery(cashFlowQueryOptions()); const all = query.data?.rows ?? [];
   const filterDefs = CASH_FILTERS.filter(([key]) => key !== "year" && key !== "quarter");
   const nameOf = (key: string, value: string) => { const r = all.find(x => (x as Record<string, unknown>)[key] === value); return key === "profitCentre" && r?.profitCentreName ? `${value} — ${r.profitCentreName}` : key === "glCode" && r?.glName ? `${value} — ${r.glName}` : value; };
+  const optionsFor = (key: string) => [...new Set(all.map(row => row[key]).filter(Boolean))].sort().map(value => ({ value, label: nameOf(key, value) }));
+  const activeFilterCount = filterDefs.filter(([key]) => filters[key] != null).length;
+  const resetFilters = () => { setFilters({}); setPage(1); };
   const rows = useMemo(() => filterCashRows(all, filters), [all, filters]); const totals = cashTotals(rows);
   const ledger = useMemo(() => searchCashLedger(rows, search), [rows, search]); const pages = Math.max(1, Math.ceil(ledger.length / pageSize));
   const currentPage = Math.min(page, pages); const visible = ledger.slice((currentPage - 1) * pageSize, currentPage * pageSize);
