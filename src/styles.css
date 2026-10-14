@@ -669,3 +669,5 @@
 .cash-filter-card h2 { font-size: 12px; }
 .cash-chart-row > .cash-panel { max-height: 200px; overflow: hidden; }
 @media (min-width: 900px) { .cash-table-scroll { max-height: max(110px, calc(100vh - 620px)); } }
+@media (min-width: 900px) { .cash-chart-row { grid-template-columns: 1.4fr 1fr 1fr; } .cash-trend { grid-column: auto; } .cash-kpi { padding: 5px 10px; } .cash-kpi strong, .cash-kpi:last-child strong { font-size: 17px; } .cash-dashboard { padding: 6px 14px 4px; } }
+@media (min-width: 900px) and (max-height: 600px) { .cash-header p { display: none; } .cash-chart-row > .cash-panel { max-height: 170px; } .cash-canvas { height: 110px; } .cash-nature-body { height: 140px; } .cash-donut { height: 80px; } .cash-footer { display: none; } .cash-table-scroll { max-height: max(90px, calc(100vh - 470px)); } }
