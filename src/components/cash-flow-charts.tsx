@@ -1,0 +1,33 @@
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { cashComposition, cashPlantGroups, cashTrend, type CashTransaction } from "@/lib/cash-flow";
+import { Switch } from "@/components/ui/switch";
+const colors = ["var(--primary)", "var(--chart-2)", "var(--cash-orange)", "var(--cash-sage)"];
+export function CashSpark({ rows, field = "net", positive = false }: { rows: CashTransaction[]; field?: "net" | "credit"; positive?: boolean }) {
+  return <div className="cash-spark"><ResponsiveContainer width="100%" height="100%"><AreaChart data={cashTrend(rows, false)}><Area type="monotone" dataKey={field} stroke={positive ? "var(--success)" : "var(--primary)"} fill={positive ? "var(--success)" : "var(--primary)"} fillOpacity={0.12} strokeWidth={2} isAnimationActive={false} /></AreaChart></ResponsiveContainer></div>;
+}
+function TrendTrack({ data }: { data: ReturnType<typeof cashTrend> }) {
+  return <ResponsiveContainer width="100%" height="100%"><BarChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 0 }} barGap={3}>
+    <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" tickLine={false} axisLine={{ stroke: "var(--border)" }} fontSize={10} />
+    <YAxis tickLine={false} axisLine={false} width={43} fontSize={10} tickFormatter={value => Number(value).toFixed(0)} />
+    <Tooltip formatter={value => [`₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`]} />
+    <Bar name="Credits" dataKey="credit" fill="var(--chart-2)" maxBarSize={14} isAnimationActive={false} /><Bar name="Debits" dataKey="debit" fill="var(--cash-orange)" maxBarSize={14} isAnimationActive={false} />
+  </BarChart></ResponsiveContainer>;
+}
+export function CashTrendPanel({ rows, quarterly, onChange }: { rows: CashTransaction[]; quarterly: boolean; onChange: (value: boolean) => void }) {
+  const data = cashTrend(rows, quarterly); const split = Math.ceil(data.length / 2);
+  return <section className="cash-panel cash-trend"><div className="cash-panel-heading"><h2>Credit vs Debit Trend</h2><label className="flex items-center gap-1.5 text-[10px]">Monthly / Quarterly<Switch aria-label="Quarterly trend" checked={quarterly} onCheckedChange={onChange} className="h-4 w-7 [&>span]:size-3 [&>span]:data-[state=checked]:translate-x-3" /></label></div>
+    <div className="cash-trend-tracks"><div className="cash-canvas"><TrendTrack data={data.slice(0, split)} /></div><div className="cash-canvas"><TrendTrack data={data.slice(split)} /></div></div>
+    <div className="cash-legend"><span><i className="cash-dot-teal" />Credits</span><span><i className="cash-dot-orange" />Debits</span><span className="text-muted-foreground">Amount (₹ Cr)</span></div>
+  </section>;
+}
+export function CashPlantPanel({ rows }: { rows: CashTransaction[] }) {
+  const groups = cashPlantGroups(rows);
+  return <section className="cash-panel"><div className="cash-panel-heading"><h2>Cash Flow by Plant & Profit Centre</h2></div><div className="cash-canvas cash-plant-scroll"><div className="cash-plant-inner" style={{ height: Math.max(180, groups.length * 30) }}><ResponsiveContainer width="100%" height="100%"><BarChart data={groups} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+    <CartesianGrid horizontal={false} stroke="var(--chart-grid-line)" /><XAxis type="number" fontSize={10} tickLine={false} tickFormatter={value => Number(value).toFixed(0)} /><YAxis type="category" dataKey="name" width={42} fontSize={10} tickLine={false} axisLine={false} /><Tooltip formatter={value => [`₹${Number(value).toFixed(2)} Cr`]} />
+    {["PC-East", "PC-South", "PC-West", "PC-Central"].map((name, i) => <Bar key={name} dataKey={name} stackId="pc" fill={colors[i]} maxBarSize={14} isAnimationActive={false} />)}
+  </BarChart></ResponsiveContainer></div></div><div className="cash-legend"><span><i className="cash-dot-blue" />PC-East</span><span><i className="cash-dot-teal" />PC-South</span><span><i className="cash-dot-orange" />PC-West</span><span><i className="cash-dot-sage" />PC-Central</span></div><p className="cash-axis-note">Credit (₹ Cr)</p></section>;
+}
+export function CashNaturePanel({ rows }: { rows: CashTransaction[] }) {
+  const data = cashComposition(rows, "classification"); const groups = cashComposition(rows, "pcGroup"); const total = data.reduce((sum, item) => sum + item.value, 0);
+  return <section className="cash-panel"><div className="cash-panel-heading"><h2>Cash Flow by Nature & PC Group</h2></div><div className="cash-nature-body"><div className="cash-donut"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={data} dataKey="value" innerRadius="49%" outerRadius="70%" paddingAngle={1} stroke="none" labelLine={false} label={({ percent, x, y }) => <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fill="var(--foreground)" fontSize={10}>{Math.round(percent * 100)}%</text>} isAnimationActive={false}>{data.map((item, i) => <Cell key={item.name} fill={colors[i]} />)}</Pie><Tooltip formatter={value => [`₹${Number(value).toFixed(2)} Cr`]} /></PieChart></ResponsiveContainer></div><div className="cash-group-legend"><strong>PC Group</strong>{groups.map((group, i) => <div key={group.name}><i className={`cash-dot-${["blue", "teal", "orange"][i]}`} /><span>{group.name}<small>{total ? (group.value / total * 100).toFixed(1) : "0"}%</small></span></div>)}</div></div><div className="cash-legend"><span><i className="cash-dot-blue" />Operating</span><span><i className="cash-dot-teal" />Investing</span><span><i className="cash-dot-orange" />Financing</span></div></section>;
+}
