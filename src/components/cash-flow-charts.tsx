@@ -8,7 +8,7 @@ const gradientStops = (color: string) => [
   { offset: "100%", stopColor: `color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))` },
 ];
 const gradientDef = (id: string, color: string) => <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">{gradientStops(color).map(stop => <stop key={stop.offset} {...stop} />)}</linearGradient>;
-const legendGradient = (color: string) => `linear-gradient(180deg, ${gradientStops(color)[0].stopColor}, ${color} 55%, ${gradientStops(color)[2].stopColor})`;
+const legendGradient = (color: string) => { const stops = gradientStops(color); return `linear-gradient(180deg, ${stops[0]?.stopColor}, ${color} 55%, ${stops[2]?.stopColor})`; };
 export function CashSpark({ rows, field = "net", positive = false }: { rows: CashTransaction[]; field?: "net" | "credit"; positive?: boolean }) {
   return <div className="cash-spark"><ResponsiveContainer width="100%" height="100%"><AreaChart data={cashTrend(rows, false)}><Area type="monotone" dataKey={field} stroke={positive ? "var(--success)" : "var(--primary)"} fill={positive ? "var(--success)" : "var(--primary)"} fillOpacity={0.12} strokeWidth={2} isAnimationActive={false} /></AreaChart></ResponsiveContainer></div>;
 }
