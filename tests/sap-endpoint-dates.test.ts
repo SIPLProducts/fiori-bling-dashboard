@@ -24,7 +24,7 @@ describe("Open Sales Orders request date", () => {
 
   test("other endpoints retain posting-window behavior", () => {
     const result = JSON.parse(
-      withEndpointDates("Sales_Reports_KPI", payload, "last7d", runDate) ?? "{}",
+      withEndpointDates("Sales_Reports_KPI", payload, "custom", runDate) ?? "{}",
     );
     expect(result["BUDAT_F"]).toBe("20260928");
     expect(result["fkdat"]).toBe("20260921");
