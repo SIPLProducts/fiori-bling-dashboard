@@ -501,7 +501,6 @@ function parsePayload(raw: string): Record<string, string> | null {
 
 
 function defaultEndpoint(): EndpointInput {
-  const payload = { BUDAT_F: toSapDate(isoDaysAgo(7)), BUDAT_T: toSapDate(isoDaysAgo(0)) };
   return {
     name: "",
     module_key: "common",
@@ -512,16 +511,137 @@ function defaultEndpoint(): EndpointInput {
     auth_type: "basic",
     query_params: [],
     headers: [],
-    body_template: JSON.stringify(payload, null, 2),
+    body_template: "{}",
     response_root: "",
     response_notes: "",
     scheduler_enabled: false,
     schedule_expression: dailySyncTimesExpression(["05:30"]),
     is_active: true,
-    posting_range: "last7d",
+    posting_range: "custom",
   };
 }
 
+
+function isZcashFlowName(value: string): boolean {
+  const n = (value ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n === "zcashflow" || n === "zcashflown" || n.includes("zcashflown");
+}
+
+type ZcashPayload = {
+  company_code: string;
+  fiscal_year: string;
+  profit_center: { profit_center: string }[];
+  plant: { plant: string }[];
+  posting_date: { from_date?: string; to_date?: string };
+};
+
+export const ZCASH_DEFAULT_PAYLOAD: ZcashPayload = {
+  company_code: "1000",
+  fiscal_year: String(new Date().getFullYear()),
+  profit_center: [],
+  plant: [],
+  posting_date: {},
+};
+
+function parseZcash(raw: string): ZcashPayload | null {
+  try {
+    const v = JSON.parse(raw || "{}");
+    if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+    const list = (x: unknown, k: string) =>
+      Array.isArray(x)
+        ? x.map((i) => String((i && typeof i === "object" ? (i as Record<string, unknown>)[k] : i) ?? "").trim()).filter(Boolean)
+        : [];
+    const pd = v.posting_date && typeof v.posting_date === "object" ? v.posting_date : {};
+    return {
+      ...v,
+      company_code: String(v.company_code ?? ""),
+      fiscal_year: String(v.fiscal_year ?? ""),
+      profit_center: list(v.profit_center, "profit_center").map((profit_center) => ({ profit_center })),
+      plant: list(v.plant, "plant").map((plant) => ({ plant })),
+      posting_date: {
+        ...(pd.from_date ? { from_date: String(pd.from_date) } : {}),
+        ...(pd.to_date ? { to_date: String(pd.to_date) } : {}),
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function assertZcashRequired(name: string, path: string, body: string) {
+  if (!isZcashFlowName(name) && !isZcashFlowName(path)) return;
+  const p = parseZcash(body);
+  if (!p) throw new Error("Request payload must be a valid JSON object");
+  if (!p.company_code.trim()) throw new Error("Company Code is required");
+  if (!/^\d{4}$/.test(p.fiscal_year)) throw new Error("Fiscal Year is required (4 digits)");
+}
+
+function ChipInput({ values, onChange, placeholder }: { values: string[]; onChange: (v: string[]) => void; placeholder: string }) {
+  const [draft, setDraft] = useState("");
+  const add = () => {
+    const parts = draft.split(/[,\s]+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length) onChange([...values, ...parts.filter((p) => !values.includes(p))]);
+    setDraft("");
+  };
+  return (
+    <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-md border border-input px-2 py-1">
+      {values.map((v) => (
+        <span key={v} className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs">
+          {v}
+          <button type="button" aria-label={`Remove ${v}`} className="text-muted-foreground hover:text-foreground" onClick={() => onChange(values.filter((x) => x !== v))}>×</button>
+        </span>
+      ))}
+      <input
+        className="min-w-24 flex-1 bg-transparent text-sm outline-none"
+        value={draft}
+        placeholder={placeholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(); }
+          if (e.key === "Backspace" && !draft && values.length) onChange(values.slice(0, -1));
+        }}
+        onBlur={add}
+      />
+    </div>
+  );
+}
+
+function ZcashFlowRequestFields({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed = parseZcash(value);
+  if (!parsed) {
+    return <p className="text-xs text-destructive">Request payload must be a valid JSON object to edit these fields.</p>;
+  }
+  const update = (patch: Partial<ZcashPayload>) => onChange(JSON.stringify({ ...parsed, ...patch }, null, 2));
+  const setDate = (key: "from_date" | "to_date", iso: string) => {
+    const next = { ...parsed.posting_date };
+    if (iso) next[key] = toSapDate(iso); else delete next[key];
+    update({ posting_date: next });
+  };
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <Field label="Company Code *" hint="Required. Sent as company_code.">
+        <Input value={parsed.company_code} onChange={(e) => update({ company_code: e.target.value.trim() })} />
+      </Field>
+      <Field label="Fiscal Year *" hint="Required. Sent as fiscal_year.">
+        <Input inputMode="numeric" maxLength={4} value={parsed.fiscal_year} onChange={(e) => update({ fiscal_year: e.target.value.replace(/\D/g, "") })} />
+      </Field>
+      <div />
+      <Field label="Profit Centre" hint="Optional. Press Enter to add each code.">
+        <ChipInput placeholder="e.g. COFF100001" values={parsed.profit_center.map((p) => p.profit_center)} onChange={(v) => update({ profit_center: v.map((profit_center) => ({ profit_center })) })} />
+      </Field>
+      <Field label="Plant" hint="Optional. Press Enter to add each plant.">
+        <ChipInput placeholder="e.g. 1000" values={parsed.plant.map((p) => p.plant)} onChange={(v) => update({ plant: v.map((plant) => ({ plant })) })} />
+      </Field>
+      <div />
+      <Field label="Posting From Date" hint="Optional. Sent as posting_date.from_date.">
+        <Input type="date" value={fromSapDate(parsed.posting_date.from_date ?? "")} onChange={(e) => setDate("from_date", e.target.value)} />
+      </Field>
+      <Field label="Posting To Date" hint="Optional. Sent as posting_date.to_date.">
+        <Input type="date" value={fromSapDate(parsed.posting_date.to_date ?? "")} onChange={(e) => setDate("to_date", e.target.value)} />
+      </Field>
+    </div>
+  );
+}
 
 function SapApiSettings() {
   const { data: launchpad } = useLaunchpad();
@@ -602,6 +722,7 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
  * missing/invalid values default to To = today, From = today − 7 days.
  */
 function withDefaultDates(input: EndpointInput): EndpointInput {
+  if (isZcashFlowName(input.name) || isZcashFlowName(input.endpoint_path)) return input;
   const payload = parsePayload(input.body_template) ?? {};
   if (isOpenSalesOrdersEndpoint(input.name)) {
     const fkdat = payload["fkdat"] ?? "";
@@ -612,6 +733,9 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
     };
   }
   const headerValue = (key: string) => input.headers.find((row) => row.key === key)?.value ?? "";
+  const usesPostingDates =
+    input.posting_range !== "custom" || "BUDAT_F" in payload || "BUDAT_T" in payload || !!headerValue("BUDAT_F");
+  if (!usesPostingDates) return input;
   const current = {
     BUDAT_F: payload["BUDAT_F"] || headerValue("BUDAT_F"),
     BUDAT_T: payload["BUDAT_T"] || headerValue("BUDAT_T"),
@@ -919,6 +1043,9 @@ function EndpointDetail({
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
   const isOpenSalesOrders = isOpenSalesOrdersEndpoint(form.name);
+  const isZcash = isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path);
+  const usesPostingDates =
+    form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
   const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
 
@@ -954,7 +1081,10 @@ function EndpointDetail({
 
 
   const saveMutation = useMutation({
-    mutationFn: async () => (id ? updateSapEndpoint(id, form) : createSapEndpoint(form)),
+    mutationFn: async () => {
+      assertZcashRequired(form.name, form.endpoint_path, form.body_template);
+      return id ? updateSapEndpoint(id, form) : createSapEndpoint(form);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sap-endpoints"] });
       toast.success(id ? "Endpoint updated" : "Endpoint created");
@@ -968,6 +1098,7 @@ function EndpointDetail({
   const testMutation = useMutation({
     mutationFn: async () => {
       if (!stored) throw new Error("Save the endpoint before testing it");
+      assertZcashRequired(form.name, form.endpoint_path, form.body_template);
       return testSapEndpoint(stored, systems);
     },
     onSuccess: (result) => {
@@ -1120,6 +1251,10 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
+            {isZcash ? (
+              <ZcashFlowRequestFields value={form.body_template} onChange={(v) => set("body_template", v)} />
+            ) : null}
+            {!isZcash && (isOpenSalesOrders || usesPostingDates) ? (
             <div className="grid gap-4 md:grid-cols-3">
               {isOpenSalesOrders ? (
                 <Field label="Request Date" hint="Sent as fkdat (YYYYMMDD).">
@@ -1196,6 +1331,7 @@ function EndpointDetail({
                 </>
               )}
             </div>
+            ) : null}
 
             <Field label="Headers" hint="Optional HTTP headers sent with the request.">
               <KeyValueRows rows={form.headers} keyLabel="Header" onChange={(rows) => set("headers", rows)} />
@@ -1204,9 +1340,13 @@ function EndpointDetail({
             <Field
               label="Request payload"
               hint={
-                isOpenSalesOrders
+                isZcash
+                  ? "Sent as the request body exactly as saved. Stays in sync with the fields above."
+                  : isOpenSalesOrders
                   ? "Sent as the request body. fkdat stays in sync with the Request Date above."
-                  : "Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+                  : usesPostingDates
+                  ? "Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
+                  : "Sent as the request body exactly as saved."
               }
             >
               <Textarea

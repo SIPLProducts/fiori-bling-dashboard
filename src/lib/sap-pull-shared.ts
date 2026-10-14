@@ -173,6 +173,8 @@ export function withEndpointDates(
   now = new Date(),
   scheduled = false,
 ) {
+  // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).
+  if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? undefined;
   return isOpenSalesOrdersEndpoint(endpointName)
     ? withOpenSalesOrdersDate(raw, now, scheduled)
     : withPostingDates(raw, range);
