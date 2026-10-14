@@ -35,7 +35,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
     <header className="cash-header"><div><h1>CASH FLOW DASHBOARD</h1><p>Realtime Financial & Cash Position Tracking</p></div><div className="flex items-center gap-2">{query.data?.syncedAt ? <span className="text-xs text-muted-foreground">Last synced: {new Date(query.data.syncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }).replace(/\//g, ".")} IST</span> : null}<Button variant="outline" size="icon" aria-label="Refresh cash flow data" title="Reload cash flow data from the database" disabled={query.isFetching} onClick={() => query.refetch()}><RefreshCw className={query.isFetching ? "animate-spin" : ""} /></Button>{canSync ? <Button size="sm" disabled={syncing} onClick={sync} aria-label="Sync ZCASH_FLOW from SAP" title="Sync ZCASH_FLOW data from SAP"><CloudDownload className={syncing ? "animate-pulse" : ""} />{syncing ? "Syncing…" : "Sync"}</Button> : null}</div></header>
     {query.isLoading ? <div className="py-16 text-center text-muted-foreground"><Loader2 className="mx-auto mb-2 animate-spin" />Loading cash flow data…</div> : query.isError ? <div className="py-16 text-center text-destructive">Could not load cash flow data. Click Refresh to try again.</div> : !all.length ? <div className="py-16 text-center text-muted-foreground">No ZCASH_FLOW data yet. Run the ZCASH_FLOW sync in SAP API Settings.</div> : <>
     <section data-pdf-exclude className="cash-filter-card rounded-md border border-border bg-card shadow-tile">
-      <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2">
+      <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-1">
         <div className="flex min-w-0 items-center gap-2">
           <Filter className="size-4 shrink-0 text-primary" />
           <h2 className="text-sm font-semibold text-card-foreground">Smart Filters</h2>
@@ -47,7 +47,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
           <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="cash-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
         </div>
       </div>
-      {filtersOpen ? <div id="cash-smart-filters" className="cash-filters grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-4">
+      {filtersOpen ? <div id="cash-smart-filters" className="cash-filters grid gap-2 border-t border-border px-3 py-2 sm:grid-cols-2">
         {filterDefs.map(([key, label]) => <FilterMultiSelect key={key} label={label} selected={filters[key] ?? null} options={optionsFor(key)} onChange={value => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); }} placeholder="No values selected" />)}
       </div> : null}
     </section>
