@@ -9,6 +9,8 @@
 - [x] Make TBN chart value labels responsive, suppress zero-label clutter, and prevent collisions in dense small-screen charts.
 # Roadmap
 
+- [x] Build the reference-matched Cash Flow sample dashboard; verified Financial Accounting navigation, filters, monthly/quarterly charts, history, table search/pagination, complete 12-row filtered Excel, light/dark layouts at 1280/951/768/390px, six passing calculation tests and clean preview.
+
 - [x] Added filtered LD Status Y/N fourth desktop chart and separate PDF block; all-active launchpad totals without FY caption. Verified 951/1280/768/390px without overflow, 1,174 lines/₹279.53 Cr, 18 passing tests, fresh five-page PDF, and clean preview.
 
 - [x] Store KWERT_INR and exact LD_STATUS N/Y; switched report/launchpad values, updated three-record/124-key SAP sample, deprecated absent VKORG, mirrored migration, rebuilt middleware, provided cleanup/deployment files, and verified empty report with no runtime errors and 31 passing tests. Fresh live amounts/status await user-run SAP sync; self-hosted deployment awaits operator.
