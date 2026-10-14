@@ -580,7 +580,8 @@
 .cash-header p { font-size: 14px; margin-top: 2px; }
 .cash-sample { background: var(--accent); color: var(--accent-foreground); border-radius: 4px; padding: 5px 12px; font-size: 12px; white-space: nowrap; }
 .cash-filter-card { margin-bottom: 14px; }
-@media (min-width: 900px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .cash-filter-card .cash-filters { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .cash-filters button { font-size: 12px; }
 .cash-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
 .cash-kpi, .cash-panel { border-radius: 8px; background: var(--card); box-shadow: var(--shadow-tile); border: 1px solid var(--border); min-width: 0; }
@@ -634,3 +635,41 @@
 @media (max-width: 767px) { .cash-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }.cash-ledger-heading { align-items: start; flex-direction: column; }.cash-chart-row { grid-template-columns: minmax(0,1fr); }.cash-trend { grid-column: auto; }.cash-header h1 { font-size: 21px; }.cash-header p { font-size: 12px; }.cash-header { margin-bottom: 16px; }.cash-pagination { grid-template-columns: 1fr auto; } }
 @media (max-width: 479px) { .cash-dashboard { padding: 14px 10px; }.cash-kpi strong { font-size: 19px; }.cash-kpi:last-child strong { font-size: 16px; }.cash-kpi-line { flex-wrap: wrap; }.cash-spark { max-width: 60px; height: 24px; }.cash-header { flex-wrap: wrap; }.cash-trend-tracks { grid-template-columns: 1fr; }.cash-canvas { height: 180px; }.cash-ledger-tools { flex-wrap: wrap; }.cash-ledger-tools input { width: 145px; }.cash-kpis { gap: 8px; }.cash-panel-heading { flex-wrap: wrap; } }
 .cash-ledger tfoot td { background: var(--accent); border-top: 1px solid var(--border); }
+
+/* Compact Cash Flow screen */
+.cash-dashboard { padding: 8px 16px 6px; }
+.cash-header { margin-bottom: 8px; }
+.cash-header h1 { font-size: 18px; }
+.cash-header p { font-size: 11px; margin-top: 0; }
+.cash-filter-card { margin-bottom: 8px; }
+.cash-filters label, .cash-filters [class*="text-xs"] { font-size: 10px; }
+.cash-filters button { font-size: 11px; height: 28px; }
+.cash-kpis, .cash-chart-row { gap: 8px; margin-bottom: 8px; }
+.cash-kpi { padding: 6px 10px; }
+.cash-kpi h2 { font-size: 11px; min-height: 18px; }
+.cash-kpi strong, .cash-kpi:last-child strong { font-size: 18px; }
+.cash-icon { width: 20px; height: 20px; } .cash-icon svg { width: 14px; height: 14px; }
+.cash-panel { padding: 6px 10px; }
+.cash-panel-heading { min-height: 22px; }
+.cash-panel-heading h2, .cash-ledger h2 { font-size: 12px; }
+.cash-canvas { height: 130px; }
+.cash-nature-body { height: 180px; }
+.cash-donut { height: 110px; }
+.cash-ledger { padding: 6px 10px 0; }
+.cash-ledger-heading { margin-bottom: 4px; }
+.cash-ledger table { font-size: 11px; }
+.cash-ledger td, .cash-ledger th { padding: 3px 6px; }
+.cash-ledger thead th { position: sticky; top: 0; z-index: 1; }
+.cash-ledger tfoot td { position: sticky; bottom: 0; background: var(--card); }
+@media (min-width: 900px) { .cash-table-scroll { max-height: max(160px, calc(100vh - 560px)); overflow-y: auto; } }
+.cash-pagination { padding: 2px 0; }
+.cash-pagination button { height: 22px; width: 22px; }
+.cash-footer { margin-top: 4px; }
+.cash-filters > *, .cash-filters > * > * { gap: 2px !important; margin-top: 0 !important; }
+.cash-filter-card h2 { font-size: 12px; }
+.cash-chart-row > .cash-panel { max-height: 200px; overflow: hidden; }
+@media (min-width: 900px) { .cash-table-scroll { max-height: max(110px, calc(100vh - 620px)); } }
+@media (min-width: 900px) { .cash-chart-row { grid-template-columns: 1.4fr 1fr 1fr; } .cash-trend { grid-column: auto; } .cash-kpi { padding: 5px 10px; } .cash-kpi strong, .cash-kpi:last-child strong { font-size: 17px; } .cash-dashboard { padding: 6px 14px 4px; } }
+@media (min-width: 900px) and (max-height: 600px) { .cash-header p { display: none; } .cash-chart-row > .cash-panel { max-height: 170px; } .cash-canvas { height: 110px; } .cash-nature-body { height: 140px; } .cash-donut { height: 80px; } .cash-footer { display: none; } .cash-table-scroll { max-height: max(90px, calc(100vh - 470px)); } }
+.cash-filters label > span:first-child { height: 16px; }
+.cash-filters label > * + * { margin-top: 2px !important; }
