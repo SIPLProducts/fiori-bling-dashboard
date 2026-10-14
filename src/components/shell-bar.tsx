@@ -58,14 +58,12 @@ export function ShellBar({
   return (
     <header className={`sticky top-0 z-40 flex items-center gap-3 bg-shell px-4 text-shell-foreground ${launchpad ? "h-10" : "h-14"}`}>
       <Link to="/launchpad" className="flex min-w-0 items-center gap-2">
-        <span className={`grid shrink-0 place-items-center overflow-hidden bg-shell-foreground/14 ${launchpad ? "h-7 rounded-lg px-1.5" : "h-8 rounded-sm px-2"}`}>
-          <img src={hblLogo} alt="HBL" className={launchpad ? "h-4 w-auto object-contain brightness-0 invert" : "h-6 w-auto object-contain"} />
+        <span className={`grid shrink-0 place-items-center overflow-hidden bg-shell-foreground/14 ${launchpad ? "h-7 rounded-lg px-1.5" : "h-8 rounded-lg px-2"}`}>
+          <img src={hblLogo} alt="HBL" className={`${launchpad ? "h-4" : "h-5"} w-auto object-contain brightness-0 invert`} />
         </span>
-        {launchpad ? (
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs font-semibold tracking-wide">MIS PORTAL</span>
-          </span>
-        ) : null}
+        <span className="flex min-w-0 items-center gap-2">
+          <span className={`truncate font-semibold tracking-wide ${launchpad ? "text-xs" : "text-sm"}`}>MIS PORTAL</span>
+        </span>
       </Link>
       <span className="flex-1" aria-hidden="true" />
 
