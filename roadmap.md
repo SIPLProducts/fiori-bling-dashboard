@@ -205,3 +205,5 @@
 - [x] Enlarge document-type/aging donut totals and right-align the single-line trend legend; verified 1,174 totals, all eight panels, matching legend colors, and no page-width overflow at 949/1500/1920/768/390/320px with updated screenshots.
 - [x] Keep the three overview cards in one desktop row from 850px; verified aligned tops/equal heights at 949/1280/1500/1920px, unchanged 1,174 totals, single-line legend, all eight panels, and no page-width overflow on tablets/phones; provided updated screenshot.
 - [x] ZCASH_FLOW table, SAP API sync (upsert) and Quality/Production install SQL
+
+- [x] Cash Flow screen: added button tooltips, per-classification colored ledger rows, radiant chart gradients, and 10/50/100/500 rows-per-page selector (default 10); verified 10/50-row paging, titles, gradients, colored rows, and clean build at 951px.
