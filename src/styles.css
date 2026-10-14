@@ -665,3 +665,7 @@
 .cash-pagination { padding: 2px 0; }
 .cash-pagination button { height: 22px; width: 22px; }
 .cash-footer { margin-top: 4px; }
+.cash-filters > *, .cash-filters > * > * { gap: 2px !important; margin-top: 0 !important; }
+.cash-filter-card h2 { font-size: 12px; }
+.cash-chart-row > .cash-panel { max-height: 200px; overflow: hidden; }
+@media (min-width: 900px) { .cash-table-scroll { max-height: max(110px, calc(100vh - 620px)); } }
