@@ -375,7 +375,7 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-3">
         <SummaryCard label="Total Open Orders" value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label="Pending AH Quantity" value={metrics.pendingAhQuantity.toLocaleString("en-IN", { maximumFractionDigits: 3 })} icon={FileText} tone="warning" />
+        <SummaryCard label="Pending AH Quantity" value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
       </div>
 
 
