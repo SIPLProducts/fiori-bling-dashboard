@@ -51,6 +51,16 @@ export const defaultOpenOrderFilters = (rows?: OpenSalesOrder[]): OpenOrderFilte
 export const productKey = (row: OpenSalesOrder) => `${row.material} — ${row.description}`;
 export const customerKey = (row: OpenSalesOrder) => row.customerSoldTo || row.customer;
 
+/**
+ * Model Wise ranking must only cover lines that actually carry a model.
+ * Blank model, product type and product range fall back to "Unassigned" when
+ * rows are mapped, and those lines must not appear in the Model Wise card.
+ */
+export const hasModelWiseType = (row: OpenSalesOrder) => {
+  const model = row.model?.trim();
+  return Boolean(model) && model.toUpperCase() !== "UNASSIGNED";
+};
+
 export function filterOpenOrders(rows: OpenSalesOrder[], filters: OpenOrderFilters, dates?: { from?: string | undefined; to?: string | undefined }) {
   return rows.filter((row) => {
     if (dates?.from || dates?.to) {
