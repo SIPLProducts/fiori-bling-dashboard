@@ -458,6 +458,7 @@
   .orders-compact > .order-ranking-row { grid-row: 5; }
   .orders-compact > .order-status-row { grid-row: 6; }
   .orders-compact .order-paired-charts .order-chart-canvas { height: 154px !important; }
+  .orders-compact .order-paired-charts .order-plant-canvas { height: 210px !important; }
   .orders-compact .order-ranking .order-chart-canvas { height: 210px !important; }
   .orders-compact .order-aging-grid { min-height: 0; height: 150px; }
   .orders-compact .order-trend .order-chart-canvas { height: 150px !important; }
@@ -500,7 +501,7 @@
 .order-ld-canvas { height: 260px; min-width: 0; }
 .order-ranking-canvas { height: 280px; }
 .order-zone-canvas { height: 270px; }
-.order-plant-canvas { height: 250px; }
+.order-plant-canvas { height: 300px; }
 .orders-compact .order-trend-legend { display: flex; flex-wrap: nowrap; justify-self: end; gap: 10px; font-size: 11px; line-height: 1.4; }
 .order-trend-open-marker { background: var(--kpi-1); }
 .order-trend-partial-marker { background: var(--kpi-2); }
@@ -545,7 +546,7 @@
   .orders-compact .order-ranking-row > :last-child { grid-column: 1 / -1; }
   .orders-compact .order-paired-charts { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: stretch; }
   .orders-compact .order-paired-charts .order-zone-canvas { height: 270px !important; }
-  .orders-compact .order-paired-charts .order-plant-canvas { height: 270px !important; }
+  .orders-compact .order-paired-charts .order-plant-canvas { height: 300px !important; }
 }
 @media (min-width: 1200px) {
   .orders-compact .order-ranking-row { grid-template-columns: repeat(3,minmax(0,1fr)); }
@@ -566,7 +567,7 @@
 @media (max-width: 639px) {
   .orders-compact .order-panel-header h2 { font-size: 14px; }
   .orders-compact .order-zone-canvas { height: 290px; }
-  .orders-compact .order-plant-canvas { height: 260px; }
+  .orders-compact .order-plant-canvas { height: 280px; }
 }
 
 /* Cash Flow reference palette stays local and inherits the portal theme. */
