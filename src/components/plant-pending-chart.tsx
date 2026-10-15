@@ -37,7 +37,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
 
         </div>
         <div className={pdf ? "h-[320px]" : "order-chart-canvas order-plant-canvas"}><ResponsiveContainer width="100%" height="100%">
-          <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: 0 }}>
+          <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: pdf ? 44 : 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
             <XAxis dataKey="code" interval={0} height={labels.height} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
