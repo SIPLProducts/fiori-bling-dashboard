@@ -54,6 +54,7 @@ export type Database = {
           is_active_snapshot: boolean
           kwert_inr: number
           ld_status: string | null
+          main_group: string | null
           material: string | null
           material_description: string | null
           material_type: string | null
@@ -72,6 +73,7 @@ export type Database = {
           product_range: string | null
           product_type: string | null
           profit_center: string | null
+          profit_center_name: string | null
           purchase_order: string | null
           purchase_order_date: string | null
           quantity: number
@@ -89,6 +91,7 @@ export type Database = {
           sales_zone: string | null
           snapshot_id: string
           source_endpoint: string
+          sub_group: string | null
           sync_scope_key: string
           synced_at: string
           total_ah: number
@@ -120,6 +123,7 @@ export type Database = {
           is_active_snapshot?: boolean
           kwert_inr?: number
           ld_status?: string | null
+          main_group?: string | null
           material?: string | null
           material_description?: string | null
           material_type?: string | null
@@ -138,6 +142,7 @@ export type Database = {
           product_range?: string | null
           product_type?: string | null
           profit_center?: string | null
+          profit_center_name?: string | null
           purchase_order?: string | null
           purchase_order_date?: string | null
           quantity?: number
@@ -155,6 +160,7 @@ export type Database = {
           sales_zone?: string | null
           snapshot_id: string
           source_endpoint: string
+          sub_group?: string | null
           sync_scope_key: string
           synced_at?: string
           total_ah?: number
@@ -186,6 +192,7 @@ export type Database = {
           is_active_snapshot?: boolean
           kwert_inr?: number
           ld_status?: string | null
+          main_group?: string | null
           material?: string | null
           material_description?: string | null
           material_type?: string | null
@@ -204,6 +211,7 @@ export type Database = {
           product_range?: string | null
           product_type?: string | null
           profit_center?: string | null
+          profit_center_name?: string | null
           purchase_order?: string | null
           purchase_order_date?: string | null
           quantity?: number
@@ -221,6 +229,7 @@ export type Database = {
           sales_zone?: string | null
           snapshot_id?: string
           source_endpoint?: string
+          sub_group?: string | null
           sync_scope_key?: string
           synced_at?: string
           total_ah?: number

@@ -17,6 +17,8 @@ import {
   Truck,
 } from "lucide-react";
 import { format } from "date-fns";
+import { OpenOrdersGroupChart } from "./open-orders-group-chart";
+import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
@@ -198,6 +200,7 @@ export function OpenSalesOrdersDashboard() {
     setDateMode("range");
     setFilters(defaultOpenOrderFilters(data));
   };
+  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup) }), [filteredData]);
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
     const totalQuantity = filteredData.reduce((sum, row) => sum + row.openQuantity, 0);
@@ -373,6 +376,11 @@ export function OpenSalesOrdersDashboard() {
         <SummaryCard label="Total Open Orders" value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
+      </div>
+
+      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
+        <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
+        <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
       </div>
 
       <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
