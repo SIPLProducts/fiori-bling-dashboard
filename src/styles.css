@@ -670,3 +670,13 @@
 @media (min-width: 900px) and (max-height: 600px) { .cash-header p { display: none; } .cash-chart-row > .cash-panel { max-height: 170px; } .cash-canvas { height: 110px; } .cash-nature-body { height: 140px; } .cash-donut { height: 80px; } .cash-footer { display: none; } }
 .cash-filters label > span:first-child { height: 16px; }
 .cash-filters label > * + * { margin-top: 2px !important; }
+
+/* Overview row: bigger document donut, trend chart matches LD chart height */
+.orders-compact .order-overview-row { align-items: stretch; }
+.orders-compact .order-overview-row > .order-panel { align-self: stretch; }
+.orders-compact .order-document-grid { grid-template-columns: 112px minmax(0,1fr) !important; align-items: center; }
+.orders-compact .order-document-donut { width: 112px !important; height: 150px !important; }
+.orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 34px 48px !important; }
+.orders-compact .order-trend .order-chart-canvas,
+.orders-compact .order-trend .order-trend-canvas { height: 260px !important; }
+@media (max-width: 899px) { .orders-compact .order-trend .order-chart-canvas { height: 240px !important; } }
