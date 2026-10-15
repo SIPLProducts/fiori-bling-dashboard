@@ -537,7 +537,7 @@
   .orders-compact .order-panel { padding: 10px 8px; }
   .orders-compact .order-panel-header { margin-bottom: 8px; padding-bottom: 6px; gap: 6px; }
   .orders-compact .order-panel-header h2 { font-size: 14px; line-height: 1.3; }
-  .orders-compact .order-overview-row { grid-template-columns: 4fr 3fr 3fr 2fr; align-items: stretch; }
+  .orders-compact .order-overview-row { grid-template-columns: minmax(0,4fr) minmax(0,3fr) minmax(0,3fr) minmax(0,2fr); align-items: stretch; }
   .orders-compact .order-overview-row > .order-panel { grid-column: auto; }
   .orders-compact .order-overview-row > :last-child { grid-column: auto; }
   .orders-compact .order-overview-row > .order-panel { container-type: inline-size; }
