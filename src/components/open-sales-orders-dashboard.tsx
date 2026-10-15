@@ -420,7 +420,7 @@ export function OpenSalesOrdersDashboard() {
                   {OrderChartGradients({ id: `${documentGradient}-pdf-zone` })}
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
-                  <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Order Lines", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Orders", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
                   <Bar dataKey="count" name="Open Order Lines" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                     {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${documentGradient}-pdf-zone-${index % ORDER_CHART_COLORS.length})`} />)}

@@ -9,7 +9,7 @@ const numeric = (value: number) => value.toLocaleString("en-IN", { maximumFracti
 const measures = [
   { key: "value", label: "Pending Value (₹ Cr)", color: "var(--chart-1)", className: "text-chart-1", format: (n: number) => n.toFixed(2) },
   { key: "quantity", label: "Pending Quantity", color: "var(--chart-2)", className: "text-chart-2", format: numeric },
-  { key: "count", label: "Open Order Lines", color: "var(--chart-4)", className: "text-chart-4", format: numeric },
+  { key: "count", label: "Open Orders", color: "var(--chart-4)", className: "text-chart-4", format: numeric },
 ] as const;
 
 export function PlantPendingChart({ plants, loading, pdf = false }: { plants: PlantPending[]; loading: boolean; pdf?: boolean }) {
