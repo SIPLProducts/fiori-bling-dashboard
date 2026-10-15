@@ -22,7 +22,7 @@ describe("plant bottom axis labels", () => {
     expect(plantLabelLayout(["VZM", "VZS"], 40)).toEqual({ chars: 3, height: 30, rotated: false });
   });
   test("joined divisions too wide for their slot return to the diagonal arrangement", () => {
-    expect(plantLabelLayout(["VZM / VZS"], 40)).toEqual({ chars: 11, height: 78, rotated: true });
+    expect(plantLabelLayout(["VZM / VZS"], 40)).toEqual({ chars: 9, height: 68, rotated: true });
   });
   test("long plant names keep all their characters when the column is wide enough", () => {
     expect(plantLabelLayout(["HBL VIZIANAGARAM", "HBL MUN"], 56)).toEqual({ chars: 16, height: 105, rotated: true });
