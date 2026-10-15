@@ -520,11 +520,11 @@
 .orders-compact .order-donut-total { gap: 2px; }
 .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 34px 52px; font-size: 11px; padding: 7px 4px; }
 .orders-compact .order-document-grid > div:last-child > div:first-child { font-size: 10px; }
-.orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 112px minmax(168px,1fr); overflow-x: auto; }
-.orders-compact .order-aging-grid .h-56 { height: 160px; }
-.orders-compact .order-aging-donut { width: 112px; }
-.orders-compact .order-aging-breakdown-row { display: grid; grid-template-columns: minmax(0,1fr) 38px; align-items: center; gap: 4px; padding: 9px 5px; font-size: 11px; }
-.orders-compact .order-aging-breakdown-row:first-child { font-size: 10px; }
+.orders-compact .order-aging-grid { height: 200px; min-height: 0; grid-template-columns: 84px minmax(0,1fr); overflow-x: hidden; }
+.orders-compact .order-aging-grid .h-56 { height: 150px; }
+.orders-compact .order-aging-donut { width: 84px; }
+.orders-compact .order-aging-breakdown-row { display: grid; grid-template-columns: minmax(0,1fr) 28px; align-items: center; gap: 4px; padding: 9px 3px; font-size: 10px; }
+.orders-compact .order-aging-breakdown-row:first-child { font-size: 9px; }
 .orders-compact .order-aging-grid .text-xs { font-size: 11px; }
 .orders-compact .order-aging-grid .py-3 { padding: 8px 0; }
 .orders-compact .order-quick { min-height: 90px; }
