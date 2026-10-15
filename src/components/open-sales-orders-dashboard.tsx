@@ -47,7 +47,7 @@ import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countDistinctOrders, countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { selectOpenOrderChartGroups } from "@/lib/open-orders-chart-selection";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
@@ -82,7 +82,7 @@ function Panel({ title, children, className = "", headerDivider = false, divider
   );
 }
 
-function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
+function SummaryCard({ label, value, subValue, icon: Icon, tone }: { label: string; value: string; subValue?: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
   const styles = TONE_STYLES[tone];
   return (
     <section className={`order-summary flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
@@ -90,6 +90,7 @@ function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value:
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-card-foreground">{label}</p>
         <p className="mt-1 text-3xl font-semibold leading-none text-foreground tabular-nums">{value}</p>
+        {subValue ? <p className="mt-1.5 text-xs font-medium text-muted-foreground tabular-nums">{subValue}</p> : null}
       </div>
     </section>
   );
