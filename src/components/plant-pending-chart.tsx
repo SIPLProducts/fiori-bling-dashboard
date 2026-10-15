@@ -43,7 +43,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
             <XAxis dataKey="code" interval={0} height={labels.height} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = plants.find((item) => item.code === payload.value);
               const name = plantLabel(plant);
-              return <g transform={`translate(${x},${y})`}><title>{name}{plant?.code ? ` (${plant.code})` : ""}</title><text textAnchor="end" transform="translate(0,10) rotate(-45)" className="fill-foreground text-[10px] font-semibold">{fitLabel(name, labels.chars)}</text></g>;
+              return <g transform={`translate(${x},${y})`}><title>{name}{plant?.code ? ` (${plant.code})` : ""}</title><text textAnchor="end" transform={`translate(${-barWidth / 2 - 4},10) rotate(-45)`} className="fill-foreground text-[10px] font-semibold">{fitLabel(name, labels.chars)}</text></g>;
             }} />
             <YAxis yAxisId="value" domain={[0, maxima.value]} ticks={[0, 0.25, 0.5, 0.75, 1].map((part) => part * maxima.value)} width={48} tick={{ fontSize: 10, fill: "var(--chart-1)" }} tickFormatter={numeric} tickLine={false} axisLine={{ stroke: "var(--chart-axis-label)" }} />
             <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
