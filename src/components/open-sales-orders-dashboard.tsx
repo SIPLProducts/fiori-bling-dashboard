@@ -201,7 +201,8 @@ export function OpenSalesOrdersDashboard() {
     const buckets = [
       { name: "1 – 180 Days", rows: filteredData.filter((row) => row.daysOpen <= 180) },
       { name: "181 – 365 Days", rows: filteredData.filter((row) => row.daysOpen > 180 && row.daysOpen <= 365) },
-      { name: "> 365 Days", rows: filteredData.filter((row) => row.daysOpen > 365) },
+      { name: "365 – 730 Days", rows: filteredData.filter((row) => row.daysOpen > 365 && row.daysOpen <= 730) },
+      { name: "> 730 Days", rows: filteredData.filter((row) => row.daysOpen > 730) },
     ].map((bucket) => ({ ...bucket, count: bucket.rows.length, value: bucket.rows.reduce((sum, row) => sum + row.value, 0), partialValue: bucket.rows.filter((row) => row.deliveredQuantity > 0).reduce((sum, row) => sum + row.value, 0) }));
     const zoneMap = new Map<string, { name: string; count: number; quantity: number; value: number }>();
     filteredData.forEach((row) => {
@@ -388,8 +389,8 @@ export function OpenSalesOrdersDashboard() {
               <div className="order-donut-total pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-lg tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Orders</span></div>
             </div>
             {pdfBusy ? <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-primary">({percent(bucket.count, filteredData.length)}%)</span></span></div>)}</div> : <div className="order-aging-breakdown overflow-hidden rounded-md border border-border text-card-foreground">
-              <div className="order-aging-breakdown-row bg-success/5 font-semibold"><span>Aging Bucket</span><span className="text-right">Orders</span><span className="text-right">%</span></div>
-              {metrics.buckets.map((bucket, index) => <div key={bucket.name} className="order-aging-breakdown-row border-t border-border"><span className="flex min-w-0 items-center gap-1.5 font-medium"><span className="size-2 shrink-0 rounded-full" style={{ background: COLORS[index] }} />{bucket.name}</span><strong className="text-right tabular-nums">{formatNumber(bucket.count)}</strong><span className="text-right tabular-nums">{percent(bucket.count, filteredData.length)}%</span></div>)}
+              <div className="order-aging-breakdown-row bg-success/5 font-semibold"><span>Aging Bucket</span><span className="text-right">Orders</span></div>
+              {metrics.buckets.map((bucket, index) => <div key={bucket.name} className="order-aging-breakdown-row border-t border-border"><span className="flex min-w-0 items-center gap-1.5 font-medium"><span className="size-2 shrink-0 rounded-full" style={{ background: COLORS[index] }} />{bucket.name}</span><strong className="text-right tabular-nums">{formatNumber(bucket.count)}</strong></div>)}
             </div>}
           </div>
         </Panel>
