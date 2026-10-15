@@ -40,7 +40,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
           <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: pdf ? 44 : 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
-            <XAxis isFront dataKey="code" interval={0} height={labels.height} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
+            <XAxis dataKey="code" interval={0} height={labels.height} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = plants.find((item) => item.code === payload.value);
               const name = plantLabel(plant);
               return <g transform={`translate(${x},${y})`}><title>{name}{plant?.code ? ` (${plant.code})` : ""}</title><text textAnchor="end" transform={`translate(${-barWidth / 2},10) rotate(-45)`} className="fill-foreground text-[10px] font-semibold">{fitLabel(name, labels.chars)}</text></g>;
