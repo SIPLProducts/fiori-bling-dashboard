@@ -674,8 +674,8 @@
 /* Overview row: bigger document donut, trend chart matches LD chart height */
 .orders-compact .order-overview-row { align-items: stretch; }
 .orders-compact .order-overview-row > .order-panel { align-self: stretch; }
-.orders-compact .order-document-grid { grid-template-columns: 112px minmax(0,1fr) !important; align-items: center; }
-.orders-compact .order-document-donut { width: 112px !important; height: 150px !important; }
+.orders-compact .order-document-grid { grid-template-columns: 128px minmax(0,1fr) !important; align-items: center; }
+.orders-compact .order-document-donut { width: 128px !important; height: 190px !important; }
 .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 34px 48px !important; }
 .orders-compact .order-trend .order-chart-canvas,
 .orders-compact .order-trend .order-trend-canvas { height: 180px !important; }
