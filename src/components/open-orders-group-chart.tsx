@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { GroupSummary } from "@/lib/open-orders-groups";
 
-const cr = (v: number) => (v / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+const cr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
 function GroupTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: GroupSummary }> }) {
   const g = payload?.[0]?.payload;
