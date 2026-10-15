@@ -678,5 +678,6 @@
 .orders-compact .order-document-donut { width: 112px !important; height: 150px !important; }
 .orders-compact .order-document-grid > div:last-child > div { grid-template-columns: minmax(0,1fr) 34px 48px !important; }
 .orders-compact .order-trend .order-chart-canvas,
-.orders-compact .order-trend .order-trend-canvas { height: 260px !important; }
-@media (max-width: 899px) { .orders-compact .order-trend .order-chart-canvas { height: 240px !important; } }
+.orders-compact .order-trend .order-trend-canvas { height: 180px !important; }
+.orders-compact .order-ld-canvas { height: 180px !important; }
+@media (max-width: 899px) { .orders-compact .order-trend .order-chart-canvas { height: 180px !important; } }
