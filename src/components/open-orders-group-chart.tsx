@@ -32,5 +32,6 @@ export function OpenOrdersGroupChart({ data, color, pdf = false }: { data: Group
         <Bar dataKey="value" fill={`url(#${id})`} radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={!pdf}><LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} fontSize={9} fill="var(--foreground)" /></Bar>
       </BarChart>
     </ResponsiveContainer>
+    </div>
   </div>;
 }
