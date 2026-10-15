@@ -11,6 +11,6 @@ const ROTATED_LABEL_CHAR_PX = 4.7; // vertical advance of one 10px glyph drawn a
 /** Diagonal plant-name axis: characters shown before an ellipsis, and the bottom space those labels need. */
 export function plantLabelLayout(names: string[], slotWidth: number) {
   const longest = names.reduce((max, name) => Math.max(max, name.trim().length), 0);
-  const chars = Math.max(4, Math.min(16, longest, Math.floor(slotWidth / 2.4) || 4));
+  const chars = Math.max(4, Math.min(18, longest, Math.floor(slotWidth / 1.6) || 4));
   return { chars, height: Math.round(chars * ROTATED_LABEL_CHAR_PX) + 16 };
 }

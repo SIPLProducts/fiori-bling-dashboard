@@ -458,7 +458,7 @@
   .orders-compact > .order-ranking-row { grid-row: 5; }
   .orders-compact > .order-status-row { grid-row: 6; }
   .orders-compact .order-paired-charts .order-chart-canvas { height: 154px !important; }
-  .orders-compact .order-paired-charts .order-plant-canvas { height: 210px !important; }
+  .orders-compact .order-paired-charts .order-plant-canvas { height: 240px !important; }
   .orders-compact .order-ranking .order-chart-canvas { height: 210px !important; }
   .orders-compact .order-aging-grid { min-height: 0; height: 150px; }
   .orders-compact .order-trend .order-chart-canvas { height: 150px !important; }

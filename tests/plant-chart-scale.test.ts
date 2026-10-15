@@ -21,7 +21,10 @@ describe("diagonal plant-name axis", () => {
     expect(plantLabelLayout(["HBL VIZIANAGARAM", "HBL MUN"], 56)).toEqual({ chars: 16, height: 91 });
   });
   test("tight columns shorten names and reserve less bottom space", () => {
-    expect(plantLabelLayout(["HBL VIZIANAGARAM"], 24)).toEqual({ chars: 10, height: 63 });
+    expect(plantLabelLayout(["HBL VIZIANAGARAM"], 24)).toEqual({ chars: 15, height: 87 });
+  });
+  test("names longer than the readable limit are cut at eighteen characters", () => {
+    expect(plantLabelLayout(["HBL INTERNATIONAL DIVISION"], 60)).toEqual({ chars: 18, height: 101 });
   });
   test("the axis grows with the name length and stays finite when no plant matches", () => {
     expect(plantLabelLayout(["ABCDEFGHIJKLMNOP"], 60).height).toBeGreaterThan(plantLabelLayout(["ABCDE"], 60).height);
