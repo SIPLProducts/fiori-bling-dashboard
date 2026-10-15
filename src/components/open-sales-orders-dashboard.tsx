@@ -48,7 +48,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countDistinctOrders, countPendingOrdersAgainstAh, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
-import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
+import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { selectOpenOrderChartGroups } from "@/lib/open-orders-chart-selection";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
@@ -235,7 +235,7 @@ export function OpenSalesOrdersDashboard() {
       ldStatuses: summarizeLdStatus(filteredData),
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
-      models: rankOrders(filteredData, (row) => row.model),
+      models: rankOrders(filteredData.filter(hasModelWiseType), (row) => row.model),
       notDeliveredCount: filteredData.length - partialCount,
       longest: [...filteredData].sort((a, b) => b.daysOpen - a.daysOpen)[0],
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
