@@ -22,6 +22,9 @@ export type OpenSalesOrder = {
   productRange: string;
   productType: string;
   division: string;
+  sapMainGroup: string;
+  subGroup: string;
+  profitCentreName: string;
   quantity: number;
   openQuantity: number;
   deliveredQuantity: number;
@@ -101,6 +104,9 @@ type OpenSalesOrderRecord = {
   country: string | null;
   sales_type: string | null;
   profit_center: string | null;
+  profit_center_name: string | null;
+  main_group: string | null;
+  sub_group: string | null;
   product_category: string | null;
   customer_group: string | null;
   industry_description: string | null;
@@ -109,7 +115,7 @@ type OpenSalesOrderRecord = {
   overall_status: string | null;
 };
 
-const OPEN_ORDER_COLUMNS = "id,updated_at,sales_order,sales_order_item,preceding_document,purchase_order,order_type,order_date,purchase_order_date,delivery_date,distribution_channel,division,plant,plant_name,sales_office,sales_group,profit_center,sales_rep_name,customer_sold_to,customer_sold_to_name,customer_bill_to,customer_bill_to_name,customer_ship_to,customer_ship_to_name,material,material_description,material_type,product_category,model,product_range,product_type,region,sales_zone,country,sales_type,industry_description,customer_group,usage_description,quantity,open_quantity,delivered_quantity,ah,total_ah,unit,currency,p_value1,ld_status,days_open,delivery_status,overall_status";
+const OPEN_ORDER_COLUMNS = "id,updated_at,sales_order,sales_order_item,preceding_document,purchase_order,order_type,order_date,purchase_order_date,delivery_date,distribution_channel,division,plant,plant_name,sales_office,sales_group,profit_center,profit_center_name,main_group,sub_group,sales_rep_name,customer_sold_to,customer_sold_to_name,customer_bill_to,customer_bill_to_name,customer_ship_to,customer_ship_to_name,material,material_description,material_type,product_category,model,product_range,product_type,region,sales_zone,country,sales_type,industry_description,customer_group,usage_description,quantity,open_quantity,delivered_quantity,ah,total_ah,unit,currency,p_value1,ld_status,days_open,delivery_status,overall_status";
 const PAGE_SIZE = 1000;
 const text = (value: string | null | undefined, fallback = "Unassigned") => value?.trim() || fallback;
 const amount = (value: number | string | null) => Number(value) || 0;
@@ -162,6 +168,9 @@ function toDashboardRow(row: OpenSalesOrderRecord): OpenSalesOrder {
     country: text(row.country, ""),
     salesType: text(row.sales_type),
     profitCentre: text(row.profit_center),
+    profitCentreName: text(row.profit_center_name, ""),
+    sapMainGroup: text(row.main_group, ""),
+    subGroup: text(row.sub_group, ""),
     mainGroup: text(row.product_range),
     category: text(row.product_category),
     customerGroup: text(row.customer_group, ""),
