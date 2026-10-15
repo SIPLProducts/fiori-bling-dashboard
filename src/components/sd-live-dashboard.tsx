@@ -3184,7 +3184,7 @@ export function SdLiveDashboard() {
 
           <div data-pdf-page-block data-pdf-section-break className="grid gap-4 sm:grid-cols-2">
             <KpiCard
-              label="Total LAH (Lakhs)"
+              label="Total LAH"
               value={LAKHS_VALUE(analytics.kpis.positiveAhTotal)}
               tone={4}
               icon={Building2}
