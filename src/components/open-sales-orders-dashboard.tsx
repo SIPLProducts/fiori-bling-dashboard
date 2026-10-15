@@ -369,8 +369,8 @@ export function OpenSalesOrdersDashboard() {
       <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
-          <div className="order-document-grid grid min-h-64 min-w-[280px] grid-cols-[104px_minmax(170px,1fr)] items-center gap-2">
-            <div className="order-document-donut relative h-56 w-32 shrink-0">
+          <div className="order-document-grid grid min-h-64 min-w-0 grid-cols-[84px_minmax(0,1fr)] items-center gap-2">
+            <div className="order-document-donut relative h-56 w-full shrink-0">
               <ResponsiveContainer width="100%" height="100%"><PieChart><defs>{COLORS.map((color, index) => <linearGradient key={index} id={`${documentGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={`url(#${documentGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
             </div>
