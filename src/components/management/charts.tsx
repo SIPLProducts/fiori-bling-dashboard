@@ -348,7 +348,7 @@ export function SalesQuantityChart({ data }: { data: SalesQtyPoint[] }) {
               yAxisId="right"
               type="monotone"
               dataKey="quantity"
-              name="Quantity (Lakhs)"
+              name="Quantity (LAH)"
               stroke={CHART_COLORS.green}
               strokeWidth={2.4}
               dot={{ r: 3 }}

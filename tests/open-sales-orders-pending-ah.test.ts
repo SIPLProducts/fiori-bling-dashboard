@@ -43,15 +43,15 @@ describe("Pending AH Quantity", () => {
 });
 
 import { formatPendingAhQuantityInLakhs } from "../src/lib/open-sales-orders-table";
-describe("Pending AH Quantity in Lakhs", () => {
+describe("Pending AH Quantity in LAH", () => {
   test("divides the Total AH sum by one lakh with two decimals", () => {
-    expect(formatPendingAhQuantityInLakhs(1107400)).toBe("11.07 Lakhs");
-    expect(formatPendingAhQuantityInLakhs(123456)).toBe("1.23 Lakhs");
+    expect(formatPendingAhQuantityInLakhs(1107400)).toBe("11.07 LAH");
+    expect(formatPendingAhQuantityInLakhs(123456)).toBe("1.23 LAH");
   });
-  test("keeps small quantities visible as decimal lakhs", () => {
-    expect(formatPendingAhQuantityInLakhs(500)).toBe("0.01 Lakhs");
+  test("keeps small quantities visible as decimal LAH", () => {
+    expect(formatPendingAhQuantityInLakhs(500)).toBe("0.01 LAH");
   });
-  test("shows zero lakhs for an empty result", () => {
-    expect(formatPendingAhQuantityInLakhs(0)).toBe("0.00 Lakhs");
+  test("shows zero LAH for an empty result", () => {
+    expect(formatPendingAhQuantityInLakhs(0)).toBe("0.00 LAH");
   });
 });

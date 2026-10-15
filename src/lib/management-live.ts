@@ -321,7 +321,7 @@ export function buildManagementView(
   const kpis: KpiDatum[] = [
     { id: "sales", label: "Net Sales (Amount)", value: money(cur.amount), delta: growthPct, icon: "rupee", tint: "#E8F0FE", iconColor: "#1769E8" },
     { id: "growth", label: "Sales Growth %", value: `${growthPct.toFixed(1)}%`, delta: growthPct, icon: "growth", tint: "#E6F6EC", iconColor: "#16A34A" },
-    { id: "qty", label: "Total Quantity", value: `${(cur.quantity / LAKH).toFixed(2)} Lakhs`, delta: pctDelta(cur.quantity, prv.quantity), icon: "package", tint: "#F1EBFA", iconColor: "#7251B5" },
+    { id: "qty", label: "Total Quantity", value: `${(cur.quantity / LAKH).toFixed(2)} LAH`, delta: pctDelta(cur.quantity, prv.quantity), icon: "package", tint: "#F1EBFA", iconColor: "#7251B5" },
     { id: "cust", label: "Active Customers", value: cur.customers.size.toLocaleString("en-IN"), delta: pctDelta(cur.customers.size, prv.customers.size), icon: "users", tint: "#FDF0DC", iconColor: "#F59E0B" },
     { id: "ah", label: "Revenue / AH", value: `₹ ${Math.round(revPerAh).toLocaleString("en-IN")}`, delta: pctDelta(revPerAh, prevRevPerAh), icon: "target", tint: "#E2F5F5", iconColor: "#20A8A8" },
     { id: "arpc", label: "Avg. Revenue / Customer", value: money(revPerCust), delta: pctDelta(revPerCust, prevRevPerCust), icon: "user", tint: "#EDEBFB", iconColor: "#6366F1" },
