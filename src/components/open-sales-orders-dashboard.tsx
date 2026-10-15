@@ -504,7 +504,7 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
   const barWidth = Math.max(2, Math.min(18, slotWidth * 0.65));
   const maximum = plantChartMaximum(zones.map((zone) => zone.count));
   return <div ref={ref} className="min-w-0" aria-label="Sales Zone chart">
-    <p className="text-[10px] font-medium text-muted-foreground">Open Order Lines</p>
+    <p className="text-[10px] font-medium text-muted-foreground">Open Orders</p>
     <div data-zone-chart-row className="order-chart-canvas order-zone-canvas"><ResponsiveContainer width="100%" height="100%">
       <BarChart data={zones} barCategoryGap="15%" margin={{ top: 34, right: 10, left: 24, bottom: 6 }}>
         {OrderChartGradients({ id: gradient })}
@@ -512,7 +512,7 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
         <XAxis dataKey="name" interval={0} height={76} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-foreground text-[11px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
         <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />
         <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-        <Bar dataKey="count" name="Open Order Lines" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
+        <Bar dataKey="count" name="Open Orders" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
           {zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}
           <LabelList dataKey="count" position="top" angle={slotWidth < 30 ? -45 : 0} offset={8} formatter={formatNumber} className="fill-foreground text-[11px] font-semibold" />
         </Bar>
@@ -546,7 +546,7 @@ function RankingTooltip({ item }: { item: RankedItem }) {
 type ZoneItem = { name: string; count: number; quantity: number; value: number; share: number };
 
 function SalesZoneTooltip({ item }: { item: ZoneItem }) {
-  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Open Order Lines: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Open Value: {formatCr(item.value)}</p></div>;
+  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Orders: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Open Value: {formatCr(item.value)}</p></div>;
 }
 
 function StatusBadge({ partial }: { partial: boolean }) {
