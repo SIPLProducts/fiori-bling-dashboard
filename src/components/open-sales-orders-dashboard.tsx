@@ -379,6 +379,8 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
 
+
+
       <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
