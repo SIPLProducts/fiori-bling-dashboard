@@ -331,7 +331,7 @@ export function OpenSalesOrdersDashboard() {
             <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="open-order-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[900px]:grid-cols-4">
+        {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[860px]:grid-cols-4">
           <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
           <FilterField label="Sales Document Type">
             <MultiSelect
