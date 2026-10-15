@@ -22,8 +22,9 @@ export function countDistinctOrders(rows: Pick<OpenSalesOrder, "order">[]) {
   return new Set(rows.map((row) => row.order)).size;
 }
 
+/** Order-number rule: one order counts once even when several lines carry Total AH > 0. */
 export function countPendingOrdersAgainstAh(rows: Pick<OpenSalesOrder, "order" | "totalAh">[]) {
-  return rows.filter((row) => row.totalAh > 0).length;
+  return new Set(rows.filter((row) => row.totalAh > 0).map((row) => row.order)).size;
 }
 
 export function summarizeOpenOrderTable(rows: Pick<OpenSalesOrder, "openQuantity" | "deliveredQuantity" | "ah" | "totalAh" | "value">[]) {
