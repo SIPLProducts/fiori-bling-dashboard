@@ -2,9 +2,9 @@ import type { OpenSalesOrder } from "./open-sales-orders-data";
 
 export type PlantPending = { code: string; name: string; value: number; quantity: number; count: number; divisions: string[] };
 
-type PlantRow = Pick<OpenSalesOrder, "order" | "plant" | "plantName" | "value" | "openQuantity" | "division" | "industryDescription">;
+type PlantRow = Pick<OpenSalesOrder, "order" | "plant" | "plantName" | "value" | "openQuantity" | "division">;
 
-/** Groups rows by plant; counts distinct order numbers and lists the divisions each plant's lines relate to. Sorted by value desc. */
+/** Groups rows by plant; counts distinct order numbers and lists the plain division codes each plant's lines carry. Sorted by value desc. */
 export function summarizePlantPending(rows: PlantRow[]): PlantPending[] {
   const plants = new Map<string, { code: string; name: string; value: number; quantity: number; orders: Set<string>; divisions: Set<string> }>();
   for (const row of rows) {
@@ -15,7 +15,7 @@ export function summarizePlantPending(rows: PlantRow[]): PlantPending[] {
     current.quantity += row.openQuantity;
     current.orders.add(row.order);
     const division = row.division?.trim();
-    if (division && division !== "Unassigned") current.divisions.add(row.industryDescription?.trim() ? `${division} — ${row.industryDescription.trim()}` : division);
+    if (division && division !== "Unassigned") current.divisions.add(division);
     plants.set(code, current);
   }
   return [...plants.values()]
