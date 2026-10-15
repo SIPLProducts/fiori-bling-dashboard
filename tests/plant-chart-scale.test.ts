@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { plantChartMaximum } from "../src/lib/plant-chart-scale";
+import { plantChartMaximum, plantLabelLayout } from "../src/lib/plant-chart-scale";
 
 describe("plant chart actual-value scales", () => {
   test("currency axis retains crore values rather than converting to percentages", () => {
@@ -13,5 +13,18 @@ describe("plant chart actual-value scales", () => {
   });
   test("empty scales have a finite nonzero domain", () => {
     expect(plantChartMaximum([])).toBe(1);
+  });
+});
+
+describe("diagonal plant-name axis", () => {
+  test("long plant names keep all their characters when the column is wide enough", () => {
+    expect(plantLabelLayout(["HBL VIZIANAGARAM", "HBL MUN"], 56)).toEqual({ chars: 16, height: 91 });
+  });
+  test("tight columns shorten names and reserve less bottom space", () => {
+    expect(plantLabelLayout(["HBL VIZIANAGARAM"], 24)).toEqual({ chars: 10, height: 63 });
+  });
+  test("the axis grows with the name length and stays finite when no plant matches", () => {
+    expect(plantLabelLayout(["ABCDEFGHIJKLMNOP"], 60).height).toBeGreaterThan(plantLabelLayout(["ABCDE"], 60).height);
+    expect(plantLabelLayout([], 60)).toEqual({ chars: 4, height: 35 });
   });
 });

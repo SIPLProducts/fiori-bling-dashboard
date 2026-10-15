@@ -1,7 +1,7 @@
 import { useId, useMemo } from "react";
 import { Bar, BarChart, Cell, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { PlantPending } from "@/lib/open-sales-orders-plants";
-import { plantChartMaximum } from "@/lib/plant-chart-scale";
+import { plantChartMaximum, plantLabelLayout } from "@/lib/plant-chart-scale";
 
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 
@@ -15,11 +15,8 @@ const measures = [
 /** Plant name when SAP supplied one, otherwise the plant code keeps the bar identifiable. */
 const plantLabel = (plant: PlantPending | undefined) => plant?.name?.trim() || plant?.code?.trim() || "—";
 
-/** Shortens the axis label to the space available; the tooltip always carries the full name. */
-const fitLabel = (text: string, slot: number, rotated: boolean) => {
-  const max = rotated ? 14 : Math.max(5, Math.floor((slot - 6) / 6.6));
-  return text.length > max ? `${text.slice(0, Math.max(2, max - 1))}…` : text;
-};
+/** Shortens the diagonal axis label to the space available; the tooltip always carries the full name. */
+const fitLabel = (text: string, chars: number) => text.length > chars ? `${text.slice(0, Math.max(2, chars - 1))}…` : text;
 
 export function PlantPendingChart({ plants, loading, pdf = false }: { plants: PlantPending[]; loading: boolean; pdf?: boolean }) {
   const maxima = useMemo(() => ({
@@ -31,7 +28,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
   const gradient = useId().replace(/:/g, "");
   const slotWidth = Math.max(1, (width - 48) / Math.max(1, plants.length));
   const barWidth = Math.max(3, Math.min(22, slotWidth * 0.7));
-  const dense = slotWidth < 36;
+  const labels = useMemo(() => plantLabelLayout(plants.map(plantLabel), slotWidth), [plants, slotWidth]);
   return <div ref={container} className="min-w-0" aria-label="Plant-wise Pending chart">
     {plants.length ? <div className="min-w-0">
       <div className="min-w-0" data-plant-chart-row>
@@ -39,13 +36,14 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
           <span className="text-chart-1">Value (₹ Cr)</span>
 
         </div>
-        <div className={pdf ? "h-[300px]" : "order-chart-canvas order-plant-canvas"}><ResponsiveContainer width="100%" height="100%">
+        <div className={pdf ? "h-[320px]" : "order-chart-canvas order-plant-canvas"}><ResponsiveContainer width="100%" height="100%">
           <BarChart data={plants} barCategoryGap="15%" margin={{ top: 22, right: 0, left: 0, bottom: 0 }}>
             {OrderChartGradients({ id: gradient })}
             <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" strokeDasharray="3 3" />
-            <XAxis dataKey="code" interval={0} height={dense ? 64 : 44} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
+            <XAxis dataKey="code" interval={0} height={labels.height} padding={{ left: 0, right: 0 }} axisLine={{ stroke: "var(--chart-axis-label)" }} tickLine={false} tick={({ x, y, payload }) => {
               const plant = plants.find((item) => item.code === payload.value);
-              return <g transform={`translate(${x},${y})`}><title>{plantLabel(plant)}{plant?.code ? ` (${plant.code})` : ""}</title><text textAnchor={dense ? "end" : "middle"} transform={dense ? "translate(0,10) rotate(-45)" : "translate(0,12)"} className="fill-foreground text-[11px] font-semibold">{fitLabel(plantLabel(plant), slotWidth, dense)}</text></g>;
+              const name = plantLabel(plant);
+              return <g transform={`translate(${x},${y})`}><title>{name}{plant?.code ? ` (${plant.code})` : ""}</title><text textAnchor="end" transform="translate(0,10) rotate(-45)" className="fill-foreground text-[10px] font-semibold">{fitLabel(name, labels.chars)}</text></g>;
             }} />
             <YAxis yAxisId="value" domain={[0, maxima.value]} ticks={[0, 0.25, 0.5, 0.75, 1].map((part) => part * maxima.value)} width={48} tick={{ fontSize: 10, fill: "var(--chart-1)" }} tickFormatter={numeric} tickLine={false} axisLine={{ stroke: "var(--chart-axis-label)" }} />
             <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
