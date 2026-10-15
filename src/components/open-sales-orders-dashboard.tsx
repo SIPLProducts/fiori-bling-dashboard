@@ -103,16 +103,19 @@ function percent(value: number, total: number) {
 type RankedItem = { name: string; value: number; quantity: number; count: number };
 
 function rankOrders(rows: OpenSalesOrder[], label: (row: OpenSalesOrder) => string): RankedItem[] {
-  const grouped = new Map<string, RankedItem>();
+  const grouped = new Map<string, RankedItem & { orders: Set<string> }>();
   rows.forEach((row) => {
     const name = label(row) || "Unassigned";
-    const current = grouped.get(name) ?? { name, value: 0, quantity: 0, count: 0 };
+    const current = grouped.get(name) ?? { name, value: 0, quantity: 0, count: 0, orders: new Set<string>() };
     current.value += row.value;
     current.quantity += row.openQuantity;
-    current.count += 1;
+    current.orders.add(row.order);
     grouped.set(name, current);
   });
-  return [...grouped.values()].sort((left, right) => right.value - left.value).slice(0, 10);
+  return [...grouped.values()]
+    .map(({ orders, ...item }) => ({ ...item, count: orders.size }))
+    .sort((left, right) => right.value - left.value)
+    .slice(0, 10);
 }
 
 function StatusCard({ title, count, value, share, partial }: { title: string; count: number; value: number; share: number; partial?: boolean }) {
@@ -203,18 +206,23 @@ export function OpenSalesOrdersDashboard() {
       { name: "181 – 365", rows: filteredData.filter((row) => row.daysOpen > 180 && row.daysOpen <= 365) },
       { name: "365 – 730", rows: filteredData.filter((row) => row.daysOpen > 365 && row.daysOpen <= 730) },
       { name: "> 730", rows: filteredData.filter((row) => row.daysOpen > 730) },
-    ].map((bucket) => ({ ...bucket, count: bucket.rows.length, value: bucket.rows.reduce((sum, row) => sum + row.value, 0), partialValue: bucket.rows.filter((row) => row.deliveredQuantity > 0).reduce((sum, row) => sum + row.value, 0) }));
-    const zoneMap = new Map<string, { name: string; count: number; quantity: number; value: number }>();
+    ].map((bucket) => ({ ...bucket, count: countDistinctOrders(bucket.rows), value: bucket.rows.reduce((sum, row) => sum + row.value, 0), partialValue: bucket.rows.filter((row) => row.deliveredQuantity > 0).reduce((sum, row) => sum + row.value, 0) }));
+    const distinctOrders = countDistinctOrders(filteredData);
+    const zoneMap = new Map<string, { name: string; quantity: number; value: number; orders: Set<string> }>();
     filteredData.forEach((row) => {
       const name = row.zone.replace(" Zone", "");
-      const current = zoneMap.get(name) ?? { name, count: 0, quantity: 0, value: 0 };
-      current.count += 1;
+      const current = zoneMap.get(name) ?? { name, quantity: 0, value: 0, orders: new Set<string>() };
       current.quantity += row.openQuantity;
       current.value += row.value;
+      current.orders.add(row.order);
       zoneMap.set(name, current);
     });
-    const zones = [...zoneMap.values()].map((zone) => ({ ...zone, share: percent(zone.count, filteredData.length) })).sort((a, b) => b.count - a.count);
-    const partialCount = filteredData.filter((row) => row.deliveredQuantity > 0).length;
+    const zones = [...zoneMap.values()]
+      .map(({ orders, ...zone }) => ({ ...zone, count: orders.size, share: percent(orders.size, distinctOrders) }))
+      .sort((a, b) => b.count - a.count);
+    const partialOrders = new Set(filteredData.filter((row) => row.deliveredQuantity > 0).map((row) => row.order));
+    const notDeliveredOrders = new Set(filteredData.filter((row) => row.deliveredQuantity <= 0).map((row) => row.order));
+    const partialCount = partialOrders.size;
     const statusValues = filteredData.reduce((totals, row) => {
       if (row.deliveredQuantity > 0) totals.partial += row.value;
       else totals.open += row.value;
@@ -225,7 +233,7 @@ export function OpenSalesOrdersDashboard() {
       totalValue,
       totalQuantity,
       pendingOrdersAgainstAh: countPendingOrdersAgainstAh(filteredData),
-      distinctOrders: countDistinctOrders(filteredData),
+      distinctOrders,
       plants: summarizePlantPending(filteredData),
       buckets,
       zones,
@@ -237,7 +245,7 @@ export function OpenSalesOrdersDashboard() {
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
       models: rankOrders(filteredData.filter(hasModelWiseType), (row) => row.model),
-      notDeliveredCount: filteredData.length - partialCount,
+      notDeliveredCount: notDeliveredOrders.size,
       longest: [...filteredData].sort((a, b) => b.daysOpen - a.daysOpen)[0],
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
     };
@@ -316,7 +324,7 @@ export function OpenSalesOrdersDashboard() {
             <Filter className="size-4 shrink-0 text-primary" />
             <h2 className="text-sm font-semibold text-card-foreground">Smart Filters</h2>
             {activeFilterCount > 0 ? <span className="rounded-sm border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{activeFilterCount} active</span> : null}
-            <span className="hidden text-[10px] text-muted-foreground sm:inline">{formatNumber(filteredData.length)} of {formatNumber(data.length)} orders</span>
+            <span className="hidden text-[10px] text-muted-foreground sm:inline">{formatNumber(filteredData.length)} of {formatNumber(data.length)} line items</span>
           </div>
           <div className="flex items-center gap-1">
             <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={isLoading || activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
@@ -373,7 +381,7 @@ export function OpenSalesOrdersDashboard() {
           <div className="order-document-grid grid min-h-64 min-w-0 grid-cols-[112px_minmax(0,1fr)] items-center gap-2">
             <div className="order-document-donut relative h-56 w-full shrink-0">
               <ResponsiveContainer width="100%" height="100%"><PieChart><defs>{COLORS.map((color, index) => <linearGradient key={index} id={`${documentGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={`url(#${documentGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(metrics.distinctOrders)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
             </div>
             <div className="min-w-0 overflow-hidden rounded-md border border-border text-xs text-card-foreground">
               <div className="grid grid-cols-[minmax(0,1fr)_44px_68px] items-center gap-1 bg-primary/5 px-2 py-2 text-[11px] font-semibold text-primary"><span className="min-w-0">Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span></div>
@@ -386,7 +394,7 @@ export function OpenSalesOrdersDashboard() {
           <div className="order-aging-grid grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
             <div className="order-aging-donut relative h-56">
               <ResponsiveContainer width="100%" height="100%"><PieChart><defs>{COLORS.map((color, index) => <linearGradient key={index} id={`${agingGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><Pie data={metrics.buckets} dataKey="count" nameKey="name" innerRadius={pdfBusy ? "54%" : "68%"} outerRadius={pdfBusy ? "82%" : "90%"} stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.buckets.map((bucket, index) => <Cell key={bucket.name} fill={`url(#${agingGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
-              <div className="order-donut-total pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-lg tabular-nums">{formatNumber(filteredData.length)}</strong><span className="text-xs text-muted-foreground">Orders</span></div>
+              <div className="order-donut-total pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-lg tabular-nums">{formatNumber(metrics.distinctOrders)}</strong><span className="text-xs text-muted-foreground">Orders</span></div>
             </div>
             {pdfBusy ? <div className="divide-y divide-border">{metrics.buckets.map((bucket, index) => <div key={bucket.name} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 py-3 text-xs"><span className="size-2.5 rounded-full" style={{ background: COLORS[index] }} /><span className="text-card-foreground">{bucket.name}</span><span className="text-right"><strong className="block tabular-nums">{formatNumber(bucket.count)}</strong></span></div>)}</div> : <div className="order-aging-breakdown overflow-hidden rounded-md border border-border text-card-foreground">
               <div className="order-aging-breakdown-row bg-success/5 font-semibold"><span>Aging Bucket</span><span className="text-right">Orders</span></div>
@@ -447,8 +455,8 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       <div data-pdf-page-block className="order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
-        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, filteredData.length)} />
-        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, filteredData.length)} partial />
+        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
+        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, metrics.distinctOrders)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
           <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
           <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-2">
