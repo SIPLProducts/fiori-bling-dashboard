@@ -1,24 +1,14 @@
-# Fix Cash Flow card and missing ZCASH_FLOW API on Quality
+# Rotate plant names below the Plant-wise Pending bars
 
-## Why it happens
-Deploying code does not add data to the Quality database. The ZCASH_FLOW API and the Cash Flow data are database records, not code:
-- **SAP API Settings** lists rows saved in the `sap_endpoints` table. The ZCASH_FLOW row was saved only in the Lovable environment, so Quality still has only Open Sales Orders and Sales_Reports_KPI.
-- **Cash Flow card** shows bars only when `zcash_flow` has rows. If the table is missing or empty on Quality, the card falls back to the plain "Open" tile, as in your screenshot.
+## What changes
+- Plant names under the bars are shown **diagonally (−45°)** in the Plant-wise Pending card, instead of flat and cut short. Every plant keeps its position; names like "HBL VIZIANAGARAM" read in full rather than "HBL VIS…".
+- The same diagonal names appear in the downloaded PDF, since both use this one chart.
+- Bar values above each bar, the left ₹ Cr axis, the blue bars, the tooltip (name, code, Division(s), pending value, quantity, open orders) and all figures stay exactly as they are.
 
-## Steps on Quality (no code changes needed)
-1. In the Quality SQL editor, check the current state:
-```text
-SELECT to_regclass('public.zcash_flow');                 -- null = table missing
-SELECT name FROM public.sap_endpoints WHERE name = 'ZCASH_FLOW';
-```
-2. Run `deploy/zcash-flow/install-zcash-flow.sql` (safe to re-run). It creates the table and its read permission, and registers the ZCASH_FLOW API using the same SAP system as Open Sales Orders, on the 5:30 am and 1:00 pm IST schedule. It ends with the schema reload.
-3. Make sure the Quality middleware runs the latest `scheduler.mjs` and `sync-core.mjs`. Rebuild with `npm run build:sync-core`, then `pm2 restart mis-q-middleware --update-env`.
-4. Reload SAP API Settings. ZCASH_FLOW now appears. Open it, check Company Code / Fiscal Year / Profit Centre / Plant, then click **Test** and run one sync.
-5. Confirm the rows arrived with `SELECT count(*), sum(credit), sum(debit) FROM public.zcash_flow;`, then reload the launchpad. The Cash Flow card shows the Credit/Debit/Net bars and the last-synced time.
+## What does not change
+Filters, chart-only top-10 behaviour, summary tiles, every other card, the detailed table, Excel, and all calculations.
 
-## If still blank after the steps
-- Make sure the signed-in role has the `fi.cash-flow` screen permission, because the table's read rule requires it. Sharvi Admin always has it.
-- Send me the outputs of the step 1 and step 5 queries.
-
-## Optional follow-up
-If you approve, I will add a short "ZCASH_FLOW" section to `deploy/README.md` that lists these steps, so the same procedure is used for Production.
+## Technical details
+- `src/components/plant-pending-chart.tsx`: the bottom axis tick always renders `textAnchor="end"` with `rotate(-45)` (the current `dense` switch that only rotates when slot width is under 36px is dropped); the axis height grows to fit the longest plant name so nothing is clipped, and the truncation limit for rotated names is raised so long names fit instead of ending in an ellipsis. The full name remains in the tooltip.
+- `src/styles.css`: the Plant-wise Pending canvas heights (currently 250 / 270 / 260px across the layout breakpoints) are raised slightly so the diagonal labels take space from the bottom margin rather than squeezing the plot.
+- Verification: run the plant summary and plant-scale tests, check the preview at 889px and a wide desktop width for readable diagonal names with no clipping or overlap, and download the PDF to confirm the same diagonal names appear there. Inspect the build log.
