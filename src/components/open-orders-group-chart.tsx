@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { GroupSummary } from "@/lib/open-orders-groups";
+import { groupAxisDecimals } from "@/lib/open-orders-group-axis";
 
 const cr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
