@@ -378,10 +378,6 @@ export function OpenSalesOrdersDashboard() {
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
 
-      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-        <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
-      </div>
 
       <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
