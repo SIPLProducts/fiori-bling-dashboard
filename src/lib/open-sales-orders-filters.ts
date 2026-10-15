@@ -34,15 +34,17 @@ export function defaultDocumentTypeKeys(rows: OpenSalesOrder[]) {
   return [...new Set(rows.filter((row) => DEFAULT_DOCUMENT_TYPES.includes(row.documentType)).map(documentTypeKey))];
 }
 export function summarizeDocumentDescriptions(rows: OpenSalesOrder[]) {
-  const groups = new Map<string, { name: string; count: number; value: number }>();
+  const groups = new Map<string, { name: string; orders: Set<string>; value: number }>();
   for (const row of rows) {
     const name = documentTypeDescription(row);
-    const group = groups.get(name) ?? { name, count: 0, value: 0 };
-    group.count += 1;
+    const group = groups.get(name) ?? { name, orders: new Set<string>(), value: 0 };
+    group.orders.add(row.order);
     group.value += row.value;
     groups.set(name, group);
   }
-  return [...groups.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+  return [...groups.values()]
+    .map(({ orders, ...group }) => ({ ...group, count: orders.size }))
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
 }
 export const defaultOpenOrderFilters = (rows?: OpenSalesOrder[]): OpenOrderFilters => ({
   documentTypes: rows ? defaultDocumentTypeKeys(rows) : [...DEFAULT_DOCUMENT_TYPES],
