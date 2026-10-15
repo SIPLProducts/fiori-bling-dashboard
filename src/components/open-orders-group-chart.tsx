@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { GroupSummary } from "@/lib/open-orders-groups";
 
 const cr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
@@ -19,15 +19,15 @@ export function OpenOrdersGroupChart({ data, color, pdf = false }: { data: Group
   const id = useId().replace(/:/g, "");
   const rows = pdf ? data : data.slice(0, 10);
   if (!rows.length) return <p className="py-8 text-center text-xs text-muted-foreground">No group data from SAP yet</p>;
-  return <div style={{ height: Math.max(180, rows.length * 26 + 30) }}>
+  return <div style={{ height: 260 }}>
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
-        <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={color} stopOpacity={0.55} /><stop offset="100%" stopColor={color} stopOpacity={1} /></linearGradient></defs>
-        <CartesianGrid horizontal={false} stroke="var(--border)" />
-        <XAxis type="number" tickFormatter={cr} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} />
-        <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />
+      <BarChart data={rows} margin={{ top: 18, right: 10, left: 4, bottom: 4 }}>
+        <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={1} /><stop offset="100%" stopColor={color} stopOpacity={0.55} /></linearGradient></defs>
+        <CartesianGrid vertical={false} stroke="var(--border)" />
+        <XAxis dataKey="name" interval={0} height={70} tickLine={false} tick={({ x, y, payload }) => { const s = String(payload.value); return <g transform={`translate(${x},${y})`}><title>{s}</title><text transform="translate(0,8) rotate(-40)" textAnchor="end" fontSize={10} fill="var(--foreground)">{s.length > 14 ? `${s.slice(0, 14)}…` : s}</text></g>; }} />
+        <YAxis tickFormatter={cr} width={48} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 9, fill: "var(--muted-foreground)" }} />
         <Tooltip content={<GroupTooltip />} cursor={{ fill: "var(--muted)" }} />
-        <Bar dataKey="value" fill={`url(#${id})`} radius={[0, 4, 4, 0]} barSize={14} isAnimationActive={!pdf} />
+        <Bar dataKey="value" fill={`url(#${id})`} radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={!pdf}><LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} fontSize={9} fill="var(--foreground)" /></Bar>
       </BarChart>
     </ResponsiveContainer>
   </div>;
