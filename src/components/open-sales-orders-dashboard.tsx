@@ -224,6 +224,7 @@ export function OpenSalesOrdersDashboard() {
       totalValue,
       totalQuantity,
       pendingOrdersAgainstAh: countPendingOrdersAgainstAh(filteredData),
+      distinctOrders: countDistinctOrders(filteredData),
       plants: summarizePlantPending(filteredData),
       buckets,
       zones,
@@ -360,7 +361,7 @@ export function OpenSalesOrdersDashboard() {
       </div> : null}
 
       <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-3">
-        <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} icon={FileText} tone="primary" />
+        <SummaryCard label="Total Open Orders" value={formatNumber(filteredData.length)} subValue={`${formatNumber(metrics.distinctOrders)} Order No`} icon={FileText} tone="primary" />
         <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label="Pending Orders Against AH" value={formatNumber(metrics.pendingOrdersAgainstAh)} icon={FileText} tone="warning" />
       </div>
