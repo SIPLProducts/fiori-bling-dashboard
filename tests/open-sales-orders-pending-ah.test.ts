@@ -31,3 +31,13 @@ describe("Pending Orders Against AH", () => {
     expect(countPendingOrdersAgainstAh([])).toBe(0);
   });
 });
+
+import { sumPendingAhQuantity } from "../src/lib/open-sales-orders-table";
+describe("Pending AH Quantity", () => {
+  test("sums the Total AH column across rows", () => {
+    expect(sumPendingAhQuantity([{ totalAh: 10 }, { totalAh: 20.5 }, { totalAh: 0 }])).toBe(30.5);
+  });
+  test("returns zero for empty results", () => {
+    expect(sumPendingAhQuantity([])).toBe(0);
+  });
+});
