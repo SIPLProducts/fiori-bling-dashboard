@@ -18,6 +18,10 @@ export function sortOpenOrdersByCreationDate(rows: OpenSalesOrder[]) {
   });
 }
 
+export function countDistinctOrders(rows: Pick<OpenSalesOrder, "order">[]) {
+  return new Set(rows.map((row) => row.order)).size;
+}
+
 export function countPendingOrdersAgainstAh(rows: Pick<OpenSalesOrder, "order" | "totalAh">[]) {
   return rows.filter((row) => row.totalAh > 0).length;
 }
