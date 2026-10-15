@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ScratchPlantRouteImport } from './routes/scratch-plant'
 import { Route as AuthenticatedLaunchpadRouteImport } from './routes/_authenticated/launchpad'
 import { Route as AuthenticatedManagementDashboardRouteImport } from './routes/_authenticated/management-dashboard'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
@@ -50,11 +49,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScratchPlantRoute = ScratchPlantRouteImport.update({
-  id: '/scratch-plant',
-  path: '/scratch-plant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedLaunchpadRoute = AuthenticatedLaunchpadRouteImport.update({
@@ -202,7 +196,6 @@ const ApiPublicSapSyncZfisalesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/scratch-plant': typeof ScratchPlantRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
@@ -231,7 +224,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/scratch-plant': typeof ScratchPlantRoute
   '/launchpad': typeof AuthenticatedLaunchpadRoute
   '/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
@@ -261,7 +253,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/scratch-plant': typeof ScratchPlantRoute
   '/_authenticated/launchpad': typeof AuthenticatedLaunchpadRoute
   '/_authenticated/management-dashboard': typeof AuthenticatedManagementDashboardRoute
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
@@ -292,7 +283,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/scratch-plant'
     | '/launchpad'
     | '/management-dashboard'
     | '/admin/permissions'
@@ -321,7 +311,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/scratch-plant'
     | '/launchpad'
     | '/management-dashboard'
     | '/admin/permissions'
@@ -350,7 +339,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/scratch-plant'
     | '/_authenticated/launchpad'
     | '/_authenticated/management-dashboard'
     | '/_authenticated/admin/permissions'
@@ -381,7 +369,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ScratchPlantRoute: typeof ScratchPlantRoute
   ApiPublicSapPullZfisalesRoute: typeof ApiPublicSapPullZfisalesRoute
   ApiPublicSapSyncZfisalesRoute: typeof ApiPublicSapSyncZfisalesRoute
 }
@@ -407,13 +394,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scratch-plant': {
-      id: '/scratch-plant'
-      path: '/scratch-plant'
-      fullPath: '/scratch-plant'
-      preLoaderRoute: typeof ScratchPlantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/launchpad': {
@@ -660,7 +640,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ScratchPlantRoute: ScratchPlantRoute,
   ApiPublicSapPullZfisalesRoute: ApiPublicSapPullZfisalesRoute,
   ApiPublicSapSyncZfisalesRoute: ApiPublicSapSyncZfisalesRoute,
 }
