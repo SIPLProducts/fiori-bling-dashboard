@@ -27,6 +27,11 @@ export function countPendingOrdersAgainstAh(rows: Pick<OpenSalesOrder, "order" |
   return new Set(rows.filter((row) => row.totalAh > 0).map((row) => row.order)).size;
 }
 
+/** Pending AH Quantity: sum of the Total AH column (SAP TOT_AH) across the supplied rows. */
+export function sumPendingAhQuantity(rows: Pick<OpenSalesOrder, "totalAh">[]) {
+  return rows.reduce((sum, row) => sum + (Number.isFinite(row.totalAh) ? row.totalAh : 0), 0);
+}
+
 export function summarizeOpenOrderTable(rows: Pick<OpenSalesOrder, "openQuantity" | "deliveredQuantity" | "ah" | "totalAh" | "value">[]) {
   return rows.reduce((totals, row) => ({
     openQuantity: totals.openQuantity + row.openQuantity,
