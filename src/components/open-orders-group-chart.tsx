@@ -18,6 +18,7 @@ function GroupTooltip({ active, payload }: { active?: boolean; payload?: Array<{
 export function OpenOrdersGroupChart({ data, color, pdf = false }: { data: GroupSummary[]; color: string; pdf?: boolean }) {
   const id = useId().replace(/:/g, "");
   const rows = pdf ? data : data.slice(0, 10);
+  const decimals = groupAxisDecimals(Math.max(0, ...rows.map((row) => Math.abs(Number(row.value) || 0))));
   if (!rows.length) return <p className="py-8 text-center text-xs text-muted-foreground">No group data from SAP yet</p>;
   return <div>
     <p className="text-[10px] font-medium text-muted-foreground">Value (₹ Cr)</p>
