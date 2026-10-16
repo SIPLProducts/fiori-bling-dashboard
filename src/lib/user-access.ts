@@ -37,3 +37,10 @@ export function normalizeAccessList(selected: string[], master: string[]): strin
   if (master.length && master.every((code) => unique.includes(code))) return [];
   return unique;
 }
+
+/** Filter dropdowns list only the values assigned to the user; an empty assignment (or admin) keeps every option. */
+export function restrictToAssigned<T>(options: T[], assigned: string[] | undefined, unrestricted: boolean | undefined, valueOf: (o: T) => string): T[] {
+  if (unrestricted || !assigned || assigned.length === 0) return options;
+  const set = new Set(assigned);
+  return options.filter((o) => set.has(valueOf(o)));
+}

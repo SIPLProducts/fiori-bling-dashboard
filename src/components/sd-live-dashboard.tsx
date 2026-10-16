@@ -91,6 +91,8 @@ import {
   profitCentreOptions,
 } from "@/lib/sd-live";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
+import { useUserAccess } from "@/lib/use-user-access";
+import { restrictToAssigned } from "@/lib/user-access";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -2222,15 +2224,16 @@ export function SdLiveDashboard() {
     return { primary, limits };
   }, [filters.fiscalYears, filters.quarters, filters.from, effectiveFilters.to]);
 
+  const access = useUserAccess();
   const opts = useMemo(
     () => ({
-      plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
-      profitCentres: profitCentreOptions(all),
+      plants: restrictToAssigned(uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)), access?.plants, access?.unrestricted, (p) => p),
+      profitCentres: restrictToAssigned(profitCentreOptions(all), access?.profitCenters, access?.unrestricted, (o) => o.value),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
       fiscalYears: uniqueValues(all, (r) => fiscalYearForDate(r.postingDate)).sort((a, b) => b.localeCompare(a)),
     }),
-    [all],
+    [all, access],
   );
   const pdfFiscalYearLabel = useMemo(() => {
     const fiscalYears = filters.fiscalYears.length
