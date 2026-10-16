@@ -71,6 +71,13 @@
       "when": 1792125150370,
       "tag": "0009_create_sap_user_dropdown_masters",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792127610962,
+      "tag": "0010_profiles_profit_center",
+      "breakpoints": true
     }
   ]
 }

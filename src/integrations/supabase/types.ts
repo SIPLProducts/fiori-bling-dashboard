@@ -256,6 +256,7 @@ export type Database = {
           info2: string | null
           last_name: string | null
           plant: string | null
+          profit_center: string | null
           purchase_group: string | null
           status: string
           updated_at: string
@@ -277,6 +278,7 @@ export type Database = {
           info2?: string | null
           last_name?: string | null
           plant?: string | null
+          profit_center?: string | null
           purchase_group?: string | null
           status?: string
           updated_at?: string
@@ -298,6 +300,7 @@ export type Database = {
           info2?: string | null
           last_name?: string | null
           plant?: string | null
+          profit_center?: string | null
           purchase_group?: string | null
           status?: string
           updated_at?: string
