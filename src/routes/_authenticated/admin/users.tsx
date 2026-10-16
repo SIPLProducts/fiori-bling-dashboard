@@ -86,6 +86,7 @@ const EMPTY_FORM: UserFormInput = {
   status: "active",
   department: "",
   plant: "",
+  profit_center: "",
   purchase_group: "",
   distribution_channel: "",
   info1: "",
@@ -116,6 +117,15 @@ function AdminUsers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sap_user_dropdown_masters").select("code, name").eq("category", "plant").order("code");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const profitCentersQuery = useQuery({
+    queryKey: ["sap-user-dropdowns", "profit_center"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sap_user_dropdown_masters").select("code, name").eq("category", "profit_center").order("code");
       if (error) throw error;
       return data ?? [];
     },
@@ -222,6 +232,7 @@ function AdminUsers() {
       status: user.status,
       department: user.department ?? "",
       plant: user.plant ?? "",
+      profit_center: user.profit_center ?? "",
       purchase_group: user.purchase_group ?? "",
       distribution_channel: user.distribution_channel ?? "",
       info1: user.info1 ?? "",
@@ -514,23 +525,6 @@ function AdminUsers() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
               </Field>
-              <Field label="Info 1">
-                <Input
-                  value={form.info1}
-                  placeholder="Enter Info 1"
-                  onChange={(e) => setForm({ ...form, info1: e.target.value })}
-                />
-              </Field>
-              <Field label="Info 2">
-                <Input
-                  value={form.info2}
-                  placeholder="Enter Info 2"
-                  onChange={(e) => setForm({ ...form, info2: e.target.value })}
-                />
-              </Field>
-            </Section>
-
-            <Section title="Contact & organisation">
               <Field label="Contact *">
                 <Input
                   value={form.contact}
@@ -538,13 +532,16 @@ function AdminUsers() {
                   onChange={(e) => setForm({ ...form, contact: e.target.value })}
                 />
               </Field>
-              <Field label="Department">
+              <Field label="Info 1">
                 <Input
-                  value={form.department}
-                  placeholder="Enter Department"
-                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                  value={form.info1}
+                  placeholder="Enter Info 1"
+                  onChange={(e) => setForm({ ...form, info1: e.target.value })}
                 />
               </Field>
+            </Section>
+
+            <Section title="Contact & organisation">
               <Field label="Plant">
                 {(plantsQuery.data?.length ?? 0) > 0 ? (
                   <Select {...(form.plant ? { value: form.plant } : {})} onValueChange={(value) => setForm({ ...form, plant: value })}>
@@ -565,6 +562,34 @@ function AdminUsers() {
                     onChange={(e) => setForm({ ...form, plant: e.target.value })}
                   />
                 )}
+              </Field>
+              <Field label="Profit Centre">
+                {(profitCentersQuery.data?.length ?? 0) > 0 ? (
+                  <Select {...(form.profit_center ? { value: form.profit_center } : {})} onValueChange={(value) => setForm({ ...form, profit_center: value })}>
+                    <SelectTrigger><SelectValue placeholder="Select Profit Centre" /></SelectTrigger>
+                    <SelectContent>
+                      {form.profit_center && !profitCentersQuery.data?.some((p) => p.code === form.profit_center) && (
+                        <SelectItem value={form.profit_center}>{form.profit_center}</SelectItem>
+                      )}
+                      {profitCentersQuery.data?.map((p) => (
+                        <SelectItem key={p.code} value={p.code}>{dropdownLabel(p.code, p.name)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={form.profit_center ?? ""}
+                    placeholder="Enter Profit Centre"
+                    onChange={(e) => setForm({ ...form, profit_center: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field label="Department">
+                <Input
+                  value={form.department}
+                  placeholder="Enter Department"
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                />
               </Field>
               <Field label="Purchase Group">
                 <Input
