@@ -46,17 +46,52 @@ DROP TRIGGER IF EXISTS profiles_guard_access_lists ON public.profiles;
 CREATE TRIGGER profiles_guard_access_lists BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.guard_profile_access_lists();
 
+-- Per-query access lookups: wrapped in (SELECT ...) inside policies so Postgres evaluates them once per query, not per row.
+CREATE OR REPLACE FUNCTION public.current_access_unrestricted()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT public.is_data_admin(auth.uid()) OR EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = auth.uid() AND cardinality(p.plants) = 0 AND cardinality(p.profit_centers) = 0
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.current_access_plants()
+RETURNS text[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT coalesce((SELECT p.plants FROM public.profiles p WHERE p.id = auth.uid()), '{}'::text[]);
+$$;
+
+CREATE OR REPLACE FUNCTION public.current_access_profit_centers()
+RETURNS text[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT coalesce((SELECT p.profit_centers FROM public.profiles p WHERE p.id = auth.uid()), '{}'::text[]);
+$$;
+
+GRANT EXECUTE ON FUNCTION public.current_access_unrestricted() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_access_plants() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_access_profit_centers() TO authenticated;
+
 DROP POLICY IF EXISTS zfisales_detail_read_authenticated ON public.zfisales_detail;
 CREATE POLICY zfisales_detail_read_authenticated ON public.zfisales_detail FOR SELECT TO authenticated
-  USING (((is_active_snapshot = true) OR is_super_admin(auth.uid())) AND public.user_can_see(plant, profit_ctr));
+  USING (((is_active_snapshot = true) OR (SELECT public.is_super_admin(auth.uid())))
+    AND ((SELECT public.current_access_unrestricted())
+      OR coalesce(plant, '') = ANY ((SELECT public.current_access_plants()))
+      OR coalesce(profit_ctr, '') = ANY ((SELECT public.current_access_profit_centers()))));
 
 DROP POLICY IF EXISTS open_sales_orders_authorized_read ON public.open_sales_orders;
 CREATE POLICY open_sales_orders_authorized_read ON public.open_sales_orders FOR SELECT TO authenticated
-  USING ((is_active_snapshot = true) AND has_screen(auth.uid(), 'sd.open-sales-orders') AND public.user_can_see(plant, profit_center));
+  USING ((is_active_snapshot = true) AND (SELECT public.has_screen(auth.uid(), 'sd.open-sales-orders'))
+    AND ((SELECT public.current_access_unrestricted())
+      OR coalesce(plant, '') = ANY ((SELECT public.current_access_plants()))
+      OR coalesce(profit_center, '') = ANY ((SELECT public.current_access_profit_centers()))));
 
 DROP POLICY IF EXISTS zcash_flow_authorized_read ON public.zcash_flow;
 CREATE POLICY zcash_flow_authorized_read ON public.zcash_flow FOR SELECT TO authenticated
-  USING (has_screen(auth.uid(), 'fi.cash-flow') AND public.user_can_see(plant, profit_center));
+  USING ((SELECT public.has_screen(auth.uid(), 'fi.cash-flow'))
+    AND ((SELECT public.current_access_unrestricted())
+      OR coalesce(plant, '') = ANY ((SELECT public.current_access_plants()))
+      OR coalesce(profit_center, '') = ANY ((SELECT public.current_access_profit_centers()))));
+
+CREATE INDEX IF NOT EXISTS zfisales_detail_active_updated_idx
+  ON public.zfisales_detail (is_active_snapshot, updated_at DESC);
 
 CREATE OR REPLACE FUNCTION public.net_sales_summary()
 RETURNS TABLE(total numeric, sales_type text, type_total numeric)
