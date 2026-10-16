@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import { canSee, isZtbnFieldAllowed } from "../src/lib/user-access";
 
 const limited = { unrestricted: false, plants: ["1000", "1100"], profitCenters: ["COFF100001"] };

@@ -50,6 +50,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countDistinctOrders, formatPendingAhQuantityInLakhs, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { useUserAccess } from "@/lib/use-user-access";
+import { restrictToAssigned } from "@/lib/user-access";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { selectOpenOrderChartGroups } from "@/lib/open-orders-chart-selection";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
@@ -169,14 +171,15 @@ export function OpenSalesOrdersDashboard() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [excelBusy, setExcelBusy] = useState(false);
   const tablePageSize = 10;
+  const access = useUserAccess();
   const options = useMemo(() => ({
     documentType: documentTypeOptions(data),
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),
     zone: [...new Set(data.map((row) => row.zone))].sort(),
-    plant: [...new Map(data.map((row) => [row.plant, { value: row.plant, label: [row.plant, row.plantName].filter(Boolean).join(" — ") || "Unassigned" }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
+    plant: restrictToAssigned([...new Map(data.map((row) => [row.plant, { value: row.plant, label: [row.plant, row.plantName].filter(Boolean).join(" — ") || "Unassigned" }])).values()].sort((a, b) => a.value.localeCompare(b.value)), access?.plants, access?.unrestricted, (o) => o.value),
     product: [...new Set(data.map(productKey))].sort(),
     division: [...new Map(data.map((row) => [row.division, { value: row.division, label: row.industryDescription ? `${row.division} — ${row.industryDescription}` : row.division }])).values()].sort((a, b) => a.value.localeCompare(b.value)),
-  }), [data]);
+  }), [data, access]);
   useEffect(() => {
     if (!data.length || documentTypeDefaultsInitialized.current) return;
     documentTypeDefaultsInitialized.current = true;
