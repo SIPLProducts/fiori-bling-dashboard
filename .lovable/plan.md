@@ -1,15 +1,23 @@
-# Plant / Profit Centre: Select All + why user 51270 sees no data
+# Plant / Profit Centre: Select All + "plant OR profit centre" access
 
-## Why 51270 sees 0
-Checked the database. User 51270 has plants 1000, 1100, 1110 and profit centres COFF100001–COFF100005. The rule is that a record shows only when its plant AND its profit centre are both allowed.
-- Open Sales Orders: plant 1100 rows only use PGNLB11001 / PGPED11001. No row has a COFF profit centre. Plants 1000 and 1110 have no rows.
-- Net Sales: plant 1100 rows only use PGNLB11001 / PGPED11001 / PGPED11002.
-So no record matches both lists, and the empty screens are correct for these settings. Nothing is broken. To give this user data, assign profit centres that really occur under their plants (for example PGNLB11001, PGPED11001), or leave Profit Centre empty, which means all profit centres in their plants.
+## Why 51270 saw 0
+User 51270 has plants 1000, 1100 and 1110, and profit centres COFF100001–COFF100005. Under the old rule, a record had to match both a plant and a profit centre. Plant 1100 rows use only PGNLB/PGPED profit centres, so no record matched both lists.
+
+## New rule (as requested)
+- A record shows when its plant is assigned **or** its profit centre is assigned.
+- If only plants are assigned, the user sees those plants. If only profit centres are assigned, the user sees those profit centres.
+- If nothing is assigned, the user sees everything. Admin and Super Admin always see everything.
+- This applies to every screen: Net Sales, Open Sales Orders, Cash Flow, Launchpad cards, Management and TBN. It also covers totals, charts, tables, Excel and PDF.
+- After the change, 51270 will see all plant 1100 data, plus any COFF profit centre rows.
 
 ## Changes
-1. Create / Edit User: add **Select All** and **Deselect All** buttons to the Plant and Profit Centre lists. These are the same buttons used in the Smart Filters. Select All applies to every value in the list, and Deselect All clears it. Empty still means "all allowed".
-2. Under Profit Centre, add a short hint: "Records must match both a selected plant and a selected profit centre. Leave empty to allow all."
+1. In Create / Edit User, add **Select All** and **Deselect All** to the Plant and Profit Centre lists.
+2. Add a short hint under the lists: "Records matching any selected plant or profit centre are shown. Leave both empty to allow all."
+3. Change the database access check, which every screen uses, to the OR rule.
+4. Smart Filter lists: show only the plants and profit centres that actually occur in the user's visible data, so no extra filtering hides them.
 
 ## Technical
-- `src/routes/_authenticated/admin/users.tsx`: pass `bulkActions` to the two `MultiSelect`s and add the hint text.
-- The access rules and the database stay unchanged.
+- Migration: replace `public.user_can_see` so it returns true when the user is a data admin, or both arrays are empty, or the plant is in plants, or the profit centre is in profit_centers. Mirror the migration in `supabase/migrations/` and update `deploy/user-access/install-user-access.sql`, then run NOTIFY pgrst.
+- Update `canSee` in `src/lib/user-access.ts` to the same rule. For TBN, profit-centre columns stay limited to assigned profit centres; if only plants are assigned, all columns stay visible.
+- In `users.tsx`, pass `bulkActions` to both MultiSelects and add the hint.
+- Update tests: OR match, plants-only, PCs-only, both empty = all, admin bypass.
