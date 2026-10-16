@@ -156,6 +156,7 @@ function AdminUsers() {
         user.email,
         user.department,
         user.plant,
+        user.profit_center,
         ...user.roles.map(roleName),
       ]
         .filter(Boolean)
