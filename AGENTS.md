@@ -39,3 +39,4 @@
 - Cash Flow reads all public.zcash_flow rows through one stable query (explicit Refresh) mapped by pure helpers in cash-flow.ts, so filters, charts, totals and exports share one dataset; date-based views stay empty until SAP supplies dates.
 - Upsert ZCASH_FLOW rows on Profit Center + Plant + GL Code without snapshots, since SAP returns current balances per account.
 - Auth state changes invalidate queries only when the signed-in user id changes (sign-out clears cache), because Supabase re-emits SIGNED_IN on tab focus. The Cash Flow launchpad card shares the Cash Flow screen query so both change only on explicit Refresh/Sync.
+- User Management dropdown masters (plants, profit centers) upsert into public.sap_user_dropdown_masters on category + code without snapshots, since SAP returns the full current master list.

@@ -19,6 +19,7 @@ import { listRoles, visibleRoles } from "@/lib/access";
 import { loginAsAdminForTesting } from "@/lib/admin-test-login.functions";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { supabase } from "@/integrations/supabase/client";
+import { dropdownLabel } from "@/lib/user-dropdown-map";
 import { AccessDenied, Panel, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,6 +111,15 @@ function AdminUsers() {
 
   const usersQuery = useQuery({ queryKey: ["portal-users"], queryFn: () => listPortalUsers() });
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: () => listRoles() });
+  const plantsQuery = useQuery({
+    queryKey: ["sap-user-dropdowns", "plant"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sap_user_dropdown_masters").select("code, name").eq("category", "plant").order("code");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const currentUserQuery = useQuery({
     queryKey: ["current-user-id"],
     queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
@@ -536,11 +546,25 @@ function AdminUsers() {
                 />
               </Field>
               <Field label="Plant">
-                <Input
-                  value={form.plant}
-                  placeholder="Enter Plant"
-                  onChange={(e) => setForm({ ...form, plant: e.target.value })}
-                />
+                {(plantsQuery.data?.length ?? 0) > 0 ? (
+                  <Select {...(form.plant ? { value: form.plant } : {})} onValueChange={(value) => setForm({ ...form, plant: value })}>
+                    <SelectTrigger><SelectValue placeholder="Select Plant" /></SelectTrigger>
+                    <SelectContent>
+                      {form.plant && !plantsQuery.data?.some((p) => p.code === form.plant) && (
+                        <SelectItem value={form.plant}>{form.plant}</SelectItem>
+                      )}
+                      {plantsQuery.data?.map((p) => (
+                        <SelectItem key={p.code} value={p.code}>{dropdownLabel(p.code, p.name)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={form.plant}
+                    placeholder="Enter Plant"
+                    onChange={(e) => setForm({ ...form, plant: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Purchase Group">
                 <Input

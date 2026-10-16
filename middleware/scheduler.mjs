@@ -21,6 +21,8 @@ import {
   isOpenSalesOrdersEndpoint,
   mapZcashFlowPayload,
   isZcashFlowEndpoint,
+  mapUserDropdownPayload,
+  isUserDropdownEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -178,6 +180,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isUserDropdownEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapUserDropdownPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("sap_user_dropdown_masters").upsert(rows.slice(i, i + BATCH), { onConflict: "category,code" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "sap_user_dropdown_masters", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isZcashFlowEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapZcashFlowPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {

@@ -64,6 +64,13 @@
       "when": 1792061292809,
       "tag": "0008_open_orders_groups_profit_center_name",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792125150370,
+      "tag": "0009_create_sap_user_dropdown_masters",
+      "breakpoints": true
     }
   ]
 }
