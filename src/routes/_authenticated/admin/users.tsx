@@ -555,6 +555,7 @@ function AdminUsers() {
                   onChange={(next) => setForm({ ...form, plants: next })}
                   placeholder="All plants"
                   emptyText="No plants synced yet"
+                  bulkActions
                 />
               </Field>
               <Field label="Profit Centre">
@@ -564,7 +565,9 @@ function AdminUsers() {
                   onChange={(next) => setForm({ ...form, profit_centers: next })}
                   placeholder="All profit centres"
                   emptyText="No profit centres synced yet"
+                  bulkActions
                 />
+                <p className="mt-1 text-[11px] text-muted-foreground">Records matching any selected plant or profit centre are shown. Leave both empty to allow all.</p>
               </Field>
               <Field label="Department">
                 <Input

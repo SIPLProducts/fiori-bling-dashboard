@@ -85,6 +85,13 @@
       "when": 1792137303279,
       "tag": "0011_user_plant_profit_center_access",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792141226752,
+      "tag": "0012_user_access_plant_or_profit_center",
+      "breakpoints": true
     }
   ]
 }

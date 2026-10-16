@@ -7,10 +7,14 @@ describe("user plant / profit centre access", () => {
   it("no assignments means everything is visible", () => {
     expect(canSee({ unrestricted: false, plants: [], profitCenters: [] }, "9999", "X")).toBe(true);
   });
-  it("requires both plant and profit centre to match", () => {
-    expect(canSee(limited, "1000", "COFF100001")).toBe(true);
-    expect(canSee(limited, "1000", "SERB010")).toBe(false);
-    expect(canSee(limited, "2000", "COFF100001")).toBe(false);
+  it("shows a record when plant OR profit centre matches", () => {
+    expect(canSee(limited, "1100", "PGNLB11001")).toBe(true);
+    expect(canSee(limited, "2000", "COFF100001")).toBe(true);
+    expect(canSee(limited, "2000", "SERB010")).toBe(false);
+  });
+  it("plants-only and profit-centres-only assignments", () => {
+    expect(canSee({ unrestricted: false, plants: ["1100"], profitCenters: [] }, "1000", "X")).toBe(false);
+    expect(canSee({ unrestricted: false, plants: [], profitCenters: ["X"] }, "1000", "X")).toBe(true);
   });
   it("admins see everything", () => {
     expect(canSee({ ...limited, unrestricted: true }, "2000", "SERB010")).toBe(true);

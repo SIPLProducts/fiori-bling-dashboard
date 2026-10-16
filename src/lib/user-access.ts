@@ -2,12 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type UserAccess = { unrestricted: boolean; plants: string[]; profitCenters: string[] };
 
-/** Mirrors public.user_can_see: empty list = unrestricted; plant AND profit centre must both match. */
+/** Mirrors public.user_can_see: both lists empty = unrestricted; otherwise plant OR profit centre must match. */
 export function canSee(access: UserAccess, plant: string | null, profitCenter: string | null): boolean {
   if (access.unrestricted) return true;
-  const plantOk = access.plants.length === 0 || access.plants.includes(plant ?? "");
-  const pcOk = access.profitCenters.length === 0 || access.profitCenters.includes(profitCenter ?? "");
-  return plantOk && pcOk;
+  if (access.plants.length === 0 && access.profitCenters.length === 0) return true;
+  return access.plants.includes(plant ?? "") || access.profitCenters.includes(profitCenter ?? "");
 }
 
 /** ZTBN stores one debit/credit column pair per profit centre (e.g. coff100001_debit). */
