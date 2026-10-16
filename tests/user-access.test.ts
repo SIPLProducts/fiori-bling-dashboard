@@ -25,3 +25,13 @@ describe("user plant / profit centre access", () => {
     expect(isZtbnFieldAllowed(limited, "gl_code")).toBe(true);
   });
 });
+
+import { restrictToAssigned } from "../src/lib/user-access";
+test("dropdown lists only assigned profit centres", () => {
+  const opts = ["COFF100001", "PGNLB11001", "COFF100004"];
+  expect(restrictToAssigned(opts, ["COFF100001", "COFF100004"], false, (o) => o)).toEqual(["COFF100001", "COFF100004"]);
+});
+test("empty assignment or admin keeps all options", () => {
+  expect(restrictToAssigned(["A", "B"], [], false, (o) => o)).toEqual(["A", "B"]);
+  expect(restrictToAssigned(["A", "B"], ["A"], true, (o) => o)).toEqual(["A", "B"]);
+});
