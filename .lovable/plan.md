@@ -1,33 +1,30 @@
-# Profit Centre field on User Management
+# Create / Edit User form: reorder fields and add Profit Centre dropdown
 
-## Where the SAP data lives
+## Layout changes
 
-The `Get_User_Management_Dropdown_RES` API writes into one table: **`sap_user_dropdown_masters`**.
+**Basic details section**
+- First Name, Last Name, Username, Email, **Contact \*** (moved here, right after Email), Info 1.
+- **Info 2 removed** from the form (existing saved values are kept untouched in the database, just no longer shown/edited).
 
-- Search for that name in the Database section to see the rows — it is not named after the API, which is why it was easy to miss.
-- It currently holds **36 plants** and **157 profit centres**, last refreshed 10:20 Calcutta.
-- Plants are already used: the Plant field on the Add/Edit user form is a dropdown fed from this table.
-- Profit centres are stored but nothing reads them yet — there is no Profit Centre field on the user form, and the user record has nowhere to keep the choice.
+**Contact & organisation section** (new order)
+1. Plant (existing SAP dropdown)
+2. **Profit Centre** (new SAP dropdown)
+3. Department
+4. Purchase Group
+5. Distribution Channel
+6. Status \*
 
-## What to build
+## Profit Centre dropdown
+- Lists the 157 profit centres already synced from SAP, shown as "code — name", same look and behaviour as Plant.
+- If a user's saved profit centre is no longer in the SAP list, it still shows so nothing is lost; if the list is empty, it falls back to a text box.
+- The choice is saved on the user record and loaded when editing.
 
-1. **Store the choice on the user record.** Add a single optional text column to the user profile table for the profit centre code. Existing users are untouched and keep showing a blank until one is picked.
-
-2. **Add the field to the Add / Edit user form.** A searchable dropdown next to the Plant field, listing entries as "COFF100001 — Corporate Office" style labels (code — name), read from the same table. It behaves like the Plant dropdown: if a saved value is no longer in the SAP list, it still shows so nothing is lost.
-
-3. **Show it in the user list and use it in searches**, the same way Plant is shown and searched today.
-
-4. **Keep Quality and Production in step.** The column change is recorded as a timestamped migration in `supabase/migrations/` and mirrored by a short script under `deploy/` so the same column can be added on those servers with one command, as done for previous tables.
-
-5. **Tests.** A small check that the profit centre list is read from the right category and that labels combine code and name correctly, alongside the existing dropdown tests.
+## Keeping Quality and Production in step
+- One new optional column on the user profile for the profit centre (additive, existing users show blank).
+- Recorded as a timestamped migration in `supabase/migrations/` plus a short script under `deploy/user-dropdowns/` for Quality and Production.
 
 ## Technical notes
-
-- New column: `public.profiles.profit_center text` (nullable, additive — no renames or drops).
-- Read path: `supabase.from("sap_user_dropdown_masters").select("code, name").eq("category", "profit_center").order("code")`, sharing the existing query helper and `dropdownLabel` formatter used by Plant.
-- The table already grants read access to signed-in users and has a read policy, so no permission changes are needed.
-- No sync or SAP changes — the API already populates both categories on its daily 05:30 IST schedule and on manual Sync Now.
-
-## Open question
-
-Should the profit centre also appear as a column in the user list table, or only inside the Add/Edit form? The plan assumes it appears in both; say the word if you want it in the form only.
+- Column: `public.profiles.profit_center text` nullable.
+- Read via `sap_user_dropdown_masters` where `category = 'profit_center'`, reusing the Plant query helper and `dropdownLabel`.
+- Save path: include `profit_center` in the admin create/update user server functions alongside `plant`.
+- Small test that profit-centre options come from the right category and labels combine code and name.
