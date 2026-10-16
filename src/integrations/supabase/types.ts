@@ -762,6 +762,42 @@ export type Database = {
           },
         ]
       }
+      sap_user_dropdown_masters: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          id: string
+          name: string | null
+          raw: Json
+          source_endpoint: string
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          raw?: Json
+          source_endpoint?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          raw?: Json
+          source_endpoint?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tile_groups: {
         Row: {
           created_at: string
