@@ -539,6 +539,7 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
       )
     )
       return false;
+    // profit centre filter values are PRCTR codes (labels show "PRCTR — LTEXT")
     if (!inList(f.segments, r.businessSegment || r.segment)) return false;
     if (!inList(f.customers, r.customerName || r.customer)) return false;
     if (
@@ -755,7 +756,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byProductType, r.productType.trim() || "Unassigned", r.amount);
     if (r.newRepl.trim()) add(byNewRepl, r.newRepl.trim(), r.amount);
     else unassignedNewReplCount += 1;
-    add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
+    add(byPc, profitCentreLabel(r.profitCtr, r.profitCtrName) || r.pcShortName, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
     add(byEmp, r.salesRepName, r.amount);
