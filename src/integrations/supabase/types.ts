@@ -2075,6 +2075,9 @@ export type Database = {
         Args: { _cron: string; _enabled: boolean; _endpoint: string }
         Returns: string
       }
+      current_access_plants: { Args: never; Returns: string[] }
+      current_access_profit_centers: { Args: never; Returns: string[] }
+      current_access_unrestricted: { Args: never; Returns: boolean }
       finish_sync_run: {
         Args: {
           _duration_ms?: number
