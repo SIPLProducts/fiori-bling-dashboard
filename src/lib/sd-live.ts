@@ -1026,3 +1026,22 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
 export function uniqueValues(rows: SdLine[], pick: (r: SdLine) => string): string[] {
   return [...new Set(rows.map(pick).filter(Boolean))].sort();
 }
+
+/** Profit centre display label from PRCTR (code) and LTEXT (description). */
+export function profitCentreLabel(code: string | null | undefined, name: string | null | undefined): string {
+  const c = (code ?? "").trim();
+  const n = (name ?? "").trim();
+  if (c && n && n !== c) return `${c} — ${n}`;
+  return c || n;
+}
+
+/** Unique profit centre options keyed by PRCTR code, labelled "PRCTR — LTEXT". */
+export function profitCentreOptions(rows: { profitCtr: string; profitCtrName: string }[]): { value: string; label: string }[] {
+  const map = new Map<string, string>();
+  for (const r of rows) {
+    const code = (r.profitCtr ?? "").trim();
+    if (!code || map.has(code)) continue;
+    map.set(code, profitCentreLabel(code, r.profitCtrName));
+  }
+  return [...map].map(([value, label]) => ({ value, label })).sort((a, b) => a.value.localeCompare(b.value));
+}
