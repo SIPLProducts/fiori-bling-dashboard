@@ -222,7 +222,7 @@ export function OpenSalesOrdersDashboard() {
     });
     const zones = [...zoneMap.values()]
       .map(({ orders, ...zone }) => ({ ...zone, count: orders.size, share: percent(orders.size, distinctOrders) }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => b.value - a.value || b.count - a.count);
     const partialOrders = new Set(filteredData.filter((row) => row.deliveredQuantity > 0).map((row) => row.order));
     const notDeliveredOrders = new Set(filteredData.filter((row) => row.deliveredQuantity <= 0).map((row) => row.order));
     const partialCount = partialOrders.size;
@@ -418,7 +418,7 @@ export function OpenSalesOrdersDashboard() {
       {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
-        <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
+        <Panel title="Open Orders by Sales Zone" headerDivider dividerColor="teal">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
@@ -426,11 +426,11 @@ export function OpenSalesOrdersDashboard() {
                   {OrderChartGradients({ id: `${documentGradient}-pdf-zone` })}
                   <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
-                  <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} tickFormatter={formatNumber} width={54} label={{ value: "Open Orders", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <YAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v.toFixed(0)} width={54} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-                  <Bar dataKey="count" name="Open Orders" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
+                  <Bar dataKey="value" name="Open Value (₹ Cr)" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                     {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${documentGradient}-pdf-zone-${index % ORDER_CHART_COLORS.length})`} />)}
-                    <LabelList dataKey="count" position="top" formatter={(value: number) => formatNumber(value)} className="fill-foreground text-[10px] font-semibold" />
+                    <LabelList dataKey="value" position="top" formatter={(value: number) => value.toFixed(2)} className="fill-foreground text-[10px] font-semibold" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -446,7 +446,7 @@ export function OpenSalesOrdersDashboard() {
       </div>
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
-        <Panel title="Open Order Lines by Sales Zone" headerDivider dividerColor="teal">
+        <Panel title="Open Orders by Sales Zone" headerDivider dividerColor="teal">
           <CompactSalesZoneChart zones={screenZones} />
         </Panel>
         <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
@@ -513,19 +513,19 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
   const gradient = useId().replace(/:/g, "");
   const slotWidth = Math.max(1, (width - 50) / Math.max(1, zones.length));
   const barWidth = Math.max(2, Math.min(18, slotWidth * 0.65));
-  const maximum = plantChartMaximum(zones.map((zone) => zone.count));
+  const maximum = plantChartMaximum(zones.map((zone) => zone.value));
   return <div ref={ref} className="min-w-0" aria-label="Sales Zone chart">
-    <p className="text-[10px] font-medium text-muted-foreground">Open Orders</p>
+    <p className="text-[10px] font-medium text-muted-foreground">Value (₹ Cr)</p>
     <div data-zone-chart-row className="order-chart-canvas order-zone-canvas"><ResponsiveContainer width="100%" height="100%">
       <BarChart data={zones} barCategoryGap="15%" margin={{ top: 34, right: 10, left: 24, bottom: 6 }}>
         {OrderChartGradients({ id: gradient })}
         <CartesianGrid vertical={false} stroke="var(--chart-grid-line)" />
         <XAxis dataKey="name" interval={0} height={76} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-foreground text-[11px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
-        <YAxis domain={[0, maximum]} allowDecimals={false} width={34} tick={{ fontSize: 10 }} tickFormatter={formatNumber} />
+        <YAxis domain={[0, maximum]} width={40} tick={{ fontSize: 10 }} tickFormatter={(v: number) => v.toFixed(0)} />
         <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-        <Bar dataKey="count" name="Open Orders" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
+        <Bar dataKey="value" name="Open Value (₹ Cr)" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
           {zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}
-          <LabelList dataKey="count" position="top" angle={slotWidth < 30 ? -45 : 0} offset={8} formatter={formatNumber} className="fill-foreground text-[11px] font-semibold" />
+          <LabelList dataKey="value" position="top" angle={slotWidth < 30 ? -45 : 0} offset={8} formatter={(v: number) => v.toFixed(2)} className="fill-foreground text-[11px] font-semibold" />
         </Bar>
       </BarChart>
     </ResponsiveContainer></div>
@@ -557,7 +557,7 @@ function RankingTooltip({ item }: { item: RankedItem }) {
 type ZoneItem = { name: string; count: number; quantity: number; value: number; share: number };
 
 function SalesZoneTooltip({ item }: { item: ZoneItem }) {
-  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Orders: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Open Value: {formatCr(item.value)}</p></div>;
+  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Open Value (₹ Cr): {item.value.toFixed(2)}</p><p>Orders: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p></div>;
 }
 
 function StatusBadge({ partial }: { partial: boolean }) {
