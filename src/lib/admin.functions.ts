@@ -18,6 +18,8 @@ export type PortalUser = {
   department: string | null;
   plant: string | null;
   profit_center: string | null;
+  plants: string[];
+  profit_centers: string[];
   purchase_group: string | null;
   distribution_channel: string | null;
   info1: string | null;
@@ -37,6 +39,8 @@ export type UserFormInput = {
   department: string;
   plant: string;
   profit_center?: string;
+  plants: string[];
+  profit_centers: string[];
   purchase_group: string;
   distribution_channel: string;
   info1: string;
@@ -86,7 +90,7 @@ export async function listPortalUsers(): Promise<PortalUser[]> {
     supabase
       .from("profiles")
       .select(
-        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status, plant, profit_center, purchase_group, distribution_channel, info1, info2",
+        "id, username, email, first_name, last_name, display_name, contact, employee_id, department, company, status, plant, profit_center, plants, profit_centers, purchase_group, distribution_channel, info1, info2",
       )
       .order("created_at"),
     supabase.from("user_role_assignments").select("user_id, role_key"),
@@ -164,8 +168,8 @@ export async function createPortalUser(input: { data: UserFormInput }) {
         last_name: form.last_name.trim(),
         contact: form.contact.trim(),
         department: form.department.trim() || null,
-        plant: form.plant.trim() || null,
-        profit_center: (form.profit_center ?? "").trim() || null,
+        plant: form.plants[0] ?? null,
+        profit_center: form.profit_centers[0] ?? null,
         purchase_group: form.purchase_group.trim() || null,
         distribution_channel: form.distribution_channel.trim() || null,
         info1: form.info1.trim() || null,
@@ -192,8 +196,10 @@ export async function createPortalUser(input: { data: UserFormInput }) {
       display_name: `${form.first_name.trim()} ${form.last_name.trim()}`.trim(),
       contact: form.contact.trim(),
       department: form.department.trim() || null,
-      plant: form.plant.trim() || null,
-      profit_center: (form.profit_center ?? "").trim() || null,
+      plant: form.plants[0] ?? null,
+      profit_center: form.profit_centers[0] ?? null,
+      plants: form.plants,
+      profit_centers: form.profit_centers,
       purchase_group: form.purchase_group.trim() || null,
       distribution_channel: form.distribution_channel.trim() || null,
       info1: form.info1.trim() || null,
@@ -225,8 +231,10 @@ export async function updatePortalUser(input: {
       display_name: `${form.first_name.trim()} ${form.last_name.trim()}`.trim(),
       contact: form.contact.trim(),
       department: form.department.trim() || null,
-      plant: form.plant.trim() || null,
-      profit_center: (form.profit_center ?? "").trim() || null,
+      plant: form.plants[0] ?? null,
+      profit_center: form.profit_centers[0] ?? null,
+      plants: form.plants,
+      profit_centers: form.profit_centers,
       purchase_group: form.purchase_group.trim() || null,
       distribution_channel: form.distribution_channel.trim() || null,
       info1: form.info1.trim() || null,
