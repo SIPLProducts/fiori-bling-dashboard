@@ -41,7 +41,7 @@ function SectionHeading({ title, subtitle, icon: Icon }: { title: string; subtit
 }
 
 function Launchpad() {
-  const { data, isLoading, error } = useLaunchpad();
+  const { data, isLoading, error, refetch } = useLaunchpad();
   const [activeGroup, setActiveGroup] = useState("all");
   const groups = useMemo(() => data ? orderGroupsForRoles(data.groups.filter((group) => data.tiles.some((tile) => tile.group_key === group.key)), data.roles) : [], [data]);
   const role = primaryRole(data?.roles);
@@ -56,7 +56,7 @@ function Launchpad() {
     </div>
 
     <main className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5">
-      {error ? <p className="text-sm text-destructive">Could not load your launchpad. Please refresh.</p> : null}
+      {error ? <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-card p-4 text-sm text-destructive"><span>Could not load modules. Please try again.</span><button type="button" onClick={() => void refetch()} className="rounded-md border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted">Retry</button></div> : null}
       {role ? <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-3 shadow-launchpad-tile">
         <div className="flex min-w-0 items-center gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><BadgeCheck className="size-[18px]" /></span><div className="min-w-0"><span className="text-[10px] font-bold tracking-wide text-primary uppercase">{role}</span><p className="truncate text-[11px] text-muted-foreground">{ROLE_HEADLINE[role]}</p></div></div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-[10px] font-semibold text-success"><Radio className="size-3" />Live Session Active</span>

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { SCREENS, SUPER_ADMIN_ROLE_KEY } from "./screens";
+import { withAuthRetry } from "./auth-retry";
 
 export type RoleRecord = {
   key: string;
@@ -19,10 +20,9 @@ const ALL_SCREENS = SCREENS.map((screen) => screen.key);
 
 /** Role keys + effective screen permissions for a user (union across their roles). */
 export async function accessForUser(userId: string): Promise<AccessSnapshot> {
-  const { data: assignments } = await supabase
-    .from("user_role_assignments")
-    .select("role_key")
-    .eq("user_id", userId);
+  const assignments = await withAuthRetry(() =>
+    supabase.from("user_role_assignments").select("role_key").eq("user_id", userId),
+  );
 
   const roleKeys = (assignments ?? []).map((row) => row.role_key);
   const isSuperAdmin = roleKeys.includes(SUPER_ADMIN_ROLE_KEY);
@@ -31,10 +31,9 @@ export async function accessForUser(userId: string): Promise<AccessSnapshot> {
   }
   if (!roleKeys.length) return { roleKeys, isSuperAdmin: false, screens: [] };
 
-  const { data: grants } = await supabase
-    .from("role_screens")
-    .select("screen_key")
-    .in("role_key", roleKeys);
+  const grants = await withAuthRetry(() =>
+    supabase.from("role_screens").select("screen_key").in("role_key", roleKeys),
+  );
 
   const screens = Array.from(new Set((grants ?? []).map((row) => row.screen_key)));
   return { roleKeys, isSuperAdmin: false, screens };

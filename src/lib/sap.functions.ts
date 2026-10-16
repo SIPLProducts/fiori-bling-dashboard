@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { canAccessModule } from "./sap-modules";
 import { accessForUser } from "./access";
+import { withAuthRetry } from "./auth-retry";
 import { childScreenForTile, permissionModule } from "./screens";
 
 import * as provider from "./sap-provider";
@@ -45,16 +46,18 @@ async function screensForUser(userId: string): Promise<string[]> {
 export async function getLaunchpad(): Promise<LaunchpadData> {
   const userId = await requireUserId();
 
-  const [access, profileRes, groupsRes, tilesRes, kpis] = await Promise.all([
+  const [access, profile, groups, tileRows, kpis] = await Promise.all([
     accessForUser(userId),
-    supabase.from("profiles").select("display_name, company, avatar_url").eq("id", userId).maybeSingle(),
-    supabase.from("tile_groups").select("key, title, sort_order").order("sort_order"),
-    supabase.from("tiles").select("*").order("sort_order"),
+    withAuthRetry(() => supabase.from("profiles").select("display_name, company, avatar_url").eq("id", userId).maybeSingle()),
+    withAuthRetry(() => supabase.from("tile_groups").select("key, title, sort_order").order("sort_order")),
+    withAuthRetry(() => supabase.from("tiles").select("*").order("sort_order")),
     provider.getKpiValues(),
   ]);
+  const profileRes = { data: profile };
+  const groupsRes = { data: groups };
 
   const { roleKeys, isSuperAdmin, screens } = access;
-  const tiles = ((tilesRes.data ?? []) as unknown as TileRecord[]).filter((tile) => {
+  const tiles = ((tileRows ?? []) as unknown as TileRecord[]).filter((tile) => {
     if (isSuperAdmin) return true;
     const childScreen = childScreenForTile(tile);
     if (childScreen) return screens.includes(childScreen);
