@@ -88,6 +88,7 @@ import {
   type QuarterSummary,
   type SdFilters,
   type SdLine,
+  profitCentreOptions,
 } from "@/lib/sd-live";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 

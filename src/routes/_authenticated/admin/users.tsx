@@ -567,7 +567,7 @@ function AdminUsers() {
                   emptyText="No profit centres synced yet"
                   bulkActions
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">Records matching any selected plant or profit centre are shown. Leave both empty to allow all.</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Records matching any selected plant or profit centre are shown. Ticking every value, or leaving it empty, means All.</p>
               </Field>
               <Field label="Department">
                 <Input
