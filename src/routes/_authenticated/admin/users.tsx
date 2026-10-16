@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MultiSelect } from "@/components/multi-select";
 import {
   Table,
   TableBody,
@@ -87,6 +88,8 @@ const EMPTY_FORM: UserFormInput = {
   department: "",
   plant: "",
   profit_center: "",
+  plants: [],
+  profit_centers: [],
   purchase_group: "",
   distribution_channel: "",
   info1: "",
@@ -155,8 +158,8 @@ function AdminUsers() {
         user.username,
         user.email,
         user.department,
-        user.plant,
-        user.profit_center,
+        ...(user.plants ?? []),
+        ...(user.profit_centers ?? []),
         ...user.roles.map(roleName),
       ]
         .filter(Boolean)
@@ -234,6 +237,8 @@ function AdminUsers() {
       department: user.department ?? "",
       plant: user.plant ?? "",
       profit_center: user.profit_center ?? "",
+      plants: user.plants?.length ? user.plants : user.plant ? [user.plant] : [],
+      profit_centers: user.profit_centers?.length ? user.profit_centers : user.profit_center ? [user.profit_center] : [],
       purchase_group: user.purchase_group ?? "",
       distribution_channel: user.distribution_channel ?? "",
       info1: user.info1 ?? "",
@@ -343,7 +348,7 @@ function AdminUsers() {
                       </TableCell>
                       <TableCell className="text-sm">{user.username ?? "—"}</TableCell>
                       <TableCell className="text-sm">{user.contact ?? "—"}</TableCell>
-                      <TableCell className="text-sm">{user.plant ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{summarizeCodes(user.plants)}</TableCell>
                       <TableCell className="text-sm">{user.department ?? "—"}</TableCell>
                       <TableCell>
                         {user.roles.length ? (
@@ -544,46 +549,22 @@ function AdminUsers() {
 
             <Section title="Contact & organisation">
               <Field label="Plant">
-                {(plantsQuery.data?.length ?? 0) > 0 ? (
-                  <Select {...(form.plant ? { value: form.plant } : {})} onValueChange={(value) => setForm({ ...form, plant: value })}>
-                    <SelectTrigger><SelectValue placeholder="Select Plant" /></SelectTrigger>
-                    <SelectContent>
-                      {form.plant && !plantsQuery.data?.some((p) => p.code === form.plant) && (
-                        <SelectItem value={form.plant}>{form.plant}</SelectItem>
-                      )}
-                      {plantsQuery.data?.map((p) => (
-                        <SelectItem key={p.code} value={p.code}>{dropdownLabel(p.code, p.name)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    value={form.plant}
-                    placeholder="Enter Plant"
-                    onChange={(e) => setForm({ ...form, plant: e.target.value })}
-                  />
-                )}
+                <MultiSelect
+                  options={withSaved(plantsQuery.data, form.plants)}
+                  selected={form.plants}
+                  onChange={(next) => setForm({ ...form, plants: next })}
+                  placeholder="All plants"
+                  emptyText="No plants synced yet"
+                />
               </Field>
               <Field label="Profit Centre">
-                {(profitCentersQuery.data?.length ?? 0) > 0 ? (
-                  <Select {...(form.profit_center ? { value: form.profit_center } : {})} onValueChange={(value) => setForm({ ...form, profit_center: value })}>
-                    <SelectTrigger><SelectValue placeholder="Select Profit Centre" /></SelectTrigger>
-                    <SelectContent>
-                      {form.profit_center && !profitCentersQuery.data?.some((p) => p.code === form.profit_center) && (
-                        <SelectItem value={form.profit_center}>{form.profit_center}</SelectItem>
-                      )}
-                      {profitCentersQuery.data?.map((p) => (
-                        <SelectItem key={p.code} value={p.code}>{dropdownLabel(p.code, p.name)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    value={form.profit_center ?? ""}
-                    placeholder="Enter Profit Centre"
-                    onChange={(e) => setForm({ ...form, profit_center: e.target.value })}
-                  />
-                )}
+                <MultiSelect
+                  options={withSaved(profitCentersQuery.data, form.profit_centers)}
+                  selected={form.profit_centers}
+                  onChange={(next) => setForm({ ...form, profit_centers: next })}
+                  placeholder="All profit centres"
+                  emptyText="No profit centres synced yet"
+                />
               </Field>
               <Field label="Department">
                 <Input
@@ -761,4 +742,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function withSaved(list: { code: string; name: string | null }[] | undefined, saved: string[]) {
+  const options = (list ?? []).map((p) => ({ value: p.code, label: dropdownLabel(p.code, p.name) }));
+  for (const code of saved) if (!options.some((o) => o.value === code)) options.unshift({ value: code, label: code });
+  return options;
+}
+
+function summarizeCodes(codes: string[] | null | undefined) {
+  if (!codes?.length) return "All";
+  return codes.length > 2 ? `${codes.slice(0, 2).join(", ")} +${codes.length - 2}` : codes.join(", ");
 }
