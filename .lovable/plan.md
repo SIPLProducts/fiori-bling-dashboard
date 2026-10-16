@@ -6,7 +6,8 @@ Ram Koti has plants 1100 and 1200, and also **all 157 profit centres** ticked. T
 ## Changes
 1. **All profit centres ticked counts as "no profit centre limit".** If every profit centre is ticked, only the plants restrict the data. The same works the other way round: all plants ticked means only the profit centres restrict. Ram Koti then sees exactly the 29 lines for 1100 + 1200.
 2. **User form:** when every profit centre (or plant) is ticked, it's saved as "All" (an empty list), and the hint says so. Ram Koti's record is corrected to plants 1100, 1200 with profit centres = All.
-3. **Sales Dashboard (Net Sales):** add a **Profit Centre** dropdown to Smart Filters ("code — name"). It lists only the profit centres in the user's own data, or all of them for admins and unrestricted users. It filters the cards, charts, tables, Excel and PDF the same way Plant does.
+3. **Sales Dashboard (Net Sales):** add a **Profit Centre** dropdown to Smart Filters, shown as "PRCTR — LTEXT" (code — description). Both are already stored for every Net Sales row. It lists only the profit centres in the user's own data, or all of them for admins and unrestricted users. It filters the cards, charts, tables, Excel and PDF the same way Plant does.
+3a. **Top 10 Profit Centres** chart labels also use "PRCTR — LTEXT", falling back to the code alone when the description is empty.
 4. Smart Filter Plant lists on all screens keep showing only the user's assigned plants.
 
 ## Technical
