@@ -88,6 +88,7 @@ import {
   type QuarterSummary,
   type SdFilters,
   type SdLine,
+  profitCentreOptions,
 } from "@/lib/sd-live";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
@@ -2224,7 +2225,7 @@ export function SdLiveDashboard() {
   const opts = useMemo(
     () => ({
       plants: uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)),
-      profitCentres: uniqueValues(all, (r) => r.pcShortName),
+      profitCentres: profitCentreOptions(all),
       segments: uniqueValues(all, (r) => r.businessSegment || r.segment),
       customers: uniqueValues(all, (r) => r.customerName || r.customer),
       fiscalYears: uniqueValues(all, (r) => fiscalYearForDate(r.postingDate)).sort((a, b) => b.localeCompare(a)),
@@ -2641,7 +2642,7 @@ export function SdLiveDashboard() {
                 Profit centre
                 <div className="mt-1">
                   <MultiSelect
-                    options={toOptions(opts.profitCentres)}
+                    options={opts.profitCentres}
                     selected={filters.profitCentres}
                     onChange={(next) => set({ profitCentres: next })}
                   />

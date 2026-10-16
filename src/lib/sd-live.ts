@@ -539,6 +539,7 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
       )
     )
       return false;
+    // profit centre filter values are PRCTR codes (labels show "PRCTR — LTEXT")
     if (!inList(f.segments, r.businessSegment || r.segment)) return false;
     if (!inList(f.customers, r.customerName || r.customer)) return false;
     if (
@@ -755,7 +756,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byProductType, r.productType.trim() || "Unassigned", r.amount);
     if (r.newRepl.trim()) add(byNewRepl, r.newRepl.trim(), r.amount);
     else unassignedNewReplCount += 1;
-    add(byPc, r.pcShortName || r.profitCtrName || r.profitCtr, r.amount);
+    add(byPc, profitCentreLabel(r.profitCtr, r.profitCtrName) || r.pcShortName, r.amount);
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
     add(byEmp, r.salesRepName, r.amount);
@@ -1024,4 +1025,23 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
 
 export function uniqueValues(rows: SdLine[], pick: (r: SdLine) => string): string[] {
   return [...new Set(rows.map(pick).filter(Boolean))].sort();
+}
+
+/** Profit centre display label from PRCTR (code) and LTEXT (description). */
+export function profitCentreLabel(code: string | null | undefined, name: string | null | undefined): string {
+  const c = (code ?? "").trim();
+  const n = (name ?? "").trim();
+  if (c && n && n !== c) return `${c} — ${n}`;
+  return c || n;
+}
+
+/** Unique profit centre options keyed by PRCTR code, labelled "PRCTR — LTEXT". */
+export function profitCentreOptions(rows: { profitCtr: string; profitCtrName: string }[]): { value: string; label: string }[] {
+  const map = new Map<string, string>();
+  for (const r of rows) {
+    const code = (r.profitCtr ?? "").trim();
+    if (!code || map.has(code)) continue;
+    map.set(code, profitCentreLabel(code, r.profitCtrName));
+  }
+  return [...map].map(([value, label]) => ({ value, label })).sort((a, b) => a.value.localeCompare(b.value));
 }

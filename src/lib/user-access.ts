@@ -30,3 +30,10 @@ export async function fetchUserAccess(): Promise<UserAccess> {
     profitCenters: profile.data?.profit_centers ?? [],
   };
 }
+
+/** Ticking every master value means "no limit" for that list, so store it as empty. */
+export function normalizeAccessList(selected: string[], master: string[]): string[] {
+  const unique = [...new Set(selected.map((v) => v.trim()).filter(Boolean))];
+  if (master.length && master.every((code) => unique.includes(code))) return [];
+  return unique;
+}

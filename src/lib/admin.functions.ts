@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { accessForUser, listRoles } from "./access";
 import { SUPER_ADMIN_ROLE_KEY } from "./screens";
+import { normalizeAccessList } from "./user-access";
+
+async function normalizeAccess<T extends { plants: string[]; profit_centers: string[] }>(form: T): Promise<T> {
+  const { data } = await supabase.from("sap_user_dropdown_masters").select("category, code");
+  const codes = (cat: string) => (data ?? []).filter((r) => r.category === cat).map((r) => r.code);
+  return { ...form, plants: normalizeAccessList(form.plants, codes("plant")), profit_centers: normalizeAccessList(form.profit_centers, codes("profit_center")) };
+}
 
 export type UserStatus = "active" | "inactive";
 
@@ -152,7 +159,7 @@ export async function activatePortalUser(userId: string) {
 
 export async function createPortalUser(input: { data: UserFormInput }) {
   await requireScreen("admin.users", "User Management");
-  const form = input.data;
+  const form = await normalizeAccess(input.data);
   validate(form, true);
   await assertUsernameFree(form.username);
   await assertAssignableRole(form.roleKey);
@@ -217,7 +224,7 @@ export async function updatePortalUser(input: {
   data: { id: string } & Omit<UserFormInput, "email">;
 }) {
   await requireScreen("admin.users", "User Management");
-  const form = input.data;
+  const form = await normalizeAccess(input.data);
   validate({ ...form, email: "placeholder@example.com" }, false);
   await assertUsernameFree(form.username, form.id);
   await assertAssignableRole(form.roleKey);
