@@ -13,7 +13,7 @@ const measures = [
 ] as const;
 
 /** The bar is named by its division codes; the plant code stands in when SAP supplied no division. */
-const plantLabel = (plant: PlantPending | undefined) => plant?.divisions?.length ? plant.divisions.join(" / ") : plant?.code?.trim() || "—";
+export const plantLabel = (plant: PlantPending | undefined) => plant?.divisions?.length ? plant.divisions.join(" / ") : plant?.name?.trim() || plant?.code?.trim() || "—";
 
 /** Shortens a diagonal label to the space available; flat labels are never shortened. */
 const fitLabel = (text: string, chars: number, rotated: boolean) => rotated && text.length > chars ? `${text.slice(0, Math.max(2, chars - 1))}…` : text;
@@ -49,7 +49,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
             <YAxis yAxisId="value" domain={[0, maxima.value]} ticks={[0, 0.25, 0.5, 0.75, 1].map((part) => part * maxima.value)} width={48} tick={{ fontSize: 10, fill: "var(--chart-1)" }} tickFormatter={numeric} tickLine={false} axisLine={{ stroke: "var(--chart-axis-label)" }} />
             <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
               const plant = payload?.[0]?.payload as PlantPending | undefined;
-              return active && plant ? <div className="max-w-80 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><p className="mb-1 font-semibold">Division: {plantLabel(plant)}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
+              return active && plant ? <div className="max-w-80 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><p className="mb-1 font-semibold">Division: {plant.divisions?.length ? plant.divisions.join(" / ") : "—"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
             }} />
             <Bar yAxisId="value" dataKey="value" name="Pending Value (₹ Cr)" fill="var(--chart-1)" barSize={barWidth} minPointSize={2} radius={[2, 2, 0, 0]} isAnimationActive={false}>
               {plants.map((plant, index) => <Cell key={plant.code} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}

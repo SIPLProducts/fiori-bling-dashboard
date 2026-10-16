@@ -313,7 +313,7 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     purchase_order_date: toIsoDate(pick(raw, ["BSTDK", "bstdk"])),
     delivery_date: toIsoDate(pick(raw, ["DELV_DAT", "VDATU"])),
     distribution_channel: str2(pick(raw, ["S_VTWEG", "s_vtweg", "VTWEG", "vtweg"])),
-    division: str2(pick(raw, ["DIVISION", "division", "SPART", "spart"])),
+    division: str2(pick(raw, ["DIVISION", "division"])),
     plant: str2(pick(raw, ["WERKS", "werks"])),
     plant_name: str2(pick(raw, ["WERKS_NAME", "werksName"])),
     sales_office: str2(pick(raw, ["VKBUR", "vkbur"])),

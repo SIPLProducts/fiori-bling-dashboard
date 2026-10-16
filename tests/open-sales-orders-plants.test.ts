@@ -36,3 +36,11 @@ describe("Plant-wise Pending", () => {
     expect(plantB?.value).toBe(8);
   });
 });
+
+import { plantLabel } from "../src/components/plant-pending-chart";
+describe("Plant label without division", () => {
+  test("empty division shows plant name, never a stray code", () => {
+    expect(plantLabel({ code: "1100", name: "HBL NCPP", value: 1, quantity: 1, count: 1, divisions: [] })).toBe("HBL NCPP");
+    expect(plantLabel({ code: "1100", name: "", value: 1, quantity: 1, count: 1, divisions: [] })).toBe("1100");
+  });
+});
