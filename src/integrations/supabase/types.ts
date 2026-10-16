@@ -256,7 +256,9 @@ export type Database = {
           info2: string | null
           last_name: string | null
           plant: string | null
+          plants: string[]
           profit_center: string | null
+          profit_centers: string[]
           purchase_group: string | null
           status: string
           updated_at: string
@@ -278,7 +280,9 @@ export type Database = {
           info2?: string | null
           last_name?: string | null
           plant?: string | null
+          plants?: string[]
           profit_center?: string | null
+          profit_centers?: string[]
           purchase_group?: string | null
           status?: string
           updated_at?: string
@@ -300,7 +304,9 @@ export type Database = {
           info2?: string | null
           last_name?: string | null
           plant?: string | null
+          plants?: string[]
           profit_center?: string | null
+          profit_centers?: string[]
           purchase_group?: string | null
           status?: string
           updated_at?: string
@@ -2096,6 +2102,7 @@ export type Database = {
         Args: { _screen: string; _user_id: string }
         Returns: boolean
       }
+      is_data_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_sap_credential_keys: { Args: never; Returns: string[] }
       net_sales_summary:
@@ -2127,6 +2134,10 @@ export type Database = {
           _started_at: string
         }
         Returns: string
+      }
+      user_can_see: {
+        Args: { _plant: string; _profit_center: string }
+        Returns: boolean
       }
     }
     Enums: {

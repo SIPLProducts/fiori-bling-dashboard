@@ -78,6 +78,13 @@
       "when": 1792127610962,
       "tag": "0010_profiles_profit_center",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792137303279,
+      "tag": "0011_user_plant_profit_center_access",
+      "breakpoints": true
     }
   ]
 }
