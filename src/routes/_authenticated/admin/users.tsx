@@ -547,7 +547,7 @@ function AdminUsers() {
               </Field>
               <Field label="Plant">
                 {(plantsQuery.data?.length ?? 0) > 0 ? (
-                  <Select value={form.plant || undefined} onValueChange={(value) => setForm({ ...form, plant: value })}>
+                  <Select {...(form.plant ? { value: form.plant } : {})} onValueChange={(value) => setForm({ ...form, plant: value })}>
                     <SelectTrigger><SelectValue placeholder="Select Plant" /></SelectTrigger>
                     <SelectContent>
                       {form.plant && !plantsQuery.data?.some((p) => p.code === form.plant) && (
