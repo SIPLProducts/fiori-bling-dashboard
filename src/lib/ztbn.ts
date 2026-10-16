@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchUserAccess, isZtbnFieldAllowed } from "@/lib/user-access";
 
 export type ZtbnRow = Record<string, string | number | null> & {
   id: string;
@@ -48,7 +49,8 @@ export async function listZtbnColumns(): Promise<ZtbnColumn[]> {
     .eq("table_key", "ztbn")
     .order("sort_order");
   if (error) throw error;
-  return (data ?? []) as ZtbnColumn[];
+  const access = await fetchUserAccess();
+  return ((data ?? []) as ZtbnColumn[]).filter((c) => isZtbnFieldAllowed(access, c.field_name));
 }
 
 export async function listZtbnRows(input: {
