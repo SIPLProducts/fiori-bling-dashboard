@@ -1,5 +1,5 @@
 import { useUserAccess } from "@/lib/use-user-access";
-import { restrictToAssigned } from "@/lib/user-access";
+import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, CloudDownload, Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
@@ -21,10 +21,9 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const [syncing, setSyncing] = useState(false);
   const [filters, setFilters] = useState<CashFilters>({}); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(10); const [filtersOpen, setFiltersOpen] = useState(true);
   const [quarterly, setQuarterly] = useState(false); const [history, setHistory] = useState(false); const [downloading, setDownloading] = useState(false); const [downloadError, setDownloadError] = useState("");
-  const query = useQuery(cashFlowQueryOptions()); const all = query.data?.rows ?? [];
+  const query = useQuery(cashFlowQueryOptions()); const access = useUserAccess(); const all = useMemo(() => scopeRowsToAssigned(query.data?.rows ?? [], access, { plant: r => r.plant, profitCentre: r => r.profitCentre }), [query.data, access]);
   const filterDefs = CASH_FILTERS.filter(([key]) => key !== "year" && key !== "quarter");
   const nameOf = (key: string, value: string) => { const r = all.find(x => (x as Record<string, unknown>)[key] === value); return key === "profitCentre" && r?.profitCentreName ? `${value} — ${r.profitCentreName}` : key === "glCode" && r?.glName ? `${value} — ${r.glName}` : value; };
-  const access = useUserAccess();
   const optionsFor = (key: string) => restrictToAssigned([...new Set(all.map(row => (row as unknown as Record<string, string | undefined>)[key]).filter((value): value is string => Boolean(value)))].sort().map(value => ({ value, label: nameOf(key, value) })), key === "plant" ? access?.plants : key === "profitCentre" ? access?.profitCenters : undefined, access?.unrestricted, o => o.value);
   const activeFilterCount = filterDefs.filter(([key]) => filters[key] != null).length;
   const resetFilters = () => { setFilters({}); setPage(1); };

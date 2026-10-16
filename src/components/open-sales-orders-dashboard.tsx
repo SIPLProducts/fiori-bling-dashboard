@@ -51,7 +51,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { countDistinctOrders, formatPendingAhQuantityInLakhs, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { useUserAccess } from "@/lib/use-user-access";
-import { restrictToAssigned } from "@/lib/user-access";
+import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
 import { selectOpenOrderChartGroups } from "@/lib/open-orders-chart-selection";
 import { summarizePlantPending } from "@/lib/open-sales-orders-plants";
@@ -149,7 +149,7 @@ export function OpenSalesOrdersDashboard() {
   const documentGradient = `${chartId}-document`;
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
-  const { data = [], error, isLoading, isFetching, refetch } = useQuery({
+  const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["open-sales-orders-live", "p-value1-v1"],
     queryFn: getOpenSalesOrders,
     staleTime: Infinity,
@@ -160,6 +160,8 @@ export function OpenSalesOrdersDashboard() {
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync("open-sales-orders");
+  const access = useUserAccess();
+  const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, { plant: (r) => r.plant }), [rawData, access]);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
   const [dateMode, setDateMode] = useState<OpenOrderDateMode>("range");
   const [singleDate, setSingleDate] = useState<Date>();
@@ -171,7 +173,6 @@ export function OpenSalesOrdersDashboard() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [excelBusy, setExcelBusy] = useState(false);
   const tablePageSize = 10;
-  const access = useUserAccess();
   const options = useMemo(() => ({
     documentType: documentTypeOptions(data),
     customer: [...new Map(data.map((row) => [customerKey(row), { value: customerKey(row), label: row.customerSoldTo && row.customerSoldToName ? `${row.customerSoldTo} — ${row.customerSoldToName}` : row.customer }])).values()].sort((a, b) => a.label.localeCompare(b.label)),

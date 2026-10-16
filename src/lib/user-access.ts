@@ -44,3 +44,12 @@ export function restrictToAssigned<T>(options: T[], assigned: string[] | undefin
   const set = new Set(assigned);
   return options.filter((o) => set.has(valueOf(o)));
 }
+
+/** Screen scope: each given key must be in its assigned list (empty list or admin = any). */
+export function scopeRowsToAssigned<T>(rows: T[], access: UserAccess | undefined, keys: { plant?: (r: T) => string | null | undefined; profitCentre?: (r: T) => string | null | undefined }): T[] {
+  if (!access || access.unrestricted) return rows;
+  const plants = keys.plant && access.plants.length ? new Set(access.plants) : null;
+  const pcs = keys.profitCentre && access.profitCenters.length ? new Set(access.profitCenters) : null;
+  if (!plants && !pcs) return rows;
+  return rows.filter((r) => (!plants || plants.has(keys.plant!(r) ?? "")) && (!pcs || pcs.has(keys.profitCentre!(r) ?? "")));
+}

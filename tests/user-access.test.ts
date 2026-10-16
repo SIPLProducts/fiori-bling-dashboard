@@ -35,3 +35,20 @@ test("empty assignment or admin keeps all options", () => {
   expect(restrictToAssigned(["A", "B"], [], false, (o) => o)).toEqual(["A", "B"]);
   expect(restrictToAssigned(["A", "B"], ["A"], true, (o) => o)).toEqual(["A", "B"]);
 });
+
+import { scopeRowsToAssigned } from "../src/lib/user-access";
+const koti = { unrestricted: false, plants: ["1100", "1200"], profitCenters: ["COFF100001", "COFF100004"] };
+const rows = [{ p: "1100", pc: "PGNLB11001" }, { p: "", pc: "COFF100001" }, { p: "1200", pc: "COFF100004" }];
+test("Net Sales scopes to assigned profit centres", () => {
+  expect(scopeRowsToAssigned(rows, koti, { profitCentre: (r) => r.pc }).map((r) => r.pc)).toEqual(["COFF100001", "COFF100004"]);
+});
+test("Open Orders scopes to assigned plants", () => {
+  expect(scopeRowsToAssigned(rows, koti, { plant: (r) => r.p }).map((r) => r.p)).toEqual(["1100", "1200"]);
+});
+test("Cash Flow needs plant and profit centre", () => {
+  expect(scopeRowsToAssigned(rows, koti, { plant: (r) => r.p, profitCentre: (r) => r.pc })).toEqual([rows[2]]);
+});
+test("admin or empty lists pass every row", () => {
+  expect(scopeRowsToAssigned(rows, { ...koti, unrestricted: true }, { plant: (r) => r.p })).toHaveLength(3);
+  expect(scopeRowsToAssigned(rows, { unrestricted: false, plants: [], profitCenters: [] }, { plant: (r) => r.p })).toHaveLength(3);
+});

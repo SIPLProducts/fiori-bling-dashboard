@@ -92,7 +92,7 @@ import {
 } from "@/lib/sd-live";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 import { useUserAccess } from "@/lib/use-user-access";
-import { restrictToAssigned } from "@/lib/user-access";
+import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 
 const INR = (value: number) =>
   value.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -2170,7 +2170,8 @@ export function SdLiveDashboard() {
     ...STABLE_SALES_QUERY_OPTIONS,
   });
 
-  const all = useMemo(() => lines ?? [], [lines]);
+  const access = useUserAccess();
+  const all = useMemo(() => scopeRowsToAssigned(lines ?? [], access, { profitCentre: (r) => r.profitCtr }), [lines, access]);
   const firstPostingDate = useMemo(
     () => all.map((row) => row.postingDate).filter(Boolean).sort()[0] ?? "",
     [all],
@@ -2224,7 +2225,6 @@ export function SdLiveDashboard() {
     return { primary, limits };
   }, [filters.fiscalYears, filters.quarters, filters.from, effectiveFilters.to]);
 
-  const access = useUserAccess();
   const opts = useMemo(
     () => ({
       plants: restrictToAssigned(uniqueValues(all, (r) => r.plant).filter((p) => !PLANT_OPTIONS_EXCLUDED.includes(p)), access?.plants, access?.unrestricted, (p) => p),
