@@ -175,6 +175,8 @@ export function withEndpointDates(
 ) {
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? undefined;
+  // User Management dropdowns: no date injection, payload sent as saved.
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? undefined;
   return isOpenSalesOrdersEndpoint(endpointName)
     ? withOpenSalesOrdersDate(raw, now, scheduled)
     : withPostingDates(raw, range);

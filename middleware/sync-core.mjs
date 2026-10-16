@@ -469,9 +469,62 @@ function mapZcashFlowPayload(payload, endpointName, now = /* @__PURE__ */ new Da
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/user-dropdown-map.ts
+function isUserDropdownEndpoint(endpointName) {
+  return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
+}
+function text2(v) {
+  if (v === void 0 || v === null) return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function field(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function list(obj, key) {
+  const v = field(obj, key);
+  return Array.isArray(v) ? v.filter((r) => r && typeof r === "object") : [];
+}
+function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  let root = {};
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    root = payload;
+    const inner = field(root, "data");
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) root = inner;
+  }
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let received = 0;
+  let invalid = 0;
+  const add = (category, rows2, codeKey, nameKey) => {
+    for (const raw of rows2) {
+      received++;
+      const code = text2(field(raw, codeKey));
+      if (!code) {
+        invalid++;
+        continue;
+      }
+      byKey.set(`${category}|${code}`, {
+        category,
+        code,
+        name: text2(field(raw, nameKey)),
+        raw,
+        source_endpoint: endpointName,
+        synced_at: syncedAt
+      });
+    }
+  };
+  add("plant", list(root, "plants"), "plant", "plantName");
+  add("profit_center", list(root, "profitCenters"), "profitCenter", "profitCenterName");
+  const rows = [...byKey.values()];
+  return { received, rows, invalid, duplicates: received - invalid - rows.length };
+}
+
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text2) {
-  const trimmed = text2.trimStart();
+function salvageTruncatedArray(text3) {
+  const trimmed = text3.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -506,11 +559,11 @@ function salvageTruncatedArray(text2) {
     return null;
   }
 }
-function extractEmbeddedBody(text2) {
+function extractEmbeddedBody(text3) {
   const marker = '"body":"';
-  const start = text2.indexOf(marker);
+  const start = text3.indexOf(marker);
   if (start < 0) return null;
-  const raw = text2.slice(start + marker.length);
+  const raw = text3.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -586,6 +639,7 @@ function isOpenSalesOrdersEndpoint(endpointName) {
 }
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }
 function keyValueObject(raw) {
@@ -603,12 +657,14 @@ export {
   extractRows,
   formatBytes,
   isOpenSalesOrdersEndpoint,
+  isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,
   mapPayload,
   mapRow,
+  mapUserDropdownPayload,
   mapZcashFlowPayload,
   postingDateRange,
   salvageTruncatedArray,
