@@ -469,11 +469,184 @@ function mapZcashFlowPayload(payload, endpointName, now = /* @__PURE__ */ new Da
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/order-book-map.ts
+var RENAMED = {
+  VBELN: "sales_order",
+  POSNR: "sales_order_item",
+  WERKS: "plant",
+  PC_CODE: "profit_center",
+  ERDAT: "created_date"
+};
+var ORDER_BOOK_TEXT_FIELDS = [
+  "APPTYP",
+  "SECTOR",
+  "VTWEG",
+  "SPART",
+  "WERKS",
+  "VBELN",
+  "AUART",
+  "KUNNR_SP",
+  "NAME1_SP",
+  "KUNNR_BP",
+  "NAME1_BP",
+  "KUNNR_SH",
+  "NAME1_SH",
+  "BSTNK",
+  "POSNR",
+  "MATNR",
+  "MAKTX",
+  "VRKME",
+  "WAERK",
+  "ZTERM",
+  "PAY_VTEXT",
+  "DELV_DAT",
+  "WARTY",
+  "INCO1",
+  "LD_TERMS",
+  "VKBUR",
+  "NAME1_SE",
+  "VTEXT_DC",
+  "VTEXT_DI",
+  "INCO2",
+  "MEINS",
+  "BEZEI",
+  "LANDX_SP",
+  "BEZEI_SP",
+  "LANDX_BP",
+  "BEZEI_BP",
+  "LANDX_SH",
+  "BEZEI_SH",
+  "VGBEL",
+  "PROJ",
+  "VKGRP",
+  "YEAR",
+  "ABSTA",
+  "GBSTA",
+  "BUY_BACK",
+  "BUY_BACK_DETAIL",
+  "UNLOAD",
+  "PLANT_NAME",
+  "DIV_NAME",
+  "PC_CODE",
+  "PC_NAME",
+  "MAIN_GRP",
+  "SUB_GRP"
+];
+var ORDER_BOOK_NUMERIC_FIELDS = [
+  "KWMENG",
+  "KWMENG_P",
+  "STCUR",
+  "KBETR",
+  "KWMENG_C",
+  "KWMENG_PC",
+  "P_VALUE",
+  "KWERT_BA",
+  "KWERT_BC",
+  "KWERT_BCI",
+  "KWERT_DS",
+  "KWERT_ED",
+  "KWERT_CST",
+  "KWERT_VAT",
+  "KWERT_ST",
+  "KWERT_SW",
+  "KWERT_GST",
+  "KWERT_KKC",
+  "KWERT_VSC",
+  "NETWR",
+  "KWERT_FR",
+  "ZNRC",
+  "ZCOM",
+  "ZPF1",
+  "ZTAX",
+  "ZDST",
+  "KF00",
+  "ZF01",
+  "ZF02",
+  "KURSK",
+  "TOT_INR",
+  "NET_INR",
+  "UMREN",
+  "TOT_AH",
+  "BASIC_AH",
+  "BASIC_AHINR",
+  "UMVKZ",
+  "TWAR",
+  "KWERT_ZSBP",
+  "KWERT_ZSF1",
+  "KWERT_ZSF2"
+];
+var ORDER_BOOK_DATE_FIELDS = ["ERDAT", "BSTDK"];
+var orderBookColumn = (sapKey) => RENAMED[sapKey] ?? sapKey.toLowerCase();
+function isOrderBookEndpoint(endpointName) {
+  return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook");
+}
+function pick3(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text2(v) {
+  if (v === void 0 || v === null) return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function orderBookNum(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (v === void 0 || v === null) return 0;
+  let s = String(v).trim().replace(/,/g, "");
+  if (!s) return 0;
+  if (s.endsWith("-")) s = "-" + s.slice(0, -1);
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function orderBookDate(v) {
+  const s = text2(v);
+  if (!s || /^0+$/.test(s.replace(/\D/g, ""))) return null;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return null;
+}
+function extractRows2(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) {
+      if (Array.isArray(obj[key])) return extractRows2(obj[key]);
+    }
+  }
+  return [];
+}
+function mapOrderBookPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows2(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const vbeln = text2(pick3(raw, "VBELN"));
+    const posnr = text2(pick3(raw, "POSNR"));
+    if (!vbeln || !posnr) {
+      invalid++;
+      continue;
+    }
+    const row = { sales_order: vbeln, sales_order_item: posnr, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of ORDER_BOOK_TEXT_FIELDS) if (k !== "VBELN" && k !== "POSNR") row[orderBookColumn(k)] = text2(pick3(raw, k));
+    for (const k of ORDER_BOOK_NUMERIC_FIELDS) row[orderBookColumn(k)] = orderBookNum(pick3(raw, k));
+    for (const k of ORDER_BOOK_DATE_FIELDS) row[orderBookColumn(k)] = orderBookDate(pick3(raw, k));
+    byKey.set(`${vbeln}|${posnr}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text2(v) {
+function text3(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -501,7 +674,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text2(field(raw, codeKey));
+      const code = text3(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -509,7 +682,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text2(field(raw, nameKey)),
+        name: text3(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -523,8 +696,8 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text3) {
-  const trimmed = text3.trimStart();
+function salvageTruncatedArray(text4) {
+  const trimmed = text4.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -559,11 +732,11 @@ function salvageTruncatedArray(text3) {
     return null;
   }
 }
-function extractEmbeddedBody(text3) {
+function extractEmbeddedBody(text4) {
   const marker = '"body":"';
-  const start = text3.indexOf(marker);
+  const start = text4.indexOf(marker);
   if (start < 0) return null;
-  const raw = text3.slice(start + marker.length);
+  const raw = text4.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -637,9 +810,32 @@ function withOpenSalesOrdersDate(raw, now = /* @__PURE__ */ new Date(), useCurre
 function isOpenSalesOrdersEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase() === "opensalesorders";
 }
+function withOrderBookDates(raw, range, now = /* @__PURE__ */ new Date()) {
+  if (!raw || !raw.trim()) return raw ?? void 0;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...parsed };
+    const window = postingWindow(range, now);
+    const valid = (v) => /^\d{8}$/.test(String(v ?? "").trim());
+    if (window) {
+      obj["ERDAT_F"] = window.from;
+      obj["ERDAT_T"] = window.to;
+    } else {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      if (!valid(obj["ERDAT_F"])) obj["ERDAT_F"] = sapDateOf(from);
+      if (!valid(obj["ERDAT_T"])) obj["ERDAT_T"] = sapDateOf(now);
+    }
+    return JSON.stringify(obj);
+  } catch {
+    return raw;
+  }
+}
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
   return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }
 function keyValueObject(raw) {
@@ -657,11 +853,13 @@ export {
   extractRows,
   formatBytes,
   isOpenSalesOrdersEndpoint,
+  isOrderBookEndpoint,
   isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,
+  mapOrderBookPayload,
   mapPayload,
   mapRow,
   mapUserDropdownPayload,

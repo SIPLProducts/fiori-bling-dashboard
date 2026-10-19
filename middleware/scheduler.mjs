@@ -23,6 +23,8 @@ import {
   isZcashFlowEndpoint,
   mapUserDropdownPayload,
   isUserDropdownEndpoint,
+  mapOrderBookPayload,
+  isOrderBookEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -180,6 +182,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isOrderBookEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapOrderBookPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("order_book").upsert(rows.slice(i, i + BATCH), { onConflict: "sales_order,sales_order_item" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "order_book", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isUserDropdownEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapUserDropdownPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {
