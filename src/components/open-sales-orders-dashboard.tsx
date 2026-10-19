@@ -199,16 +199,36 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   });
-  const filteredData = useMemo(() => filterOpenOrders(data, { ...filters, channels: null }, activeDates), [data, filters, activeDates.from, activeDates.to]);
+  const hasDateSelection = Boolean(activeDates.from || activeDates.to);
+  const periodYears = isBook && !hasDateSelection ? fiscalYears : [];
+  const periodQuarters = isBook && !hasDateSelection ? quarterFilter : [];
+  useEffect(() => {
+    if (hasDateSelection) { setFiscalYears([]); setQuarterFilter([]); }
+  }, [hasDateSelection]);
+  const dateFilteredData = useMemo(() => filterOpenOrders(data, { ...filters, channels: null }, activeDates), [data, filters, activeDates.from, activeDates.to]);
+  const filteredData = useMemo(() => filterByFiscalPeriod(dateFilteredData, periodYears, periodQuarters), [dateFilteredData, periodYears.join(), periodQuarters.join()]);
+  const quarterComparisonRows = useMemo(() => isBook ? filterOpenOrders(data, { ...filters, channels: null }) : [], [isBook, data, filters]);
+  const quarterSummaries = useMemo(() => isBook ? buildOrderBookQuarters(filteredData, quarterComparisonRows, periodYears, periodQuarters, { from: activeDates.from, to: activeDates.to }) : [], [isBook, filteredData, quarterComparisonRows, periodYears.join(), periodQuarters.join(), activeDates.from, activeDates.to]);
+  const yearOptions = useMemo(() => {
+    const years = new Set(orderBookFiscalYears(data));
+    years.add(currentFiscalYear());
+    return [...years].sort((a, b) => b.localeCompare(a)).map((year) => ({ value: year, label: `FY ${year}–${String(Number(year) + 1).slice(-2)}` }));
+  }, [data]);
+  const todayIso = format(new Date(), "yyyy-MM-dd");
+  const activeQuarterKey = fiscalQuarter(activeDates.to || todayIso);
+  const activeQuarterYear = fiscalYearForDate(activeDates.to || todayIso);
   const activeFilterCount = Number(Boolean(activeDates.from || activeDates.to))
     + Number(filters.documentTypes.length > 0)
+    + Number(periodYears.length > 0 || periodQuarters.length > 0)
     + [filters.customers, filters.zones, filters.products, filters.divisions, filters.plants].filter((values) => values !== null).length;
-  useEffect(() => setTablePage(1), [dateRange, singleDate, dateMode, filters, tableStatus, tableSearch]);
+  useEffect(() => setTablePage(1), [dateRange, singleDate, dateMode, filters, tableStatus, tableSearch, fiscalYears, quarterFilter]);
   const resetFilters = () => {
     setDateRangeState(undefined);
     setSingleDate(undefined);
     setDateMode("range");
     setFilters(defaultOpenOrderFilters(data));
+    setFiscalYears([currentFiscalYear()]);
+    setQuarterFilter([]);
   };
   const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup) }), [filteredData]);
   const monthSeries = useMemo(() => summarizeByCreatedMonth(filteredData), [filteredData]);
