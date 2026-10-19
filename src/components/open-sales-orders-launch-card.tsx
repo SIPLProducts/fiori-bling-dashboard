@@ -15,9 +15,9 @@ type Summary = ReturnType<typeof summarizeLaunchOrders>;
 
 async function fetchOrderBookRows() {
   const pageSize = 1_000;
-  const allRows: { netwr: number | string | null; vtext_dc: string | null; auart: string | null; plant: string | null }[] = [];
+  const allRows: { netwr: number | string | null; vtext_dc: string | null; auart: string | null; plant: string | null; profit_center: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant")
+    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant,profit_center")
       .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
@@ -34,7 +34,7 @@ export function OrderBookLaunchCard({ fallback }: { fallback: React.ReactNode })
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
   const access = useUserAccess();
-  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.plant })
+  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.plant, profitCentre: (r) => r.profit_center })
     .map((r) => ({ p_value1: r.netwr, sales_type: r.vtext_dc, order_type: r.auart })), { byCode: true, all: true }) : undefined, [rows, access]);
   const { data: lastSynced } = useReportSync("order-book");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
