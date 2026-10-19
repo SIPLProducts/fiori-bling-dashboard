@@ -6,12 +6,12 @@ export type LaunchOrderRow = {
 
 export type LaunchOrderGroup = { name: string; count: number; value: number; share: number };
 
-export function summarizeLaunchOrders(rows: LaunchOrderRow[]) {
+export function summarizeLaunchOrders(rows: LaunchOrderRow[], options: { byCode?: boolean; all?: boolean } = {}) {
   const groups = new Map<string, LaunchOrderGroup>();
   let openValue = 0;
   for (const row of rows) {
     const description = row.sales_type?.trim();
-    const name = description && description !== "Unassigned" ? description : row.order_type || "Unassigned";
+    const name = options.byCode ? row.order_type?.trim() || "Unassigned" : description && description !== "Unassigned" ? description : row.order_type || "Unassigned";
     const parsed = Number(row.p_value1 ?? 0);
     const value = Number.isFinite(parsed) ? parsed : 0;
     const group = groups.get(name) ?? { name, count: 0, value: 0, share: 0 };
@@ -21,8 +21,8 @@ export function summarizeLaunchOrders(rows: LaunchOrderRow[]) {
     openValue += value;
   }
   const ranked = [...groups.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
-  const breakdown = ranked.slice(0, 3);
-  if (ranked.length > 3) {
+  const breakdown = options.all ? ranked : ranked.slice(0, 3);
+  if (!options.all && ranked.length > 3) {
     breakdown.push(ranked.slice(3).reduce<LaunchOrderGroup>((others, group) => ({
       ...others, count: others.count + group.count, value: others.value + group.value,
     }), { name: "Others", count: 0, value: 0, share: 0 }));
