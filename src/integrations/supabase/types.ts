@@ -291,11 +291,13 @@ export type Database = {
           landx_bp: string | null
           landx_sh: string | null
           landx_sp: string | null
+          ld_status: string | null
           ld_terms: string | null
           main_grp: string | null
           maktx: string | null
           matnr: string | null
           meins: string | null
+          model: string | null
           name1_bp: string | null
           name1_se: string | null
           name1_sh: string | null
@@ -309,6 +311,7 @@ export type Database = {
           plant_name: string | null
           profit_center: string | null
           proj: string | null
+          range: string | null
           raw: Json
           sales_order: string
           sales_order_item: string
@@ -321,6 +324,7 @@ export type Database = {
           tot_ah: number
           tot_inr: number
           twar: number
+          type: string | null
           umren: number
           umvkz: number
           unload: string | null
@@ -395,11 +399,13 @@ export type Database = {
           landx_bp?: string | null
           landx_sh?: string | null
           landx_sp?: string | null
+          ld_status?: string | null
           ld_terms?: string | null
           main_grp?: string | null
           maktx?: string | null
           matnr?: string | null
           meins?: string | null
+          model?: string | null
           name1_bp?: string | null
           name1_se?: string | null
           name1_sh?: string | null
@@ -413,6 +419,7 @@ export type Database = {
           plant_name?: string | null
           profit_center?: string | null
           proj?: string | null
+          range?: string | null
           raw?: Json
           sales_order?: string
           sales_order_item?: string
@@ -425,6 +432,7 @@ export type Database = {
           tot_ah?: number
           tot_inr?: number
           twar?: number
+          type?: string | null
           umren?: number
           umvkz?: number
           unload?: string | null
@@ -499,11 +507,13 @@ export type Database = {
           landx_bp?: string | null
           landx_sh?: string | null
           landx_sp?: string | null
+          ld_status?: string | null
           ld_terms?: string | null
           main_grp?: string | null
           maktx?: string | null
           matnr?: string | null
           meins?: string | null
+          model?: string | null
           name1_bp?: string | null
           name1_se?: string | null
           name1_sh?: string | null
@@ -517,6 +527,7 @@ export type Database = {
           plant_name?: string | null
           profit_center?: string | null
           proj?: string | null
+          range?: string | null
           raw?: Json
           sales_order?: string
           sales_order_item?: string
@@ -529,6 +540,7 @@ export type Database = {
           tot_ah?: number
           tot_inr?: number
           twar?: number
+          type?: string | null
           umren?: number
           umvkz?: number
           unload?: string | null

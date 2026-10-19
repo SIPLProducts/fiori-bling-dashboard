@@ -130,3 +130,11 @@ SELECT 'ORDER_BOOK', 'common', 'Order Book (ZORDERBOOK) — stored in public.ord
   '{"VKORG":"1000","SPART_F":"","SPART_T":"","VTWEG_F":"","VTWEG_T":"","AUART_F":"","AUART_T":"","VBELN_F":"","VBELN_T":"","ERDAT_F":"","ERDAT_T":"","WERKS_F":"","WERKS_T":""}',
   false, 'IST:05:30', true, 'last1m'
 WHERE NOT EXISTS (SELECT 1 FROM public.sap_endpoints WHERE regexp_replace(lower(name), '[^a-z0-9]', '', 'g') LIKE '%orderbook%');
+
+-- LD_STATUS / MODEL / RANGE / TYPE
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS ld_status text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS model text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS range text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS type text;
+UPDATE public.order_book SET ld_status = NULLIF(trim(raw->>'LD_STATUS'),''), model = NULLIF(trim(raw->>'MODEL'),''), range = NULLIF(trim(raw->>'RANGE'),''), type = NULLIF(trim(raw->>'TYPE'),'');
+NOTIFY pgrst, 'reload schema';

@@ -113,6 +113,13 @@
       "when": 1792383201653,
       "tag": "0015_order_book_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792408865942,
+      "tag": "0016_order_book_model_fields",
+      "breakpoints": true
     }
   ]
 }
