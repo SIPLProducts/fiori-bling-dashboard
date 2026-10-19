@@ -17,7 +17,7 @@ async function fetchOrderBookRows() {
   const pageSize = 1_000;
   const allRows: { netwr: number | string | null; vtext_dc: string | null; auart: string | null; plant: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant")
+    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant,profit_center")
       .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
