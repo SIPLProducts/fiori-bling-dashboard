@@ -32,7 +32,7 @@ export function toOrderBookDashboardRow(r: Rec, now = new Date()): OpenSalesOrde
     value: n(r.netwr) / 10_000_000, ldStatus: t(r.ld_status, ""), deliveryDate: t(r.delv_dat, ""),
     orderDate, daysOpen: daysSince(orderDate, now), salesOrg: "1000", channel: t(r.vtweg),
     plant: t(r.plant, ""), plantName: t(r.plant_name, ""), office: t(r.vkbur), salesGroup: t(r.vkgrp),
-    salesRepName: t(r.name1_se, ""), zone: t(r.bezei_sp, t(r.bezei)), region: t(r.bezei_sp, ""),
+    salesRepName: t(r.name1_se, ""), zone: t(r.bezei, "Unassigned"), region: t(r.bezei_sp, ""),
     country: t(r.landx_sp, ""), salesType: t(r.vtext_dc), profitCentre: t(r.profit_center),
     mainGroup: t(r.main_grp), category: t(r.sub_grp), customerGroup: "", industryDescription: t(r.sector, ""),
     usageDescription: "", deliveryStatus: t(r.absta, ""), overallStatus: t(r.gbsta, ""),

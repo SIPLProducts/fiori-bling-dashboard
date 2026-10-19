@@ -17,8 +17,8 @@ describe("order book quarters", () => {
     const active = filterByFiscalPeriod(rows, ["2026"], []);
     const q = buildOrderBookQuarters(active, rows, ["2026"], []);
     const q1 = q.find((s) => s.quarter === "Q1")!;
-    expect(q1.amount).toBe(150);
+    expect(q1.amount).toBe(150 * 10_000_000);
     expect(q1.recordCount).toBe(1);
-    expect(q.find((s) => s.quarter === "Q2")!.amount).toBe(200);
+    expect(q.find((s) => s.quarter === "Q2")!.amount).toBe(200 * 10_000_000);
   });
 });
