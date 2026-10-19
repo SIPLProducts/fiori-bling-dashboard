@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { OpenOrdersGroupChart } from "./open-orders-group-chart";
+import { OrderBookMonthChart } from "./order-book-month-chart";
+import { summarizeByCreatedMonth } from "@/lib/order-book-months";
 import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
@@ -208,6 +210,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setFilters(defaultOpenOrderFilters(data));
   };
   const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup) }), [filteredData]);
+  const monthSeries = useMemo(() => summarizeByCreatedMonth(filteredData), [filteredData]);
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
     const totalQuantity = filteredData.reduce((sum, row) => sum + row.openQuantity, 0);
@@ -391,10 +394,11 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
 
-      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 ${isBook ? "[&>*]:lg:col-span-6" : "[&>*]:lg:col-span-4"}`}>
+      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-4" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
+        {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
-          <div className="order-document-grid grid min-h-64 min-w-0 grid-cols-[112px_minmax(0,1fr)] items-center gap-2">
+          <div className={`order-document-grid grid min-h-64 min-w-0 items-center gap-2 ${isBook ? "grid-cols-1 [&_.order-document-donut]:h-36" : "grid-cols-[112px_minmax(0,1fr)]"}`}>
             <div className="order-document-donut relative h-56 w-full shrink-0">
               <ResponsiveContainer width="100%" height="100%"><PieChart><defs>{COLORS.map((color, index) => <linearGradient key={index} id={`${documentGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={`url(#${documentGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(metrics.distinctOrders)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
@@ -423,7 +427,11 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={40} tick={{ fontSize: 9, angle: -28, textAnchor: "end" } as never} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
         </> : null}
-        {!pdfBusy ? <Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
+        {!pdfBusy && !isBook ? <Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
+        {isBook ? <>
+          <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
+          <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
+        </> : null}
       </div>
       {pdfBusy ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
@@ -458,6 +466,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
+        {isBook ? <Panel title="LD" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
         <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <CompactSalesZoneChart zones={screenZones} />
         </Panel>
@@ -466,10 +475,10 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </Panel>
       </div>}
 
-      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
+      {!isBook ? <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
         <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
         <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
-      </div>
+      </div> : null}
 
       <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title={isBook ? "Top 10 Orders by Customer" : "Top 10 Open Orders by Customer"} data={metrics.customers} color="var(--chart-1)" />
