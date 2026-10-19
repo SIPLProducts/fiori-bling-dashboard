@@ -429,7 +429,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
       {isBook && quarterSummaries.length ? <div data-pdf-page-block className={`order-quarter-row grid gap-4 sm:grid-cols-2 ${quarterSummaries.length >= 4 ? "lg:grid-cols-4" : quarterSummaries.length === 3 ? "lg:grid-cols-3" : quarterSummaries.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
-        {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} compact />)}
+        {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} compact gradient />)}
       </div> : null}
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
