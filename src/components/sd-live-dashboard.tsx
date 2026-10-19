@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useReportSync } from "@/lib/use-report-sync";
@@ -462,8 +462,9 @@ function KpiCard({
   );
 }
 
-export function QuarterCard({ summary, tone, active, compact = false }: { summary: QuarterSummary; tone: number; active: boolean; compact?: boolean }) {
+export function QuarterCard({ summary, tone, active, compact = false, gradient = false }: { summary: QuarterSummary; tone: number; active: boolean; compact?: boolean; gradient?: boolean }) {
   const isMobile = useIsMobile();
+  const gradientId = useId().replace(/:/g, "");
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
   const direction = summary.changePct == null ? "neutral" : summary.changePct >= 0 ? "up" : "down";
@@ -580,8 +581,9 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
                 );
               }}
             />
-            {series.map((item) => (
-              <Bar key={item.key} dataKey={item.key} name={item.fiscalYear} fill={item.color} radius={[3, 3, 0, 0]} maxBarSize={series.length > 1 ? 20 : 28} isAnimationActive={false}>
+            {gradient ? <defs>{series.map((item, index) => <linearGradient key={item.key} id={`${gradientId}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${item.color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={item.color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${item.color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs> : null}
+            {series.map((item, index) => (
+              <Bar key={item.key} dataKey={item.key} name={item.fiscalYear} fill={gradient ? `url(#${gradientId}-${index})` : item.color} radius={[3, 3, 0, 0]} maxBarSize={series.length > 1 ? 20 : 28} isAnimationActive={false}>
                 {series.length === 1 ? (
                   <LabelList
                     dataKey={item.key}
