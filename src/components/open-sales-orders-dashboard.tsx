@@ -397,7 +397,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
-        <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
+        <Panel title={isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className={`order-document-grid grid min-h-64 min-w-0 items-center gap-2 ${isBook ? "grid-cols-1 [&_.order-document-donut]:h-36" : "grid-cols-[112px_minmax(0,1fr)]"}`}>
             <div className="order-document-donut relative h-56 w-full shrink-0">
