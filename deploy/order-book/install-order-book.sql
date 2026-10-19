@@ -112,7 +112,7 @@ ALTER TABLE public.order_book ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Order book visible by plant or profit centre" ON public.order_book;
 CREATE POLICY "Order book visible by plant or profit centre" ON public.order_book
   FOR SELECT TO authenticated
-  USING ((SELECT public.user_can_see(plant, profit_center)));
+  USING (public.user_can_see(plant, profit_center));
 
 CREATE INDEX IF NOT EXISTS order_book_created_date_idx ON public.order_book (created_date);
 CREATE INDEX IF NOT EXISTS order_book_plant_idx ON public.order_book (plant);
