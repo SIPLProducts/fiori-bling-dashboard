@@ -2,7 +2,7 @@ import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
 import { channelDescription } from "@/lib/open-sales-orders-filters";
 
-export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
+export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx") {
   const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "HBL Engineering Limited";
@@ -145,7 +145,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[]) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "open-sales-orders.xlsx";
+  anchor.download = fileName;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
