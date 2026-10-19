@@ -160,7 +160,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: isBook ? ["order-book-live", "tot-inr-v1"] : ["open-sales-orders-live", "p-value1-v1"],
+    queryKey: isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
     queryFn: isBook ? getOrderBookRows : getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
