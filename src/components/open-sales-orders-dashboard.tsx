@@ -420,14 +420,14 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={40} tick={{ fontSize: 9, angle: -28, textAnchor: "end" } as never} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
         </> : null}
-        {!pdfBusy ? <Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
+        {!pdfBusy ? <Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
       </div>
-      {pdfBusy ? <div data-pdf-page-block><Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
+      {pdfBusy ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
       {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
-        <Panel title="Open Orders by Sales Zone" headerDivider dividerColor="teal">
+        <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
@@ -449,16 +449,16 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
 
       <div data-pdf-page-block>
-        <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
+        <Panel title={isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
           <PlantPendingChart plants={metrics.plants} loading={isLoading} pdf />
         </Panel>
       </div>
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
-        <Panel title="Open Orders by Sales Zone" headerDivider dividerColor="teal">
+        <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <CompactSalesZoneChart zones={screenZones} />
         </Panel>
-        <Panel title="Plant-wise Pending" headerDivider dividerColor="green">
+        <Panel title={isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
           <PlantPendingChart plants={screenPlants} loading={isLoading} />
         </Panel>
       </div>}
@@ -469,9 +469,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
 
       <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
-        <RankingPanel title="Top 10 Open Orders by Customer" data={metrics.customers} color="var(--chart-1)" />
-        <RankingPanel title="Top 10 Open Orders by Product" data={metrics.products} color="var(--success)" />
-        <RankingPanel title="Open Orders by Model Wise" data={metrics.models} color="var(--quick-view-violet)" />
+        <RankingPanel title={isBook ? "Top 10 Orders by Customer" : "Top 10 Open Orders by Customer"} data={metrics.customers} color="var(--chart-1)" />
+        <RankingPanel title={isBook ? "Top 10 Orders by Product" : "Top 10 Open Orders by Product"} data={metrics.products} color="var(--success)" />
+        <RankingPanel title={isBook ? "Top 10 Orders by Model Wise" : "Open Orders by Model Wise"} data={metrics.models} color="var(--quick-view-violet)" />
       </div>
 
       <div data-pdf-page-block className={isBook ? "order-status-row grid gap-4" : "order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]"}>
