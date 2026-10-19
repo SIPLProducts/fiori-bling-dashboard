@@ -685,19 +685,20 @@ function OrderBookRequestFields({
       <Field label="Created To *" hint="Sent as ERDAT_T (YYYYMMDD).">
         <Input type="date" disabled={rolling} value={fromSapDate(get("ERDAT_T"))} onChange={(e) => update({ ERDAT_T: e.target.value ? toSapDate(e.target.value) : "" })} />
       </Field>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:col-span-3">
       <Field label="Order Type From" hint="Optional. Sent as AUART_F.">
         <Input placeholder="e.g. ZDOR" maxLength={4} value={get("AUART_F")} onChange={(e) => update({ AUART_F: e.target.value.trim().toUpperCase() })} />
       </Field>
       <Field label="Order Type To" hint="Optional. Sent as AUART_T.">
         <Input maxLength={4} value={get("AUART_T")} onChange={(e) => update({ AUART_T: e.target.value.trim().toUpperCase() })} />
       </Field>
-      <div />
       <Field label="Plant From" hint="Optional. Sent as WERKS_F.">
         <Input placeholder="e.g. 1600" maxLength={4} value={get("WERKS_F")} onChange={(e) => update({ WERKS_F: e.target.value.trim() })} />
       </Field>
       <Field label="Plant To" hint="Optional. Sent as WERKS_T.">
         <Input maxLength={4} value={get("WERKS_T")} onChange={(e) => update({ WERKS_T: e.target.value.trim() })} />
       </Field>
+      </div>
     </div>
   );
 }
