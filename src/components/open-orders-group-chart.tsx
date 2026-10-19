@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { useOrderWording } from "./order-wording";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { GroupSummary } from "@/lib/open-orders-groups";
 import { groupAxisDecimals } from "@/lib/open-orders-group-axis";
@@ -7,12 +8,13 @@ const cr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2, 
 
 function GroupTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: GroupSummary }> }) {
   const g = payload?.[0]?.payload;
+  const w = useOrderWording();
   if (!active || !g) return null;
   return <div className="rounded-md border border-border bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-md">
     <p className="font-semibold">{g.name}</p>
     <p>Division: {g.divisions.length ? g.divisions.join(", ") : "—"}</p>
-    <p>Open Orders: {g.orders.toLocaleString("en-IN")}</p>
-    <p>Open Value: ₹{cr(g.value)} Cr</p>
+    <p>{w.openOrders}: {g.orders.toLocaleString("en-IN")}</p>
+    <p>{w.value}: ₹{cr(g.value)} Cr</p>
   </div>;
 }
 

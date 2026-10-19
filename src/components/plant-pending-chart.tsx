@@ -3,6 +3,7 @@ import { Bar, BarChart, Cell, CartesianGrid, LabelList, ResponsiveContainer, Too
 import type { PlantPending } from "@/lib/open-sales-orders-plants";
 import { plantChartMaximum, plantLabelLayout } from "@/lib/plant-chart-scale";
 
+import { useOrderWording } from "@/components/order-wording";
 import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/components/order-chart-presentation";
 
 const numeric = (value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 3 });
@@ -24,6 +25,8 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
     quantity: plantChartMaximum(plants.map((plant) => plant.quantity)),
     count: plantChartMaximum(plants.map((plant) => plant.count)),
   }), [plants]);
+  const w = useOrderWording();
+  const label = (key: string, fallback: string) => key === "value" ? w.pendingValue : key === "count" ? w.openOrders : fallback;
   const { ref: container, width } = useChartWidth();
   const gradient = useId().replace(/:/g, "");
   const slotWidth = Math.max(1, (width - 48) / Math.max(1, plants.length));
@@ -49,7 +52,7 @@ export function PlantPendingChart({ plants, loading, pdf = false }: { plants: Pl
             <YAxis yAxisId="value" domain={[0, maxima.value]} ticks={[0, 0.25, 0.5, 0.75, 1].map((part) => part * maxima.value)} width={48} tick={{ fontSize: 10, fill: "var(--chart-1)" }} tickFormatter={numeric} tickLine={false} axisLine={{ stroke: "var(--chart-axis-label)" }} />
             <Tooltip cursor={{ fill: "var(--chart-hover-fill)" }} content={({ active, payload }) => {
               const plant = payload?.[0]?.payload as PlantPending | undefined;
-              return active && plant ? <div className="max-w-80 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><p className="mb-1 font-semibold">Division: {plant.divisions?.length ? plant.divisions.join(" / ") : "—"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{metric.label}: {metric.format(plant[metric.key])}</p>)}</div> : null;
+              return active && plant ? <div className="max-w-80 rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-tile"><p className="mb-1 font-semibold">Division: {plant.divisions?.length ? plant.divisions.join(" / ") : "—"}</p>{measures.map((metric) => <p key={metric.key} className={metric.className}>{label(metric.key, metric.label)}: {metric.format(plant[metric.key])}</p>)}</div> : null;
             }} />
             <Bar yAxisId="value" dataKey="value" name="Pending Value (₹ Cr)" fill="var(--chart-1)" barSize={barWidth} minPointSize={2} radius={[2, 2, 0, 0]} isAnimationActive={false}>
               {plants.map((plant, index) => <Cell key={plant.code} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { OpenSalesOrdersDashboard } from "@/components/open-sales-orders-dashboard";
+import { OrderBookWording } from "@/components/order-wording";
 import { AccessDenied } from "@/components/report-shell";
 import { ShellBar } from "@/components/shell-bar";
 import { hasScreen } from "@/lib/screens";
@@ -24,7 +25,7 @@ function OrderBookPage() {
     <div className="open-orders-page min-h-screen bg-background">
       <ShellBar title="Order Book Report" displayName={data?.profile?.display_name} screens={data?.screens} />
       <main className="p-2 sm:p-3">
-        {!isLoading && !allowed ? <AccessDenied area="Order Book" /> : <OpenSalesOrdersDashboard variant="order-book" />}
+        {!isLoading && !allowed ? <AccessDenied area="Order Book" /> : <OrderBookWording.Provider value={true}><OpenSalesOrdersDashboard variant="order-book" /></OrderBookWording.Provider>}
       </main>
     </div>
   );
