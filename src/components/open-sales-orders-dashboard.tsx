@@ -313,6 +313,12 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     }
   };
 
+  const groupRow = (
+      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
+        <Panel title={isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
+        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
+      </div>
+  );
   return (
     <div ref={dashboardRef} className={`mx-auto min-w-0 max-w-[1600px] space-y-4 pb-4 ${pdfBusy ? "orders-pdf-export" : "orders-compact"}`}>
       {pdfBusy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3">
@@ -432,6 +438,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
       {pdfBusy ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
+      {isBook ? groupRow : null}
       {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
@@ -471,10 +478,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </Panel>
       </div>}
 
-      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title={isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
-      </div>
+      {!isBook ? groupRow : null}
 
       <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title={isBook ? "Top 10 Orders by Customer" : "Top 10 Open Orders by Customer"} data={metrics.customers} color="var(--chart-1)" />
