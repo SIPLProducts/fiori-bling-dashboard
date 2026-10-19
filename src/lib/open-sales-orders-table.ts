@@ -78,3 +78,11 @@ export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTa
     return values.some((value) => value.toLocaleLowerCase().includes(query));
   });
 }
+/** Order Book Total LAH: keep two decimals when the fraction is .49 or less, otherwise round to a whole number. */
+export function formatBookLah(value: number) {
+  const lakhs = (Number.isFinite(value) ? value : 0) / 100000;
+  const cents = Math.round(Math.abs(lakhs) * 100);
+  const frac = cents % 100;
+  if (frac > 49) return Math.round(lakhs).toLocaleString("en-IN");
+  return (Math.sign(lakhs) * cents / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}

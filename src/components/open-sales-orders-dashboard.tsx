@@ -18,13 +18,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { OpenOrdersGroupChart } from "./open-orders-group-chart";
+import { OrderBookSubGroupChart } from "./order-book-subgroup-chart";
 import { useOrderWording } from "./order-wording";
 import { OrderBookMonthChart } from "./order-book-month-chart";
 import { summarizeByCreatedMonth } from "@/lib/order-book-months";
 import { buildOrderBookQuarters, filterByFiscalPeriod, orderBookFiscalYears } from "@/lib/order-book-quarters";
 import { currentFiscalYear, fiscalQuarter, fiscalYearForDate } from "@/lib/sd-live";
 import { QuarterCard } from "./sd-live-dashboard";
-import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
+import { summarizeOpenOrderGroups, summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
@@ -56,7 +57,7 @@ import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { countDistinctOrders, formatPendingAhQuantityInLakhs, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countDistinctOrders, formatPendingAhQuantityInLakhs, formatBookLah, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { useUserAccess } from "@/lib/use-user-access";
 import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
@@ -235,7 +236,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setFiscalYears([currentFiscalYear()]);
     setQuarterFilter([]);
   };
-  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup) }), [filteredData]);
+  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup) }), [filteredData]);
   const monthSeries = useMemo(() => summarizeByCreatedMonth(filteredData), [filteredData]);
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
@@ -284,7 +285,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
       models: rankOrders(filteredData.filter(hasModelWiseType), (row) => row.model),
-      materials: rankOrders(filteredData, (row) => row.description || row.material),
+      regions: rankOrders(filteredData.filter((row) => row.region.trim()), (row) => row.region),
       salesMen: rankOrders(filteredData.filter((row) => row.salesRepName.trim()), (row) => row.salesRepName),
       notDeliveredCount: notDeliveredOrders.size,
       longest: [...filteredData].sort((a, b) => b.daysOpen - a.daysOpen)[0],
@@ -341,7 +342,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const groupRow = (
       <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
         <Panel title={isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
+        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
       </div>
   );
   return (
@@ -421,7 +422,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
         <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label={isBook ? "Total AH (LAH)" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
+        <SummaryCard label={isBook ? "Total AH (LAH)" : "Pending AH Quantity"} value={isBook ? formatBookLah(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
         {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
       </div>
 
@@ -519,7 +520,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       {isBook ? (
         <div data-pdf-page-block className="order-ranking-row grid gap-4 lg:grid-cols-2">
-          <RankingPanel title="Top 10 Materials" data={metrics.materials} color="var(--chart-2)" />
+          <RankingPanel title="Top 10 Regions" data={metrics.regions} color="var(--chart-2)" />
           <RankingPanel title="Top 10 Sales Men" data={metrics.salesMen} color="var(--chart-4)" />
         </div>
       ) : null}
