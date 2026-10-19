@@ -18,6 +18,12 @@ export function currentReportDateRange(now = new Date()) {
   return { from: date(range.from), to: date(range.to) };
 }
 
+/** Keep rows whose ISO date (YYYY-MM-DD) falls inside the current April–March period up to today. */
+export function inReportPeriod(date: string | null | undefined, range: ReturnType<typeof currentReportPeriod>) {
+  const d = (date ?? "").slice(0, 10);
+  return d !== "" && d >= range.from && d <= range.to;
+}
+
 export function reportPeriodLabel(range: ReturnType<typeof currentReportPeriod>) {
   const display = (value: string) => value.split("-").reverse().join(".");
   return `FY ${range.fiscalYear}–${String(Number(range.fiscalYear) + 1).slice(-2)} · ${display(range.from)} – ${display(range.to)}`;

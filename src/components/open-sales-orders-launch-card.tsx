@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useReportSync } from "@/lib/use-report-sync";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
 import { summarizeLaunchOrders, type LaunchOrderRow } from "@/lib/open-orders-launch-summary";
+import { currentReportPeriod, inReportPeriod, reportPeriodLabel } from "@/lib/report-period";
 
 const BAR_TONES = ["var(--kpi-1)", "var(--kpi-2)", "var(--kpi-3)", "var(--kpi-4)"];
 const formatValue = (value: number) => `₹${(value / 10_000_000).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
@@ -15,9 +16,9 @@ type Summary = ReturnType<typeof summarizeLaunchOrders>;
 
 async function fetchOrderBookRows() {
   const pageSize = 1_000;
-  const allRows: { netwr: number | string | null; vtext_dc: string | null; auart: string | null; plant: string | null; profit_center: string | null }[] = [];
+  const allRows: { netwr: number | string | null; vtext_dc: string | null; auart: string | null; plant: string | null; profit_center: string | null; created_date: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant,profit_center")
+    const result = await supabase.from("order_book").select("netwr,vtext_dc,auart,plant,profit_center,created_date")
       .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
@@ -29,17 +30,18 @@ async function fetchOrderBookRows() {
 
 export function OrderBookLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["order-book-launch-summary", "netwr-v1"],
+    queryKey: ["order-book-launch-summary", "netwr-current-fy-v2"],
     queryFn: fetchOrderBookRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
   const access = useUserAccess();
-  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.plant, profitCentre: (r) => r.profit_center })
-    .map((r) => ({ p_value1: r.netwr, sales_type: r.vtext_dc, order_type: r.auart })), { byCode: true, all: true }) : undefined, [rows, access]);
+  const period = useMemo(() => currentReportPeriod(), []);
+  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows.filter((r) => inReportPeriod(r.created_date, period)), access, { plant: (r) => r.plant, profitCentre: (r) => r.profit_center })
+    .map((r) => ({ p_value1: r.netwr, sales_type: r.vtext_dc, order_type: r.auart })), { byCode: true, all: true }) : undefined, [rows, access, period]);
   const { data: lastSynced } = useReportSync("order-book");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
-  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Order Book" subtitle="Total Orders" lineLabel="order lines" href="/reports/sd/order-book" />;
+  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Order Book" subtitle="Current FY Orders" caption={reportPeriodLabel(period)} lineLabel="order lines" href="/reports/sd/order-book" />;
 }
 
 async function fetchSummary(): Promise<Summary> {
@@ -80,7 +82,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
   return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Open Sales Orders" subtitle="Total Open Orders" lineLabel="open order lines" href="/reports/sd/open-sales-orders" />;
 }
 
-function LaunchSummaryCard({ data, lastSynced, title, subtitle, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" }) {
+function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" }) {
   return (
     <section aria-label={`${title} all dates`} className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-1) 28%, var(--color-border))",
@@ -97,6 +99,7 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, lineLabel, href 
         <p className="text-[9px] font-semibold text-primary">{subtitle}</p>
         <p className="text-[9px] font-medium text-foreground tabular-nums">{data.count.toLocaleString("en-IN")} {lineLabel}</p>
       </div>
+      {caption && <p className="mt-1 text-[9px] text-muted-foreground tabular-nums">{caption}</p>}
       <div className="my-3 space-y-2.5">
         {data.breakdown.map((group, index) => (
           <div key={group.name}>
