@@ -7,6 +7,7 @@ import { mapPayload } from "./zfisales-sync.server";
 import { mapOpenSalesOrdersPayload } from "./open-sales-orders-map";
 import { isZcashFlowEndpoint, mapZcashFlowPayload } from "./zcash-flow-map";
 import { isUserDropdownEndpoint, mapUserDropdownPayload } from "./user-dropdown-map";
+import { isOrderBookEndpoint, mapOrderBookPayload } from "./order-book-map";
 import {
   extractEmbeddedBody,
   keyValueObject,
@@ -248,6 +249,39 @@ export async function storeUserDropdownPayload(
   }
 }
 
+/** Inserts or updates Order Book lines on VBELN + POSNR. */
+export async function storeOrderBookPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
+): Promise<SyncCounts> {
+  const db = await admin();
+  const { received, rows, invalid, duplicates } = mapOrderBookPayload(payload, endpointName);
+  const { data: run } = await db.from("sap_sync_runs").insert({
+    endpoint: endpointName, status: "running", started_at: new Date().toISOString(), records_received: received,
+    records_invalid: invalid, response_bytes: metrics.responseBytes ?? 0, duration_ms: metrics.durationMs ?? 0,
+    ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+  }).select("id").single();
+  const finish = async (patch: Record<string, unknown>) => {
+    if (run?.id) await db.from("sap_sync_runs").update({ finished_at: new Date().toISOString(), ...patch }).eq("id", run.id);
+    await pruneRuns(endpointName);
+  };
+  const base = { received, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "order_book", snapshotId: "", postingFrom: null, postingTo: null };
+  try {
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const { error } = await db.from("order_book").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "sales_order,sales_order_item" });
+      if (error) throw error;
+    }
+    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${invalid} without VBELN + POSNR` : "SAP returned no rows — existing data left unchanged" });
+    return { ...base, stored: rows.length };
+  } catch (err) {
+    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Order Book write failed" });
+    throw err;
+  }
+}
+
 /** True when another run is still in flight (single-flight guard). */
 async function runInProgress(endpointName: string): Promise<boolean> {
   const db = await admin();
@@ -446,7 +480,7 @@ export async function pullSapEndpoint(
 
 
 
-  const counts = await (isUserDropdownEndpoint(endpointName) ? storeUserDropdownPayload : isZcashFlowEndpoint(endpointName) ? storeZcashFlowPayload : isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
+  const counts = await (isOrderBookEndpoint(endpointName) ? storeOrderBookPayload : isUserDropdownEndpoint(endpointName) ? storeUserDropdownPayload : isZcashFlowEndpoint(endpointName) ? storeZcashFlowPayload : isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
     durationMs,
     responseBytes: bytes,
     httpStatus: response.status,

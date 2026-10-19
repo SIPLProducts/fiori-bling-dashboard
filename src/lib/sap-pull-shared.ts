@@ -166,6 +166,25 @@ export function isOpenSalesOrdersEndpoint(endpointName: string): boolean {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase() === "opensalesorders";
 }
 
+/** Order Book: ERDAT_F / ERDAT_T follow the window preset; custom keeps saved dates. */
+export function withOrderBookDates(raw: string | null | undefined, range?: string | null, now: Date = new Date()): string | undefined {
+  if (!raw || !raw.trim()) return raw ?? undefined;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...(parsed as Record<string, unknown>) };
+    const window = postingWindow(range, now);
+    const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
+    if (window) { obj["ERDAT_F"] = window.from; obj["ERDAT_T"] = window.to; }
+    else {
+      const from = new Date(now); from.setDate(from.getDate() - 7);
+      if (!valid(obj["ERDAT_F"])) obj["ERDAT_F"] = sapDateOf(from);
+      if (!valid(obj["ERDAT_T"])) obj["ERDAT_T"] = sapDateOf(now);
+    }
+    return JSON.stringify(obj);
+  } catch { return raw; }
+}
+
 export function withEndpointDates(
   endpointName: string,
   raw: string | null | undefined,
@@ -177,6 +196,7 @@ export function withEndpointDates(
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? undefined;
   // User Management dropdowns: no date injection, payload sent as saved.
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? undefined;
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
   return isOpenSalesOrdersEndpoint(endpointName)
     ? withOpenSalesOrdersDate(raw, now, scheduled)
     : withPostingDates(raw, range);

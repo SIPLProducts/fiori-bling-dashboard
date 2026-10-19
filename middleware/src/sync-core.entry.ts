@@ -6,6 +6,7 @@
 export { canonicalJson, sha256, mapPayload, mapRow, extractRows, postingDateRange, toIsoDate } from "../../src/lib/zfisales-map";
 export { mapOpenSalesOrdersPayload, mapOpenSalesOrderRow } from "../../src/lib/open-sales-orders-map";
 export { mapZcashFlowPayload, isZcashFlowEndpoint } from "../../src/lib/zcash-flow-map";
+export { mapOrderBookPayload, isOrderBookEndpoint } from "../../src/lib/order-book-map";
 export { mapUserDropdownPayload, isUserDropdownEndpoint } from "../../src/lib/user-dropdown-map";
 export {
   extractEmbeddedBody,

@@ -239,6 +239,321 @@ export type Database = {
         }
         Relationships: []
       }
+      order_book: {
+        Row: {
+          absta: string | null
+          apptyp: string | null
+          auart: string | null
+          basic_ah: number
+          basic_ahinr: number
+          bezei: string | null
+          bezei_bp: string | null
+          bezei_sh: string | null
+          bezei_sp: string | null
+          bstdk: string | null
+          bstnk: string | null
+          buy_back: string | null
+          buy_back_detail: string | null
+          created_at: string
+          created_date: string | null
+          delv_dat: string | null
+          div_name: string | null
+          gbsta: string | null
+          id: string
+          inco1: string | null
+          inco2: string | null
+          kbetr: number
+          kf00: number
+          kunnr_bp: string | null
+          kunnr_sh: string | null
+          kunnr_sp: string | null
+          kursk: number
+          kwert_ba: number
+          kwert_bc: number
+          kwert_bci: number
+          kwert_cst: number
+          kwert_ds: number
+          kwert_ed: number
+          kwert_fr: number
+          kwert_gst: number
+          kwert_kkc: number
+          kwert_st: number
+          kwert_sw: number
+          kwert_vat: number
+          kwert_vsc: number
+          kwert_zsbp: number
+          kwert_zsf1: number
+          kwert_zsf2: number
+          kwmeng: number
+          kwmeng_c: number
+          kwmeng_p: number
+          kwmeng_pc: number
+          landx_bp: string | null
+          landx_sh: string | null
+          landx_sp: string | null
+          ld_terms: string | null
+          main_grp: string | null
+          maktx: string | null
+          matnr: string | null
+          meins: string | null
+          name1_bp: string | null
+          name1_se: string | null
+          name1_sh: string | null
+          name1_sp: string | null
+          net_inr: number
+          netwr: number
+          p_value: number
+          pay_vtext: string | null
+          pc_name: string | null
+          plant: string | null
+          plant_name: string | null
+          profit_center: string | null
+          proj: string | null
+          raw: Json
+          sales_order: string
+          sales_order_item: string
+          sector: string | null
+          source_endpoint: string
+          spart: string | null
+          stcur: number
+          sub_grp: string | null
+          synced_at: string
+          tot_ah: number
+          tot_inr: number
+          twar: number
+          umren: number
+          umvkz: number
+          unload: string | null
+          updated_at: string
+          vgbel: string | null
+          vkbur: string | null
+          vkgrp: string | null
+          vrkme: string | null
+          vtext_dc: string | null
+          vtext_di: string | null
+          vtweg: string | null
+          waerk: string | null
+          warty: string | null
+          year: string | null
+          zcom: number
+          zdst: number
+          zf01: number
+          zf02: number
+          znrc: number
+          zpf1: number
+          ztax: number
+          zterm: string | null
+        }
+        Insert: {
+          absta?: string | null
+          apptyp?: string | null
+          auart?: string | null
+          basic_ah?: number
+          basic_ahinr?: number
+          bezei?: string | null
+          bezei_bp?: string | null
+          bezei_sh?: string | null
+          bezei_sp?: string | null
+          bstdk?: string | null
+          bstnk?: string | null
+          buy_back?: string | null
+          buy_back_detail?: string | null
+          created_at?: string
+          created_date?: string | null
+          delv_dat?: string | null
+          div_name?: string | null
+          gbsta?: string | null
+          id?: string
+          inco1?: string | null
+          inco2?: string | null
+          kbetr?: number
+          kf00?: number
+          kunnr_bp?: string | null
+          kunnr_sh?: string | null
+          kunnr_sp?: string | null
+          kursk?: number
+          kwert_ba?: number
+          kwert_bc?: number
+          kwert_bci?: number
+          kwert_cst?: number
+          kwert_ds?: number
+          kwert_ed?: number
+          kwert_fr?: number
+          kwert_gst?: number
+          kwert_kkc?: number
+          kwert_st?: number
+          kwert_sw?: number
+          kwert_vat?: number
+          kwert_vsc?: number
+          kwert_zsbp?: number
+          kwert_zsf1?: number
+          kwert_zsf2?: number
+          kwmeng?: number
+          kwmeng_c?: number
+          kwmeng_p?: number
+          kwmeng_pc?: number
+          landx_bp?: string | null
+          landx_sh?: string | null
+          landx_sp?: string | null
+          ld_terms?: string | null
+          main_grp?: string | null
+          maktx?: string | null
+          matnr?: string | null
+          meins?: string | null
+          name1_bp?: string | null
+          name1_se?: string | null
+          name1_sh?: string | null
+          name1_sp?: string | null
+          net_inr?: number
+          netwr?: number
+          p_value?: number
+          pay_vtext?: string | null
+          pc_name?: string | null
+          plant?: string | null
+          plant_name?: string | null
+          profit_center?: string | null
+          proj?: string | null
+          raw?: Json
+          sales_order?: string
+          sales_order_item?: string
+          sector?: string | null
+          source_endpoint?: string
+          spart?: string | null
+          stcur?: number
+          sub_grp?: string | null
+          synced_at?: string
+          tot_ah?: number
+          tot_inr?: number
+          twar?: number
+          umren?: number
+          umvkz?: number
+          unload?: string | null
+          updated_at?: string
+          vgbel?: string | null
+          vkbur?: string | null
+          vkgrp?: string | null
+          vrkme?: string | null
+          vtext_dc?: string | null
+          vtext_di?: string | null
+          vtweg?: string | null
+          waerk?: string | null
+          warty?: string | null
+          year?: string | null
+          zcom?: number
+          zdst?: number
+          zf01?: number
+          zf02?: number
+          znrc?: number
+          zpf1?: number
+          ztax?: number
+          zterm?: string | null
+        }
+        Update: {
+          absta?: string | null
+          apptyp?: string | null
+          auart?: string | null
+          basic_ah?: number
+          basic_ahinr?: number
+          bezei?: string | null
+          bezei_bp?: string | null
+          bezei_sh?: string | null
+          bezei_sp?: string | null
+          bstdk?: string | null
+          bstnk?: string | null
+          buy_back?: string | null
+          buy_back_detail?: string | null
+          created_at?: string
+          created_date?: string | null
+          delv_dat?: string | null
+          div_name?: string | null
+          gbsta?: string | null
+          id?: string
+          inco1?: string | null
+          inco2?: string | null
+          kbetr?: number
+          kf00?: number
+          kunnr_bp?: string | null
+          kunnr_sh?: string | null
+          kunnr_sp?: string | null
+          kursk?: number
+          kwert_ba?: number
+          kwert_bc?: number
+          kwert_bci?: number
+          kwert_cst?: number
+          kwert_ds?: number
+          kwert_ed?: number
+          kwert_fr?: number
+          kwert_gst?: number
+          kwert_kkc?: number
+          kwert_st?: number
+          kwert_sw?: number
+          kwert_vat?: number
+          kwert_vsc?: number
+          kwert_zsbp?: number
+          kwert_zsf1?: number
+          kwert_zsf2?: number
+          kwmeng?: number
+          kwmeng_c?: number
+          kwmeng_p?: number
+          kwmeng_pc?: number
+          landx_bp?: string | null
+          landx_sh?: string | null
+          landx_sp?: string | null
+          ld_terms?: string | null
+          main_grp?: string | null
+          maktx?: string | null
+          matnr?: string | null
+          meins?: string | null
+          name1_bp?: string | null
+          name1_se?: string | null
+          name1_sh?: string | null
+          name1_sp?: string | null
+          net_inr?: number
+          netwr?: number
+          p_value?: number
+          pay_vtext?: string | null
+          pc_name?: string | null
+          plant?: string | null
+          plant_name?: string | null
+          profit_center?: string | null
+          proj?: string | null
+          raw?: Json
+          sales_order?: string
+          sales_order_item?: string
+          sector?: string | null
+          source_endpoint?: string
+          spart?: string | null
+          stcur?: number
+          sub_grp?: string | null
+          synced_at?: string
+          tot_ah?: number
+          tot_inr?: number
+          twar?: number
+          umren?: number
+          umvkz?: number
+          unload?: string | null
+          updated_at?: string
+          vgbel?: string | null
+          vkbur?: string | null
+          vkgrp?: string | null
+          vrkme?: string | null
+          vtext_dc?: string | null
+          vtext_di?: string | null
+          vtweg?: string | null
+          waerk?: string | null
+          warty?: string | null
+          year?: string | null
+          zcom?: number
+          zdst?: number
+          zf01?: number
+          zf02?: number
+          znrc?: number
+          zpf1?: number
+          ztax?: number
+          zterm?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
