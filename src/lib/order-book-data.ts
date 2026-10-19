@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 
 /** Reads every public.order_book row (paginated) and maps it to the shared order-dashboard row shape. */
-type Rec = Partial<Record<"absta" | "auart" | "basic_ah" | "bezei" | "bezei_sp" | "bstdk" | "bstnk" | "created_date" | "delv_dat" | "div_name" | "gbsta" | "kunnr_bp" | "kunnr_sh" | "kunnr_sp" | "kwmeng" | "kwmeng_p" | "landx_sp" | "ld_terms" | "main_grp" | "maktx" | "matnr" | "meins" | "name1_bp" | "name1_se" | "name1_sh" | "name1_sp" | "pc_name" | "plant" | "plant_name" | "profit_center" | "sales_order" | "sales_order_item" | "sector" | "spart" | "sub_grp" | "tot_ah" | "tot_inr" | "vgbel" | "vkbur" | "vkgrp" | "vrkme" | "vtweg" | "waerk", string | number | null>>;
+type Rec = Partial<Record<"absta" | "auart" | "basic_ah" | "bezei" | "bezei_sp" | "bstdk" | "bstnk" | "created_date" | "delv_dat" | "div_name" | "gbsta" | "kunnr_bp" | "kunnr_sh" | "kunnr_sp" | "kwmeng" | "kwmeng_p" | "landx_sp" | "ld_terms" | "main_grp" | "maktx" | "matnr" | "meins" | "name1_bp" | "name1_se" | "name1_sh" | "name1_sp" | "netwr" | "pc_name" | "plant" | "plant_name" | "profit_center" | "sales_order" | "sales_order_item" | "sector" | "spart" | "sub_grp" | "tot_ah" | "tot_inr" | "vgbel" | "vkbur" | "vkgrp" | "vrkme" | "vtweg" | "waerk", string | number | null>>;
 
 const PAGE_SIZE = 1000;
 const t = (v: unknown, fallback = "Unassigned") => (v == null ? "" : String(v)).trim() || fallback;
@@ -29,7 +29,7 @@ export function toOrderBookDashboardRow(r: Rec, now = new Date()): OpenSalesOrde
     profitCentreName: t(r.pc_name, ""), quantity, openQuantity: pending || quantity,
     deliveredQuantity: pending ? Math.max(0, quantity - pending) : 0,
     ah: n(r.basic_ah), totalAh: n(r.tot_ah), unit: t(r.vrkme, t(r.meins, "")), currency: t(r.waerk, ""),
-    value: n(r.tot_inr) / 10_000_000, ldStatus: t(r.ld_terms, ""), deliveryDate: t(r.delv_dat, ""),
+    value: n(r.netwr) / 10_000_000, ldStatus: t(r.ld_terms, ""), deliveryDate: t(r.delv_dat, ""),
     orderDate, daysOpen: daysSince(orderDate, now), salesOrg: "1000", channel: t(r.vtweg),
     plant: t(r.plant, ""), plantName: t(r.plant_name, ""), office: t(r.vkbur), salesGroup: t(r.vkgrp),
     salesRepName: t(r.name1_se, ""), zone: t(r.bezei_sp, t(r.bezei)), region: t(r.bezei_sp, ""),
