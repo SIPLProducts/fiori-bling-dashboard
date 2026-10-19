@@ -33,9 +33,10 @@ export function sumPendingAhQuantity(rows: Pick<OpenSalesOrder, "totalAh">[]) {
 }
 
 /** Pending AH Quantity shown in LAH (lakhs), e.g. 1107400 → "11.07 LAH". */
-export function formatPendingAhQuantityInLakhs(value: number) {
+export function formatPendingAhQuantityInLakhs(value: number, withUnit = true) {
   const lakhs = (Number.isFinite(value) ? value : 0) / 100000;
-  return `${lakhs.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LAH`;
+  const text = lakhs.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return withUnit ? `${text} LAH` : text;
 }
 
 export function summarizeOpenOrderTable(rows: Pick<OpenSalesOrder, "openQuantity" | "deliveredQuantity" | "ah" | "totalAh" | "value">[]) {
