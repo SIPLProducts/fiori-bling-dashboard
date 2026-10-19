@@ -10,7 +10,8 @@ export function toQuarterLines(rows: BookRow[]): SdLine[] {
     const date = row.orderDate.slice(0, 10);
     const key = `${row.order}|${date}`;
     const entry = map.get(key) ?? { postingDate: date, amount: 0 };
-    entry.amount += Number.isFinite(row.value) ? row.value : 0;
+    // Order Book row values are ₹ Cr; quarter summaries expect rupees.
+    entry.amount += Number.isFinite(row.value) ? row.value * 10_000_000 : 0;
     map.set(key, entry);
   }
   return [...map.values()] as unknown as SdLine[];
