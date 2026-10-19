@@ -1,5 +1,6 @@
-ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order text NOT NULL;
-ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order_item text NOT NULL;
+CREATE TABLE IF NOT EXISTS public.order_book (id uuid PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order text NOT NULL DEFAULT '';
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order_item text NOT NULL DEFAULT '';
 ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS apptyp text;
 ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sector text;
 ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vtweg text;
