@@ -462,7 +462,7 @@ function KpiCard({
   );
 }
 
-export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
+export function QuarterCard({ summary, tone, active, compact = false }: { summary: QuarterSummary; tone: number; active: boolean; compact?: boolean }) {
   const isMobile = useIsMobile();
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
@@ -527,8 +527,8 @@ export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary
         </span>
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
-      <p className="mt-2 text-[10px] text-muted-foreground">{summary.periodLabel}</p>
-      {hasChartData ? <div className="mt-2 h-40 overflow-visible rounded-md bg-muted/40 pt-1">
+      <p className={`${compact ? "mt-1" : "mt-2"} text-[10px] text-muted-foreground`}>{summary.periodLabel}</p>
+      {hasChartData ? <div className={`${compact ? "mt-1 h-24" : "mt-2 h-40"} overflow-visible`} data-x=" rounded-md bg-muted/40 pt-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
             {series.length > 1 ? (
