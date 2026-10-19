@@ -1103,7 +1103,10 @@ function EndpointDetail({
 
   const payload = useMemo(() => parsePayload(form.body_template), [form.body_template]);
   const isOpenSalesOrders = isOpenSalesOrdersEndpoint(form.name);
-  const isOrderBook = isOrderBookName(form.name) || isOrderBookName(form.endpoint_path);
+  const isOrderBook =
+    isOrderBookName(form.name) ||
+    isOrderBookName(form.endpoint_path) ||
+    (!!payload && "ERDAT_F" in payload && "ERDAT_T" in payload);
   const isZcash = !isOrderBook && (isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path));
   const usesPostingDates =
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
@@ -1319,6 +1322,22 @@ function EndpointDetail({
                 onChange={(v) => set("body_template", v)}
                 onRange={(r) => set("posting_range", r as EndpointInput["posting_range"])}
               />
+            ) : !isZcash ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-border p-3">
+                <span className="text-sm text-muted-foreground">Order Book API?</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const w = postingWindow("last_1_month") ?? postingWindow(form.posting_range);
+                    set("body_template", JSON.stringify({ ...ORDER_BOOK_DEFAULT_PAYLOAD, ...(w ? { ERDAT_F: w.from, ERDAT_T: w.to } : {}) }, null, 2));
+                    if (!form.endpoint_path) set("endpoint_path", "/zorderbook/order?sap-client=234");
+                  }}
+                >
+                  Use Order Book request fields
+                </Button>
+              </div>
             ) : null}
             {isZcash ? (
               <ZcashFlowRequestFields value={form.body_template} onChange={(v) => set("body_template", v)} />
