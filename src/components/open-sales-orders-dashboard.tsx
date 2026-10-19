@@ -93,7 +93,7 @@ function Panel({ title, children, className = "", headerDivider = false, divider
   );
 }
 
-function SummaryCard({ label, value, subValue, icon: Icon, tone }: { label: string; value: string; subValue?: string; icon: ComponentType<{ className?: string }>; tone: Tone }) {
+function SummaryCard({ label, value, subValue, icon: Icon, tone, smallSub = false }: { label: string; value: string; subValue?: string; icon: ComponentType<{ className?: string }>; tone: Tone; smallSub?: boolean }) {
   const styles = TONE_STYLES[tone];
   return (
     <section className={`order-summary flex min-h-32 items-start gap-4 rounded-md border p-4 shadow-tile ${styles.card}`}>
@@ -101,7 +101,7 @@ function SummaryCard({ label, value, subValue, icon: Icon, tone }: { label: stri
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-card-foreground">{label}</p>
         <p className="mt-1 text-3xl font-semibold leading-none text-foreground tabular-nums">{value}</p>
-        {subValue ? <p className="mt-1.5 text-xs font-medium text-muted-foreground tabular-nums">{subValue}</p> : null}
+        {subValue ? <p title={subValue} className={`mt-1.5 font-medium text-muted-foreground tabular-nums ${smallSub ? "truncate text-[11px]" : "text-xs"}`}>{subValue}</p> : null}
       </div>
     </section>
   );
@@ -422,7 +422,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label={isBook ? "Total AH (LAH)" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
-        {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" /> : null}
+        {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
       </div>
 
 

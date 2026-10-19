@@ -528,9 +528,9 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
       <p className={`${compact ? "mt-1" : "mt-2"} text-[10px] text-muted-foreground`}>{summary.periodLabel}</p>
-      {hasChartData ? <div className={`${compact ? "mt-1 h-24" : "mt-2 h-40"} overflow-visible rounded-md bg-muted/40 pt-1`}>
+      {hasChartData ? <div className={`${compact ? "mt-1 h-28" : "mt-2 h-40"} overflow-visible rounded-md bg-muted/40 pt-1`}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={compact ? { top: 14, right: 4, bottom: 0, left: 0 } : { top: 24, right: 6, bottom: 20, left: 6 }}>
+          <BarChart data={chartData} margin={compact ? { top: 16, right: 4, bottom: 2, left: 0 } : { top: 24, right: 6, bottom: 20, left: 6 }}>
             {series.length > 1 ? (
               <Legend
                 verticalAlign="top"
@@ -543,6 +543,7 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
             ) : null}
             <XAxis
               dataKey="label"
+              height={compact ? 16 : 30}
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }}
@@ -594,7 +595,7 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
             ))}
           </BarChart>
         </ResponsiveContainer>
-      </div> : <div className={`${compact ? "mt-1 h-24" : "mt-2 h-40"} grid place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground`}>—</div>}
+      </div> : <div className={`${compact ? "mt-1 h-28" : "mt-2 h-40"} grid place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground`}>—</div>}
     </section>
   );
 }
