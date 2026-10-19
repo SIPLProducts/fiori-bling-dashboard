@@ -384,7 +384,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
         <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label={isBook ? "Pending LAH Quantity" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
+        <SummaryCard label={isBook ? "Total AH (LAH)" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
         {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" /> : null}
       </div>
 
