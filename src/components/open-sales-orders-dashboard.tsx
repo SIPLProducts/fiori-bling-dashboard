@@ -381,10 +381,11 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         <h2 className="text-base font-semibold text-card-foreground">Open Sales Orders Reports</h2>
       </div> : null}
 
-      <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-3">
+      <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
         <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
         <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
         <SummaryCard label={isBook ? "Pending LAH Quantity" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
+        {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" /> : null}
       </div>
 
 
@@ -483,17 +484,17 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </div>
       ) : null}
 
-      <div data-pdf-page-block className={isBook ? "order-status-row grid gap-4" : "order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]"}>
-        {!isBook ? <><StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
-        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, metrics.distinctOrders)} partial /></> : null}
+      {!isBook ? <div data-pdf-page-block className="order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
+        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
+        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, metrics.distinctOrders)} partial />
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
           <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
           <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-2">
-            {!isBook ? <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} /> : null}
+            <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
           </div>
         </section>
-      </div>
+      </div> : null}
 
       <section data-pdf-exclude className="order-details overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="order-details-header grid min-w-0 gap-2 border-b border-border px-4 py-3">
