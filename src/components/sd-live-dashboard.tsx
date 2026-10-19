@@ -546,7 +546,7 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }}
-              label={compact ? undefined : { value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 }}
+              {...(compact ? {} : { label: { value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 } })}
             />
             <YAxis
               width={compact ? 36 : isMobile ? 52 : 58}
@@ -555,7 +555,7 @@ export function QuarterCard({ summary, tone, active, compact = false }: { summar
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: isMobile ? 8 : 9, fill: "var(--color-muted-foreground)" }}
               tickFormatter={(value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
-              label={compact ? undefined : { value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 }}
+              {...(compact ? {} : { label: { value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 } })}
               domain={[domainMin, domainMax]}
             />
             <Tooltip
