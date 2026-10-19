@@ -25,7 +25,7 @@ import { summarizeByCreatedMonth } from "@/lib/order-book-months";
 import { buildOrderBookQuarters, filterByFiscalPeriod, orderBookFiscalYears } from "@/lib/order-book-quarters";
 import { currentFiscalYear, fiscalQuarter, fiscalYearForDate } from "@/lib/sd-live";
 import { QuarterCard } from "./sd-live-dashboard";
-import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
+import { summarizeOpenOrderGroups, summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
@@ -57,7 +57,7 @@ import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { countDistinctOrders, formatPendingAhQuantityInLakhs, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countDistinctOrders, formatPendingAhQuantityInLakhs, formatBookLah, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { useUserAccess } from "@/lib/use-user-access";
 import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
