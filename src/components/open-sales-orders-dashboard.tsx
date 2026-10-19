@@ -21,6 +21,9 @@ import { OpenOrdersGroupChart } from "./open-orders-group-chart";
 import { useOrderWording } from "./order-wording";
 import { OrderBookMonthChart } from "./order-book-month-chart";
 import { summarizeByCreatedMonth } from "@/lib/order-book-months";
+import { buildOrderBookQuarters, filterByFiscalPeriod, orderBookFiscalYears } from "@/lib/order-book-quarters";
+import { currentFiscalYear, fiscalQuarter, fiscalYearForDate } from "@/lib/sd-live";
+import { QuarterCard } from "./sd-live-dashboard";
 import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
@@ -172,6 +175,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const [dateMode, setDateMode] = useState<OpenOrderDateMode>("range");
   const [singleDate, setSingleDate] = useState<Date>();
   const [filters, setFilters] = useState<OpenOrderFilters>(() => defaultOpenOrderFilters());
+  const [fiscalYears, setFiscalYears] = useState<string[]>(() => [currentFiscalYear()]);
+  const [quarterFilter, setQuarterFilter] = useState<string[]>([]);
   const documentTypeDefaultsInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
   const [tableStatus, setTableStatus] = useState<OpenOrderTableStatus>("all");
@@ -400,6 +405,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
               </Popover>)}
             </div>)}
           </div>
+          {isBook ? <FilterMultiSelect label="Financial Year" selected={fiscalYears.length ? fiscalYears : null} options={yearOptions} onChange={(years) => { setFiscalYears(years); if (years.length) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All years" /> : null}
+          {isBook ? <FilterMultiSelect label="Quarter" selected={quarterFilter.length ? quarterFilter : null} options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q }))} onChange={(quarters) => { setQuarterFilter(quarters.length === 4 ? [] : quarters); if (quarters.length && quarters.length < 4) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All quarters" /> : null}
           <div className="min-w-0 min-[900px]:col-start-1"><FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" /></div>
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
@@ -420,6 +427,10 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
 
+
+      {isBook && quarterSummaries.length ? <div data-pdf-page-block className={`order-quarter-row grid gap-4 sm:grid-cols-2 ${quarterSummaries.length >= 4 ? "lg:grid-cols-4" : quarterSummaries.length === 3 ? "lg:grid-cols-3" : quarterSummaries.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
+        {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} />)}
+      </div> : null}
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
