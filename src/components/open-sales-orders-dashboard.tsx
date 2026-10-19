@@ -170,7 +170,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync(isBook ? "order-book" : "open-sales-orders");
   const access = useUserAccess();
-  const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, { plant: (r) => r.plant }), [rawData, access]);
+  const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, isBook ? { plant: (r) => r.plant, profitCentre: (r) => r.profitCentre } : { plant: (r) => r.plant }), [rawData, access]);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
   const [dateMode, setDateMode] = useState<OpenOrderDateMode>("range");
   const [singleDate, setSingleDate] = useState<Date>();
