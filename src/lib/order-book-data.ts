@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 
 /** Reads every public.order_book row (paginated) and maps it to the shared order-dashboard row shape. */
-type Rec = Record<string, string | number | null>;
+type Rec = Partial<Record<"absta" | "auart" | "basic_ah" | "bezei" | "bezei_sp" | "bstdk" | "bstnk" | "created_date" | "delv_dat" | "div_name" | "gbsta" | "kunnr_bp" | "kunnr_sh" | "kunnr_sp" | "kwmeng" | "kwmeng_p" | "landx_sp" | "ld_terms" | "main_grp" | "maktx" | "matnr" | "meins" | "name1_bp" | "name1_se" | "name1_sh" | "name1_sp" | "pc_name" | "plant" | "plant_name" | "profit_center" | "sales_order" | "sales_order_item" | "sector" | "spart" | "sub_grp" | "tot_ah" | "tot_inr" | "vgbel" | "vkbur" | "vkgrp" | "vrkme" | "vtweg" | "waerk", string | number | null>>;
 
 const PAGE_SIZE = 1000;
 const t = (v: unknown, fallback = "Unassigned") => (v == null ? "" : String(v)).trim() || fallback;
