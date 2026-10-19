@@ -1330,7 +1330,7 @@ function EndpointDetail({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const w = postingWindow("last_1_month") ?? postingWindow(form.posting_range);
+                    const w = postingWindow(form.posting_range) ?? postingWindow("last1m");
                     set("body_template", JSON.stringify({ ...ORDER_BOOK_DEFAULT_PAYLOAD, ...(w ? { ERDAT_F: w.from, ERDAT_T: w.to } : {}) }, null, 2));
                     if (!form.endpoint_path) set("endpoint_path", "/zorderbook/order?sap-client=234");
                   }}
