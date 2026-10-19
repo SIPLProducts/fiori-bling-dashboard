@@ -213,7 +213,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const dateFilteredData = useMemo(() => filterOpenOrders(data, { ...filters, channels: null }, activeDates), [data, filters, activeDates.from, activeDates.to]);
   const filteredData = useMemo(() => filterByFiscalPeriod(dateFilteredData, periodYears, periodQuarters), [dateFilteredData, periodYears.join(), periodQuarters.join()]);
   const quarterComparisonRows = useMemo(() => isBook ? filterOpenOrders(data, { ...filters, channels: null }) : [], [isBook, data, filters]);
-  const quarterSummaries = useMemo(() => isBook ? buildOrderBookQuarters(filteredData, quarterComparisonRows, periodYears, periodQuarters, { from: activeDates.from, to: activeDates.to }) : [], [isBook, filteredData, quarterComparisonRows, periodYears.join(), periodQuarters.join(), activeDates.from, activeDates.to]);
+  const quarterSummaries = useMemo(() => isBook ? buildOrderBookQuarters(filteredData, quarterComparisonRows, periodYears, periodQuarters, { from: activeDates.from ?? "", to: activeDates.to ?? "" }) : [], [isBook, filteredData, quarterComparisonRows, periodYears.join(), periodQuarters.join(), activeDates.from, activeDates.to]);
   const yearOptions = useMemo(() => {
     const years = new Set(orderBookFiscalYears(data));
     years.add(currentFiscalYear());
