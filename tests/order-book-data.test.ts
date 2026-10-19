@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { toOrderBookDashboardRow } from "../src/lib/order-book-data";
 
 describe("toOrderBookDashboardRow", () => {
-  it("uses TOT_INR in crores and the sold-to customer", () => {
-    const row = toOrderBookDashboardRow({ sales_order: "1", sales_order_item: "10", tot_inr: 25_000_000, name1_sp: "ACME", kwmeng: 5, tot_ah: 3 });
+  it("uses NETWR (not TOT_INR) in crores and the sold-to customer", () => {
+    const row = toOrderBookDashboardRow({ sales_order: "1", sales_order_item: "10", netwr: 25_000_000, tot_inr: 99_000_000, name1_sp: "ACME", kwmeng: 5, tot_ah: 3 });
     expect(row.value).toBe(2.5);
     expect(row.customer).toBe("ACME");
     expect(row.totalAh).toBe(3);
