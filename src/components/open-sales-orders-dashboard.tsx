@@ -255,6 +255,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       customers: rankOrders(filteredData, (row) => row.customer),
       products: rankOrders(filteredData, (row) => row.description),
       models: rankOrders(filteredData.filter(hasModelWiseType), (row) => row.model),
+      materials: rankOrders(filteredData, (row) => row.description || row.material),
+      salesMen: rankOrders(filteredData.filter((row) => row.salesRepName.trim()), (row) => row.salesRepName),
       notDeliveredCount: notDeliveredOrders.size,
       longest: [...filteredData].sort((a, b) => b.daysOpen - a.daysOpen)[0],
       highestValue: [...filteredData].sort((a, b) => b.value - a.value)[0],
@@ -473,6 +475,13 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         <RankingPanel title={isBook ? "Top 10 Orders by Product" : "Top 10 Open Orders by Product"} data={metrics.products} color="var(--success)" />
         <RankingPanel title={isBook ? "Top 10 Orders by Model Wise" : "Open Orders by Model Wise"} data={metrics.models} color="var(--quick-view-violet)" />
       </div>
+
+      {isBook ? (
+        <div data-pdf-page-block className="order-ranking-row grid gap-4 lg:grid-cols-2">
+          <RankingPanel title="Top 10 Materials" data={metrics.materials} color="var(--chart-2)" />
+          <RankingPanel title="Top 10 Sales Men" data={metrics.salesMen} color="var(--chart-4)" />
+        </div>
+      ) : null}
 
       <div data-pdf-page-block className={isBook ? "order-status-row grid gap-4" : "order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]"}>
         {!isBook ? <><StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
