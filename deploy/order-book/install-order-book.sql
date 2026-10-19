@@ -126,7 +126,7 @@ NOTIFY pgrst, 'reload schema';
 
 -- Register the Order Book endpoint if it is not configured yet (edit it in SAP API Settings).
 INSERT INTO public.sap_endpoints (name, module_key, description, endpoint_path, http_method, auth_type, query_params, headers, body_template, scheduler_enabled, schedule_expression, is_active, posting_range)
-SELECT 'ORDER_BOOK', 'common', 'Order Book (ZORDERBOOK) — stored in public.order_book', '/zorderbook/order?sap-client=234', 'POST', 'basic', '[]'::jsonb, '[]'::jsonb,
+SELECT 'ORDER_BOOK', 'common', 'Order Book (ZORDERBOOK) — stored in public.order_book', '/zorderbook/order?sap-client=234', 'POST', 'proxy', '[]'::jsonb, '[]'::jsonb,
   '{"VKORG":"1000","SPART_F":"","SPART_T":"","VTWEG_F":"","VTWEG_T":"","AUART_F":"","AUART_T":"","VBELN_F":"","VBELN_T":"","ERDAT_F":"","ERDAT_T":"","WERKS_F":"","WERKS_T":""}',
   false, 'IST:05:30', true, 'last1m'
 WHERE NOT EXISTS (SELECT 1 FROM public.sap_endpoints WHERE regexp_replace(lower(name), '[^a-z0-9]', '', 'g') LIKE '%orderbook%');

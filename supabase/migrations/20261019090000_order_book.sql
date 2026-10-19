@@ -1,108 +1,106 @@
-CREATE TABLE IF NOT EXISTS public.order_book (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  sales_order text NOT NULL,
-  sales_order_item text NOT NULL,
-  apptyp text,
-  sector text,
-  vtweg text,
-  spart text,
-  plant text,
-  auart text,
-  kunnr_sp text,
-  name1_sp text,
-  kunnr_bp text,
-  name1_bp text,
-  kunnr_sh text,
-  name1_sh text,
-  bstnk text,
-  matnr text,
-  maktx text,
-  vrkme text,
-  waerk text,
-  zterm text,
-  pay_vtext text,
-  delv_dat text,
-  warty text,
-  inco1 text,
-  ld_terms text,
-  vkbur text,
-  name1_se text,
-  vtext_dc text,
-  vtext_di text,
-  inco2 text,
-  meins text,
-  bezei text,
-  landx_sp text,
-  bezei_sp text,
-  landx_bp text,
-  bezei_bp text,
-  landx_sh text,
-  bezei_sh text,
-  vgbel text,
-  proj text,
-  vkgrp text,
-  year text,
-  absta text,
-  gbsta text,
-  buy_back text,
-  buy_back_detail text,
-  unload text,
-  plant_name text,
-  div_name text,
-  profit_center text,
-  pc_name text,
-  main_grp text,
-  sub_grp text,
-  kwmeng numeric NOT NULL DEFAULT 0,
-  kwmeng_p numeric NOT NULL DEFAULT 0,
-  stcur numeric NOT NULL DEFAULT 0,
-  kbetr numeric NOT NULL DEFAULT 0,
-  kwmeng_c numeric NOT NULL DEFAULT 0,
-  kwmeng_pc numeric NOT NULL DEFAULT 0,
-  p_value numeric NOT NULL DEFAULT 0,
-  kwert_ba numeric NOT NULL DEFAULT 0,
-  kwert_bc numeric NOT NULL DEFAULT 0,
-  kwert_bci numeric NOT NULL DEFAULT 0,
-  kwert_ds numeric NOT NULL DEFAULT 0,
-  kwert_ed numeric NOT NULL DEFAULT 0,
-  kwert_cst numeric NOT NULL DEFAULT 0,
-  kwert_vat numeric NOT NULL DEFAULT 0,
-  kwert_st numeric NOT NULL DEFAULT 0,
-  kwert_sw numeric NOT NULL DEFAULT 0,
-  kwert_gst numeric NOT NULL DEFAULT 0,
-  kwert_kkc numeric NOT NULL DEFAULT 0,
-  kwert_vsc numeric NOT NULL DEFAULT 0,
-  netwr numeric NOT NULL DEFAULT 0,
-  kwert_fr numeric NOT NULL DEFAULT 0,
-  znrc numeric NOT NULL DEFAULT 0,
-  zcom numeric NOT NULL DEFAULT 0,
-  zpf1 numeric NOT NULL DEFAULT 0,
-  ztax numeric NOT NULL DEFAULT 0,
-  zdst numeric NOT NULL DEFAULT 0,
-  kf00 numeric NOT NULL DEFAULT 0,
-  zf01 numeric NOT NULL DEFAULT 0,
-  zf02 numeric NOT NULL DEFAULT 0,
-  kursk numeric NOT NULL DEFAULT 0,
-  tot_inr numeric NOT NULL DEFAULT 0,
-  net_inr numeric NOT NULL DEFAULT 0,
-  umren numeric NOT NULL DEFAULT 0,
-  tot_ah numeric NOT NULL DEFAULT 0,
-  basic_ah numeric NOT NULL DEFAULT 0,
-  basic_ahinr numeric NOT NULL DEFAULT 0,
-  umvkz numeric NOT NULL DEFAULT 0,
-  twar numeric NOT NULL DEFAULT 0,
-  kwert_zsbp numeric NOT NULL DEFAULT 0,
-  kwert_zsf1 numeric NOT NULL DEFAULT 0,
-  kwert_zsf2 numeric NOT NULL DEFAULT 0,
-  created_date date,
-  bstdk date,
-  raw jsonb NOT NULL DEFAULT '{}'::jsonb,
-  source_endpoint text NOT NULL DEFAULT '',
-  synced_at timestamptz NOT NULL DEFAULT now(),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT order_book_sales_order_item_key UNIQUE (sales_order, sales_order_item)
-);
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order text NOT NULL;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sales_order_item text NOT NULL;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS apptyp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sector text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vtweg text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS spart text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS plant text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS auart text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kunnr_sp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS name1_sp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kunnr_bp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS name1_bp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kunnr_sh text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS name1_sh text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bstnk text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS matnr text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS maktx text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vrkme text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS waerk text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zterm text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS pay_vtext text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS delv_dat text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS warty text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS inco1 text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS ld_terms text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vkbur text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS name1_se text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vtext_dc text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vtext_di text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS inco2 text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS meins text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bezei text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS landx_sp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bezei_sp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS landx_bp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bezei_bp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS landx_sh text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bezei_sh text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vgbel text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS proj text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS vkgrp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS year text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS absta text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS gbsta text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS buy_back text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS buy_back_detail text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS unload text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS plant_name text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS div_name text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS profit_center text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS pc_name text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS main_grp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS sub_grp text;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwmeng numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwmeng_p numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS stcur numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kbetr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwmeng_c numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwmeng_pc numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS p_value numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_ba numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_bc numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_bci numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_ds numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_ed numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_cst numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_vat numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_st numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_sw numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_gst numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_kkc numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_vsc numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS netwr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_fr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS znrc numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zcom numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zpf1 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS ztax numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zdst numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kf00 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zf01 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS zf02 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kursk numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS tot_inr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS net_inr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS umren numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS tot_ah numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS basic_ah numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS basic_ahinr numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS umvkz numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS twar numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_zsbp numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_zsf1 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS kwert_zsf2 numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS created_date date;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS bstdk date;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS raw jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS source_endpoint text NOT NULL DEFAULT '';
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS synced_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.order_book ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='order_book_sales_order_item_key') THEN ALTER TABLE public.order_book ADD CONSTRAINT order_book_sales_order_item_key UNIQUE (sales_order, sales_order_item); END IF; END $$;
+
 
 GRANT SELECT ON public.order_book TO authenticated;
 GRANT ALL ON public.order_book TO service_role;
