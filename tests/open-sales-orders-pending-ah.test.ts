@@ -55,3 +55,10 @@ describe("Pending AH Quantity in LAH", () => {
     expect(formatPendingAhQuantityInLakhs(0)).toBe("0.00 LAH");
   });
 });
+
+describe("Order Book Pending LAH Quantity", () => {
+  test("shows lakhs without the LAH word", () => {
+    expect(formatPendingAhQuantityInLakhs(1107400, false)).toBe("11.07");
+    expect(formatPendingAhQuantityInLakhs(0, false)).toBe("0.00");
+  });
+});

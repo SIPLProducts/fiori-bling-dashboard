@@ -380,9 +380,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div> : null}
 
       <div data-pdf-page-block className="order-summary-row grid gap-4 sm:grid-cols-3">
-        <SummaryCard label="Total Open Orders" value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
-        <SummaryCard label="Open Order Value" value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label="Pending AH Quantity" value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
+        <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
+        <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
+        <SummaryCard label={isBook ? "Pending LAH Quantity" : "Pending AH Quantity"} value={formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity, !isBook)} icon={FileText} tone="warning" />
       </div>
 
 
