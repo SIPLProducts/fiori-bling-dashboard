@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "recharts";
 import { getOpenSalesOrders, type OpenSalesOrder } from "@/lib/open-sales-orders-data";
+import { getOrderBookRows } from "@/lib/order-book-data";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -143,15 +144,17 @@ function StatusCard({ title, count, value, share, partial }: { title: string; co
   );
 }
 
-export function OpenSalesOrdersDashboard() {
+export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?: "open-orders" | "order-book" } = {}) {
+  const isBook = variant === "order-book";
+  const screenTitle = isBook ? "Order Book Report" : "Open Sales Orders Reports";
   const dashboardRef = useRef<HTMLDivElement>(null);
   const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const documentGradient = `${chartId}-document`;
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["open-sales-orders-live", "p-value1-v1"],
-    queryFn: getOpenSalesOrders,
+    queryKey: isBook ? ["order-book-live", "tot-inr-v1"] : ["open-sales-orders-live", "p-value1-v1"],
+    queryFn: isBook ? getOrderBookRows : getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
@@ -159,7 +162,7 @@ export function OpenSalesOrdersDashboard() {
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { data: lastSynced, refetch: refetchSync } = useReportSync("open-sales-orders");
+  const { data: lastSynced, refetch: refetchSync } = useReportSync(isBook ? "order-book" : "open-sales-orders");
   const access = useUserAccess();
   const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, { plant: (r) => r.plant }), [rawData, access]);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
@@ -272,7 +275,7 @@ export function OpenSalesOrdersDashboard() {
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       await new Promise<void>((resolve) => setTimeout(resolve, 300));
-      await exportDashboardPdf(dashboardRef.current, "open-sales-orders.pdf", "[data-pdf-exclude]", {
+      await exportDashboardPdf(dashboardRef.current, isBook ? "order-book-report.pdf" : "open-sales-orders.pdf", "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
         blockSelector: "[data-pdf-page-block]",
         sectionBreakSelector: "[data-pdf-section-break]",
@@ -295,7 +298,7 @@ export function OpenSalesOrdersDashboard() {
     }
     setExcelBusy(true);
     try {
-      await downloadOpenSalesOrdersExcel(tableData);
+      await downloadOpenSalesOrdersExcel(tableData, isBook ? "order-book-report.xlsx" : "open-sales-orders.xlsx");
       toast.success("Open Sales Orders Excel downloaded");
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download Excel");
@@ -311,19 +314,19 @@ export function OpenSalesOrdersDashboard() {
       </div> : null}
       {!pdfBusy ? <header data-pdf-exclude className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-foreground">Open Sales Orders Reports</h1>
+          <h1 className="text-xl font-semibold text-foreground">{screenTitle}</h1>
           <p className="mt-1 text-xs text-muted-foreground" data-pdf-exclude>{lastSyncedLabel(lastSynced)}</p>
         </div>
          <div className="flex min-w-0 items-center justify-end gap-2">
           <Button type="button" variant="outline" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
            const [result] = await Promise.all([refetch(), refetchSync()]);
           if (result.error) toast.error(result.error.message);
-          else toast.success("Open Sales Orders refreshed");
+          else toast.success(`${screenTitle} refreshed`);
          }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><Button type="button" variant="outline" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
       </header> : null}
 
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
-      {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading current Open Sales Orders…</section> : null}
+      {isLoading ? <section className="grid h-40 place-items-center rounded-md border border-border bg-card text-sm text-muted-foreground">Loading {screenTitle}…</section> : null}
 
       <section data-pdf-exclude className="order-filters rounded-md border border-border bg-card shadow-tile">
         <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2">
@@ -385,7 +388,7 @@ export function OpenSalesOrdersDashboard() {
 
 
 
-      <div data-pdf-page-block className="order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:lg:col-span-4">
+      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 lg:grid-cols-12 ${isBook ? "[&>*]:lg:col-span-6" : "[&>*]:lg:col-span-4"}`}>
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className="order-document-grid grid min-h-64 min-w-0 grid-cols-[112px_minmax(0,1fr)] items-center gap-2">
@@ -400,6 +403,7 @@ export function OpenSalesOrdersDashboard() {
           </div>
           </div>
         </Panel>
+        {!isBook ? <>
         <Panel title="Open Orders by Aging Bucket" headerDivider dividerColor="green">
           <div className="order-aging-grid grid min-h-64 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
             <div className="order-aging-donut relative h-56">
@@ -415,6 +419,7 @@ export function OpenSalesOrdersDashboard() {
         <Panel title="Open Order Value Trend" className="order-trend" headerDivider dividerColor="amber" headerAside={!pdfBusy ? <div className="order-trend-legend flex items-center gap-2 text-[11px] text-card-foreground"><span className="flex items-center gap-1 whitespace-nowrap"><span className="order-trend-open-marker size-2 shrink-0" />Open</span><span className="flex items-center gap-1 whitespace-nowrap"><span className="order-trend-partial-marker size-2 shrink-0" />Partial Delivered</span></div> : undefined}>
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={40} tick={{ fontSize: 9, angle: -28, textAnchor: "end" } as never} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
+        </> : null}
         {!pdfBusy ? <Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
       </div>
       {pdfBusy ? <div data-pdf-page-block><Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
@@ -469,13 +474,13 @@ export function OpenSalesOrdersDashboard() {
         <RankingPanel title="Open Orders by Model Wise" data={metrics.models} color="var(--quick-view-violet)" />
       </div>
 
-      <div data-pdf-page-block className="order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
-        <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
-        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, metrics.distinctOrders)} partial />
+      <div data-pdf-page-block className={isBook ? "order-status-row grid gap-4" : "order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]"}>
+        {!isBook ? <><StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
+        <StatusCard title="Partial Delivered Orders" count={metrics.partialCount} value={metrics.partialOpenValue} share={percent(metrics.partialCount, metrics.distinctOrders)} partial /></> : null}
         <section className="min-w-0 overflow-hidden rounded-md border border-border">
           <h2 className="order-quick-header border-b border-border bg-quick-view-header px-4 py-3 text-sm font-semibold text-quick-view-heading">Quick View</h2>
           <div className="order-quick-body grid gap-3 p-2 sm:grid-cols-2">
-            <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} />
+            {!isBook ? <QuickItem icon={CalendarDays} tone="primary" label="Longest Aging" value={`${formatNumber(metrics.longest?.daysOpen ?? 0)} Days`} detail={`Customer: ${metrics.longest?.customer ?? "—"}`} /> : null}
             <QuickItem icon={TriangleAlert} tone="warning" label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} detail={`Customer: ${metrics.highestValue?.customer ?? "—"}`} />
           </div>
         </section>
@@ -483,7 +488,7 @@ export function OpenSalesOrdersDashboard() {
 
       <section data-pdf-exclude className="order-details overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="order-details-header grid min-w-0 gap-2 border-b border-border px-4 py-3">
-          <div className="min-w-0"><h2 className="text-sm font-semibold text-card-foreground">Open Sales Orders Report – Detailed View (Aging Bucket)</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered line items</p></div>
+          <div className="min-w-0"><h2 className="text-sm font-semibold text-card-foreground">{isBook ? "Order Book Report – Detailed View" : "Open Sales Orders Report – Detailed View (Aging Bucket)"}</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered line items</p></div>
           <div className="order-table-controls grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <div className="order-table-search relative col-span-2 min-w-0"><Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Search detailed orders" placeholder="Search orders…" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} className="h-9 pl-9" /></div>
             <Select value={tableStatus} onValueChange={(value) => { if (value === "all" || value === "open" || value === "partial") setTableStatus(value); }}><SelectTrigger aria-label="Filter orders by status" className="w-full min-w-0"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Status: All</SelectItem><SelectItem value="open">Open</SelectItem><SelectItem value="partial">Partially Delivered</SelectItem></SelectContent></Select>
@@ -493,7 +498,7 @@ export function OpenSalesOrdersDashboard() {
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading current Open Sales Orders…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading {screenTitle}…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
             <TableCell colSpan={14}>Total</TableCell>
             <TableCell className="text-right tabular-nums">{tableTotals.openQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>

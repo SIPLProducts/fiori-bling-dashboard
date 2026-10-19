@@ -1,8 +1,8 @@
-export type ReportDataset = "net-sales" | "open-sales-orders";
+export type ReportDataset = "net-sales" | "open-sales-orders" | "order-book";
 
 export function matchesReportEndpoint(endpoint: string, dataset: ReportDataset) {
   const normalized = endpoint.replace(/[^a-z0-9]/gi, "").toLowerCase();
-  return normalized === (dataset === "net-sales" ? "salesreportskpi" : "opensalesorders");
+  return normalized === (dataset === "net-sales" ? "salesreportskpi" : dataset === "order-book" ? "orderbook" : "opensalesorders");
 }
 
 export function lastSyncedLabel(value: string | null | undefined) {
