@@ -217,7 +217,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const yearOptions = useMemo(() => {
     const years = new Set(orderBookFiscalYears(data));
     years.add(currentFiscalYear());
-    return [...years].sort((a, b) => b.localeCompare(a)).map((year) => ({ value: year, label: `FY ${year}–${String(Number(year) + 1).slice(-2)}` }));
+    return [...years].sort((a, b) => b.localeCompare(a)).map((year) => ({ value: year, label: year }));
   }, [data]);
   const todayIso = format(new Date(), "yyyy-MM-dd");
   const activeQuarterKey = fiscalQuarter(activeDates.to || todayIso);
@@ -429,7 +429,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
       {isBook && quarterSummaries.length ? <div data-pdf-page-block className={`order-quarter-row grid gap-4 sm:grid-cols-2 ${quarterSummaries.length >= 4 ? "lg:grid-cols-4" : quarterSummaries.length === 3 ? "lg:grid-cols-3" : quarterSummaries.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
-        {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} />)}
+        {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} compact />)}
       </div> : null}
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>

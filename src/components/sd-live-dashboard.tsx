@@ -462,7 +462,7 @@ function KpiCard({
   );
 }
 
-export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
+export function QuarterCard({ summary, tone, active, compact = false }: { summary: QuarterSummary; tone: number; active: boolean; compact?: boolean }) {
   const isMobile = useIsMobile();
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
@@ -527,10 +527,10 @@ export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary
         </span>
         <span className="truncate text-muted-foreground">{summary.comparisonLabel}</span>
       </p>
-      <p className="mt-2 text-[10px] text-muted-foreground">{summary.periodLabel}</p>
-      {hasChartData ? <div className="mt-2 h-40 overflow-visible rounded-md bg-muted/40 pt-1">
+      <p className={`${compact ? "mt-1" : "mt-2"} text-[10px] text-muted-foreground`}>{summary.periodLabel}</p>
+      {hasChartData ? <div className={`${compact ? "mt-1 h-24" : "mt-2 h-40"} overflow-visible rounded-md bg-muted/40 pt-1`}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 24, right: 6, bottom: 20, left: 6 }}>
+          <BarChart data={chartData} margin={compact ? { top: 14, right: 4, bottom: 0, left: 0 } : { top: 24, right: 6, bottom: 20, left: 6 }}>
             {series.length > 1 ? (
               <Legend
                 verticalAlign="top"
@@ -546,16 +546,16 @@ export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }}
-              label={{ value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 }}
+              {...(compact ? {} : { label: { value: "Month", position: "insideBottom", offset: -12, fill: "var(--color-muted-foreground)", fontSize: 9 } })}
             />
             <YAxis
-              width={isMobile ? 52 : 58}
+              width={compact ? 36 : isMobile ? 52 : 58}
               ticks={yTicks}
               axisLine={{ stroke: "var(--color-border)" }}
               tickLine={{ stroke: "var(--color-border)" }}
               tick={{ fontSize: isMobile ? 8 : 9, fill: "var(--color-muted-foreground)" }}
               tickFormatter={(value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
-              label={{ value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 }}
+              {...(compact ? {} : { label: { value: "Amount (₹)", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 9 } })}
               domain={[domainMin, domainMax]}
             />
             <Tooltip
@@ -586,7 +586,7 @@ export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary
                     dataKey={item.key}
                     position="top"
                     formatter={(value: number) => value === 0 ? "" : value.toLocaleString("en-IN", { minimumFractionDigits: isMobile ? 0 : 2, maximumFractionDigits: isMobile ? 1 : 2 })}
-                    fontSize={isMobile ? 7 : 9}
+                    fontSize={compact || isMobile ? 7 : 9}
                     fill="var(--chart-label-strong)"
                   />
                 ) : null}
@@ -594,7 +594,7 @@ export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary
             ))}
           </BarChart>
         </ResponsiveContainer>
-      </div> : <div className="mt-2 grid h-40 place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground">—</div>}
+      </div> : <div className={`${compact ? "mt-1 h-24" : "mt-2 h-40"} grid place-items-center rounded-md bg-muted/30 text-sm text-muted-foreground`}>—</div>}
     </section>
   );
 }
