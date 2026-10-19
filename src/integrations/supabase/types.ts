@@ -239,6 +239,18 @@ export type Database = {
         }
         Relationships: []
       }
+      order_book: {
+        Row: {
+          id: string
+        }
+        Insert: {
+          id?: string
+        }
+        Update: {
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
