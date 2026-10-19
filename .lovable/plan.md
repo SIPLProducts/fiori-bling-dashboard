@@ -1,16 +1,13 @@
-# Order Book fetch failed: SAP error, not too much data
+# Order Book — Top 10 Materials and Top 10 Sales Men
 
-## What the log shows
-- The request did reach SAP. SAP answered **HTTP 500, "Application Server Error"**, after **391 ms**, with a 9.7 KB HTML error page.
-- A response that was too large would take many seconds or minutes, or end in a timeout. A 391 ms reply means SAP failed right away, inside its own program. Usually that is a short dump (ST22) caused by the request payload: a wrong date format, a missing or extra field, or a bad field name.
-- The portal message is misleading. It says both "SAP was not contacted" and "SAP was reached". SAP was reached.
-
-## Steps
-1. **Find the real SAP error.** Ask the SAP team to check ST22 (short dumps) and SICF/SMICM logs at the time of the call. Compare the payload we send (shown in the Request tab) with the PDF: field names ERDAT_F/ERDAT_T as YYYYMMDD, VKORG, AUART_F/T, WERKS_F/T, SPART_F/T, VTWEG_F/T, VBELN_F/T. Then send the same payload from Postman.
-2. **Fix the payload** to whatever SAP expects (for example, the date format or leaving out empty optional fields), if the dump points to one.
-3. **Fix the message.** If SAP returns an HTTP error, show "SAP returned HTTP 500 (Application Server Error), not a size problem", without the "tunnel/not contacted" text. Also show the error title from SAP's HTML page.
-4. **Size safeguard.** If the dump does turn out to be memory or time (TSV_TNEW_PAGE_ALLOC_FAILED / TIME_OUT), let a scheduled run split the Created From/To window into monthly pieces.
+## Result
+- Two new cards on the Order Book screen only, placed in a new row right after the existing Top 10 Customer / Product / Model Wise row:
+  - **Top 10 Materials** — ranked by Order Value (NETWR), label = material description (MAKTX), falling back to material code (MATNR).
+  - **Top 10 Sales Men** — ranked by Order Value (NETWR), label = sales employee name (NAME1_SE); lines without a name are left out.
+- Same ranking-card style, tooltips, and order counts (distinct order numbers) as the other Top 10 cards; included in the PDF.
+- They follow all Smart Filters and the user's assigned Plants. Open Sales Orders is unchanged.
 
 ## Technical details
-- `src/lib/sap-pull.server.ts` / `sap-api.functions.ts`: when `sapStatus` is present, classify the error as `sap-http-error` and stop using the tunnel 502 wording. Pull the `<title>`/`<h1>` from the HTML body.
-- Optional: chunk the ERDAT window in `withEndpointDates` for Order Book endpoints.
+- `open-sales-orders-dashboard.tsx`: compute `materials` (group by `material`, label `description`) and `salesMen` (group by `salesRepName`, skip empty) in metrics using the existing ranking helper, top 10; render two `RankingPanel`s when `isBook`.
+- `order-book-data.ts` already maps `salesRepName` from `name1_se` and material/description from MATNR/MAKTX — no data or database change.
+- Add a test for the Sales Men ranking (empty names excluded, top 10, value order).
