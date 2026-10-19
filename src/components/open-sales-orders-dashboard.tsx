@@ -379,7 +379,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
             <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="open-order-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
-        {filtersOpen ? <div id="open-order-smart-filters" data-order-filters className="grid gap-3 border-t border-border p-4 sm:grid-cols-2 min-[860px]:grid-cols-4">
+        {filtersOpen ? <div id="open-order-smart-filters" data-order-filters data-book={isBook ? "" : undefined} className={`grid gap-3 border-t border-border p-4 sm:grid-cols-2 ${isBook ? "min-[860px]:grid-cols-5" : "min-[860px]:grid-cols-4"}`}>
           <FilterMultiSelect label="Plant" selected={filters.plants} options={options.plant} onChange={(plants) => setFilters((current) => ({ ...current, plants }))} placeholder="All plants" />
           <FilterField label="Sales Document Type">
             <MultiSelect
@@ -407,8 +407,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
             </div>)}
           </div>
           {isBook ? <FilterMultiSelect label="Financial Year" selected={fiscalYears.length ? fiscalYears : null} options={yearOptions} onChange={(years) => { setFiscalYears(years); if (years.length) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All years" /> : null}
-          {isBook ? <FilterMultiSelect label="Quarter" selected={quarterFilter.length ? quarterFilter : null} options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q }))} onChange={(quarters) => { setQuarterFilter(quarters.length === 4 ? [] : quarters); if (quarters.length && quarters.length < 4) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All quarters" /> : null}
-          <div className="min-w-0 min-[900px]:col-start-1"><FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" /></div>
+          {isBook ? <div className="min-w-0 min-[860px]:col-start-1"><FilterMultiSelect label="Quarter" selected={quarterFilter.length ? quarterFilter : null} options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q }))} onChange={(quarters) => { setQuarterFilter(quarters.length === 4 ? [] : quarters); if (quarters.length && quarters.length < 4) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All quarters" /></div> : null}
+          <div className={`min-w-0 ${isBook ? "" : "min-[900px]:col-start-1"}`}><FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" /></div>
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
           <FilterMultiSelect label="Division" selected={filters.divisions} options={options.division} onChange={(divisions) => setFilters((current) => ({ ...current, divisions }))} placeholder="All divisions" />
