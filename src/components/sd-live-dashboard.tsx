@@ -462,7 +462,7 @@ function KpiCard({
   );
 }
 
-function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
+export function QuarterCard({ summary, tone, active }: { summary: QuarterSummary; tone: number; active: boolean }) {
   const isMobile = useIsMobile();
   const outside = summary.status === "outside";
   const color = KPI_TONES[tone % KPI_TONES.length];
