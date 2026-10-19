@@ -50,3 +50,15 @@ test("all-date totals include older FY and nonpreset document types", () => {
   expect(summary.breakdown.reduce((sum, group) => sum + group.count, 0)).toBe(3);
   expect(summary.breakdown.reduce((sum, group) => sum + group.value, 0)).toBe(12_572_907.4);
 });
+
+
+test("order book groups by order type and keeps every group without Others", () => {
+    const r = summarizeLaunchOrders([
+      { p_value1: 10, sales_type: "Domestic Sales", order_type: "ZDOR" },
+      { p_value1: 5, sales_type: "SEZ Sales", order_type: "ZDOR" },
+      { p_value1: 3, sales_type: "Domestic Sales", order_type: "ZSOR" },
+      { p_value1: 2, sales_type: "Export Sales", order_type: "ZEOR" },
+      { p_value1: 1, sales_type: "Export Sales", order_type: "ZSOR" },
+    ], { byCode: true, all: true });
+    expect(r.breakdown.map((g) => [g.name, g.value])).toEqual([["ZDOR", 15], ["ZSOR", 4], ["ZEOR", 2]]);
+  });
