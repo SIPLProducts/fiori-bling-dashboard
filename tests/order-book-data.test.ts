@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import { toOrderBookDashboardRow } from "../src/lib/order-book-data";
 
 describe("toOrderBookDashboardRow", () => {
