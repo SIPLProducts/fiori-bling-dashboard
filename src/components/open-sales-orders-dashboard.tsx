@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { OpenOrdersGroupChart } from "./open-orders-group-chart";
+import { useOrderWording } from "./order-wording";
 import { OrderBookMonthChart } from "./order-book-month-chart";
 import { summarizeByCreatedMonth } from "@/lib/order-book-months";
 import { summarizeOpenOrderGroups } from "@/lib/open-orders-groups";
@@ -394,7 +395,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
 
-      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-4" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
+      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
         <Panel title="Open Orders by Sales Document Type" headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
@@ -427,11 +428,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={40} tick={{ fontSize: 9, angle: -28, textAnchor: "end" } as never} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
         </> : null}
-        {!pdfBusy && !isBook ? <Panel title="LD Status" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
-        {isBook ? <>
-          <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-          <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
-        </> : null}
+        {!pdfBusy ? <Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
       </div>
       {pdfBusy ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
@@ -448,7 +445,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v.toFixed(0)} width={54} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-                  <Bar dataKey="value" name="Open Value (₹ Cr)" radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
+                  <Bar dataKey="value" name={isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)"} radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                     {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${documentGradient}-pdf-zone-${index % ORDER_CHART_COLORS.length})`} />)}
                     <LabelList dataKey="value" position="top" formatter={(value: number) => value.toFixed(2)} className="fill-foreground text-[10px] font-semibold" />
                   </Bar>
@@ -466,7 +463,6 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
-        {isBook ? <Panel title="LD" headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
         <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <CompactSalesZoneChart zones={screenZones} />
         </Panel>
@@ -475,10 +471,10 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </Panel>
       </div>}
 
-      {!isBook ? <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title="Open Orders by Main Group" headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-        <Panel title="Open Orders by Sub Group" headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
-      </div> : null}
+      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
+        <Panel title={isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
+        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet"><OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} /></Panel>
+      </div>
 
       <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title={isBook ? "Top 10 Orders by Customer" : "Top 10 Open Orders by Customer"} data={metrics.customers} color="var(--chart-1)" />
@@ -516,7 +512,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </div>
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", "Open Qty", "Delivered Qty", "AH", "Total AH", isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading {screenTitle}…" : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
             <TableCell colSpan={14}>Total</TableCell>
@@ -537,6 +533,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
 function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
+  const w = useOrderWording();
   const { ref, width } = useChartWidth();
   const gradient = useId().replace(/:/g, "");
   const slotWidth = Math.max(1, (width - 50) / Math.max(1, zones.length));
@@ -551,7 +548,7 @@ function CompactSalesZoneChart({ zones }: { zones: ZoneItem[] }) {
         <XAxis dataKey="name" interval={0} height={76} tick={({ x, y, payload }) => <g transform={`translate(${x},${y})`}><text transform="translate(0,10) rotate(-45)" textAnchor="end" className="fill-foreground text-[11px]">{slotWidth < 30 ? `${String(payload.value).slice(0, 8)}${String(payload.value).length > 8 ? "…" : ""}` : payload.value}</text></g>} tickLine={false} />
         <YAxis domain={[0, maximum]} width={40} tick={{ fontSize: 10 }} tickFormatter={(v: number) => v.toFixed(0)} />
         <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-        <Bar dataKey="value" name="Open Value (₹ Cr)" radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
+        <Bar dataKey="value" name={`${w.value} (₹ Cr)`} radius={[2, 2, 0, 0]} barSize={barWidth} minPointSize={2} isAnimationActive={false}>
           {zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${gradient}-${index % ORDER_CHART_COLORS.length})`} />)}
           <LabelList dataKey="value" position="top" angle={slotWidth < 30 ? -45 : 0} offset={8} formatter={(v: number) => v.toFixed(2)} className="fill-foreground text-[11px] font-semibold" />
         </Bar>
@@ -579,13 +576,15 @@ function RankingAxisTick({ x = 0, y = 0, payload }: { x?: number; y?: number; pa
 }
 
 function RankingTooltip({ item }: { item: RankedItem }) {
-  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">{item.name}</p><p>Open Value: {formatCr(item.value)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>Orders: {formatNumber(item.count)}</p></div>;
+  const w = useOrderWording();
+  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">{item.name}</p><p>{w.value}: {formatCr(item.value)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p><p>{w.count}: {formatNumber(item.count)}</p></div>;
 }
 
 type ZoneItem = { name: string; count: number; quantity: number; value: number; share: number };
 
 function SalesZoneTooltip({ item }: { item: ZoneItem }) {
-  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>Open Value (₹ Cr): {item.value.toFixed(2)}</p><p>Orders: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p></div>;
+  const w = useOrderWording();
+  return <div className="rounded-md border border-border bg-popover p-2 text-xs text-popover-foreground shadow-md"><p className="mb-1 font-semibold">Sales Zone: {item.name}</p><p>{w.value} (₹ Cr): {item.value.toFixed(2)}</p><p>{w.count}: {formatNumber(item.count)}</p><p>Open Quantity: {formatNumber(item.quantity)}</p></div>;
 }
 
 function StatusBadge({ partial }: { partial: boolean }) {
