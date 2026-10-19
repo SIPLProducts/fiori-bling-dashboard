@@ -2,7 +2,7 @@
 
 ## What you will see
 - **New row right after the four tiles:** four Quarter cards (Q1 Apr–Jun, Q2 Jul–Sep, Q3 Oct–Dec, Q4 Jan–Mar), same design as Net Sales: Order Value (₹ Cr), order count, change vs previous quarter / same quarter last year, status (complete / partial), small trend bars per month and a coloured highlight on the current quarter.
-- Below the cards, the **Quarterly Trajectory & Up/Down Variance Analysis** card, same as Net Sales.
+- No Quarterly Trajectory & Up/Down Variance Analysis card on this screen.
 - **Year dropdown** in Smart Filters (Financial Year, April–March, e.g. "FY 2026–27"), multi-select like Net Sales, plus a **Quarter** dropdown (Q1–Q4). Choosing years compares them side by side in the quarter cards.
 - All dates use **ERDAT (Created Date)** — the same date the Date Range filter already uses. Quarters follow April–March.
 
