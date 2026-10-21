@@ -25,7 +25,7 @@ function SitPage() {
     <div className="open-orders-page min-h-screen bg-background">
       <ShellBar title="Sales In Transit (SIT)" displayName={data?.profile?.display_name} screens={data?.screens} />
       <main className="p-2 sm:p-3">
-        {!isLoading && !allowed ? <AccessDenied area="Sales In Transit" /> : <OrderBookWording.Provider value={true}><OpenSalesOrdersDashboard variant="sit" /></OrderBookWording.Provider>}
+        {!isLoading && !allowed ? <AccessDenied area="Sales In Transit" /> : <OrderBookWording.Provider value="sit"><OpenSalesOrdersDashboard variant="sit" /></OrderBookWording.Provider>}
       </main>
     </div>
   );

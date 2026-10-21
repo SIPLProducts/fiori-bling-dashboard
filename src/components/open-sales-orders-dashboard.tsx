@@ -343,8 +343,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
   const groupRow = (
       <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title={isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
-        <Panel title={isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
+        <Panel title={isSit ? "SIT by Main Group" : isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue"><OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} /></Panel>
+        <Panel title={isSit ? "SIT by Sub Group" : isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
       </div>
   );
   return (
@@ -422,9 +422,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div> : null}
 
       <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
-        <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
-        <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={isBook ? formatCrWhole(metrics.totalValue) : formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label={isBook ? "Total LAH" : "Pending AH Quantity"} value={isBook ? formatBookLahWhole(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
+        <SummaryCard label={isSit ? "SIT Orders" : isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
+        <SummaryCard label={isSit ? "SIT Value" : isBook ? "Order Value" : "Open Order Value"} value={isBook ? formatCrWhole(metrics.totalValue) : formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
+        <SummaryCard label={isSit ? "SIT LAH" : isBook ? "Total LAH" : "Pending AH Quantity"} value={isBook ? formatBookLahWhole(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
         {isBook ? <SummaryCard label="Highest Value" value={formatCrWhole(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
       </div>
 
@@ -437,12 +437,12 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "order-overview-book lg:grid-cols-12 [&>*]:min-w-0 " + (isSit ? "[&>*:nth-child(1)]:lg:col-span-8 [&>*:nth-child(2)]:lg:col-span-4" : "[&>*:nth-child(1)]:lg:col-span-7 [&>*:nth-child(2)]:lg:col-span-3 [&>*:nth-child(3)]:lg:col-span-2") : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
-        <Panel title={isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
+        <Panel title={isSit ? "SIT by Sales Document Type" : isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className={`order-document-grid grid min-h-64 min-w-0 items-center gap-2 ${isBook ? "grid-cols-1 [&_.order-document-donut]:h-36" : "grid-cols-[112px_minmax(0,1fr)]"}`}>
             <div className="order-document-donut relative h-56 w-full shrink-0">
               <ResponsiveContainer width="100%" height="100%"><PieChart><defs>{COLORS.map((color, index) => <linearGradient key={index} id={`${documentGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><Pie data={metrics.documentTypes} dataKey="count" nameKey="name" innerRadius="68%" outerRadius="90%" stroke="var(--card)" strokeWidth={1} isAnimationActive={false}>{metrics.documentTypes.map((item, index) => <Cell key={item.name} fill={`url(#${documentGradient}-${index})`} />)}</Pie><Tooltip formatter={(value: number) => [`${formatNumber(value)} orders`, "Orders"]} /></PieChart></ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(metrics.distinctOrders)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">Total Orders</span></div>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center"><strong className="text-xl font-bold leading-none text-card-foreground tabular-nums">{formatNumber(metrics.distinctOrders)}</strong><span className="text-[10px] font-semibold leading-tight text-card-foreground">{isSit ? "SIT Orders" : "Total Orders"}</span></div>
             </div>
             <div className="min-w-0 overflow-hidden rounded-md border border-border text-xs text-card-foreground">
               <div className="grid grid-cols-[minmax(0,1fr)_44px_68px] items-center gap-1 bg-primary/5 px-2 py-2 text-[11px] font-semibold text-primary"><span className="min-w-0">Sales Document Type</span><span className="text-right">Orders</span><span className="text-right">Value (₹ Cr)</span></div>
@@ -476,7 +476,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       {pdfBusy ? <>
       <div data-pdf-page-block className="grid gap-4" style={pdfBusy ? { width: Math.max(1280, metrics.zones.length * 48 + 120) } : undefined}>
 
-        <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
+        <Panel title={isSit ? "SIT By Zone" : isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <div className={pdfBusy ? "overflow-visible" : "overflow-x-auto"}>
             <div style={{ minWidth: Math.max(320, metrics.zones.length * 48 + 120) }}>
               <ResponsiveContainer width="100%" height={pdfBusy ? 380 : 290}>
@@ -486,7 +486,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
                   <XAxis type="category" dataKey="name" interval={0} height={116} tick={<SalesZoneAxisTick />} tickLine={false} />
                   <YAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v.toFixed(0)} width={54} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} />
                   <Tooltip content={({ active, payload }) => active && payload?.[0]?.payload ? <SalesZoneTooltip item={payload[0].payload as ZoneItem} /> : null} />
-                  <Bar dataKey="value" name={isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)"} radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
+                  <Bar dataKey="value" name={isSit ? "SIT Value (₹ Cr)" : isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)"} radius={[3, 3, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                     {metrics.zones.map((zone, index) => <Cell key={zone.name} fill={`url(#${documentGradient}-pdf-zone-${index % ORDER_CHART_COLORS.length})`} />)}
                     <LabelList dataKey="value" position="top" formatter={(value: number) => value.toFixed(2)} className="fill-foreground text-[10px] font-semibold" />
                   </Bar>
@@ -498,16 +498,16 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div>
 
       <div data-pdf-page-block>
-        <Panel title={isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
+        <Panel title={isSit ? "Plant-wise SIT" : isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
           <PlantPendingChart plants={metrics.plants} loading={isLoading} pdf />
         </Panel>
       </div>
 
       </> : <div className="order-paired-charts grid grid-cols-1 gap-4" data-pdf-exclude>
-        <Panel title={isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
+        <Panel title={isSit ? "SIT By Zone" : isBook ? "Orders By Zone" : "Open Orders by Sales Zone"} headerDivider dividerColor="teal">
           <CompactSalesZoneChart zones={screenZones} />
         </Panel>
-        <Panel title={isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
+        <Panel title={isSit ? "Plant-wise SIT" : isBook ? "Plant-wise order received" : "Plant-wise Pending"} headerDivider dividerColor="green">
           <PlantPendingChart plants={screenPlants} loading={isLoading} />
         </Panel>
       </div>}
@@ -550,7 +550,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         </div>
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
-          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", isBook ? "Open Qty (LAH)" : "Open Qty", isBook ? "Delivered Qty (LAH)" : "Delivered Qty", "AH", isBook ? "Total AH (LAH)" : "Total AH", isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
+          <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", isBook ? "Open Qty (LAH)" : "Open Qty", isBook ? "Delivered Qty (LAH)" : "Delivered Qty", "AH", isBook ? "Total AH (LAH)" : "Total AH", isSit ? "SIT Value (₹ Cr)" : isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
           <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.openQuantity) : formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.deliveredQuantity) : formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.totalAh) : row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading {screenTitle}…" : isSit ? (data.length ? "No orders match the selected filters or search." : "No SIT data from SAP yet.") : isBook ? "No orders match the selected filters or search." : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
             <TableCell colSpan={14}>Total</TableCell>
