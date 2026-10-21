@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { isSitEndpoint, mapSitPayload } from "../src/lib/sit-map";
 import { toSitDashboardRow } from "../src/lib/sit-data";
 import { buildPayloadText, parsePayloadFields } from "../src/lib/payload-fields";

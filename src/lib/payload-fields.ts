@@ -35,8 +35,8 @@ export function parsePayloadFields(raw: string): PayloadField[] | null {
   for (const line of text.split(/\r?\n/)) {
     const commented = line.trim().startsWith("//");
     const m = line.match(/"([^"]+)"\s*:/);
-    if (!m || seen.has(m[1])) continue;
-    const key = m[1];
+    const key = m?.[1];
+    if (!key || seen.has(key)) continue;
     if (commented && key in active) continue;
     if (!commented && !(key in active)) continue;
     const v = active[key];
