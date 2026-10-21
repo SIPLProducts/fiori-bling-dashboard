@@ -433,7 +433,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} compact gradient />)}
       </div> : null}
 
-      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-3" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
+      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "lg:grid-cols-12 [&>*]:min-w-0 [&>*:nth-child(1)]:lg:col-span-7 [&>*:nth-child(2)]:lg:col-span-3 [&>*:nth-child(3)]:lg:col-span-2" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
         <Panel title={isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
