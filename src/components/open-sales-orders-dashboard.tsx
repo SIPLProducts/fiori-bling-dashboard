@@ -162,7 +162,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: isSit ? ["sit-live", "netwr-tot-v1"] : isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
+    queryKey: isSit ? ["sit-live", "netwr-tot-erdat-v2"] : isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
     queryFn: isSit ? getSitRows : isBook ? getOrderBookRows : getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -182,6 +182,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const [fiscalYears, setFiscalYears] = useState<string[]>(() => [currentFiscalYear()]);
   const [quarterFilter, setQuarterFilter] = useState<string[]>([]);
   const documentTypeDefaultsInitialized = useRef(false);
+  const sitYearInitialized = useRef(false);
   const [tablePage, setTablePage] = useState(1);
   const [tableStatus, setTableStatus] = useState<OpenOrderTableStatus>("all");
   const [tableSearch, setTableSearch] = useState("");
@@ -204,12 +205,19 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       documentTypes: defaultDocumentTypeKeys(data),
     }));
   }, [data]);
+  // SIT opens on the latest financial year (by ERDAT) present in the data.
+  useEffect(() => {
+    if (!isSit || !data.length || sitYearInitialized.current) return;
+    sitYearInitialized.current = true;
+    const latest = orderBookFiscalYears(data)[0];
+    if (latest) setFiscalYears([latest]);
+  }, [isSit, data]);
   const activeDates = activeOpenOrderDates(dateMode, singleDate ? format(singleDate, "yyyy-MM-dd") : undefined, {
     from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   });
   const hasDateSelection = Boolean(activeDates.from || activeDates.to);
-  const periodYears = isBook && !isSit && !hasDateSelection ? fiscalYears : [];
+  const periodYears = isBook && !hasDateSelection ? fiscalYears : [];
   const periodQuarters = isBook && !isSit && !hasDateSelection ? quarterFilter : [];
   useEffect(() => {
     if (hasDateSelection) { setFiscalYears([]); setQuarterFilter([]); }
@@ -236,7 +244,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setSingleDate(undefined);
     setDateMode("range");
     setFilters(defaultOpenOrderFilters(data));
-    setFiscalYears([currentFiscalYear()]);
+    setFiscalYears(isSit ? orderBookFiscalYears(data).slice(0, 1) : [currentFiscalYear()]);
     setQuarterFilter([]);
   };
   const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup) }), [filteredData]);
