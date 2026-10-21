@@ -244,7 +244,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setSingleDate(undefined);
     setDateMode("range");
     setFilters(defaultOpenOrderFilters(data));
-    setFiscalYears([currentFiscalYear()]);
+    setFiscalYears(isSit ? orderBookFiscalYears(data).slice(0, 1) : [currentFiscalYear()]);
     setQuarterFilter([]);
   };
   const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup) }), [filteredData]);
