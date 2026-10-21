@@ -40,3 +40,9 @@ describe("payload fields", () => {
     expect(JSON.parse(withEndpointDates("Sales In Transit (SIT)", PAYLOAD, "custom")!)).toEqual({ VKORG: "1000", FKDAT_F: "20260331" });
   });
 });
+
+import { defaultDocumentTypeKeys } from "../src/lib/open-sales-orders-filters";
+test("SIT billing types are all pre-selected when no ZDOR/ZEOR/ZSOR rows exist", () => {
+  const rows = [{ documentType: "Domestic Invoice" }, { documentType: "Export Invoice" }] as never[];
+  expect(defaultDocumentTypeKeys(rows).length).toBe(2);
+});
