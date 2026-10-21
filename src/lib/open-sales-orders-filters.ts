@@ -30,8 +30,10 @@ export function documentTypeOptions(rows: OpenSalesOrder[]) {
     label: `${row.documentType} — ${documentTypeDescription(row)}`,
   }])).values()].sort((a, b) => a.label.localeCompare(b.label));
 }
+/** Pre-select ZDOR/ZEOR/ZSOR when present; datasets without them (e.g. SIT billing types) select every type. */
 export function defaultDocumentTypeKeys(rows: OpenSalesOrder[]) {
-  return [...new Set(rows.filter((row) => DEFAULT_DOCUMENT_TYPES.includes(row.documentType)).map(documentTypeKey))];
+  const preferred = [...new Set(rows.filter((row) => DEFAULT_DOCUMENT_TYPES.includes(row.documentType)).map(documentTypeKey))];
+  return preferred.length ? preferred : [...new Set(rows.map(documentTypeKey))];
 }
 export function summarizeDocumentDescriptions(rows: OpenSalesOrder[]) {
   const groups = new Map<string, { name: string; orders: Set<string>; value: number }>();

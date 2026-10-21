@@ -66,7 +66,8 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   });
   const access = useUserAccess();
   const period = useMemo(() => currentReportPeriod(), []);
-  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows.filter((r) => inReportPeriod(r.fkdat, period)), access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
+  // SIT is a current in-transit snapshot: count every stored line regardless of billing date.
+  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
     .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc, order_type: r.vtext })), { byCode: true, all: true }) : undefined, [rows, access, period]);
   const { data: lastSynced } = useReportSync("sit");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
