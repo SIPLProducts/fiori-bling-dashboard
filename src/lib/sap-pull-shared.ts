@@ -3,6 +3,9 @@
  * browser sync. Pure functions only — no Supabase admin client, no env reads.
  */
 
+import { stripJsonComments } from "./payload-fields";
+import { isSitEndpoint } from "./sit-map";
+
 /**
  * Recovers the complete objects of a JSON array that was cut mid-document
  * (an older middleware build truncates responses). Scans with string/escape
@@ -185,6 +188,20 @@ export function withOrderBookDates(raw: string | null | undefined, range?: strin
   } catch { return raw; }
 }
 
+/** SIT: FKDAT_F / FKDAT_T follow the window preset; custom keeps saved dates and drops an empty FKDAT_T. */
+export function withSitDates(raw: string | null | undefined, range?: string | null, now: Date = new Date()): string | undefined {
+  if (!raw || !raw.trim()) return raw ?? undefined;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...(parsed as Record<string, unknown>) };
+    const window = postingWindow(range, now);
+    if (window) { obj["FKDAT_F"] = window.from; obj["FKDAT_T"] = window.to; }
+    if (!String(obj["FKDAT_T"] ?? "").trim()) delete obj["FKDAT_T"];
+    return JSON.stringify(obj);
+  } catch { return raw; }
+}
+
 export function withEndpointDates(
   endpointName: string,
   raw: string | null | undefined,
@@ -192,6 +209,9 @@ export function withEndpointDates(
   now = new Date(),
   scheduled = false,
 ) {
+  // `//` lines in a saved payload mark optional keys that are not sent.
+  if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
+  if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now);
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? undefined;
   // User Management dropdowns: no date injection, payload sent as saved.
