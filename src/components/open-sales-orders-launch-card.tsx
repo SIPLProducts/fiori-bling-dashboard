@@ -60,7 +60,7 @@ async function fetchSitRows() {
 
 export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["sit-launch-summary", "netwr-tot-current-fy-v1"],
+    queryKey: ["sit-launch-summary", "netwr-tot-all-v2"],
     queryFn: fetchSitRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
@@ -72,7 +72,7 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: lastSynced } = useReportSync("sit");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
-  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales In Transit (SIT)" subtitle="Current FY SIT" caption={reportPeriodLabel(period)} lineLabel="SIT lines" href="/reports/sd/sit" />;
+  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales In Transit (SIT)" subtitle="All SIT" caption="All billing dates" lineLabel="SIT lines" href="/reports/sd/sit" />;
 }
 
 async function fetchSummary(): Promise<Summary> {
