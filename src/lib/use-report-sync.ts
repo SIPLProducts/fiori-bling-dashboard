@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { matchesReportEndpoint, type ReportDataset } from "./report-sync-time";
 
 export async function fetchReportSyncTime(dataset: ReportDataset): Promise<string | null> {
-  const table = dataset === "net-sales" ? "zfisales_detail" : dataset === "order-book" ? "order_book" : "open_sales_orders";
+  const table = dataset === "net-sales" ? "zfisales_detail" : dataset === "order-book" ? "order_book" : dataset === "sit" ? "sales_in_transit" : "open_sales_orders";
   const { data: mappings } = await supabase.from("sap_table_mappings")
     .select("endpoint_id").eq("table_name", table);
   const ids = (mappings ?? []).flatMap((row) => row.endpoint_id ? [row.endpoint_id] : []);

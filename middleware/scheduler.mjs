@@ -25,6 +25,8 @@ import {
   isUserDropdownEndpoint,
   mapOrderBookPayload,
   isOrderBookEndpoint,
+  mapSitPayload,
+  isSitEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -182,6 +184,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isSitEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapSitPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("sales_in_transit").upsert(rows.slice(i, i + BATCH), { onConflict: "vbeln,posnr" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "sales_in_transit", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isOrderBookEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapOrderBookPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {

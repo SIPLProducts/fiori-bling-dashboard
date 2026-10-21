@@ -41,3 +41,5 @@
 - Auth state changes invalidate queries only when the signed-in user id changes (sign-out clears cache), because Supabase re-emits SIGNED_IN on tab focus. The Cash Flow launchpad card shares the Cash Flow screen query so both change only on explicit Refresh/Sync.
 - User Management dropdown masters (plants, profit centers) upsert into public.sap_user_dropdown_masters on category + code without snapshots, since SAP returns the full current master list.
 - Order Book (ZORDERBOOK) rows upsert into public.order_book on VBELN + POSNR without snapshots, with every SAP response field typed plus raw; ERDAT_F/ERDAT_T follow the endpoint's date-window preset, because SAP returns order lines by created date.
+- Sales In Transit (Z_SIT) rows upsert into public.sales_in_transit on VBELN + POSNR without snapshots, every SAP field typed plus raw; FKDAT_F/FKDAT_T follow the endpoint's date window and an empty FKDAT_T is omitted, because SAP returns billing lines by billing date.
+- SAP API Settings builds request fields from the pasted payload (`//` lines = optional keys stripped before sending) via pure helpers in payload-fields.ts, so new APIs need no bespoke form.

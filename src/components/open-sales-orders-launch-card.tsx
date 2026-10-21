@@ -44,6 +44,36 @@ export function OrderBookLaunchCard({ fallback }: { fallback: React.ReactNode })
   return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Order Book" subtitle="Current FY Orders" caption={reportPeriodLabel(period)} lineLabel="order lines" href="/reports/sd/order-book" />;
 }
 
+async function fetchSitRows() {
+  const pageSize = 1_000;
+  const allRows: { netwr_tot: number | string | null; vtext_dc: string | null; vtext: string | null; werks: string | null; prctr: string | null; fkdat: string | null }[] = [];
+  for (let page = 0; ; page += 1) {
+    const result = await supabase.from("sales_in_transit").select("netwr_tot,vtext_dc,vtext,werks,prctr,fkdat")
+      .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
+    if (result.error) throw result.error;
+    const rows = result.data ?? [];
+    allRows.push(...rows);
+    if (rows.length < pageSize) break;
+  }
+  return allRows;
+}
+
+export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
+  const { data: rows, isLoading } = useQuery({
+    queryKey: ["sit-launch-summary", "netwr-tot-current-fy-v1"],
+    queryFn: fetchSitRows,
+    staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
+  });
+  const access = useUserAccess();
+  const period = useMemo(() => currentReportPeriod(), []);
+  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows.filter((r) => inReportPeriod(r.fkdat, period)), access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
+    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc, order_type: r.vtext })), { byCode: true, all: true }) : undefined, [rows, access, period]);
+  const { data: lastSynced } = useReportSync("sit");
+  if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
+  if (!data) return <>{fallback}</>;
+  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales In Transit (SIT)" subtitle="Current FY SIT" caption={reportPeriodLabel(period)} lineLabel="SIT lines" href="/reports/sd/sit" />;
+}
+
 async function fetchSummary(): Promise<Summary> {
   const pageSize = 1_000;
   let page = 0;
@@ -82,7 +112,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
   return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Open Sales Orders" subtitle="Total Open Orders" lineLabel="open order lines" href="/reports/sd/open-sales-orders" />;
 }
 
-function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" }) {
+function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" | "/reports/sd/sit" }) {
   return (
     <section aria-label={`${title} all dates`} className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-1) 28%, var(--color-border))",
