@@ -646,11 +646,63 @@ function mapOrderBookPayload(payload, endpointName, now = /* @__PURE__ */ new Da
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/sit-map.ts
+var SIT_TEXT_FIELDS = ["APPTYP", "SECTOR", "WERKS", "NAME1_P", "EXGRP", "VTWEG_AUFT", "MATKL", "VTEXT_DC", "SPART", "VTEXT_SD", "PRCTR", "PRCTR_I", "MCTXT", "MCTXT_I", "KUNAG", "NAME_C", "GSTIN_C", "LANDX50_C", "BEZEI_C", "J_1ICSTNO_C", "KUNNR", "NAME_P", "GSTIN_PY", "KUNNR_S", "NAME_S", "GSTIN_SH", "LANDX50_S", "BEZEI_S", "J_1ICSTNO_S", "KUNNR_RE", "NAME_RE", "GSTIN_RE", "FKART", "VTEXT", "AUBEL", "BSTNK", "MATNR", "HSN_CODE", "ARKTX", "XBLNR", "LIFNR", "VTXT_C", "VTXT_V", "WAERK", "RFBSK", "BEZEI_SO", "BEZEI_SG", "SEGMENT", "ZTERM", "VTEXT_PAY", "NAME_SE", "NAME_TF", "LR_NO", "PREPRN", "EXNUM", "FAWREF", "HKONT", "TXT50", "REMARKS_F2", "NOTI_TEXT", "EX_COM_TEXT", "INCO1", "INCO2", "J_1ICHID", "VBELN_DEL", "MEINS", "VRKME", "MTART", "LAND1", "REGIO", "BUKRS", "KUNNR_SP", "KUNNR_SH", "KUNNR_BP", "BRSCH", "BRTXT", "DIVISION", "INV", "REF", "BELNR1", "BELNR2", "JV3", "JV4", "AUART", "RACCT", "MBLNR", "BELNR3", "TXT500", "AGE", "VBELN_C", "VGBEL", "LGORT", "LGOBE", "DIV_NAME", "MAIN_GRP", "SUB_GRP", "AUPOS", "GJAHR1", "GJAHR2", "MJAHR", "CELLCOLOR"];
+var SIT_NUMERIC_FIELDS = ["FKIMG", "KBETR", "NETWR", "NETWR_B", "NETWR_BEX", "NETWR_TOT", "KWERT_D", "KWERT_DEX", "CST", "CST_EX", "TOT_BP", "PRICE_CELL", "PRICE_CELLINR", "VAT", "VAT_EX", "TCS", "TCS_EX", "MWSBK", "MWSBK_EX", "NETWR_T", "NETWR_T_EX", "NETWR_EX", "TAX_RATE", "KWERT_CGST", "KWERT_SGST", "KWERT_IGST", "KURRF", "FRGHT1", "FRGHT1_EX", "FRGHT2", "FRGHT2_EX", "DISCNT", "DISCNT_EX", "KWERT_ZNRC", "KWERT_ZNRC_INR", "SBCESS", "SBCESS_EX", "PFCHRG", "PFCHRG_EX", "SERVI", "SERVI_EX", "ECESS", "ECESS_EX", "SHESS", "SHESS_EX", "JLSR", "JLSR_EX", "ZGST", "ZGST_EX", "ZKKC", "ZKKC_EX", "UMREN", "TOT_AH", "AH", "KWMENG", "UMVKZ", "FKIMG_TOT", "BASIC_AH", "BASIC_AHINR", "DMBTR"];
+var SIT_DATE_FIELDS = ["ERDAT", "FKDAT", "BSTDK", "FKDAT_BILL", "EXDAT", "AUDAT", "LFDAT_DEL", "BUDAT", "PODDATE", "FKDAT_C"];
+function isSitEndpoint(name) {
+  const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n.includes("salesintransit") || n === "sit" || n === "zsit" || /(^|[^a-z])z?_?sit([^a-z]|$)/i.test(name ?? "");
+}
+function pick4(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text3(v) {
+  if (v === void 0 || v === null) return null;
+  if (typeof v === "object") {
+    const s2 = JSON.stringify(v);
+    return s2 === "[]" || s2 === "{}" ? null : s2;
+  }
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows3(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows3(obj[key]);
+  }
+  return [];
+}
+function mapSitPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows3(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const vbeln = text3(pick4(raw, "VBELN"));
+    const posnr = text3(pick4(raw, "POSNR"));
+    if (!vbeln || !posnr) {
+      invalid++;
+      continue;
+    }
+    const row = { vbeln, posnr, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of SIT_TEXT_FIELDS) row[k.toLowerCase()] = text3(pick4(raw, k));
+    for (const k of SIT_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick4(raw, k));
+    for (const k of SIT_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick4(raw, k));
+    byKey.set(`${vbeln}|${posnr}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text3(v) {
+function text4(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -678,7 +730,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text3(field(raw, codeKey));
+      const code = text4(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -686,7 +738,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text3(field(raw, nameKey)),
+        name: text4(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -699,9 +751,14 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   return { received, rows, invalid, duplicates: received - invalid - rows.length };
 }
 
+// ../src/lib/payload-fields.ts
+function stripJsonComments(raw) {
+  return (raw ?? "").split(/\r?\n/).filter((line) => !line.trim().startsWith("//")).join("\n").replace(/,(\s*[}\]])/g, "$1");
+}
+
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text4) {
-  const trimmed = text4.trimStart();
+function salvageTruncatedArray(text5) {
+  const trimmed = text5.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -736,11 +793,11 @@ function salvageTruncatedArray(text4) {
     return null;
   }
 }
-function extractEmbeddedBody(text4) {
+function extractEmbeddedBody(text5) {
   const marker = '"body":"';
-  const start = text4.indexOf(marker);
+  const start = text5.indexOf(marker);
   if (start < 0) return null;
-  const raw = text4.slice(start + marker.length);
+  const raw = text5.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -836,7 +893,26 @@ function withOrderBookDates(raw, range, now = /* @__PURE__ */ new Date()) {
     return raw;
   }
 }
+function withSitDates(raw, range, now = /* @__PURE__ */ new Date()) {
+  if (!raw || !raw.trim()) return raw ?? void 0;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...parsed };
+    const window = postingWindow(range, now);
+    if (window) {
+      obj["FKDAT_F"] = window.from;
+      obj["FKDAT_T"] = window.to;
+    }
+    if (!String(obj["FKDAT_T"] ?? "").trim()) delete obj["FKDAT_T"];
+    return JSON.stringify(obj);
+  } catch {
+    return raw;
+  }
+}
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
+  if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
+  if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
@@ -858,6 +934,7 @@ export {
   formatBytes,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
+  isSitEndpoint,
   isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
@@ -866,6 +943,7 @@ export {
   mapOrderBookPayload,
   mapPayload,
   mapRow,
+  mapSitPayload,
   mapUserDropdownPayload,
   mapZcashFlowPayload,
   postingDateRange,
