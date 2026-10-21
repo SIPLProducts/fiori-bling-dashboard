@@ -2,7 +2,7 @@ import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
 import { channelDescription } from "@/lib/open-sales-orders-filters";
 
-export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx") {
+export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx", dateHeader = "Sales Order Creation Date") {
   const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "HBL Engineering Limited";
@@ -16,7 +16,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     { header: "Preceding Document", key: "precedingDocument", width: 20 },
     { header: "Purchase Order", key: "purchaseOrder", width: 18 },
     { header: "Sales Document Type", key: "documentType", width: 17 },
-    { header: "Sales Order Creation Date", key: "orderDate", width: 28 },
+    { header: dateHeader, key: "orderDate", width: 28 },
     { header: "Purchase Order Date", key: "purchaseOrderDate", width: 20 },
     { header: "Requested Date", key: "deliveryDate", width: 17 },
     { header: "Distribution Channel", key: "channel", width: 21 },
