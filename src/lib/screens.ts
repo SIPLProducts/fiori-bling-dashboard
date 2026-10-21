@@ -45,6 +45,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     groupKey: "sales-distribution",
     children: [
       { key: "sd.total-sales", label: "Net Sales", tileKey: "sd_total_sales" },
+      { key: "sd.sit", label: "Sales In Transit (SIT)", tileKey: "sd_sit" },
       { key: "sd.dispatches", label: "Dispatches", tileKey: "sd_dispatches" },
       { key: "sd.order-book", label: "Order Book", tileKey: "sd_order_book" },
       { key: "sd.open-sales-orders", label: "Open Sales Orders", tileKey: "sd_open_orders" },
