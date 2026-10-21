@@ -151,17 +151,18 @@ function StatusCard({ title, count, value, share, partial }: { title: string; co
   );
 }
 
-export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?: "open-orders" | "order-book" } = {}) {
-  const isBook = variant === "order-book";
-  const screenTitle = isBook ? "Order Book" : "Open Sales Orders Reports";
+export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?: "open-orders" | "order-book" | "sit" } = {}) {
+  const isSit = variant === "sit";
+  const isBook = variant === "order-book" || isSit;
+  const screenTitle = isSit ? "Sales In Transit (SIT)" : isBook ? "Order Book" : "Open Sales Orders Reports";
   const dashboardRef = useRef<HTMLDivElement>(null);
   const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const documentGradient = `${chartId}-document`;
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
-    queryFn: isBook ? getOrderBookRows : getOpenSalesOrders,
+    queryKey: isSit ? ["sit-live", "pending-api-v1"] : isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
+    queryFn: isSit ? async () => [] as Awaited<ReturnType<typeof getOrderBookRows>> : isBook ? getOrderBookRows : getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
@@ -169,7 +170,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { data: lastSynced, refetch: refetchSync } = useReportSync(isBook ? "order-book" : "open-sales-orders");
+  const { data: syncedAt, refetch: refetchSync } = useReportSync(isBook ? "order-book" : "open-sales-orders");
+  const lastSynced = isSit ? null : syncedAt;
   const access = useUserAccess();
   const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, isBook ? { plant: (r) => r.plant, profitCentre: (r) => r.profitCentre } : { plant: (r) => r.plant }), [rawData, access]);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
@@ -206,8 +208,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   });
   const hasDateSelection = Boolean(activeDates.from || activeDates.to);
-  const periodYears = isBook && !hasDateSelection ? fiscalYears : [];
-  const periodQuarters = isBook && !hasDateSelection ? quarterFilter : [];
+  const periodYears = isBook && !isSit && !hasDateSelection ? fiscalYears : [];
+  const periodQuarters = isBook && !isSit && !hasDateSelection ? quarterFilter : [];
   useEffect(() => {
     if (hasDateSelection) { setFiscalYears([]); setQuarterFilter([]); }
   }, [hasDateSelection]);
@@ -307,7 +309,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       await new Promise<void>((resolve) => setTimeout(resolve, 300));
-      await exportDashboardPdf(dashboardRef.current, isBook ? "order-book-report.pdf" : "open-sales-orders.pdf", "[data-pdf-exclude]", {
+      await exportDashboardPdf(dashboardRef.current, isSit ? "sales-in-transit.pdf" : isBook ? "order-book-report.pdf" : "open-sales-orders.pdf", "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
         blockSelector: "[data-pdf-page-block]",
         sectionBreakSelector: "[data-pdf-section-break]",
@@ -330,7 +332,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     }
     setExcelBusy(true);
     try {
-      await downloadOpenSalesOrdersExcel(tableData, isBook ? "order-book-report.xlsx" : "open-sales-orders.xlsx");
+      await downloadOpenSalesOrdersExcel(tableData, isSit ? "sales-in-transit.xlsx" : isBook ? "order-book-report.xlsx" : "open-sales-orders.xlsx");
       toast.success("Open Sales Orders Excel downloaded");
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : "Unable to download Excel");
@@ -407,7 +409,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
             </div>)}
           </div>
           {isBook ? <FilterMultiSelect label="Financial Year" selected={fiscalYears.length ? fiscalYears : null} options={yearOptions} onChange={(years) => { setFiscalYears(years); if (years.length) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All years" /> : null}
-          {isBook ? <div className="min-w-0 min-[860px]:col-start-1"><FilterMultiSelect label="Quarter" selected={quarterFilter.length ? quarterFilter : null} options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q }))} onChange={(quarters) => { setQuarterFilter(quarters.length === 4 ? [] : quarters); if (quarters.length && quarters.length < 4) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All quarters" /></div> : null}
+          {isBook && !isSit ? <div className="min-w-0 min-[860px]:col-start-1"><FilterMultiSelect label="Quarter" selected={quarterFilter.length ? quarterFilter : null} options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q }))} onChange={(quarters) => { setQuarterFilter(quarters.length === 4 ? [] : quarters); if (quarters.length && quarters.length < 4) { setDateRangeState(undefined); setSingleDate(undefined); } }} placeholder="All quarters" /></div> : null}
           <div className={`min-w-0 ${isBook ? "" : "min-[900px]:col-start-1"}`}><FilterMultiSelect label="Customer" selected={filters.customers} options={options.customer} onChange={(customers) => setFilters((current) => ({ ...current, customers }))} placeholder="All customers" /></div>
           <FilterMultiSelect label="Sales Zone" selected={filters.zones} options={options.zone} onChange={(zones) => setFilters((current) => ({ ...current, zones }))} placeholder="All sales zones" />
           <FilterMultiSelect label="Products" selected={filters.products} options={options.product} onChange={(products) => setFilters((current) => ({ ...current, products }))} placeholder="All products" />
@@ -429,11 +431,11 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
 
 
-      {isBook && quarterSummaries.length ? <div data-pdf-page-block className={`order-quarter-row grid gap-4 sm:grid-cols-2 ${quarterSummaries.length >= 4 ? "lg:grid-cols-4" : quarterSummaries.length === 3 ? "lg:grid-cols-3" : quarterSummaries.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
+      {isBook && !isSit && quarterSummaries.length ? <div data-pdf-page-block className={`order-quarter-row grid gap-4 sm:grid-cols-2 ${quarterSummaries.length >= 4 ? "lg:grid-cols-4" : quarterSummaries.length === 3 ? "lg:grid-cols-3" : quarterSummaries.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
         {quarterSummaries.map((summary, index) => <QuarterCard key={summary.quarter} summary={summary} tone={index + 1} active={summary.quarter === activeQuarterKey && summary.fiscalYear === activeQuarterYear && summary.status !== "outside"} compact gradient />)}
       </div> : null}
 
-      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "order-overview-book lg:grid-cols-12 [&>*]:min-w-0 [&>*:nth-child(1)]:lg:col-span-7 [&>*:nth-child(2)]:lg:col-span-3 [&>*:nth-child(3)]:lg:col-span-2" : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
+      <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "order-overview-book lg:grid-cols-12 [&>*]:min-w-0 " + (isSit ? "[&>*:nth-child(1)]:lg:col-span-8 [&>*:nth-child(2)]:lg:col-span-4" : "[&>*:nth-child(1)]:lg:col-span-7 [&>*:nth-child(2)]:lg:col-span-3 [&>*:nth-child(3)]:lg:col-span-2") : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
         {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
         <Panel title={isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
@@ -466,9 +468,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <div className={pdfBusy ? "" : "order-chart-canvas order-trend-canvas"}><ResponsiveContainer width="100%" height={pdfBusy ? 250 : "100%"}><BarChart data={metrics.buckets} barGap={4} margin={{ top: pdfBusy ? 22 : 10, right: 8, left: 0, bottom: 0 }}><defs>{["var(--kpi-1)", "var(--kpi-2)"].map((color, index) => <linearGradient key={index} id={`${trendGradient}-${index}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-light-share), var(--quick-view-value))`} /><stop offset="45%" stopColor={color} /><stop offset="100%" stopColor={`color-mix(in oklab, ${color} var(--order-gradient-deep-share), var(--foreground))`} /></linearGradient>)}</defs><CartesianGrid vertical={false} stroke="var(--chart-grid-line)" /><XAxis dataKey="name" interval={0} height={40} tick={{ fontSize: 9, angle: -28, textAnchor: "end" } as never} tickFormatter={(value: string) => value.replace(" Days", "")} /><YAxis tick={{ fontSize: 10 }} label={{ value: "Value (₹ Cr)", angle: -90, position: "insideLeft", fontSize: 10 }} /><Tooltip formatter={(value: number, name: string) => [formatCr(value), name]} />{pdfBusy ? <Legend wrapperStyle={{ fontSize: 10 }} payload={[{ value: "Open", type: "square", color: "var(--kpi-1)" }, { value: "Partial Delivered", type: "square", color: "var(--kpi-2)" }]} /> : null}<Bar name="Open" dataKey="value" fill={`url(#${trendGradient}-0)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="value" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar><Bar name="Partial Delivered" dataKey="partialValue" fill={`url(#${trendGradient}-1)`} radius={[3, 3, 0, 0]} maxBarSize={42} isAnimationActive={false}><LabelList dataKey="partialValue" position="top" formatter={(value: number) => value > 0 ? value.toFixed(1) : ""} className="fill-foreground text-[10px]" /></Bar></BarChart></ResponsiveContainer></div>
         </Panel>
         </> : null}
-        {!pdfBusy ? <Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
+        {!pdfBusy && !isSit ? <Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} /></Panel> : null}
       </div>
-      {pdfBusy ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
+      {pdfBusy && !isSit ? <div data-pdf-page-block><Panel title={isBook ? "LD" : "LD Status"} headerDivider dividerColor="green"><OpenOrdersLdStatusChart data={metrics.ldStatuses} pdf /></Panel></div> : null}
 
       {isBook ? groupRow : null}
       {pdfBusy ? <>
@@ -512,13 +514,13 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       {!isBook ? groupRow : null}
 
-      <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
+      {!isSit ? <div data-pdf-page-block data-pdf-section-break className="order-ranking-row grid gap-4 lg:grid-cols-12 [&>*]:lg:col-span-4">
         <RankingPanel title={isBook ? "Top 10 Orders by Customer" : "Top 10 Open Orders by Customer"} data={metrics.customers} color="var(--chart-1)" />
         <RankingPanel title={isBook ? "Top 10 Orders by Product" : "Top 10 Open Orders by Product"} data={metrics.products} color="var(--success)" />
         <RankingPanel title={isBook ? "Top 10 Orders by Model Wise" : "Open Orders by Model Wise"} data={metrics.models} color="var(--quick-view-violet)" />
-      </div>
+      </div> : null}
 
-      {isBook ? (
+      {isBook && !isSit ? (
         <div data-pdf-page-block className="order-ranking-row grid gap-4 lg:grid-cols-2">
           <RankingPanel title="Top 10 Regions" data={metrics.regions} color="var(--chart-2)" />
           <RankingPanel title="Top 10 Sales Men" data={metrics.salesMen} color="var(--chart-4)" />
@@ -549,7 +551,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         <div className="order-table-scroll" role="region" aria-label="Detailed orders table, scroll to view more rows and columns" tabIndex={0}>
         <Table>
           <TableHeader className="bg-primary/5"><TableRow>{["#", "Order No.", "Line Item", "Customer", "Sales Document Type", "Distribution Channel", "Sales Zone", "Division", "Plant", "Product", "Product Description", "Sales Order Creation Date", "Requested Date", "Days Open", isBook ? "Open Qty (LAH)" : "Open Qty", isBook ? "Delivered Qty (LAH)" : "Delivered Qty", "AH", isBook ? "Total AH (LAH)" : "Total AH", isBook ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", "Status"].map((heading) => <TableHead key={heading} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{heading}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.openQuantity) : formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.deliveredQuantity) : formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.totalAh) : row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading {screenTitle}…" : isBook ? "No orders match the selected filters or search." : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
+          <TableBody>{tableRows.length ? tableRows.map((row, index) => <TableRow key={`${row.order}:${row.item}`} data-document-type={row.documentType} className="order-detail-row text-[11px]"><TableCell>{(currentTablePage - 1) * tablePageSize + index + 1}</TableCell><TableCell className="whitespace-nowrap font-medium text-primary">{row.order}</TableCell><TableCell className="whitespace-nowrap">{row.item}</TableCell><TableCell className="whitespace-nowrap">{row.customer}</TableCell><TableCell className="order-document-cell font-medium"><span className="inline-flex items-center gap-1.5"><span className="order-document-dot size-2.5 shrink-0 rounded-sm" />{row.documentType}</span></TableCell><TableCell className="whitespace-nowrap">{row.salesType?.trim() && row.salesType.trim() !== "Unassigned" ? row.salesType.trim() : "—"}</TableCell><TableCell className="whitespace-nowrap">{row.zone.replace(" Zone", "")}</TableCell><TableCell>{row.division}</TableCell><TableCell className="whitespace-nowrap">{[row.plant, row.plantName].filter(Boolean).join(" — ") || "—"}</TableCell><TableCell className="whitespace-nowrap">{row.material}</TableCell><TableCell className="min-w-56">{row.description}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.orderDate)}</TableCell><TableCell className="whitespace-nowrap">{displayDate(row.deliveryDate)}</TableCell><TableCell className="text-right tabular-nums">{formatNumber(row.daysOpen)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.openQuantity) : formatNumber(row.openQuantity)}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.deliveredQuantity) : formatNumber(row.deliveredQuantity)}</TableCell><TableCell className="text-right tabular-nums">{row.ah.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{isBook ? toLah(row.totalAh) : row.totalAh.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell><TableCell className="text-right tabular-nums">{row.value.toFixed(2)}</TableCell><TableCell><StatusBadge partial={row.deliveredQuantity > 0} /></TableCell></TableRow>) : <TableRow><TableCell colSpan={20} className="h-24 text-center text-muted-foreground">{isLoading ? "Loading {screenTitle}…" : isSit ? (data.length ? "No orders match the selected filters or search." : "No SIT data from SAP yet.") : isBook ? "No orders match the selected filters or search." : "No open orders match the selected filters or search."}</TableCell></TableRow>}</TableBody>
           <TableFooter><TableRow data-testid="order-table-totals" className="border-t-2 border-border bg-muted text-[11px] font-semibold">
             <TableCell colSpan={14}>Total</TableCell>
             <TableCell className="text-right tabular-nums">{isBook ? toLah(tableTotals.openQuantity) : tableTotals.openQuantity.toLocaleString("en-IN", { maximumFractionDigits: 15 })}</TableCell>
