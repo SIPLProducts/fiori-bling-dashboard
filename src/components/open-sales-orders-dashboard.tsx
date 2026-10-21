@@ -57,7 +57,7 @@ import { MultiSelect } from "@/components/multi-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { countDistinctOrders, formatPendingAhQuantityInLakhs, formatBookLah, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
+import { countDistinctOrders, formatPendingAhQuantityInLakhs, formatBookLah, formatCrWhole, formatBookLahWhole, sumPendingAhQuantity, displayOpenOrderDate, filterOpenOrderTable, sortOpenOrdersByCreationDate, summarizeOpenOrderTable, openOrderStatusLabel, type OpenOrderTableStatus } from "@/lib/open-sales-orders-table";
 import { useUserAccess } from "@/lib/use-user-access";
 import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { activeOpenOrderDates, type OpenOrderDateMode, customerKey, productKey, documentTypeOptions, defaultDocumentTypeKeys, summarizeDocumentDescriptions, defaultOpenOrderFilters, filterOpenOrders, hasModelWiseType, type OpenOrderFilters } from "@/lib/open-sales-orders-filters";
@@ -153,7 +153,7 @@ function StatusCard({ title, count, value, share, partial }: { title: string; co
 
 export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?: "open-orders" | "order-book" } = {}) {
   const isBook = variant === "order-book";
-  const screenTitle = isBook ? "Order Book Report" : "Open Sales Orders Reports";
+  const screenTitle = isBook ? "Order Book" : "Open Sales Orders Reports";
   const dashboardRef = useRef<HTMLDivElement>(null);
   const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const documentGradient = `${chartId}-document`;
@@ -421,9 +421,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
         <SummaryCard label={isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
-        <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label={isBook ? "Total LAH" : "Pending AH Quantity"} value={isBook ? formatBookLah(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
-        {isBook ? <SummaryCard label="Highest Value" value={formatCr(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
+        <SummaryCard label={isBook ? "Order Value" : "Open Order Value"} value={isBook ? formatCrWhole(metrics.totalValue) : formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
+        <SummaryCard label={isBook ? "Total LAH" : "Pending AH Quantity"} value={isBook ? formatBookLahWhole(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
+        {isBook ? <SummaryCard label="Highest Value" value={formatCrWhole(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
       </div>
 
 
@@ -539,7 +539,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       <section data-pdf-exclude className="order-details overflow-hidden rounded-md border border-border bg-card shadow-tile">
         <div className="order-details-header grid min-w-0 gap-2 border-b border-border px-4 py-3">
-          <div className="min-w-0"><h2 className="text-sm font-semibold text-card-foreground">{isBook ? "Order Book Report – Detailed View" : "Open Sales Orders Report – Detailed View (Aging Bucket)"}</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered line items</p></div>
+          <div className="min-w-0"><h2 className="text-sm font-semibold text-card-foreground">{isBook ? "Order Book – Detailed View" : "Open Sales Orders Report – Detailed View (Aging Bucket)"}</h2><p className="text-[10px] text-muted-foreground">{formatNumber(tableData.length)} filtered line items</p></div>
           <div className="order-table-controls grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <div className="order-table-search relative col-span-2 min-w-0"><Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Search detailed orders" placeholder="Search orders…" value={tableSearch} onChange={(event) => setTableSearch(event.target.value)} className="h-9 pl-9" /></div>
             <Select value={tableStatus} onValueChange={(value) => { if (value === "all" || value === "open" || value === "partial") setTableStatus(value); }}><SelectTrigger aria-label="Filter orders by status" className="w-full min-w-0"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Status: All</SelectItem><SelectItem value="open">Open</SelectItem><SelectItem value="partial">Partially Delivered</SelectItem></SelectContent></Select>

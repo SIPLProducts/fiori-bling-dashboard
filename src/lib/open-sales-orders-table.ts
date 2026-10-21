@@ -86,3 +86,13 @@ export function formatBookLah(value: number) {
   if (frac > 49) return Math.round(lakhs).toLocaleString("en-IN");
   return (Math.sign(lakhs) * cents / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+/** Order Book tiles: whole ₹ Cr, e.g. 263.92 → "₹264 Cr". */
+export function formatCrWhole(value: number) {
+  return `₹${Math.round(Number.isFinite(value) ? value : 0).toLocaleString("en-IN")} Cr`;
+}
+
+/** Order Book Total LAH tile: whole lakhs, e.g. 104,140,000 → "1,041". */
+export function formatBookLahWhole(value: number) {
+  return Math.round((Number.isFinite(value) ? value : 0) / 100000).toLocaleString("en-IN");
+}
