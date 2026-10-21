@@ -58,7 +58,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     { header: "Total AH", key: "totalAh", width: 18 },
     { header: "Unit", key: "unit", width: 10 },
     { header: "Currency", key: "currency", width: 11 },
-    { header: fileName.startsWith("order-book") ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", key: "value", width: 19 },
+    { header: fileName.startsWith("sales-in-transit") ? "SIT Value (₹ Cr)" : fileName.startsWith("order-book") ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", key: "value", width: 19 },
     { header: "Days Open", key: "daysOpen", width: 13 },
     { header: "LD_STATUS", key: "ldStatus", width: 14 },
     { header: "Delivery Status", key: "deliveryStatus", width: 18 },
