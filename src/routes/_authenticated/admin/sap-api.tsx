@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
+import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -484,7 +486,7 @@ function parsePayload(raw: string): Record<string, string> | null {
   const text = (raw ?? "").trim();
   if (!text) return null;
   try {
-    const parsed: unknown = JSON.parse(text);
+    const parsed: unknown = JSON.parse(stripJsonComments(text));
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     return Object.fromEntries(
       Object.entries(parsed as Record<string, unknown>).map(([key, value]) => [
@@ -647,58 +649,41 @@ function isOrderBookName(value: string): boolean {
   return (value ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook");
 }
 
-const ORDER_BOOK_DEFAULT_PAYLOAD: Record<string, string> = {
-  VKORG: "1000", SPART_F: "", SPART_T: "", VTWEG_F: "", VTWEG_T: "", AUART_F: "", AUART_T: "",
-  VBELN_F: "", VBELN_T: "", ERDAT_F: "", ERDAT_T: "", WERKS_F: "", WERKS_T: "",
-};
-
-function OrderBookRequestFields({
+function PayloadRequestFields({
   value, range, onChange, onRange,
 }: { value: string; range: string; onChange: (v: string) => void; onRange: (r: string) => void }) {
-  let parsed: Record<string, unknown> | null = null;
-  try {
-    const v = JSON.parse(value || "{}");
-    if (v && typeof v === "object" && !Array.isArray(v)) parsed = { ...ORDER_BOOK_DEFAULT_PAYLOAD, ...v };
-  } catch { parsed = null; }
-  if (!parsed) return <p className="text-xs text-destructive">Request payload must be a valid JSON object to edit these fields.</p>;
-  const obj = parsed;
-  const get = (k: string) => String(obj[k] ?? "");
-  const update = (patch: Record<string, string>) => onChange(JSON.stringify({ ...obj, ...patch }, null, 2));
-  const rolling = range !== "custom";
+  const fields = parsePayloadFields(value);
+  if (fields === null) return <p className="text-xs text-destructive">Request payload must be a valid JSON object to edit these fields.</p>;
+  if (!fields.length) return <p className="text-xs text-muted-foreground">Paste the request payload below — its fields appear here automatically.</p>;
+  const update = (key: string, v: string) => onChange(buildPayloadText(fields.map((f) => (f.key === key ? { ...f, value: v } : f))));
+  const dateFields = fields.filter((f) => f.date && /_(F|T)$/i.test(f.key));
+  const rolling = range !== "custom" && dateFields.length > 0;
+  const label = (key: string) => (/_F$/i.test(key) ? "From" : /_T$/i.test(key) ? "To" : key);
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Field label="Created date window" hint="Preset windows follow today on every sync; custom dates stay fixed.">
-        <Select value={range} onValueChange={(r) => {
-          onRange(r);
-          const w = postingWindow(r);
-          if (w) update({ ERDAT_F: w.from, ERDAT_T: w.to });
-        }}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {POSTING_RANGES.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field label="Created From *" hint="Sent as ERDAT_F (YYYYMMDD).">
-        <Input type="date" disabled={rolling} value={fromSapDate(get("ERDAT_F"))} onChange={(e) => update({ ERDAT_F: e.target.value ? toSapDate(e.target.value) : "" })} />
-      </Field>
-      <Field label="Created To *" hint="Sent as ERDAT_T (YYYYMMDD).">
-        <Input type="date" disabled={rolling} value={fromSapDate(get("ERDAT_T"))} onChange={(e) => update({ ERDAT_T: e.target.value ? toSapDate(e.target.value) : "" })} />
-      </Field>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:col-span-3">
-      <Field label="Order Type From" hint="Optional. Sent as AUART_F.">
-        <Input placeholder="e.g. ZDOR" maxLength={4} value={get("AUART_F")} onChange={(e) => update({ AUART_F: e.target.value.trim().toUpperCase() })} />
-      </Field>
-      <Field label="Order Type To" hint="Optional. Sent as AUART_T.">
-        <Input maxLength={4} value={get("AUART_T")} onChange={(e) => update({ AUART_T: e.target.value.trim().toUpperCase() })} />
-      </Field>
-      <Field label="Plant From" hint="Optional. Sent as WERKS_F.">
-        <Input placeholder="e.g. 1600" maxLength={4} value={get("WERKS_F")} onChange={(e) => update({ WERKS_F: e.target.value.trim() })} />
-      </Field>
-      <Field label="Plant To" hint="Optional. Sent as WERKS_T.">
-        <Input maxLength={4} value={get("WERKS_T")} onChange={(e) => update({ WERKS_T: e.target.value.trim() })} />
-      </Field>
-      </div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {dateFields.length ? (
+        <Field label="Date window" hint="Preset windows follow today on every sync; custom dates stay fixed.">
+          <Select value={range} onValueChange={(r) => {
+            onRange(r);
+            const w = postingWindow(r);
+            if (w) onChange(buildPayloadText(fields.map((f) => (dateFields.includes(f) ? { ...f, value: /_F$/i.test(f.key) ? w.from : w.to } : f))));
+          }}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {POSTING_RANGES.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+      ) : null}
+      {fields.map((f) => (
+        <Field key={f.key} label={`${f.date ? `${label(f.key)} date` : f.key}${f.optional ? "" : " *"}`} hint={`${f.optional ? "Optional. " : ""}Sent as ${f.key}${f.date ? " (YYYYMMDD)" : ""}.`}>
+          {f.date ? (
+            <Input type="date" disabled={rolling} value={fromSapDate(f.value)} onChange={(e) => update(f.key, e.target.value ? toSapDate(e.target.value) : "")} />
+          ) : (
+            <Input value={f.value} onChange={(e) => update(f.key, e.target.value)} />
+          )}
+        </Field>
+      ))}
     </div>
   );
 }
@@ -784,6 +769,7 @@ function toInput(endpoint: SapEndpoint): EndpointInput {
 function withDefaultDates(input: EndpointInput): EndpointInput {
   if (isZcashFlowName(input.name) || isZcashFlowName(input.endpoint_path)) return input;
   if (isOrderBookName(input.name) || isOrderBookName(input.endpoint_path)) return input;
+  if (isSitEndpoint(input.name) || isSitEndpoint(input.endpoint_path)) return input;
   const payload = parsePayload(input.body_template) ?? {};
   if (isOpenSalesOrdersEndpoint(input.name)) {
     const fkdat = payload["fkdat"] ?? "";
@@ -1109,8 +1095,10 @@ function EndpointDetail({
     isOrderBookName(form.endpoint_path) ||
     (!!payload && "ERDAT_F" in payload && "ERDAT_T" in payload);
   const isZcash = !isOrderBook && (isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path));
+  const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const usesPostingDates =
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
+  const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
   const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
 
@@ -1316,34 +1304,18 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
-            {isOrderBook ? (
-              <OrderBookRequestFields
+            {usesPayloadFields ? (
+              <PayloadRequestFields
                 value={form.body_template}
                 range={form.posting_range}
                 onChange={(v) => set("body_template", v)}
                 onRange={(r) => set("posting_range", r as EndpointInput["posting_range"])}
               />
-            ) : !isZcash ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-border p-3">
-                <span className="text-sm text-muted-foreground">Order Book API?</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const w = postingWindow(form.posting_range) ?? postingWindow("last1m");
-                    set("body_template", JSON.stringify({ ...ORDER_BOOK_DEFAULT_PAYLOAD, ...(w ? { ERDAT_F: w.from, ERDAT_T: w.to } : {}) }, null, 2));
-                    if (!form.endpoint_path) set("endpoint_path", "/zorderbook/order?sap-client=234");
-                  }}
-                >
-                  Use Order Book request fields
-                </Button>
-              </div>
             ) : null}
             {isZcash ? (
               <ZcashFlowRequestFields value={form.body_template} onChange={(v) => set("body_template", v)} />
             ) : null}
-            {!isZcash && !isOrderBook && (isOpenSalesOrders || usesPostingDates) ? (
+            {!isZcash && !usesPayloadFields && (isOpenSalesOrders || usesPostingDates) ? (
             <div className="grid gap-4 md:grid-cols-3">
               {isOpenSalesOrders ? (
                 <Field label="Request Date" hint="Sent as fkdat (YYYYMMDD).">
