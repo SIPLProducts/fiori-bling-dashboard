@@ -67,6 +67,7 @@ import { OrderChartGradients, ORDER_CHART_COLORS, useChartWidth } from "@/compon
 import { plantChartMaximum } from "@/lib/plant-chart-scale";
 import { PlantPendingChart } from "@/components/plant-pending-chart";
 import { useReportSync } from "@/lib/use-report-sync";
+import { getSitRows } from "@/lib/sit-data";
 import { lastSyncedLabel } from "@/lib/report-sync-time";
 import { summarizeLdStatus } from "@/lib/open-orders-ld-status";
 import { OpenOrdersLdStatusChart } from "@/components/open-orders-ld-status-chart";
@@ -161,8 +162,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
   const agingGradient = `${chartId}-aging`;
   const trendGradient = `${chartId}-trend`;
   const { data: rawData, error, isLoading, isFetching, refetch } = useQuery({
-    queryKey: isSit ? ["sit-live", "pending-api-v1"] : isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
-    queryFn: isSit ? async () => [] as Awaited<ReturnType<typeof getOrderBookRows>> : isBook ? getOrderBookRows : getOpenSalesOrders,
+    queryKey: isSit ? ["sit-live", "netwr-tot-v1"] : isBook ? ["order-book-live", "tot-inr-zone-bezei-v2"] : ["open-sales-orders-live", "p-value1-v1"],
+    queryFn: isSit ? getSitRows : isBook ? getOrderBookRows : getOpenSalesOrders,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
@@ -170,8 +171,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     refetchOnReconnect: false,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { data: syncedAt, refetch: refetchSync } = useReportSync(isBook ? "order-book" : "open-sales-orders");
-  const lastSynced = isSit ? null : syncedAt;
+  const { data: syncedAt, refetch: refetchSync } = useReportSync(isSit ? "sit" : isBook ? "order-book" : "open-sales-orders");
+  const lastSynced = syncedAt;
   const access = useUserAccess();
   const data = useMemo(() => scopeRowsToAssigned(rawData ?? [], access, isBook ? { plant: (r) => r.plant, profitCentre: (r) => r.profitCentre } : { plant: (r) => r.plant }), [rawData, access]);
   const [dateRange, setDateRangeState] = useState<DateRange | undefined>();
