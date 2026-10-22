@@ -2,7 +2,7 @@ import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
 import { channelDescription } from "@/lib/open-sales-orders-filters";
 
-export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx", dateHeader = "Sales Order Creation Date", valueHeader = "Open Value (₹ Cr)", documentTypeLabel: (row: OpenSalesOrder) => string = (row) => row.documentType) {
+export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx", dateHeader = "Sales Order Creation Date", valueHeader = "Open Value (₹ Cr)", documentTypeLabel: (row: OpenSalesOrder) => string = (row) => row.documentType, ahInLakhs = false) {
   const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "HBL Engineering Limited";
@@ -54,7 +54,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     { header: "Ordered Qty", key: "quantity", width: 15 },
     { header: "Open Qty", key: "openQuantity", width: 15 },
     { header: "Delivered Qty", key: "deliveredQuantity", width: 16 },
-    { header: "AH", key: "ah", width: 16 },
+    { header: ahInLakhs ? "AH (LAH)" : "AH", key: "ah", width: 16 },
     { header: "Total AH", key: "totalAh", width: 18 },
     { header: "Unit", key: "unit", width: 10 },
     { header: "Currency", key: "currency", width: 11 },
@@ -109,7 +109,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     quantity: row.quantity,
     openQuantity: row.openQuantity,
     deliveredQuantity: row.deliveredQuantity,
-    ah: row.ah,
+    ah: ahInLakhs ? Math.round(row.ah / 1000) / 100 : row.ah,
     totalAh: row.totalAh,
     unit: row.unit,
     currency: row.currency,
