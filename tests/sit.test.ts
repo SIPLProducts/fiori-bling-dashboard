@@ -53,3 +53,17 @@ it("SIT launch tile labels ZDOR rows by VTEXT_DC", () => {
   expect(JSON.stringify(s)).toContain("Domestic Sales");
   expect(JSON.stringify(s)).not.toContain("Invoice");
 });
+
+describe("SIT From date", () => {
+  const body = '{"VKORG":"1000","FKDAT_F":"20260101"}';
+  const day = new Date(2026, 9, 22, 12);
+  it("scheduled run sends today's date", () => {
+    expect(JSON.parse(withEndpointDates("Sales In Transit (SIT)", body, "custom", day, true)!).FKDAT_F).toBe("20261022");
+  });
+  it("manual run keeps the chosen date", () => {
+    expect(JSON.parse(withEndpointDates("Sales In Transit (SIT)", body, "custom", day)!).FKDAT_F).toBe("20260101");
+  });
+  it("empty From date falls back to today", () => {
+    expect(JSON.parse(withEndpointDates("Sales In Transit (SIT)", '{"VKORG":"1000","FKDAT_F":""}', "custom", day)!).FKDAT_F).toBe("20261022");
+  });
+});
