@@ -1,20 +1,13 @@
-# SIT: creation date label and latest-year default
+# SIT by Main Group: split by Division like Sub Group
 
-## What the SIT screen uses today
-- Date, Financial Year, Month on Month and sorting all use SAP **ERDAT** (creation date). If ERDAT is empty, it uses FKDAT (billing date).
-- Stored SIT lines have ERDAT from 13.11.2025 to 31.03.2026, so every line is in **FY 2025** (April 2025 – March 2026). No line is in FY 2026 yet.
+## Result (Sales In Transit screen only)
+- **SIT by Main Group** becomes a stacked bar chart: one bar per main group, split into colored Division pieces, the same way **SIT by Sub Group** looks today.
+- Same colors per division as the Sub Group card, the total value above each bar, and a Division legend underneath.
+- Tooltip: main group name, each division's SIT Value (₹ Cr) and SIT count, then the total.
+- Also shown this way in the PDF.
 
-## Why the year looked wrong
-- The screen first opens with **2026** (the current year, same as the other screens) and only switches to the latest year in the data once the rows finish loading. Before that switch, or on an older build, you can see 2026 picked while 2025 lines are listed.
-- The year list also always adds 2026 even when SIT has no 2026 lines.
-
-## Changes
-1. Detailed table and Excel: rename "Sales Order Creation Date" to **"SIT Creation Date"** on the SIT screen only (shows ERDAT). Order Book and Open Sales Orders keep the old name.
-2. SIT starts with no year picked while it loads, then picks the **latest financial year found in ERDAT** (2025 now; it becomes 2026 by itself once SAP sends lines created from 1 April 2026). Reset goes back to that year.
-3. The SIT year list shows only years that exist in the SIT data, so you can't pick an empty 2026.
-4. Tiles, charts, table and Excel all follow the picked year.
+Order Book and Open Sales Orders Main Group cards stay as they are.
 
 ## Technical details
-- `open-sales-orders-dashboard.tsx`: SIT initial `fiscalYears` = `[]` until rows load; `yearOptions` skips adding `currentFiscalYear()` when `isSit`; column heading conditional on `isSit`.
-- `open-sales-orders-export.ts`: same heading switch for SIT.
-- Test: latest FY from ERDAT rows (2025-11-13…2026-03-31 gives "2025").
+- `open-sales-orders-dashboard.tsx`: compute `mainByDivision = summarizeGroupsByDivision(rows, mainGroup key)` alongside `subByDivision`; for `isSit` render `OrderBookSubGroupChart` with it in the Main Group panel.
+- `order-book-subgroup-chart.tsx`: add a `groupLabel` prop ("Main Group" / "Sub Group") for the tooltip heading; share one division color order across both cards.
