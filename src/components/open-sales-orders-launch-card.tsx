@@ -46,9 +46,9 @@ export function OrderBookLaunchCard({ fallback }: { fallback: React.ReactNode })
 
 async function fetchSitRows() {
   const pageSize = 1_000;
-  const allRows: { netwr_tot: number | string | null; vtext_dc: string | null; vtext: string | null; werks: string | null; prctr: string | null; fkdat: string | null }[] = [];
+  const allRows: { netwr_tot: number | string | null; vtext_dc: string | null; auart: string | null; werks: string | null; prctr: string | null; fkdat: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("sales_in_transit").select("netwr_tot,vtext_dc,vtext,werks,prctr,fkdat")
+    const result = await supabase.from("sales_in_transit").select("netwr_tot,vtext_dc,auart,werks,prctr,fkdat")
       .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
@@ -60,7 +60,7 @@ async function fetchSitRows() {
 
 export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["sit-launch-summary", "netwr-tot-all-v2"],
+    queryKey: ["sit-launch-summary", "netwr-tot-auart-v3"],
     queryFn: fetchSitRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
@@ -68,7 +68,7 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const period = useMemo(() => currentReportPeriod(), []);
   // SIT is a current in-transit snapshot: count every stored line regardless of billing date.
   const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
-    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc, order_type: r.vtext })), { byCode: true, all: true }) : undefined, [rows, access, period]);
+    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc, order_type: r.auart })), { byCode: true, all: true }) : undefined, [rows, access, period]);
   const { data: lastSynced } = useReportSync("sit");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
