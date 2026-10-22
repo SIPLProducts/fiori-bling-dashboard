@@ -51,5 +51,6 @@ export function buildSalesRegister(rows: SalesRegisterRow[]) {
     byCategory: rollup(rows, (r) => r.productCategory),
     daily: [...daily.values()].sort((a, b) => a.date.localeCompare(b.date)),
     tax: [...tax.values()].sort((a, b) => a.week.localeCompare(b.week)),
+    dateRange: rows.length ? { from: rows.reduce((m, r) => (r.billingDate < m ? r.billingDate : m), rows[0].billingDate), to: rows.reduce((m, r) => (r.billingDate > m ? r.billingDate : m), rows[0].billingDate) } : null,
   };
 }

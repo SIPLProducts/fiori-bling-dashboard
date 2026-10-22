@@ -19,10 +19,6 @@ const CODE_FIELDS = [
   ["salesOffice", "Sales Office"],
   ["material", "Material code"],
   ["profitCenter", "Profit Center"],
-  ["salesman", "Salesman"],
-  ["materialType", "Material Type"],
-  ["region", "Region"],
-  ["paymentTerms", "Terms of Payment"],
 ] as const;
 const DATE_KEYS = new Set(["billingDate", "billingCreationDate"]);
 
@@ -31,7 +27,6 @@ type DateRange = { mode: "single" | "range"; from: string; to: string };
 export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boolean }) {
   const access = useUserAccess();
   const [open, setOpen] = useState(defaultOpen);
-  const [salesOrg, setSalesOrg] = useState("1000");
   const [codes, setCodes] = useState<Record<string, string[] | null>>({});
   const [dates, setDates] = useState<Record<string, DateRange>>({});
   const optionsFor = (key: string): string[] => {
@@ -39,10 +34,10 @@ export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boo
     if (key === "profitCenter") return access && !access.unrestricted ? access.profitCenters : [];
     return [];
   };
-  const active = (salesOrg !== "1000" ? 1 : 0)
+  const active = 0
     + Object.values(codes).filter((v) => v !== null && v !== undefined).length
     + Object.values(dates).filter((d) => d.from || d.to).length;
-  const reset = () => { setSalesOrg("1000"); setCodes({}); setDates({}); };
+  const reset = () => { setCodes({}); setDates({}); };
 
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
@@ -53,8 +48,7 @@ export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boo
       </button>
       <Button type="button" variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />Reset</Button>
     </div>
-    {open ? <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-2 min-[900px]:grid-cols-4">
-      <FilterField label="Sales Organization"><Input value={salesOrg} onChange={(e) => setSalesOrg(e.target.value)} className="h-9" /></FilterField>
+    {open ? <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-2 md:grid-cols-4">
       {CODE_FIELDS.map(([key, label]) => {
         if (DATE_KEYS.has(key)) {
           const d = dates[key] ?? { mode: "range", from: "", to: "" };

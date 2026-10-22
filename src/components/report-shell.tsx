@@ -11,12 +11,16 @@ export function ReportShell({
   description,
   tcode,
   providerMode,
+  actions,
+  compact = false,
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   tcode?: string | undefined;
   providerMode?: string | undefined;
+  actions?: ReactNode;
+  compact?: boolean;
   children: ReactNode;
 }) {
   const { data: launchpad } = useLaunchpad();
@@ -25,17 +29,21 @@ export function ReportShell({
       <ShellBar title={title} displayName={launchpad?.profile?.display_name} screens={launchpad?.screens} />
 
       <div className="border-b border-border bg-card">
-        <div className="mx-auto max-w-[1400px] px-4 py-4">
-          {/* Home moved to the top navigation bar; this space is used by the screen. */}
-          {title ? <h1 className="text-2xl font-light text-foreground">{title}</h1> : null}
-          {tcode ? (
-            <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              {tcode}
-            </p>
-          ) : null}
-          <p className="text-sm text-muted-foreground">{description}</p>
+        <div className={`mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 ${compact ? "py-2" : "py-4"}`}>
+          <div className="min-w-0">
+            {/* Home moved to the top navigation bar; this space is used by the screen. */}
+            {title ? <h1 className={`${compact ? "text-base font-medium" : "text-2xl font-light"} text-foreground`}>{title}</h1> : null}
+            {tcode ? (
+              <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+                {tcode}
+              </p>
+            ) : null}
+            {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+          </div>
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       </div>
+
 
       <main className="mx-auto max-w-[1400px] px-4 py-6">{children}</main>
       {providerMode ? (
