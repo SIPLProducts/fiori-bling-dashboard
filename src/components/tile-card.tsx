@@ -78,21 +78,21 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       {href ? (
         <Link
           to={href}
-          aria-label={`${status ?? "View details"}: ${label}`}
+          aria-label={`${status ?? "Open Details"}: ${label}`}
           className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
         >
-          <span className="truncate text-muted-foreground">{status ?? "View details"}</span>
+          <span className="truncate text-muted-foreground">{status ?? "Open Details"}</span>
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : (
         <Button
           type="button"
           variant="ghost"
-          aria-label={`${status ?? "View details"}: ${label}`}
+          aria-label={`${status ?? "Open Details"}: ${label}`}
           onClick={onOpen}
           className="group mt-3 min-h-8 w-full justify-between rounded-full bg-launchpad-tile-footer px-3 text-[10px] font-normal text-muted-foreground shadow-launchpad-inset hover:-translate-y-0.5 hover:bg-launchpad-tile-footer focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"
         >
-          <span className="truncate">{status ?? "View details"}</span>
+          <span className="truncate">{status ?? "Open Details"}</span>
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Button>
       )}

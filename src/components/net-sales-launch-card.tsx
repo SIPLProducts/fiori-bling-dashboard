@@ -117,7 +117,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
-        <div className="mt-auto grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
+        <div className="mt-auto grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
           <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
           <Link
             to="/reports/module/$module"
