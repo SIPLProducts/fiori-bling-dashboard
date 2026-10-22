@@ -688,3 +688,23 @@
   .orders-compact .order-overview-row.order-overview-book { grid-template-columns: minmax(0,7fr) minmax(0,3fr) minmax(0,2fr); }
   .orders-compact .order-overview-row.order-overview-book > * { grid-column: auto; }
 }
+
+/* Launchpad Sales & Distribution: five compact cards in one row. */
+@media (min-width: 768px) {
+  .sd-compact > * > section, .sd-compact > * > div, .sd-compact > section, .sd-compact > div { min-height: 150px; padding: 0.625rem; border-radius: 0.875rem; }
+  .sd-compact [class*="text-[26px]"] { font-size: 18px; }
+  .sd-compact [class*="text-[11px]"] { font-size: 10px; }
+  .sd-compact [class*="text-[10px]"], .sd-compact [class*="text-[9px]"] { font-size: 9px; }
+  .sd-compact p, .sd-compact span { min-width: 0; overflow-wrap: anywhere; }
+  .sd-compact .size-9 { width: 1.5rem; height: 1.5rem; border-radius: 0.5rem; }
+  .sd-compact .size-9 svg { width: 0.8rem; height: 0.8rem; }
+  .sd-compact .h-1\.5 { height: 0.25rem; }
+  .sd-compact .my-3 { margin-block: 0.375rem; }
+  .sd-compact .space-y-2\.5 > * + * { margin-top: 0.375rem; }
+  .sd-compact .mt-3 { margin-top: 0.375rem; }
+  .sd-compact .pt-4 { padding-top: 0.5rem; }
+  .sd-compact .gap-3 { gap: 0.375rem; }
+  .sd-compact a.min-h-8 { min-height: 1.5rem; padding-inline: 0.625rem; font-size: 9px; }
+  .sd-compact a.min-h-8 svg { width: 0.7rem; height: 0.7rem; }
+  .sd-compact .h-8 { height: 1.25rem; }
+}
