@@ -7,19 +7,19 @@ const cr = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, 
 
 type Row = Record<string, number | string>;
 
-function SubTooltip({ active, payload, colors }: { active?: boolean; payload?: Array<{ dataKey?: string | number; payload: Row & { __g: GroupDivisionSummary } }>; colors: Map<string, string> }) {
+function SubTooltip({ active, payload, colors, label }: { active?: boolean; payload?: Array<{ dataKey?: string | number; payload: Row & { __g: GroupDivisionSummary } }>; colors: Map<string, string>; label: string }) {
   const g = payload?.[0]?.payload.__g as GroupDivisionSummary | undefined;
   if (!active || !g) return null;
   const parts = Object.entries(g.parts).sort((a, b) => b[1].value - a[1].value);
   return <div className="max-w-xs rounded-md border border-border bg-popover px-3 py-2 text-[11px] text-popover-foreground shadow-md">
-    <p className="font-semibold">Sub Group: {g.name}</p>
+    <p className="font-semibold">{label}: {g.name}</p>
     {parts.map(([d, p]) => <p key={d} className="mt-0.5 flex items-center gap-1.5 text-muted-foreground"><span className="size-2.5 shrink-0 rounded-sm" style={{ background: colors.get(d) }} />{d}: ₹{cr(p.value)} Cr · {p.orders.toLocaleString("en-IN")} orders</p>)}
     <p className="mt-1 font-medium">Total: ₹{cr(g.value)} Cr · {g.orders.toLocaleString("en-IN")} orders</p>
   </div>;
 }
 
-/** Order Book Sub Group chart: one stacked bar per sub group, split by division with radiant colours. */
-export function OrderBookSubGroupChart({ groups, divisions, pdf = false }: { groups: GroupDivisionSummary[]; divisions: string[]; pdf?: boolean }) {
+/** Order Book group chart: one stacked bar per group, split by division with radiant colours. Colours follow the order of `divisions`. */
+export function OrderBookSubGroupChart({ groups, divisions, pdf = false, groupLabel = "Sub Group" }: { groups: GroupDivisionSummary[]; divisions: string[]; pdf?: boolean; groupLabel?: string }) {
   const id = useId().replace(/:/g, "");
   const rows = pdf ? groups : groups.slice(0, 10);
   if (!rows.length) return <p className="py-8 text-center text-xs text-muted-foreground">No group data from SAP yet</p>;
