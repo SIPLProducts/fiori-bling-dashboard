@@ -50,7 +50,7 @@ export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) 
       <div className="mt-auto grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
         <span className="min-w-0 leading-relaxed">{lastSyncedLabel(data.syncedAt)}</span>
         <Link to="/reports/fi/cash-flow" aria-label="Open Cash Flow details" className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
-          View details
+          Open Details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>

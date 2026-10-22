@@ -122,7 +122,7 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold text-primary uppercase">{title}</p>
-          <p className="mt-2 text-[26px] leading-none font-semibold tabular-nums" style={{ color: BAR_TONES[0] }}>{formatValue(data.openValue)}</p>
+          <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold tabular-nums" style={{ color: BAR_TONES[0] }}>{formatValue(data.openValue)}</p>
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><ShoppingCart className="size-[18px]" /></span>
       </div>
@@ -147,10 +147,10 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
           </div>
         ))}
       </div>
-      <div className="mt-3 grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
+      <div className="mt-3 grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
         <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
         <Link to={href} aria-label={`Open ${title} details`} className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
-          View details
+          Open Details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>

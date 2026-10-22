@@ -84,7 +84,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             <p className="truncate text-[11px] font-semibold tracking-wide text-primary uppercase">
               Net Sales
             </p>
-            <p className="tabular mt-1 text-[26px] leading-none font-semibold" style={{ color }}>
+            <p className="tabular mt-1 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold" style={{ color }}>
               ₹{compact(data.total)}
             </p>
           </div>
@@ -117,7 +117,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
-        <div className="mt-auto grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
+        <div className="mt-auto grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
           <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
           <Link
             to="/reports/module/$module"

@@ -69,7 +69,7 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
-          <p className="mt-2 text-[26px] leading-none font-semibold text-foreground">{value}</p>
+          <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold text-foreground">{value}</p>
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
       </div>
@@ -78,21 +78,21 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       {href ? (
         <Link
           to={href}
-          aria-label={`${status ?? "View details"}: ${label}`}
+          aria-label={`${status ?? "Open Details"}: ${label}`}
           className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
         >
-          <span className="truncate text-muted-foreground">{status ?? "View details"}</span>
+          <span className="truncate text-muted-foreground">{status ?? "Open Details"}</span>
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : (
         <Button
           type="button"
           variant="ghost"
-          aria-label={`${status ?? "View details"}: ${label}`}
+          aria-label={`${status ?? "Open Details"}: ${label}`}
           onClick={onOpen}
           className="group mt-3 min-h-8 w-full justify-between rounded-full bg-launchpad-tile-footer px-3 text-[10px] font-normal text-muted-foreground shadow-launchpad-inset hover:-translate-y-0.5 hover:bg-launchpad-tile-footer focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"
         >
-          <span className="truncate">{status ?? "View details"}</span>
+          <span className="truncate">{status ?? "Open Details"}</span>
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Button>
       )}
