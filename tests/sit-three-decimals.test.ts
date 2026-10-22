@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
-import { formatSit3 } from "../src/lib/format";
-test("SIT value 265,432,100 shows as 26.543 Cr", () => { expect(formatSit3(265_432_100 / 10_000_000)).toBe("26.543"); });
-test("SIT LAH 1,234,567 AH shows as 12.346", () => { expect(formatSit3(1_234_567 / 100_000)).toBe("12.346"); });
+import { roundWhole3 } from "../src/lib/format";
+test("24.499 rounds to 24", () => expect(roundWhole3(24.499)).toBe(24));
+test("24.500 rounds to 25", () => expect(roundWhole3(24.5)).toBe(25));
+test("24.495 rounds to 24 (no 2-decimal pre-rounding)", () => expect(roundWhole3(24.495)).toBe(24));

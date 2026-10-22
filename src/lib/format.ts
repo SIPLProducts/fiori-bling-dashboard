@@ -32,3 +32,8 @@ export function datedFileName(screen: string, ext: string, now: Date = new Date(
 export function formatSit3(value: number): string {
   return value.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
+
+/** Round to a whole number, deciding from the value taken to 3 decimals (single round-off). */
+export function roundWhole3(value: number): number {
+  return Math.round(Number(value.toFixed(3)));
+}
