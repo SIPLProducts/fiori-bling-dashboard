@@ -27,3 +27,8 @@ export function datedFileName(screen: string, ext: string, now: Date = new Date(
   const [d, m, y] = new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).format(now).split("/");
   return `${screen}_${d}-${m}-${y}.${ext.replace(/^\./, "")}`;
 }
+
+/** SIT tiles: exactly 3 decimals, Indian grouping. */
+export function formatSit3(value: number): string {
+  return value.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+}

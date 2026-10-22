@@ -1,3 +1,4 @@
+import { formatSit3 } from "@/lib/format";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
@@ -75,6 +76,8 @@ import { OpenOrdersLdStatusChart } from "@/components/open-orders-ld-status-char
 
 const COLORS = ["var(--kpi-1)", "var(--kpi-5)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-2)"];
 const formatCr = (value: number) => `₹ ${value.toFixed(2)} Cr`;
+const formatCr3 = (value: number) => `₹ ${formatSit3(value)} Cr`;
+const formatLah3 = (ah: number) => `${formatSit3(ah / 100000)} LAH`;
 const formatNumber = (value: number) => Math.round(value).toLocaleString("en-IN");
 type Tone = "primary" | "success" | "violet" | "warning";
 const TONE_STYLES: Record<Tone, { card: string; icon: string }> = {
@@ -433,9 +436,9 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
       <div data-pdf-page-block className={`order-summary-row grid gap-4 ${isBook ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
         <SummaryCard label={isSit ? "SIT Orders" : isBook ? "Total Orders" : "Total Open Orders"} value={formatNumber(metrics.distinctOrders)} icon={FileText} tone="primary" />
-        <SummaryCard label={isSit ? "SIT Value" : isBook ? "Order Value" : "Open Order Value"} value={isBook ? formatCrWhole(metrics.totalValue) : formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
-        <SummaryCard label={isSit ? "SIT LAH" : isBook ? "Total LAH" : "Pending AH Quantity"} value={isBook ? formatBookLahWhole(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
-        {isBook ? <SummaryCard label="Highest Value" value={formatCrWhole(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
+        <SummaryCard label={isSit ? "SIT Value" : isBook ? "Order Value" : "Open Order Value"} value={isSit ? formatCr3(metrics.totalValue) : isBook ? formatCrWhole(metrics.totalValue) : formatCr(metrics.totalValue)} icon={IndianRupee} tone="success" />
+        <SummaryCard label={isSit ? "SIT LAH" : isBook ? "Total LAH" : "Pending AH Quantity"} value={isSit ? formatLah3(metrics.pendingAhQuantity) : isBook ? formatBookLahWhole(metrics.pendingAhQuantity) : formatPendingAhQuantityInLakhs(metrics.pendingAhQuantity)} icon={FileText} tone="warning" />
+        {isBook ? <SummaryCard label="Highest Value" value={(isSit ? formatCr3 : formatCrWhole)(metrics.highestValue?.value ?? 0)} subValue={`Customer: ${metrics.highestValue?.customer ?? "—"}`} icon={TriangleAlert} tone="violet" smallSub /> : null}
       </div>
 
 
