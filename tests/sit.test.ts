@@ -49,7 +49,7 @@ it("SIT billing types are all pre-selected when no ZDOR/ZEOR/ZSOR rows exist", (
 
 import { summarizeLaunchOrders } from "../src/lib/open-orders-launch-summary";
 it("SIT launch tile labels ZDOR rows by VTEXT_DC", () => {
-  const s = summarizeLaunchOrders([{ p_value1: 1e7, sales_type: "Domestic Sales", order_type: "ZDOR" }] as never, { byCode: true, all: true } as never);
+  const s = summarizeLaunchOrders([{ p_value1: 1e7, sales_type: "Domestic Sales", order_type: "ZDOR" }] as never, { all: true });
   expect(JSON.stringify(s)).toContain("Domestic Sales");
   expect(JSON.stringify(s)).not.toContain("Invoice");
 });
