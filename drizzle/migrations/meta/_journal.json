@@ -134,6 +134,13 @@
       "when": 1792663141135,
       "tag": "0018_rename_dispatches_sales_register",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792681875751,
+      "tag": "0019_sales_register_table",
+      "breakpoints": true
     }
   ]
 }

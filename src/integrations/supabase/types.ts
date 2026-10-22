@@ -1243,6 +1243,609 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_register: {
+        Row: {
+          abrvw: string | null
+          abrvw_desp: string | null
+          age: string | null
+          ah: number
+          apptyp: string | null
+          arktx: string | null
+          auart: string | null
+          aubel: string | null
+          audat: string | null
+          aupos: string | null
+          basic_ah: number
+          basic_ahinr: number
+          battery_serial_no: string | null
+          belnr1: string | null
+          belnr2: string | null
+          belnr3: string | null
+          bezei_c: string | null
+          bezei_s: string | null
+          bezei_sg: string | null
+          bezei_so: string | null
+          brsch: string | null
+          brtxt: string | null
+          bstdk: string | null
+          bstnk: string | null
+          budat: string | null
+          bukrs: string | null
+          cellcolor: string | null
+          created_at: string
+          cst: number
+          cst_ex: number
+          discnt: number
+          discnt_ex: number
+          div_name: string | null
+          division: string | null
+          dmbtr: number
+          ecess: number
+          ecess_ex: number
+          erdat: string | null
+          ex_com_text: string | null
+          exdat: string | null
+          exgrp: string | null
+          exnum: string | null
+          fawref: string | null
+          fkart: string | null
+          fkdat: string | null
+          fkdat_bill: string | null
+          fkdat_c: string | null
+          fkimg: number
+          fkimg_tot: number
+          frght1: number
+          frght1_ex: number
+          frght2: number
+          frght2_ex: number
+          gjahr1: string | null
+          gjahr2: string | null
+          gst_tds: string | null
+          gstin_c: string | null
+          gstin_py: string | null
+          gstin_re: string | null
+          gstin_sh: string | null
+          hkont: string | null
+          hsn_code: string | null
+          id: string
+          inco1: string | null
+          inco2: string | null
+          inv: string | null
+          j_1ichid: string | null
+          j_1icstno_c: string | null
+          j_1icstno_s: string | null
+          jlsr: number
+          jlsr_ex: number
+          jv3: string | null
+          jv4: string | null
+          kbetr: number
+          kdgrp: string | null
+          kdgrp_desp: string | null
+          kunag: string | null
+          kunnr: string | null
+          kunnr_bp: string | null
+          kunnr_re: string | null
+          kunnr_s: string | null
+          kunnr_sh: string | null
+          kunnr_sp: string | null
+          kurrf: number
+          kwert_cgst: number
+          kwert_d: number
+          kwert_dex: number
+          kwert_igst: number
+          kwert_sgst: number
+          kwert_znrc: number
+          kwert_znrc_inr: number
+          kwmeng: number
+          land1: string | null
+          landx50_c: string | null
+          landx50_s: string | null
+          lfdat_del: string | null
+          lgobe: string | null
+          lgort: string | null
+          lifnr: string | null
+          lr_no: string | null
+          main_group: string | null
+          main_grp: string | null
+          material_cost: number
+          matkl: string | null
+          matnr: string | null
+          mblnr: string | null
+          mctxt: string | null
+          mctxt_i: string | null
+          meins: string | null
+          mjahr: string | null
+          model: string | null
+          mtart: string | null
+          mwsbk: number
+          mwsbk_ex: number
+          name_c: string | null
+          name_p: string | null
+          name_re: string | null
+          name_s: string | null
+          name_se: string | null
+          name_tf: string | null
+          name1_p: string | null
+          netwr: number
+          netwr_b: number
+          netwr_bex: number
+          netwr_ex: number
+          netwr_t: number
+          netwr_t_ex: number
+          netwr_tot: number
+          noti_text: string | null
+          overhead_cost: number
+          pfchrg: number
+          pfchrg_ex: number
+          poddate: string | null
+          posnr: string
+          prctr: string | null
+          prctr_i: string | null
+          preprn: string | null
+          price_cell: number
+          price_cellinr: number
+          racct: string | null
+          raw: Json
+          ref: string | null
+          regio: string | null
+          remarks_f2: string | null
+          rfbsk: string | null
+          sbcess: number
+          sbcess_ex: number
+          sector: string | null
+          segment: string | null
+          servi: number
+          servi_ex: number
+          shess: number
+          shess_ex: number
+          source_endpoint: string
+          spart: string | null
+          sub_group: string | null
+          sub_grp: string | null
+          synced_at: string
+          tax_rate: number
+          tcs: number
+          tcs_ex: number
+          tot_ah: number
+          tot_bp: number
+          total_cost: number
+          twar: number
+          txt50: string | null
+          txt500: string | null
+          type: string | null
+          umren: number
+          umvkz: number
+          updated_at: string
+          vat: number
+          vat_ex: number
+          vbeln: string
+          vbeln_c: string | null
+          vbeln_del: string | null
+          vgbel: string | null
+          vrkme: string | null
+          vtext: string | null
+          vtext_dc: string | null
+          vtext_desp: string | null
+          vtext_pay: string | null
+          vtext_sd: string | null
+          vtweg_auft: string | null
+          vtxt_c: string | null
+          vtxt_v: string | null
+          waerk: string | null
+          werks: string | null
+          wrdets: string | null
+          wrmnts: string | null
+          xblnr: string | null
+          zah: number
+          zgst: number
+          zgst_ex: number
+          zkkc: number
+          zkkc_ex: number
+          zterm: string | null
+          zwrexpdt: string | null
+        }
+        Insert: {
+          abrvw?: string | null
+          abrvw_desp?: string | null
+          age?: string | null
+          ah?: number
+          apptyp?: string | null
+          arktx?: string | null
+          auart?: string | null
+          aubel?: string | null
+          audat?: string | null
+          aupos?: string | null
+          basic_ah?: number
+          basic_ahinr?: number
+          battery_serial_no?: string | null
+          belnr1?: string | null
+          belnr2?: string | null
+          belnr3?: string | null
+          bezei_c?: string | null
+          bezei_s?: string | null
+          bezei_sg?: string | null
+          bezei_so?: string | null
+          brsch?: string | null
+          brtxt?: string | null
+          bstdk?: string | null
+          bstnk?: string | null
+          budat?: string | null
+          bukrs?: string | null
+          cellcolor?: string | null
+          created_at?: string
+          cst?: number
+          cst_ex?: number
+          discnt?: number
+          discnt_ex?: number
+          div_name?: string | null
+          division?: string | null
+          dmbtr?: number
+          ecess?: number
+          ecess_ex?: number
+          erdat?: string | null
+          ex_com_text?: string | null
+          exdat?: string | null
+          exgrp?: string | null
+          exnum?: string | null
+          fawref?: string | null
+          fkart?: string | null
+          fkdat?: string | null
+          fkdat_bill?: string | null
+          fkdat_c?: string | null
+          fkimg?: number
+          fkimg_tot?: number
+          frght1?: number
+          frght1_ex?: number
+          frght2?: number
+          frght2_ex?: number
+          gjahr1?: string | null
+          gjahr2?: string | null
+          gst_tds?: string | null
+          gstin_c?: string | null
+          gstin_py?: string | null
+          gstin_re?: string | null
+          gstin_sh?: string | null
+          hkont?: string | null
+          hsn_code?: string | null
+          id?: string
+          inco1?: string | null
+          inco2?: string | null
+          inv?: string | null
+          j_1ichid?: string | null
+          j_1icstno_c?: string | null
+          j_1icstno_s?: string | null
+          jlsr?: number
+          jlsr_ex?: number
+          jv3?: string | null
+          jv4?: string | null
+          kbetr?: number
+          kdgrp?: string | null
+          kdgrp_desp?: string | null
+          kunag?: string | null
+          kunnr?: string | null
+          kunnr_bp?: string | null
+          kunnr_re?: string | null
+          kunnr_s?: string | null
+          kunnr_sh?: string | null
+          kunnr_sp?: string | null
+          kurrf?: number
+          kwert_cgst?: number
+          kwert_d?: number
+          kwert_dex?: number
+          kwert_igst?: number
+          kwert_sgst?: number
+          kwert_znrc?: number
+          kwert_znrc_inr?: number
+          kwmeng?: number
+          land1?: string | null
+          landx50_c?: string | null
+          landx50_s?: string | null
+          lfdat_del?: string | null
+          lgobe?: string | null
+          lgort?: string | null
+          lifnr?: string | null
+          lr_no?: string | null
+          main_group?: string | null
+          main_grp?: string | null
+          material_cost?: number
+          matkl?: string | null
+          matnr?: string | null
+          mblnr?: string | null
+          mctxt?: string | null
+          mctxt_i?: string | null
+          meins?: string | null
+          mjahr?: string | null
+          model?: string | null
+          mtart?: string | null
+          mwsbk?: number
+          mwsbk_ex?: number
+          name_c?: string | null
+          name_p?: string | null
+          name_re?: string | null
+          name_s?: string | null
+          name_se?: string | null
+          name_tf?: string | null
+          name1_p?: string | null
+          netwr?: number
+          netwr_b?: number
+          netwr_bex?: number
+          netwr_ex?: number
+          netwr_t?: number
+          netwr_t_ex?: number
+          netwr_tot?: number
+          noti_text?: string | null
+          overhead_cost?: number
+          pfchrg?: number
+          pfchrg_ex?: number
+          poddate?: string | null
+          posnr: string
+          prctr?: string | null
+          prctr_i?: string | null
+          preprn?: string | null
+          price_cell?: number
+          price_cellinr?: number
+          racct?: string | null
+          raw?: Json
+          ref?: string | null
+          regio?: string | null
+          remarks_f2?: string | null
+          rfbsk?: string | null
+          sbcess?: number
+          sbcess_ex?: number
+          sector?: string | null
+          segment?: string | null
+          servi?: number
+          servi_ex?: number
+          shess?: number
+          shess_ex?: number
+          source_endpoint?: string
+          spart?: string | null
+          sub_group?: string | null
+          sub_grp?: string | null
+          synced_at?: string
+          tax_rate?: number
+          tcs?: number
+          tcs_ex?: number
+          tot_ah?: number
+          tot_bp?: number
+          total_cost?: number
+          twar?: number
+          txt50?: string | null
+          txt500?: string | null
+          type?: string | null
+          umren?: number
+          umvkz?: number
+          updated_at?: string
+          vat?: number
+          vat_ex?: number
+          vbeln: string
+          vbeln_c?: string | null
+          vbeln_del?: string | null
+          vgbel?: string | null
+          vrkme?: string | null
+          vtext?: string | null
+          vtext_dc?: string | null
+          vtext_desp?: string | null
+          vtext_pay?: string | null
+          vtext_sd?: string | null
+          vtweg_auft?: string | null
+          vtxt_c?: string | null
+          vtxt_v?: string | null
+          waerk?: string | null
+          werks?: string | null
+          wrdets?: string | null
+          wrmnts?: string | null
+          xblnr?: string | null
+          zah?: number
+          zgst?: number
+          zgst_ex?: number
+          zkkc?: number
+          zkkc_ex?: number
+          zterm?: string | null
+          zwrexpdt?: string | null
+        }
+        Update: {
+          abrvw?: string | null
+          abrvw_desp?: string | null
+          age?: string | null
+          ah?: number
+          apptyp?: string | null
+          arktx?: string | null
+          auart?: string | null
+          aubel?: string | null
+          audat?: string | null
+          aupos?: string | null
+          basic_ah?: number
+          basic_ahinr?: number
+          battery_serial_no?: string | null
+          belnr1?: string | null
+          belnr2?: string | null
+          belnr3?: string | null
+          bezei_c?: string | null
+          bezei_s?: string | null
+          bezei_sg?: string | null
+          bezei_so?: string | null
+          brsch?: string | null
+          brtxt?: string | null
+          bstdk?: string | null
+          bstnk?: string | null
+          budat?: string | null
+          bukrs?: string | null
+          cellcolor?: string | null
+          created_at?: string
+          cst?: number
+          cst_ex?: number
+          discnt?: number
+          discnt_ex?: number
+          div_name?: string | null
+          division?: string | null
+          dmbtr?: number
+          ecess?: number
+          ecess_ex?: number
+          erdat?: string | null
+          ex_com_text?: string | null
+          exdat?: string | null
+          exgrp?: string | null
+          exnum?: string | null
+          fawref?: string | null
+          fkart?: string | null
+          fkdat?: string | null
+          fkdat_bill?: string | null
+          fkdat_c?: string | null
+          fkimg?: number
+          fkimg_tot?: number
+          frght1?: number
+          frght1_ex?: number
+          frght2?: number
+          frght2_ex?: number
+          gjahr1?: string | null
+          gjahr2?: string | null
+          gst_tds?: string | null
+          gstin_c?: string | null
+          gstin_py?: string | null
+          gstin_re?: string | null
+          gstin_sh?: string | null
+          hkont?: string | null
+          hsn_code?: string | null
+          id?: string
+          inco1?: string | null
+          inco2?: string | null
+          inv?: string | null
+          j_1ichid?: string | null
+          j_1icstno_c?: string | null
+          j_1icstno_s?: string | null
+          jlsr?: number
+          jlsr_ex?: number
+          jv3?: string | null
+          jv4?: string | null
+          kbetr?: number
+          kdgrp?: string | null
+          kdgrp_desp?: string | null
+          kunag?: string | null
+          kunnr?: string | null
+          kunnr_bp?: string | null
+          kunnr_re?: string | null
+          kunnr_s?: string | null
+          kunnr_sh?: string | null
+          kunnr_sp?: string | null
+          kurrf?: number
+          kwert_cgst?: number
+          kwert_d?: number
+          kwert_dex?: number
+          kwert_igst?: number
+          kwert_sgst?: number
+          kwert_znrc?: number
+          kwert_znrc_inr?: number
+          kwmeng?: number
+          land1?: string | null
+          landx50_c?: string | null
+          landx50_s?: string | null
+          lfdat_del?: string | null
+          lgobe?: string | null
+          lgort?: string | null
+          lifnr?: string | null
+          lr_no?: string | null
+          main_group?: string | null
+          main_grp?: string | null
+          material_cost?: number
+          matkl?: string | null
+          matnr?: string | null
+          mblnr?: string | null
+          mctxt?: string | null
+          mctxt_i?: string | null
+          meins?: string | null
+          mjahr?: string | null
+          model?: string | null
+          mtart?: string | null
+          mwsbk?: number
+          mwsbk_ex?: number
+          name_c?: string | null
+          name_p?: string | null
+          name_re?: string | null
+          name_s?: string | null
+          name_se?: string | null
+          name_tf?: string | null
+          name1_p?: string | null
+          netwr?: number
+          netwr_b?: number
+          netwr_bex?: number
+          netwr_ex?: number
+          netwr_t?: number
+          netwr_t_ex?: number
+          netwr_tot?: number
+          noti_text?: string | null
+          overhead_cost?: number
+          pfchrg?: number
+          pfchrg_ex?: number
+          poddate?: string | null
+          posnr?: string
+          prctr?: string | null
+          prctr_i?: string | null
+          preprn?: string | null
+          price_cell?: number
+          price_cellinr?: number
+          racct?: string | null
+          raw?: Json
+          ref?: string | null
+          regio?: string | null
+          remarks_f2?: string | null
+          rfbsk?: string | null
+          sbcess?: number
+          sbcess_ex?: number
+          sector?: string | null
+          segment?: string | null
+          servi?: number
+          servi_ex?: number
+          shess?: number
+          shess_ex?: number
+          source_endpoint?: string
+          spart?: string | null
+          sub_group?: string | null
+          sub_grp?: string | null
+          synced_at?: string
+          tax_rate?: number
+          tcs?: number
+          tcs_ex?: number
+          tot_ah?: number
+          tot_bp?: number
+          total_cost?: number
+          twar?: number
+          txt50?: string | null
+          txt500?: string | null
+          type?: string | null
+          umren?: number
+          umvkz?: number
+          updated_at?: string
+          vat?: number
+          vat_ex?: number
+          vbeln?: string
+          vbeln_c?: string | null
+          vbeln_del?: string | null
+          vgbel?: string | null
+          vrkme?: string | null
+          vtext?: string | null
+          vtext_dc?: string | null
+          vtext_desp?: string | null
+          vtext_pay?: string | null
+          vtext_sd?: string | null
+          vtweg_auft?: string | null
+          vtxt_c?: string | null
+          vtxt_v?: string | null
+          waerk?: string | null
+          werks?: string | null
+          wrdets?: string | null
+          wrmnts?: string | null
+          xblnr?: string | null
+          zah?: number
+          zgst?: number
+          zgst_ex?: number
+          zkkc?: number
+          zkkc_ex?: number
+          zterm?: string | null
+          zwrexpdt?: string | null
+        }
+        Relationships: []
+      }
       sales_revenue_targets: {
         Row: {
           created_at: string
