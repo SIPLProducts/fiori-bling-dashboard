@@ -247,7 +247,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setFiscalYears(isSit ? orderBookFiscalYears(data).slice(0, 1) : [currentFiscalYear()]);
     setQuarterFilter([]);
   };
-  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup) }), [filteredData]);
+  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup), mainByDivision: summarizeGroupsByDivision(filteredData, (row) => row.sapMainGroup) }), [filteredData]);
   const monthSeries = useMemo(() => summarizeByCreatedMonth(filteredData), [filteredData]);
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
