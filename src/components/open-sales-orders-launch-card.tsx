@@ -147,10 +147,10 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
           </div>
         ))}
       </div>
-      <div className="mt-3 grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
+      <div className="mt-3 launch-footer grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
         <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
         <Link to={href} aria-label={`Open ${title} details`} className="group inline-flex min-h-8 items-center gap-1 rounded-full bg-launchpad-tile-footer px-4 font-semibold text-primary shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
-          Open Details
+          Open<span className="launch-details"> Details</span>
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>

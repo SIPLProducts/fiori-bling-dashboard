@@ -74,14 +74,15 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
       </div>
       {trend?.length ? <div className="text-primary"><Sparkline values={trend} /></div> : <div className="h-8" />}
-      <p className="mt-auto truncate text-[10px] text-muted-foreground">{note}</p>
+      <div className="launch-footer mt-auto">
+      <p className="truncate text-[10px] text-muted-foreground">{note}</p>
       {href ? (
         <Link
           to={href}
           aria-label={`${status ?? "Open Details"}: ${label}`}
           className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
         >
-          <span className="truncate text-muted-foreground">{status ?? "Open Details"}</span>
+          <span className="truncate text-muted-foreground">{status ? status : <>Open<span className="launch-details"> Details</span></>}</span>
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : (
@@ -96,6 +97,7 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
           <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </Button>
       )}
+      </div>
     </div>
   );
 }
