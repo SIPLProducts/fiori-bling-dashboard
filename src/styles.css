@@ -691,7 +691,7 @@
 
 /* Launchpad Sales & Distribution: five compact cards in one row. */
 @media (min-width: 768px) {
-  .sd-compact > * > section, .sd-compact > * > div, .sd-compact > section, .sd-compact > div { min-height: 150px; padding: 0.625rem; border-radius: 0.875rem; }
+  .sd-compact .rounded-2xl { min-height: 150px; padding: 0.625rem; border-radius: 0.875rem; }
   .sd-compact [class*="text-[26px]"] { font-size: 18px; }
   .sd-compact [class*="text-[11px]"] { font-size: 10px; }
   .sd-compact [class*="text-[10px]"], .sd-compact [class*="text-[9px]"] { font-size: 9px; }
