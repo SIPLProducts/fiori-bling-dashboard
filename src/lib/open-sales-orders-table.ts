@@ -67,7 +67,7 @@ export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTa
     if (!query) return true;
     const numbers = [row.daysOpen, row.openQuantity, row.deliveredQuantity, row.ah, row.totalAh];
     const values = [
-      row.order, row.item, row.customer, row.documentType, row.zone.replace(" Zone", ""),
+      row.order, row.item, row.customer, row.documentType, row.salesType ?? "", row.zone.replace(" Zone", ""),
       row.channel ?? "", row.salesType ?? "", channelLabel(row),
       row.division, row.plant ?? "", row.plantName ?? "", row.material, row.description, row.orderDate, row.deliveryDate,
       displayOpenOrderDate(row.orderDate), displayOpenOrderDate(row.deliveryDate),

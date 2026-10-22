@@ -21,3 +21,9 @@ export function formatDateTimeISTLabel(value: string | number | Date | null | un
   const formatted = formatDateTimeIST(value);
   return formatted === "—" ? formatted : `${formatted} IST`;
 }
+
+/** Download file name "<screen>_DD-MM-YYYY.<ext>" using today's date in India time. */
+export function datedFileName(screen: string, ext: string, now: Date = new Date()): string {
+  const [d, m, y] = new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).format(now).split("/");
+  return `${screen}_${d}-${m}-${y}.${ext.replace(/^\./, "")}`;
+}

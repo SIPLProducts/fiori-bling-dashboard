@@ -1,3 +1,4 @@
+import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -2314,7 +2315,7 @@ export function SdLiveDashboard() {
         };
         requestAnimationFrame(waitForModelCharts);
       });
-      await exportDashboardPdf(dashboardRef.current, "sales-dashboard.pdf", "[data-pdf-exclude]", {
+      await exportDashboardPdf(dashboardRef.current, datedFileName("Net Sales", "pdf"), "[data-pdf-exclude]", {
         headerSelector: "[data-pdf-header]",
         blockSelector: "[data-pdf-page-block]",
         sectionBreakSelector: "[data-pdf-section-break]",
