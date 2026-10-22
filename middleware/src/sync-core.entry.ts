@@ -8,6 +8,7 @@ export { mapOpenSalesOrdersPayload, mapOpenSalesOrderRow } from "../../src/lib/o
 export { mapZcashFlowPayload, isZcashFlowEndpoint } from "../../src/lib/zcash-flow-map";
 export { mapOrderBookPayload, isOrderBookEndpoint } from "../../src/lib/order-book-map";
 export { mapSitPayload, isSitEndpoint } from "../../src/lib/sit-map";
+export { mapSalesRegisterPayload, isSalesRegisterEndpoint } from "../../src/lib/sales-register-map";
 export { mapUserDropdownPayload, isUserDropdownEndpoint } from "../../src/lib/user-dropdown-map";
 export {
   extractEmbeddedBody,
