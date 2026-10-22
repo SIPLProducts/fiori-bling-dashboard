@@ -12,7 +12,7 @@
 - Keep ZTBN source-aligned, paginated and horizontally scrollable; disable scheduled sync pending its dedicated SAP mapper.
 - Read TBN exclusively from public.ztbn; refresh through one cleaned-up Realtime subscription with periodic fallback.
 - Capture PDFs by visual rows with repeated headers/numbered footers; preserve screen colors and independent PDF geometry. Exclude sync metadata and unmount the Open Orders screen header during capture.
-- Default Sales and Net Sales launchpad to the current April–March FY; explicit shared/URL dates override reports. Name PDFs by the FY ending year.
+- Default Sales and Net Sales launchpad to the current April–March FY; explicit shared/URL dates override reports. Name every PDF/Excel/CSV/PNG download "<Screen name>_DD-MM-YYYY" (IST) via datedFileName.
 - Activate validated ZFISALES snapshots under an advisory lock by Posting Date range; never replace active rows on empty or failed staging.
 - Keep Sales/Open Orders datasets stable across navigation; refresh only explicitly.
 - Store multiple sync times in backward-compatible IST:HH:mm,... expressions.

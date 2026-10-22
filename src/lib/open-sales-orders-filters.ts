@@ -81,4 +81,8 @@ export function filterOpenOrders(rows: OpenSalesOrder[], filters: OpenOrderFilte
     if (filters.channels != null && !filters.channels.includes(row.channel)) return false;
     return true;
   });
-}
+}/** "ZDOR — Domestic Sales"; code alone when no separate description exists. */
+export const documentTypeLabel = (row: OpenSalesOrder) => {
+  const d = documentTypeDescription(row);
+  return d && d !== row.documentType ? `${row.documentType} — ${d}` : row.documentType;
+};

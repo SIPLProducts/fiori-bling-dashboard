@@ -2,7 +2,7 @@ import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
 import { channelDescription } from "@/lib/open-sales-orders-filters";
 
-export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx", dateHeader = "Sales Order Creation Date") {
+export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileName = "open-sales-orders.xlsx", dateHeader = "Sales Order Creation Date", valueHeader = "Open Value (₹ Cr)", documentTypeLabel: (row: OpenSalesOrder) => string = (row) => row.documentType) {
   const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "HBL Engineering Limited";
@@ -58,7 +58,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     { header: "Total AH", key: "totalAh", width: 18 },
     { header: "Unit", key: "unit", width: 10 },
     { header: "Currency", key: "currency", width: 11 },
-    { header: fileName.startsWith("sales-in-transit") ? "SIT Value (₹ Cr)" : fileName.startsWith("order-book") ? "Order Value (₹ Cr)" : "Open Value (₹ Cr)", key: "value", width: 19 },
+    { header: valueHeader, key: "value", width: 19 },
     { header: "Days Open", key: "daysOpen", width: 13 },
     { header: "LD_STATUS", key: "ldStatus", width: 14 },
     { header: "Delivery Status", key: "deliveryStatus", width: 18 },
@@ -70,7 +70,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     item: row.item,
     precedingDocument: row.precedingDocument,
     purchaseOrder: row.purchaseOrder,
-    documentType: row.documentType,
+    documentType: documentTypeLabel(row),
     orderDate: displayOpenOrderDate(row.orderDate),
     purchaseOrderDate: displayOpenOrderDate(row.purchaseOrderDate),
     deliveryDate: displayOpenOrderDate(row.deliveryDate),

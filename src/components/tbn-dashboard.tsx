@@ -1,3 +1,4 @@
+import { datedFileName } from "@/lib/format";
 import { useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Building2, CircleDollarSign, Download, Filter, LoaderCircle, RotateCcw, Scale, Search, TableProperties } from "lucide-react";
@@ -113,7 +114,7 @@ export function TbnDashboard({ rows, columns }: { rows: ZtbnRow[]; columns: Ztbn
   const downloadPdf = async () => {
     setIsExporting(true);
     try {
-      await exportDashboardPdf(reportRef.current, `TBN-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+      await exportDashboardPdf(reportRef.current, datedFileName("TBN", "pdf"));
       toast.success("TBN report downloaded");
     } catch {
       toast.error("Unable to create the TBN report");

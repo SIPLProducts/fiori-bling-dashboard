@@ -1,3 +1,4 @@
+import { datedFileName } from "@/lib/format";
 import { useState } from "react";
 import { Download, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ export function ChartExportActions({
             toast.error("No data to export");
             return;
           }
-          downloadCsv(rows, `${filename}.csv`, columns);
+          downloadCsv(rows, datedFileName(filename, "csv"), columns);
           toast.success("CSV downloaded");
         }}
       >
@@ -45,7 +46,7 @@ export function ChartExportActions({
         onClick={async () => {
           setBusy(true);
           try {
-            await exportChartPng(containerRef.current, `${filename}.png`);
+            await exportChartPng(containerRef.current, datedFileName(filename, "png"));
             toast.success("Chart image downloaded");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Unable to export the chart");

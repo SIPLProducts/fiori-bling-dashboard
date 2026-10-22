@@ -1,3 +1,4 @@
+import { datedFileName } from "@/lib/format";
 export type CashTransaction = {
   id: string; date: string; plant: string; profitCentre: string; glCode: string;
   pcGroup: string; classification: string; nature: string; year: string; quarter: string;
@@ -108,7 +109,7 @@ export async function downloadCashLedger(rows: CashTransaction[]) {
   [10, 11, 12].forEach(index => { sheet.getColumn(index).numFmt = '#,##0.00;[Red]-#,##0.00'; });
   const buffer = await workbook.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-  const link = document.createElement("a"); link.href = url; link.download = "Cash-Flow-Report.xlsx"; link.click();
+  const link = document.createElement("a"); link.href = url; link.download = datedFileName("Cash Flow", "xlsx"); link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }/** Sums every filtered/searched ledger row, independent of pagination. */
 export function cashLedgerTotals(rows: CashTransaction[]) {
