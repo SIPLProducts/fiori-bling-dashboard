@@ -43,3 +43,4 @@
 - Order Book (ZORDERBOOK) rows upsert into public.order_book on VBELN + POSNR without snapshots, with every SAP response field typed plus raw; ERDAT_F/ERDAT_T follow the endpoint's date-window preset, because SAP returns order lines by created date.
 - Sales In Transit (Z_SIT) rows upsert into public.sales_in_transit on VBELN + POSNR without snapshots, every SAP field typed plus raw; FKDAT_F/FKDAT_T follow the endpoint's date window and an empty FKDAT_T is omitted, because SAP returns billing lines by billing date.
 - SAP API Settings builds request fields from the pasted payload (`//` lines = optional keys stripped before sending) via pure helpers in payload-fields.ts, so new APIs need no bespoke form.
+- Sales Register (ZVF05) rows upsert into public.sales_register on VBELN + POSNR without snapshots, every SAP field typed plus raw; SAP requires MODE (scheduled DAILY, manual ONETIME), because SAP rejects requests without it.
