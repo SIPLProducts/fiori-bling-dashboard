@@ -63,7 +63,7 @@ WHERE group_key = 'financial-accounting'
   AND screen_key = 'fi.tbn';
 
 INSERT INTO public.tiles (group_key, title, subtitle, icon, kind, kpi_key, target_path, allowed_roles, sort_order, screen_key)
-SELECT 'sales-distribution', 'Dispatches', 'Dispatch reporting', 'shipping', 'launch', 'sd_dispatches', '/reports/sd/dispatches', ARRAY['admin','buyer','approver','viewer']::public.app_role[], 2, 'sd.dispatches'
+SELECT 'sales-distribution', 'Sales Register', 'Sales register reporting', 'shipping', 'launch', 'sd_dispatches', '/reports/sd/dispatches', ARRAY['admin','buyer','approver','viewer']::public.app_role[], 2, 'sd.dispatches'
 WHERE NOT EXISTS (SELECT 1 FROM public.tiles WHERE screen_key = 'sd.dispatches');
 
 INSERT INTO public.tiles (group_key, title, subtitle, icon, kind, kpi_key, target_path, allowed_roles, sort_order, screen_key)
@@ -100,3 +100,4 @@ DELETE FROM public.role_screens
 WHERE screen_key IN ('fi.open-receivables', 'fi.open-payables', 'fi.days-sales-outstanding', 'fi.cash-flow-trend');
 
 NOTIFY pgrst, 'reload schema';
+UPDATE public.tiles SET title = 'Sales Register', subtitle = 'Sales register reporting' WHERE screen_key = 'sd.dispatches';

@@ -127,6 +127,13 @@
       "when": 1792600349027,
       "tag": "0017_sales_in_transit_table",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792663141135,
+      "tag": "0018_rename_dispatches_sales_register",
+      "breakpoints": true
     }
   ]
 }
