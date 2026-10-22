@@ -19,7 +19,55 @@ export type SalesRegisterRow = {
   igst: number;
   tcs: number;
   status: string;
+  creationDate: string;
+  channelCode: string;
+  division: string;
+  billingType: string;
+  salesDocument: string;
+  salesDocumentItem: string;
+  salesOffice: string;
+  materialCode: string;
 };
+
+/** Smart Filter keys → row values. null/absent selection = unrestricted, [] = none. */
+export const SALES_REGISTER_CODE_KEYS = {
+  distributionChannel: (r: SalesRegisterRow) => r.channelCode,
+  division: (r: SalesRegisterRow) => r.division,
+  plant: (r: SalesRegisterRow) => r.plant,
+  billingType: (r: SalesRegisterRow) => r.billingType,
+  billingDocument: (r: SalesRegisterRow) => r.billingDocument,
+  salesDocument: (r: SalesRegisterRow) => r.salesDocument,
+  salesDocumentItem: (r: SalesRegisterRow) => r.salesDocumentItem,
+  customer: (r: SalesRegisterRow) => r.customer,
+  salesOffice: (r: SalesRegisterRow) => r.salesOffice,
+  material: (r: SalesRegisterRow) => r.materialCode,
+  profitCenter: (r: SalesRegisterRow) => r.profitCenter,
+} as const;
+export type SalesRegisterCodeKey = keyof typeof SALES_REGISTER_CODE_KEYS;
+export type SalesRegisterDateRange = { mode: "single" | "range"; from: string; to: string };
+export type SalesRegisterFilterState = {
+  codes: Partial<Record<SalesRegisterCodeKey, string[] | null>>;
+  dates: Partial<Record<"billingDate" | "billingCreationDate", SalesRegisterDateRange>>;
+};
+export const emptySalesRegisterFilters: SalesRegisterFilterState = { codes: {}, dates: {} };
+
+function inRange(iso: string, d: SalesRegisterDateRange | undefined) {
+  if (!d || (!d.from && !d.to)) return true;
+  if (d.mode === "single") return !d.from || iso === d.from;
+  return (!d.from || iso >= d.from) && (!d.to || iso <= d.to);
+}
+
+export function filterSalesRegister(rows: SalesRegisterRow[], f: SalesRegisterFilterState): SalesRegisterRow[] {
+  const sets = (Object.entries(f.codes) as [SalesRegisterCodeKey, string[] | null | undefined][])
+    .filter(([, v]) => Array.isArray(v)).map(([k, v]) => [SALES_REGISTER_CODE_KEYS[k], new Set(v!)] as const);
+  return rows.filter((r) => sets.every(([get, set]) => set.has(get(r)))
+    && inRange(r.billingDate, f.dates.billingDate) && inRange(r.creationDate, f.dates.billingCreationDate));
+}
+
+export function salesRegisterOptions(rows: SalesRegisterRow[], key: SalesRegisterCodeKey): string[] {
+  const get = SALES_REGISTER_CODE_KEYS[key];
+  return [...new Set(rows.map(get).filter(Boolean))].sort();
+}
 
 export type Named = { name: string; value: number };
 
