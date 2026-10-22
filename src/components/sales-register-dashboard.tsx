@@ -94,7 +94,7 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
           <tbody>{filtered.length ? filtered.slice(page * 10, page * 10 + 10).map((r) => <tr key={r.billingDocument + r.invoiceNo + r.material} className="border-t border-border">
             {[r.billingDate, r.billingDocument, r.invoiceNo, r.customerName, r.plant, r.profitCenter, `${r.mainGroup} / ${r.subGroup}`, r.material, r.billedQty.toFixed(3), inr(r.netValue), inr(r.invoiceValue), inr(r.cgst), inr(r.sgst), inr(r.igst)].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1.5">{v}</td>)}
             <td className="px-2 py-1.5"><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{r.status}</span></td>
-          </tr>) : <tr><td colSpan={heads.length} className="py-8 text-center text-muted-foreground">No data yet — Sales Register SAP API not connected.</td></tr>}</tbody></table>
+          </tr>) : <tr><td colSpan={heads.length} className="py-8 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</td></tr>}</tbody></table>
       </div>
     </section>
   </div>;
