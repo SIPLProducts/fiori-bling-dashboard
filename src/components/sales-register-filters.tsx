@@ -28,9 +28,9 @@ const DATE_KEYS = new Set(["billingDate", "billingCreationDate"]);
 
 type DateRange = { mode: "single" | "range"; from: string; to: string };
 
-export function SalesRegisterFilters() {
+export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boolean }) {
   const access = useUserAccess();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   const [salesOrg, setSalesOrg] = useState("1000");
   const [codes, setCodes] = useState<Record<string, string[] | null>>({});
   const [dates, setDates] = useState<Record<string, DateRange>>({});

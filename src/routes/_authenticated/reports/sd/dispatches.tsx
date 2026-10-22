@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { SalesRegisterFilters } from "@/components/sales-register-filters";
+import { SalesRegisterDashboard } from "@/components/sales-register-dashboard";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
@@ -21,8 +22,8 @@ function SalesRegisterPage() {
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "sd.dispatches");
   return <ReportShell title="Sales Register" description="Sales & Distribution">
     {!isLoading && !allowed ? <AccessDenied area="Sales Register" /> : <div className="space-y-4">
-      <SalesRegisterFilters />
-      <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">Sales Register data not connected yet. Once the SAP API is configured, the report will appear here.</div>
+      <SalesRegisterFilters defaultOpen={false} />
+      <SalesRegisterDashboard />
     </div>}
   </ReportShell>;
 }
