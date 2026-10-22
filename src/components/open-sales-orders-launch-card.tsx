@@ -122,7 +122,7 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold text-primary uppercase">{title}</p>
-          <p className="mt-2 text-[26px] leading-none font-semibold tabular-nums" style={{ color: BAR_TONES[0] }}>{formatValue(data.openValue)}</p>
+          <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold tabular-nums" style={{ color: BAR_TONES[0] }}>{formatValue(data.openValue)}</p>
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><ShoppingCart className="size-[18px]" /></span>
       </div>

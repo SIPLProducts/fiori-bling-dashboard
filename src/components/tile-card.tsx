@@ -69,7 +69,7 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
-          <p className="mt-2 text-[26px] leading-none font-semibold text-foreground">{value}</p>
+          <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold text-foreground">{value}</p>
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
       </div>

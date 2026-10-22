@@ -84,7 +84,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             <p className="truncate text-[11px] font-semibold tracking-wide text-primary uppercase">
               Net Sales
             </p>
-            <p className="tabular mt-1 text-[26px] leading-none font-semibold" style={{ color }}>
+            <p className="tabular mt-1 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold" style={{ color }}>
               ₹{compact(data.total)}
             </p>
           </div>
