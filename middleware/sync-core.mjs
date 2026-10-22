@@ -893,7 +893,7 @@ function withOrderBookDates(raw, range, now = /* @__PURE__ */ new Date()) {
     return raw;
   }
 }
-function withSitDates(raw, range, now = /* @__PURE__ */ new Date()) {
+function withSitDates(raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (!raw || !raw.trim()) return raw ?? void 0;
   try {
     const parsed = JSON.parse(raw);
@@ -904,6 +904,8 @@ function withSitDates(raw, range, now = /* @__PURE__ */ new Date()) {
       obj["FKDAT_F"] = window.from;
       obj["FKDAT_T"] = window.to;
     }
+    const from = String(obj["FKDAT_F"] ?? "").trim();
+    if (scheduled || !/^\d{8}$/.test(from)) obj["FKDAT_F"] = sapDateOf(now);
     if (!String(obj["FKDAT_T"] ?? "").trim()) delete obj["FKDAT_T"];
     return JSON.stringify(obj);
   } catch {
@@ -912,7 +914,7 @@ function withSitDates(raw, range, now = /* @__PURE__ */ new Date()) {
 }
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
-  if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now);
+  if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
