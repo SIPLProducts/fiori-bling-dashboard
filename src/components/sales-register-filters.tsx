@@ -4,8 +4,13 @@ import { FilterField, FilterMultiSelect } from "@/components/filter-multi-select
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUserAccess } from "@/lib/use-user-access";
+import { restrictToAssigned } from "@/lib/user-access";
+import {
+  emptySalesRegisterFilters, salesRegisterOptions,
+  type SalesRegisterCodeKey, type SalesRegisterDateRange, type SalesRegisterFilterState, type SalesRegisterRow,
+} from "@/lib/sales-register";
 
-const CODE_FIELDS = [
+const FIELDS: ReadonlyArray<readonly [string, string]> = [
   ["distributionChannel", "Distribution Channel"],
   ["division", "Division"],
   ["plant", "Plant"],
@@ -19,25 +24,22 @@ const CODE_FIELDS = [
   ["salesOffice", "Sales Office"],
   ["material", "Material code"],
   ["profitCenter", "Profit Center"],
-] as const;
+];
 const DATE_KEYS = new Set(["billingDate", "billingCreationDate"]);
 
-type DateRange = { mode: "single" | "range"; from: string; to: string };
-
-export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boolean }) {
+export function SalesRegisterFilters({ defaultOpen = true, rows, value, onChange }: {
+  defaultOpen?: boolean; rows: SalesRegisterRow[]; value: SalesRegisterFilterState; onChange: (v: SalesRegisterFilterState) => void;
+}) {
   const access = useUserAccess();
   const [open, setOpen] = useState(defaultOpen);
-  const [codes, setCodes] = useState<Record<string, string[] | null>>({});
-  const [dates, setDates] = useState<Record<string, DateRange>>({});
-  const optionsFor = (key: string): string[] => {
-    if (key === "plant") return access && !access.unrestricted ? access.plants : [];
-    if (key === "profitCenter") return access && !access.unrestricted ? access.profitCenters : [];
-    return [];
+  const optionsFor = (key: SalesRegisterCodeKey): string[] => {
+    const all = salesRegisterOptions(rows, key);
+    if (key === "plant") return restrictToAssigned(all, access?.plants, access?.unrestricted, (o) => o);
+    if (key === "profitCenter") return restrictToAssigned(all, access?.profitCenters, access?.unrestricted, (o) => o);
+    return all;
   };
-  const active = 0
-    + Object.values(codes).filter((v) => v !== null && v !== undefined).length
-    + Object.values(dates).filter((d) => d.from || d.to).length;
-  const reset = () => { setCodes({}); setDates({}); };
+  const active = Object.values(value.codes).filter((v) => v !== null && v !== undefined).length
+    + Object.values(value.dates).filter((d) => d && (d.from || d.to)).length;
 
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
@@ -46,16 +48,17 @@ export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boo
         {active ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">{active} active</span> : null}
         <ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
-      <Button type="button" variant="outline" size="sm" onClick={reset}><RotateCcw className="size-3.5" />Reset</Button>
+      <Button type="button" variant="outline" size="sm" onClick={() => onChange(emptySalesRegisterFilters)}><RotateCcw className="size-3.5" />Reset</Button>
     </div>
     {open ? <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-2 md:grid-cols-4">
-      {CODE_FIELDS.map(([key, label]) => {
+      {FIELDS.map(([key, label]) => {
         if (DATE_KEYS.has(key)) {
-          const d = dates[key] ?? { mode: "range", from: "", to: "" };
-          const set = (next: Partial<DateRange>) => setDates({ ...dates, [key]: { ...d, ...next } });
+          const dk = key as keyof SalesRegisterFilterState["dates"];
+          const d = value.dates[dk] ?? { mode: "range", from: "", to: "" };
+          const set = (next: Partial<SalesRegisterDateRange>) => onChange({ ...value, dates: { ...value.dates, [dk]: { ...d, ...next } } });
           return <FilterField key={key} label={label}>
             <div className="flex gap-1">
-              <select aria-label={`${label} mode`} value={d.mode} onChange={(e) => set({ mode: e.target.value as DateRange["mode"], to: "" })} className="h-9 rounded-sm border border-input bg-background px-1 text-xs">
+              <select aria-label={`${label} mode`} value={d.mode} onChange={(e) => set({ mode: e.target.value as SalesRegisterDateRange["mode"], to: "" })} className="h-9 rounded-sm border border-input bg-background px-1 text-xs">
                 <option value="single">Single</option><option value="range">From–To</option>
               </select>
               <Input type="date" aria-label={`${label} from`} value={d.from} onChange={(e) => set({ from: e.target.value })} className="h-9 min-w-0 px-1 text-xs" />
@@ -63,7 +66,8 @@ export function SalesRegisterFilters({ defaultOpen = true }: { defaultOpen?: boo
             </div>
           </FilterField>;
         }
-        return <FilterMultiSelect key={key} label={label} placeholder="All" options={optionsFor(key)} selected={codes[key] ?? null} onChange={(v) => setCodes({ ...codes, [key]: v })} />;
+        const ck = key as SalesRegisterCodeKey;
+        return <FilterMultiSelect key={key} label={label} placeholder="All" options={optionsFor(ck)} selected={value.codes[ck] ?? null} onChange={(v) => onChange({ ...value, codes: { ...value.codes, [ck]: v } })} />;
       })}
     </div> : null}
   </section>;
