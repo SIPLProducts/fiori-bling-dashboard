@@ -24,7 +24,7 @@ export function OrderBookSubGroupChart({ groups, divisions, pdf = false, groupLa
   const rows = pdf ? groups : groups.slice(0, 10);
   if (!rows.length) return <p className="py-8 text-center text-xs text-muted-foreground">No group data from SAP yet</p>;
   const used = divisions.filter((d) => rows.some((g) => g.parts[d]));
-  const colors = new Map(used.map((d, i) => [d, PALETTE[i % PALETTE.length]!]));
+  const colors = new Map(used.map((d) => [d, PALETTE[divisions.indexOf(d) % PALETTE.length]!]));
   const data: Row[] = rows.map((g) => ({ name: g.name, total: g.value, __g: g as unknown as number, ...Object.fromEntries(used.map((d) => [d, g.parts[d]?.value ?? 0])) }));
   return <div>
     <p className="text-[10px] font-medium text-muted-foreground">Value (₹ Cr)</p>
@@ -39,7 +39,7 @@ export function OrderBookSubGroupChart({ groups, divisions, pdf = false, groupLa
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis dataKey="name" interval={0} height={70} tickLine={false} tick={({ x, y, payload }) => { const s = String(payload.value); return <g transform={`translate(${x},${y})`}><title>{s}</title><text transform="translate(0,8) rotate(-40)" textAnchor="end" fontSize={10} fill="var(--foreground)">{s.length > 14 ? `${s.slice(0, 14)}…` : s}</text></g>; }} />
           <YAxis tickFormatter={(v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 0 })} width={44} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} />
-          <Tooltip content={<SubTooltip colors={colors} />} cursor={{ fill: "var(--muted)" }} />
+          <Tooltip content={<SubTooltip colors={colors} label={groupLabel} />} cursor={{ fill: "var(--muted)" }} />
           {used.map((d, i) => <Bar key={d} dataKey={d} name={d} stackId="div" fill={`url(#${id}-${i})`} maxBarSize={32} isAnimationActive={!pdf} {...(i === used.length - 1 ? { radius: [4, 4, 0, 0] as [number, number, number, number] } : {})}>
             {i === used.length - 1 ? <LabelList dataKey="total" position="top" formatter={(v: number) => Number(v).toFixed(2)} fontSize={9} fill="var(--foreground)" /> : null}
           </Bar>)}
