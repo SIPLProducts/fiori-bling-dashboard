@@ -36,3 +36,16 @@ describe("ZCASH_FLOW request payload", () => {
     expect(withEndpointDates("ZCASH_FLOW", body, "last7d", runDate, true)).toBe(body);
   });
 });
+
+describe("sales register MODE", () => {
+  const body = '{"vkorg":"1000","fkdat_f":"20260301","fkdat_t":"20260331"}';
+  it("scheduled run sends DAILY", () => {
+    expect(JSON.parse(withEndpointDates("Sales _Register", body, "custom", new Date(), true)!).MODE).toBe("DAILY");
+  });
+  it("manual run sends ONETIME and keeps picked dates", () => {
+    const out = JSON.parse(withEndpointDates("Sales _Register", body, "custom", new Date(), false)!);
+    expect(out.MODE).toBe("ONETIME");
+    expect(out.fkdat_f).toBe("20260301");
+    expect(out.fkdat_t).toBe("20260331");
+  });
+});

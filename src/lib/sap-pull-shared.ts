@@ -204,6 +204,18 @@ export function withSitDates(raw: string | null | undefined, range?: string | nu
   } catch { return raw; }
 }
 
+/** Sales Register (ZVF05): SAP requires MODE — DAILY for scheduled runs, ONETIME for manual runs with the saved dates. */
+export function withSalesRegisterMode(raw: string | null | undefined, scheduled = false): string | undefined {
+  try {
+    const parsed = raw && raw.trim() ? JSON.parse(raw) as unknown : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw ?? undefined;
+    const obj: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) if (k.toLowerCase() !== "mode") obj[k] = v;
+    obj["MODE"] = scheduled ? "DAILY" : "ONETIME";
+    return JSON.stringify(obj);
+  } catch { return raw ?? undefined; }
+}
+
 export function withEndpointDates(
   endpointName: string,
   raw: string | null | undefined,
@@ -214,6 +226,7 @@ export function withEndpointDates(
   // `//` lines in a saved payload mark optional keys that are not sent.
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled);
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? undefined;
   // User Management dropdowns: no date injection, payload sent as saved.
