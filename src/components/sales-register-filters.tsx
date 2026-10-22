@@ -29,7 +29,7 @@ const DATE_KEYS = new Set(["billingDate", "billingCreationDate"]);
 type DateRange = { mode: "single" | "range"; from: string; to: string };
 
 export function SalesRegisterFilters() {
-  const { data: access } = useUserAccess();
+  const access = useUserAccess();
   const [open, setOpen] = useState(true);
   const [salesOrg, setSalesOrg] = useState("1000");
   const [codes, setCodes] = useState<Record<string, string[] | null>>({});
