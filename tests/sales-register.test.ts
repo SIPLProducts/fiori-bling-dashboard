@@ -19,4 +19,8 @@ describe("sales register", () => {
     const rows = Array.from({ length: 12 }, (_, i) => row({ plant: `P${i}`, invoiceValue: i }));
     expect(buildSalesRegister(rows).byPlant).toHaveLength(10);
   });
+  it("reports earliest and latest billing date", () => {
+    expect(buildSalesRegister([row({ billingDate: "2026-03-05" }), row({ billingDate: "2026-01-10" })]).dateRange).toEqual({ from: "2026-01-10", to: "2026-03-05" });
+    expect(buildSalesRegister([]).dateRange).toBeNull();
+  });
 });
