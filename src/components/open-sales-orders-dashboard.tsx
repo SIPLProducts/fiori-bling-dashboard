@@ -28,6 +28,7 @@ import { summarizeByCreatedMonth } from "@/lib/order-book-months";
 import { buildOrderBookQuarters, filterByFiscalPeriod, orderBookFiscalYears } from "@/lib/order-book-quarters";
 import { currentFiscalYear, fiscalQuarter, fiscalYearForDate } from "@/lib/sd-live";
 import { QuarterCard } from "./sd-live-dashboard";
+import { ModelTypeCards } from "./model-type-cards";
 import { summarizeOpenOrderGroups, summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import type { DateRange } from "react-day-picker";
 import {
@@ -540,6 +541,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <RankingPanel title="Top 10 Sales Men" data={metrics.salesMen} color="var(--chart-4)" />
         </div>
       ) : null}
+
+      {isBook && !isSit ? <ModelTypeCards rows={filteredData.map((r) => ({ model: r.model, type: r.productType, amount: r.value * 10_000_000, ah: r.totalAh }))} /> : null}
 
       {!isBook ? <div data-pdf-page-block className="order-status-row grid gap-4 lg:grid-cols-[0.65fr_0.75fr_2fr]">
         <StatusCard title="Open Orders" count={metrics.notDeliveredCount} value={metrics.notDeliveredOpenValue} share={percent(metrics.notDeliveredCount, metrics.distinctOrders)} />
