@@ -7,7 +7,7 @@ import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
 import { buildSalesRegister, salesRegisterGroupRows, type SalesRegisterRow } from "@/lib/sales-register";
 
-const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--primary)"];
+const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const cr = (v: number) => Math.round((v / 1e7) * 100) / 100;
 const inr = (v: number) => `₹ ${Math.round(v).toLocaleString("en-IN")}`;
 
@@ -99,7 +99,7 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
       <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
       <Card title="Sales Register (Daily)">{a.daily.length ? <ResponsiveContainer width="100%" height={150}><ComposedChart data={a.daily.map((d) => ({ ...d, invoice: cr(d.invoice), net: cr(d.net) }))}>
         <XAxis dataKey="date" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        <Grad id="sr-daily" /><Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="var(--chart-2)" />
+        <Grad id="sr-daily" /><Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="#0f9d8a" />
       </ComposedChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
         <Grad id="sr-tax" /><XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
