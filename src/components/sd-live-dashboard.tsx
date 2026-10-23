@@ -876,7 +876,7 @@ export function SalesByModelChart({
 
   return (
     <div
-      className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[720px]"}`}
+      className={`cxo-chart-surface overflow-auto ${full ? "h-full" : "max-h-[380px]"}`}
       data-pdf-model-chart-ready={exportMode ? "true" : undefined}
     >
       <div style={{ height: chartHeight, minWidth: exportMode ? 520 : 480 }}>
@@ -958,7 +958,7 @@ export function ModelWiseChart({ items, exportMode = false }: { items: TypePerfo
     : 145;
 
   return (
-    <div className="cxo-chart-surface max-h-[720px] overflow-auto" data-pdf-model-chart-ready={exportMode ? "true" : undefined}>
+    <div className="cxo-chart-surface max-h-[380px] overflow-auto" data-pdf-model-chart-ready={exportMode ? "true" : undefined}>
       <div style={{ height: chartHeight, minWidth: 480 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart layout="vertical" data={items} margin={{ top: 8, right: exportMode ? 120 : 96, bottom: 18, left: 8 }}>

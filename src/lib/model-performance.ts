@@ -2,14 +2,14 @@ import type { ModelPerformance, TypePerformance } from "@/lib/sd-live";
 
 export type ModelInput = { model?: string | undefined; type?: string | undefined; amount: number; ah?: number | undefined };
 
-const key = (v?: string) => (v ?? "").trim() || "Unassigned";
+const key = (v?: string) => (v ?? "").trim();
 
 /** Rank models by amount (desc) with ₹/AH realization; blank model → "Unassigned". */
 export function rankModels(rows: ModelInput[]): ModelPerformance[] {
-  const total = rows.reduce((s, r) => s + r.amount, 0);
+  const total = rows.filter((r) => key(r.model)).reduce((s, r) => s + r.amount, 0);
   const m = new Map<string, ModelPerformance>();
   for (const r of rows) {
-    const k = key(r.model);
+    const k = key(r.model); if (!k) continue;
     const p = m.get(k) ?? { model: k, totalAmount: 0, totalAh: 0, perAhRate: 0, recordCount: 0, salesSharePct: 0 };
     p.totalAmount += r.amount; p.totalAh += r.ah ?? 0; p.recordCount += 1; m.set(k, p);
   }
@@ -19,10 +19,10 @@ export function rankModels(rows: ModelInput[]): ModelPerformance[] {
 
 /** Rank types by amount (desc); blank type → "Unassigned". */
 export function rankTypes(rows: ModelInput[]): TypePerformance[] {
-  const total = rows.reduce((s, r) => s + r.amount, 0);
+  const total = rows.filter((r) => key(r.type)).reduce((s, r) => s + r.amount, 0);
   const m = new Map<string, TypePerformance>();
   for (const r of rows) {
-    const k = key(r.type);
+    const k = key(r.type); if (!k) continue;
     const p = m.get(k) ?? { type: k, totalAmount: 0, recordCount: 0, salesSharePct: 0 };
     p.totalAmount += r.amount; p.recordCount += 1; m.set(k, p);
   }
