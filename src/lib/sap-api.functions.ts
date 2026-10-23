@@ -803,8 +803,12 @@ const runEndpointSyncServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { endpointName: string }) => data)
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
-    if (error || !isAdmin) throw new Error("Forbidden: Sharvi Admin role required");
+    const { data: roleRows, error } = await context.supabase
+      .from("user_role_assignments").select("role_key").eq("user_id", context.userId);
+    const { canSyncSap } = await import("@/lib/sync-access");
+    if (error || !canSyncSap((roleRows ?? []).map((r) => r.role_key))) {
+      throw new Error("Forbidden: Admin or Sharvi Admin role required");
+    }
 
     const { pullSapEndpoint } = await import("@/lib/sap-pull.server");
     const result = await pullSapEndpoint(data.endpointName);
