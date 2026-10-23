@@ -53,9 +53,9 @@ function RankList({ data }: { data: { name: string; value: number }[] }) {
   if (!data.length) return <Empty />;
   const max = Math.max(...data.map((d) => d.value), 1);
   return <div className="text-[10px]"><p className="mb-1 text-right text-muted-foreground">₹ Cr</p>
-    <ul className="space-y-1.5">{data.map((d) => <li key={d.name} className="grid grid-cols-[minmax(0,42%)_minmax(0,1fr)_auto] items-center gap-2" title={`${d.name}: ₹ ${cr(d.value)} Cr`}>
+    <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,42%)_minmax(0,1fr)_auto] items-center gap-2" title={`${d.name}: ₹ ${cr(d.value)} Cr`}>
       <span className="truncate text-muted-foreground">{d.name}</span>
-      <span className="h-2 rounded-full" style={{ width: `${Math.max(3, (d.value / max) * 100)}%`, background: "linear-gradient(90deg, color-mix(in oklab, var(--chart-2) 60%, transparent), var(--chart-2))" }} />
+      <span className="h-2 rounded-full" style={{ width: `${Math.max(3, (d.value / max) * 100)}%`, background: `linear-gradient(90deg, ${COLORS[i % COLORS.length]}99, ${COLORS[i % COLORS.length]})` }} />
       <b className="text-right text-foreground">{cr(d.value).toFixed(2)}</b></li>)}</ul></div>;
 }
 
