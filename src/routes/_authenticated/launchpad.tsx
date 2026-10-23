@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio } from "lucide-react";
+import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio, ShoppingCart } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
 import { PlaceholderTile, TableStatusTile, TileCard } from "@/components/tile-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/launchpad")({
 
 const SECTION_META: Record<string, { subtitle: string; icon: typeof Factory }> = {
   "sales-distribution": { subtitle: "Quarterly Realtime Tracking", icon: Boxes },
+  purchase: { subtitle: "MM Purchasing & Procurement", icon: ShoppingCart },
   "financial-accounting": { subtitle: "FI General Ledger & Cash Analysis", icon: CircleDollarSign },
   "production-planning": { subtitle: "PP Operations & Work Centre Status", icon: Factory },
   "tables-master": { subtitle: "SAP Schema & Dictionary Tables", icon: Boxes },
@@ -28,6 +29,7 @@ const SECTION_META: Record<string, { subtitle: string; icon: typeof Factory }> =
 
 const SECTION_TITLES: Record<string, string> = {
   "sales-distribution": "Sales & Distribution",
+  purchase: "Purchase",
   "financial-accounting": "Financial Accounting",
   "production-planning": "Production Planning",
   "tables-master": "Tables Master",
@@ -71,7 +73,7 @@ function Launchpad() {
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
         return <section key={group.key} className="mb-7">
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
-          {group.key === "sales-distribution" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
+          {group.key === "sales-distribution" || group.key === "purchase" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : group.key === "purchase" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
