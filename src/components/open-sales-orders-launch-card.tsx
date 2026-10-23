@@ -96,7 +96,7 @@ export function SalesRegisterLaunchCard({ fallback }: { fallback: React.ReactNod
   });
   const access = useUserAccess();
   const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
-    .map((r) => ({ p_value1: r.netwr_t, sales_type: r.vtext_dc, order_type: r.auart })), { byCode: true, all: true }) : undefined, [rows, access]);
+    .map((r) => ({ p_value1: r.netwr_t, sales_type: r.auart && r.vtext_dc ? `${r.auart.trim()} — ${r.vtext_dc.trim()}` : r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access]);
   const { data: lastSynced } = useReportSync("sales-register");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data || !rows?.length) return <>{fallback}</>;
