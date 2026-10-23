@@ -33,7 +33,7 @@ export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) 
         <p className="text-[9px] font-semibold text-primary">Net Balance</p>
         <p className="text-[9px] font-medium text-foreground tabular-nums">{s.records.toLocaleString("en-IN")} GL records · {s.plants.toLocaleString("en-IN")} plants</p>
       </div>
-      <div className="my-3 space-y-2.5">
+      <div className="my-3 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
         {s.bars.map((bar) => {
           const tone = bar.key === "net" ? netTone : TONES[bar.key];
           return <div key={bar.key}>
@@ -47,9 +47,9 @@ export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) 
           </div>;
         })}
       </div>
-      <div className="mt-auto grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground">
-        <span className="min-w-0 leading-relaxed">{lastSyncedLabel(data.syncedAt)}</span>
-        <Link to="/reports/fi/cash-flow" aria-label="Open Cash Flow details" className="group inline-flex min-h-8 items-center gap-1 rounded-full btn-action px-4 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
+      <div className="mt-auto launch-footer flex items-center justify-between gap-2 text-[9px] text-muted-foreground">
+        <span className="min-w-0 truncate whitespace-nowrap">{lastSyncedLabel(data.syncedAt)}</span>
+        <Link to="/reports/fi/cash-flow" aria-label="Open Cash Flow details" className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
           Open Details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
