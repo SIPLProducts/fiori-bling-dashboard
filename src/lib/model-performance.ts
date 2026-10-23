@@ -1,6 +1,6 @@
 import type { ModelPerformance, TypePerformance } from "@/lib/sd-live";
 
-export type ModelInput = { model?: string; type?: string; amount: number; ah?: number };
+export type ModelInput = { model?: string | undefined; type?: string | undefined; amount: number; ah?: number | undefined };
 
 const key = (v?: string) => (v ?? "").trim() || "Unassigned";
 
