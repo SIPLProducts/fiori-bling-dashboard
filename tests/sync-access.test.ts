@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { canSyncSap } from "./sync-access";
+import { describe, expect, it } from "bun:test";
+import { canSyncSap } from "../src/lib/sync-access";
 
 describe("canSyncSap", () => {
   it("allows admin", () => expect(canSyncSap(["admin"])).toBe(true));
