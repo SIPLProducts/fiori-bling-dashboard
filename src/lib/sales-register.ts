@@ -118,7 +118,7 @@ const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct
 const dayNum = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 864e5;
 
 /** Net Value trend: ≤31 days weekly, ≤366 days monthly, longer quarterly (April–March FY). */
-export function salesRegisterTrend(rows: SalesRegisterRow[], range?: SalesRegisterDateRange) {
+export function salesRegisterTrend(rows: SalesRegisterRow[], range?: SalesRegisterDateRange | undefined) {
   const dates = rows.map((r) => r.billingDate).filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d)).sort();
   const useRange = range && range.mode === "range" && range.from && range.to;
   const from = useRange ? range!.from : range?.mode === "single" && range.from ? range.from : dates[0];

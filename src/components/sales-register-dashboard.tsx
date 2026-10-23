@@ -72,7 +72,7 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
   </div>;
 }
 
-export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange }) {
+export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
