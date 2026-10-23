@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Wallet } from "lucide-react";
 import { cashFlowQueryOptions } from "@/lib/cash-flow-data";
 import { CRORE, summarizeCashLaunch } from "@/lib/cash-flow";
-import { lastSyncedLabel } from "@/lib/report-sync-time";
+import { lastSyncedLabel, lastSyncShortLabel } from "@/lib/report-sync-time";
 
 const fmt = (value: number) => `₹${(value / CRORE).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
 const LABELS = { credit: "Credit", debit: "Debit", net: "Net" } as const;
@@ -48,7 +48,7 @@ export function CashFlowLaunchCard({ fallback }: { fallback: React.ReactNode }) 
         })}
       </div>
       <div className="mt-auto launch-footer flex items-center justify-between gap-2 text-[9px] text-muted-foreground">
-        <span className="min-w-0 truncate whitespace-nowrap">{lastSyncedLabel(data.syncedAt)}</span>
+        <span className="min-w-0 whitespace-nowrap" title={lastSyncedLabel(data.syncedAt)}>{lastSyncShortLabel(data.syncedAt)}</span>
         <Link to="/reports/fi/cash-flow" aria-label="Open Cash Flow details" className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
           Open Details
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />

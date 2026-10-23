@@ -703,6 +703,7 @@
   .sd-compact .space-y-2\.5 > * + * { margin-top: 0.375rem; }
   .sd-compact section.rounded-2xl { max-height: 300px; }
   .sd-compact .launch-footer span { overflow-wrap: normal; white-space: nowrap; }
+  .sd-compact .launch-footer .launch-details { display: none; }
   .sd-compact .mt-3 { margin-top: 0.375rem; }
   .sd-compact .pt-4 { padding-top: 0.5rem; }
   .sd-compact .gap-3 { gap: 0.375rem; }

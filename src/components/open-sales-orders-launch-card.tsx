@@ -6,7 +6,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useReportSync } from "@/lib/use-report-sync";
-import { lastSyncedLabel } from "@/lib/report-sync-time";
+import { lastSyncedLabel, lastSyncShortLabel } from "@/lib/report-sync-time";
 import { summarizeLaunchOrders, type LaunchOrderRow } from "@/lib/open-orders-launch-summary";
 import { currentReportPeriod, inReportPeriod, reportPeriodLabel } from "@/lib/report-period";
 
@@ -176,7 +176,7 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
         ))}
       </div>
       <div className="mt-auto launch-footer flex items-center justify-between gap-2 text-[9px] text-muted-foreground">
-        <span className="min-w-0 truncate whitespace-nowrap">{lastSyncedLabel(lastSynced)}</span>
+        <span className="min-w-0 whitespace-nowrap" title={lastSyncedLabel(lastSynced)}>{lastSyncShortLabel(lastSynced)}</span>
         <Link to={href} aria-label={`Open ${title} details`} className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none">
           Open<span className="launch-details"> Details</span>
           <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />

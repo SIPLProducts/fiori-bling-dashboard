@@ -4,7 +4,7 @@ import { ArrowRight, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { currentReportPeriod } from "@/lib/report-period";
 import { useReportSync } from "@/lib/use-report-sync";
-import { lastSyncedLabel } from "@/lib/report-sync-time";
+import { lastSyncedLabel, lastSyncShortLabel } from "@/lib/report-sync-time";
 import { STABLE_SALES_QUERY_OPTIONS } from "@/lib/stable-sales-query";
 
 const KPI_TONES = [
@@ -118,7 +118,7 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
           </div>
         ) : null}
         <div className="mt-auto launch-footer flex items-center justify-between gap-2 pt-3 text-[9px] text-muted-foreground">
-          <span className="min-w-0 truncate whitespace-nowrap">{lastSyncedLabel(lastSynced)}</span>
+          <span className="min-w-0 whitespace-nowrap" title={lastSyncedLabel(lastSynced)}>{lastSyncShortLabel(lastSynced)}</span>
           <Link
             to="/reports/module/$module"
             params={{ module: "sd" }}
