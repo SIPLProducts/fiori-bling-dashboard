@@ -963,12 +963,17 @@ function withSitDates(raw, range, now = /* @__PURE__ */ new Date(), scheduled = 
     return raw;
   }
 }
-function withSalesRegisterMode(raw, scheduled = false) {
+function withSalesRegisterMode(raw, scheduled = false, range, now = /* @__PURE__ */ new Date()) {
   try {
     const parsed = raw && raw.trim() ? JSON.parse(raw) : {};
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw ?? void 0;
     const obj = {};
     for (const [k, v] of Object.entries(parsed)) if (k.toLowerCase() !== "mode") obj[k] = v;
+    const window = postingWindow(range, now);
+    if (window) for (const k of Object.keys(obj)) {
+      if (/^fkdat_f$/i.test(k)) obj[k] = window.from;
+      else if (/^fkdat_t$/i.test(k)) obj[k] = window.to;
+    }
     obj["MODE"] = scheduled ? "DAILY" : "ONETIME";
     return JSON.stringify(obj);
   } catch {
@@ -978,7 +983,7 @@ function withSalesRegisterMode(raw, scheduled = false) {
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
-  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled);
+  if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
