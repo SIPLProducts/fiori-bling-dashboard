@@ -7,6 +7,10 @@ Yes, DIV_NAME is already saved from SAP for every line (and used today for Produ
 - The tooltip shows the plant code, the short name and the value in ₹ Cr.
 - Plants still group by plant code (WERKS). If DIV_NAME is blank, the label falls back to the plant name.
 
+## Remove Sales by Product Category
+- Product Category was built from DIV_NAME, so once plants carry the DIV_NAME label it repeats the plant card. The card is removed.
+- The third card row then has three cards: Distribution Channel, Daily and Tax Breakdown, spread across the full width.
+
 ## Sales Register Details table
 - Pagination moves under the table at the bottom left, as on Open Sales Orders: rows-per-page choice (10/25/50), "Showing X–Y of Z", and Previous/Next.
 - Search and the Excel button stay in the header.
