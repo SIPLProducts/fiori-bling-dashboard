@@ -1098,7 +1098,7 @@ function EndpointDetail({
   const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const usesPostingDates =
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
-  const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || !usesPostingDates);
+  const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || /salesregister/i.test(`${form.name}${form.endpoint_path}`.replace(/[^a-z0-9]/gi, "")) || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
   const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
 
