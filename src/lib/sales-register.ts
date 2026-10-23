@@ -102,7 +102,7 @@ export function buildSalesRegister(rows: SalesRegisterRow[]) {
     totalNet: rows.reduce((s, r) => s + r.netValue, 0),
     customers: new Set(rows.map((r) => r.customer)).size,
     documents: new Set(rows.map((r) => r.billingDocument)).size,
-    byPlant: rollup(rows, (r) => (r.descs?.plant ? `${r.plant} ${r.descs.plant}` : r.plant)).slice(0, 10),
+    byPlant: rollup(rows, (r) => (r.descs?.["plant"] ? `${r.plant} ${r.descs["plant"]}` : r.plant)).slice(0, 10),
     topCustomers: rollup(rows, (r) => r.customerName).slice(0, 10),
     byMainGroup: rollup(rows, (r) => r.mainGroup),
     byChannel: rollup(rows, (r) => r.channel),
@@ -115,5 +115,5 @@ export function buildSalesRegister(rows: SalesRegisterRow[]) {
 
 /** Rows for the division-stacked group charts; value in ₹ Cr, order = billing document. */
 export function salesRegisterGroupRows(rows: SalesRegisterRow[], group: "mainGroup" | "subGroup") {
-  return rows.map((r) => ({ name: r[group], value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.division || r.productCategory || r.division }));
+  return rows.map((r) => ({ name: r[group], value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.["division"] || r.productCategory || r.division }));
 }
