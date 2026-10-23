@@ -208,3 +208,4 @@
 
 - [x] Cash Flow screen: added button tooltips, per-classification colored ledger rows, radiant chart gradients, and 10/50/100/500 rows-per-page selector (default 10); verified 10/50-row paging, titles, gradients, colored rows, and clean build at 951px.
 - [x] Stop auto-refresh on tab focus/session renewal; add Cash Flow launchpad card (Credit/Debit/Net bars, last sync).
+- [x] Sales Register: visible chart colours, plant columns, rank lists, launchpad doc-type card, Distribution Channel column, coloured table, full Excel
