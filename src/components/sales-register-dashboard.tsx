@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie
 import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { buildSalesRegister, salesRegisterGroupRows, salesRegisterTrend, type SalesRegisterDateRange, type SalesRegisterRow } from "@/lib/sales-register";
+import { toCr, toLah, buildSalesRegister, salesRegisterGroupRows, salesRegisterTrend, type SalesRegisterDateRange, type SalesRegisterRow } from "@/lib/sales-register";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const cr = (v: number) => Math.round((v / 1e7) * 100) / 100;
@@ -85,7 +85,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
   const has = rows.length > 0;
   const sum = (k: "billedQty" | "netValue" | "invoiceValue" | "cgst" | "sgst" | "igst") => filtered.reduce((s, r) => s + r[k], 0);
   const channels = [...new Set(rows.map((r) => r.channelCode || r.channel))];
-  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Total Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
+  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty (LAH)", "Net Value (₹ Cr)", "CGST (LAH)", "SGST (LAH)", "IGST (LAH)", "Posting Status"];
   const R = "text-right tabular-nums whitespace-nowrap";
 
   return <div className="space-y-3">
@@ -137,23 +137,21 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
             <TableCell className="whitespace-nowrap">{r.profitCenter}</TableCell>
             <TableCell className="whitespace-nowrap">{`${r.mainGroup} / ${r.subGroup}`}</TableCell>
             <TableCell className="min-w-56">{r.material}</TableCell>
-            <TableCell className={R}>{r.billedQty.toFixed(3)}</TableCell>
-            <TableCell className={R}>{inr(r.netValue)}</TableCell>
-            <TableCell className={R}>{inr(r.invoiceValue)}</TableCell>
-            <TableCell className={R}>{inr(r.cgst)}</TableCell>
-            <TableCell className={R}>{inr(r.sgst)}</TableCell>
-            <TableCell className={R}>{inr(r.igst)}</TableCell>
+            <TableCell className={R}>{toLah(r.billedQty).toFixed(2)}</TableCell>
+            <TableCell className={R}>{toCr(r.netValue).toFixed(2)}</TableCell>
+                        <TableCell className={R}>{toLah(r.cgst).toFixed(2)}</TableCell>
+            <TableCell className={R}>{toLah(r.sgst).toFixed(2)}</TableCell>
+            <TableCell className={R}>{toLah(r.igst).toFixed(2)}</TableCell>
             <TableCell><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-chart-2/15 font-semibold text-chart-2" : "bg-chart-4/20 font-semibold text-foreground"}`}>{r.status}</span></TableCell>
           </TableRow>;
         }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
         {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
           <TableCell colSpan={10}>Total ({filtered.length} lines)</TableCell>
-          <TableCell className={R}>{sum("billedQty").toFixed(3)}</TableCell>
-          <TableCell className={R}>{inr(sum("netValue"))}</TableCell>
-          <TableCell className={R}>{inr(sum("invoiceValue"))}</TableCell>
-          <TableCell className={R}>{inr(sum("cgst"))}</TableCell>
-          <TableCell className={R}>{inr(sum("sgst"))}</TableCell>
-          <TableCell className={R}>{inr(sum("igst"))}</TableCell>
+          <TableCell className={R}>{toLah(sum("billedQty")).toFixed(2)}</TableCell>
+          <TableCell className={R}>{toCr(sum("netValue")).toFixed(2)}</TableCell>
+                    <TableCell className={R}>{toLah(sum("cgst")).toFixed(2)}</TableCell>
+          <TableCell className={R}>{toLah(sum("sgst")).toFixed(2)}</TableCell>
+          <TableCell className={R}>{toLah(sum("igst")).toFixed(2)}</TableCell>
           <TableCell />
         </TableRow></TableFooter>}
       </Table>

@@ -1,3 +1,4 @@
+import { toCr, toLah } from "./sales-register";
 import { datedFileName } from "@/lib/format";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
@@ -15,8 +16,8 @@ export const SALES_REGISTER_EXPORT_COLUMNS: [string, (r: SalesRegisterRow) => st
   ["Sales Document", (r) => r.salesDocument], ["Sales Document Item", (r) => r.salesDocumentItem],
   ["Main Group", (r) => r.mainGroup], ["Sub Group", (r) => r.subGroup],
   ["Material Code", (r) => r.materialCode], ["Material Description", (r) => r.material],
-  ["Billed Qty", (r) => r.billedQty], ["Net Value (₹)", (r) => r.netValue], ["Total Invoice Value (₹)", (r) => r.invoiceValue],
-  ["CGST (₹)", (r) => r.cgst], ["SGST (₹)", (r) => r.sgst], ["IGST (₹)", (r) => r.igst], ["TCS (₹)", (r) => r.tcs],
+  ["Billed Qty (LAH)", (r) => toLah(r.billedQty)], ["Net Value (₹ Cr)", (r) => toCr(r.netValue)],
+  ["CGST (LAH)", (r) => toLah(r.cgst)], ["SGST (LAH)", (r) => toLah(r.sgst)], ["IGST (LAH)", (r) => toLah(r.igst)], ["TCS (₹)", (r) => r.tcs],
   ["Posting Status", (r) => r.status],
 ];
 

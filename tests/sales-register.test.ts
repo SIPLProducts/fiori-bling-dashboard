@@ -115,3 +115,10 @@ describe("Sales Register trend granularity", () => {
     expect(t.points.map((p) => p.name)).toEqual(["Q1 FY24-25", "Q4 FY25-26"]);
   });
 });
+
+import { toCr, toLah } from "../src/lib/sales-register";
+describe("sales register table units", () => {
+  it("net value in Cr", () => expect(toCr(25_000_000)).toBe(2.5));
+  it("qty and GST in LAH", () => expect(toLah(250_000)).toBe(2.5));
+  it("Excel drops Total Invoice Value", () => expect(SALES_REGISTER_EXPORT_COLUMNS.map(([h]) => h)).not.toContain("Total Invoice Value (₹)"));
+});
