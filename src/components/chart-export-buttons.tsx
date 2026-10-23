@@ -22,7 +22,7 @@ export function ChartExportActions({
     <>
       <Button
         type="button"
-        variant="ghost"
+        variant="export"
         size="sm"
         className="h-7 gap-1 px-2 text-xs"
         onClick={() => {
@@ -39,7 +39,7 @@ export function ChartExportActions({
       </Button>
       <Button
         type="button"
-        variant="ghost"
+        variant="export"
         size="sm"
         disabled={busy}
         className="h-7 gap-1 px-2 text-xs"

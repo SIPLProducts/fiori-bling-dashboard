@@ -80,10 +80,10 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
         <Link
           to={href}
           aria-label={`${status ?? "Open Details"}: ${label}`}
-          className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full bg-launchpad-tile-footer px-3 text-[10px] shadow-launchpad-inset transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
+          className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full btn-soft px-3 text-[10px] transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
         >
-          <span className="truncate text-muted-foreground">{status ? status : <>Open<span className="launch-details"> Details</span></>}</span>
-          <ArrowRight className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+          <span className="truncate font-semibold">{status ? status : <>Open<span className="launch-details"> Details</span></>}</span>
+          <ArrowRight className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
         </Link>
       ) : (
         <Button
