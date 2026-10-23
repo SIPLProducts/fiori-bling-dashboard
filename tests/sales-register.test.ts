@@ -63,3 +63,18 @@ describe("sales register code + description", () => {
     expect(salesRegisterOptionLabels([toSalesRegisterRow({ spart: "01" })], "division")).toEqual([{ value: "01", label: "01" }]);
   });
 });
+
+import { salesRegisterGroupRows } from "../src/lib/sales-register";
+import { summarizeGroupsByDivision } from "../src/lib/open-orders-groups";
+describe("sales register cards", () => {
+  it("keeps only top 10 product categories", () => {
+    const rows = Array.from({ length: 12 }, (_, i) => row({ productCategory: `C${i}`, invoiceValue: i }));
+    expect(buildSalesRegister(rows).byCategory).toHaveLength(10);
+  });
+  it("stacks main group value by division in Cr", () => {
+    const rows = [row({ mainGroup: "M", invoiceValue: 1e7, descs: { division: "NCPP" } }), row({ mainGroup: "M", invoiceValue: 2e7, descs: { division: "DEF" } })];
+    const { groups } = summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name);
+    expect(groups[0]!.value).toBe(3);
+    expect(groups[0]!.parts.NCPP!.value).toBe(1);
+  });
+});

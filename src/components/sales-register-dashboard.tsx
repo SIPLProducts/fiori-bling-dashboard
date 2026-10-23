@@ -1,8 +1,10 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
+import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3 } from "lucide-react";
 import { Bar, BarChart, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { Input } from "@/components/ui/input";
-import { buildSalesRegister, type SalesRegisterRow } from "@/lib/sales-register";
+import { buildSalesRegister, salesRegisterGroupRows, type SalesRegisterRow } from "@/lib/sales-register";
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--primary)"];
 const cr = (v: number) => Math.round((v / 1e7) * 100) / 100;
@@ -25,29 +27,39 @@ function Tile({ icon, label, value, tone }: { icon: ReactNode; label: string; va
   </div>;
 }
 
+function Grad({ id, horizontal = false }: { id: string; horizontal?: boolean }) {
+  return <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2={horizontal ? "1" : "0"} y2={horizontal ? "0" : "1"}>
+    <stop offset="0%" stopColor={`color-mix(in oklab, ${c} 55%, var(--background))`} /><stop offset="50%" stopColor={c} />
+    <stop offset="100%" stopColor={`color-mix(in oklab, ${c} 75%, var(--foreground))`} /></linearGradient>)}</defs>;
+}
+
 function HBars({ data }: { data: { name: string; value: number }[] }) {
+  const id = useId().replace(/:/g, "");
   if (!data.length) return <Empty />;
-  return <ResponsiveContainer width="100%" height={150}><BarChart layout="vertical" data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ left: 0, right: 40 }}>
+  return <ResponsiveContainer width="100%" height={150}><BarChart layout="vertical" data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ left: 0, right: 48 }}><Grad id={id} horizontal />
     <XAxis type="number" tick={{ fontSize: 9 }} /><YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 9 }} />
     <Tooltip formatter={(v: number) => `₹ ${v} Cr`} />
     <Bar dataKey="value" radius={[0, 3, 3, 0]} label={{ position: "right", fontSize: 9, formatter: (v: number) => `₹ ${v} Cr` }}>
-      {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar>
+      {data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}</Bar>
   </BarChart></ResponsiveContainer>;
 }
 
 function Donut({ data, total }: { data: { name: string; value: number }[]; total: number }) {
+  const id = useId().replace(/:/g, "");
   if (!data.length) return <Empty />;
-  return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-    <div className="relative"><ResponsiveContainer width="100%" height={140}><PieChart>
-      <Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%">{data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie>
+  return <div className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] items-center gap-2">
+    <div className="relative"><ResponsiveContainer width="100%" height={140}><PieChart><Grad id={id} />
+      <Pie data={data} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} label={false} labelLine={false}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}</Pie>
       <Tooltip formatter={(v: number) => `₹ ${cr(v)} Cr`} /></PieChart></ResponsiveContainer>
-      <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-xs font-bold text-foreground">₹ {cr(total)} Cr<br /><span className="text-[9px] font-normal text-muted-foreground">Total Sales</span></div></div>
-    <ul className="space-y-1 text-[10px]">{data.map((d, i) => <li key={d.name} className="flex items-center gap-1"><span className="size-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{d.name} <b className="ml-auto pl-2">{total ? ((d.value / total) * 100).toFixed(1) : 0}%</b></li>)}</ul>
+      <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight text-foreground">₹ {cr(total)} Cr<br /><span className="text-[8px] font-normal text-muted-foreground">Total Sales</span></div></div>
+    <ul className="max-h-[140px] min-w-0 space-y-1 overflow-auto text-[10px]">{data.map((d, i) => <li key={d.name} className="flex min-w-0 items-center gap-1" title={d.name}><span className="size-2 shrink-0 rounded-full" style={{ background: COLORS[i % COLORS.length] }} /><span className="truncate">{d.name}</span> <b className="ml-auto shrink-0 pl-2">{total ? ((d.value / total) * 100).toFixed(1) : 0}%</b></li>)}</ul>
   </div>;
 }
 
 export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[] }) {
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
+  const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
+  const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const filtered = rows.filter((r) => !q || [r.customerName, r.invoiceNo, r.billingDocument, r.material].some((v) => v.toLowerCase().includes(q.toLowerCase())));
@@ -65,19 +77,20 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Card title="Sales by Plant (Top 10)"><HBars data={a.byPlant} /></Card>
       <Card title="Top 10 Customers"><HBars data={a.topCustomers} /></Card>
-      <Card title="Sales by Main Group"><Donut data={a.byMainGroup} total={a.totalInvoice} /></Card>
-      <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
+      <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
+      <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
       <Card title="Sales Register (Daily)">{a.daily.length ? <ResponsiveContainer width="100%" height={150}><ComposedChart data={a.daily.map((d) => ({ ...d, invoice: cr(d.invoice), net: cr(d.net) }))}>
         <XAxis dataKey="date" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        <Bar dataKey="invoice" name="Invoice Value" fill="var(--chart-1)" /><Line dataKey="net" name="Net Value" stroke="var(--chart-2)" />
+        <Grad id="sr-daily" /><Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="var(--chart-2)" />
       </ComposedChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
-        <XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={COLORS[i]} />)}
+        <Grad id="sr-tax" /><XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
+        {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
-      <Card title="Sales by Product Category"><HBars data={a.byCategory} /></Card>
+      <Card title="Sales by Product Category (Top 10)"><HBars data={a.byCategory} /></Card>
     </div>
     <section className="rounded-xl border border-border bg-card shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-2">
