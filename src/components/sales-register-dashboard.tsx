@@ -1,8 +1,9 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
-import { FileText, IndianRupee, Receipt, Search, Users, BarChart3 } from "lucide-react";
-import { Bar, BarChart, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
 import { buildSalesRegister, salesRegisterGroupRows, type SalesRegisterRow } from "@/lib/sales-register";
 
@@ -29,19 +30,33 @@ function Tile({ icon, label, value, tone }: { icon: ReactNode; label: string; va
 
 function Grad({ id, horizontal = false }: { id: string; horizontal?: boolean }) {
   return <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2={horizontal ? "1" : "0"} y2={horizontal ? "0" : "1"}>
-    <stop offset="0%" stopColor={`color-mix(in oklab, ${c} 55%, var(--background))`} /><stop offset="50%" stopColor={c} />
-    <stop offset="100%" stopColor={`color-mix(in oklab, ${c} 75%, var(--foreground))`} /></linearGradient>)}</defs>;
+    <stop offset="0%" style={{ stopColor: c, stopOpacity: 0.55 }} /><stop offset="55%" style={{ stopColor: c, stopOpacity: 0.9 }} />
+    <stop offset="100%" style={{ stopColor: c, stopOpacity: 1 }} /></linearGradient>)}</defs>;
 }
 
-function HBars({ data }: { data: { name: string; value: number }[] }) {
+const shortPlant = (name: string) => { const rest = name.split(" ").slice(1).join(" ").replace(/^HBL\s+/i, "") || name; return rest.length > 12 ? `${rest.slice(0, 11)}…` : rest; };
+
+function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
   const id = useId().replace(/:/g, "");
   if (!data.length) return <Empty />;
-  return <ResponsiveContainer width="100%" height={150}><BarChart layout="vertical" data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ left: 0, right: 48 }}><Grad id={id} horizontal />
-    <XAxis type="number" tick={{ fontSize: 9 }} /><YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 9 }} />
-    <Tooltip formatter={(v: number) => `₹ ${v} Cr`} />
-    <Bar dataKey="value" radius={[0, 3, 3, 0]} label={{ position: "right", fontSize: 9, formatter: (v: number) => `₹ ${v} Cr` }}>
-      {data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}</Bar>
+  return <ResponsiveContainer width="100%" height={170}><BarChart data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}><Grad id={id} />
+    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
+    <XAxis dataKey="name" interval={0} tick={{ fontSize: 8, fontWeight: 600 }} tickFormatter={shortPlant} angle={-30} textAnchor="end" height={40} />
+    <YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${v} Cr`} />
+    <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={28}>
+      {data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
+      <LabelList dataKey="value" position="top" style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
   </BarChart></ResponsiveContainer>;
+}
+
+function RankList({ data }: { data: { name: string; value: number }[] }) {
+  if (!data.length) return <Empty />;
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return <div className="text-[10px]"><p className="mb-1 text-right text-muted-foreground">₹ Cr</p>
+    <ul className="space-y-1.5">{data.map((d) => <li key={d.name} className="grid grid-cols-[minmax(0,42%)_minmax(0,1fr)_auto] items-center gap-2" title={`${d.name}: ₹ ${cr(d.value)} Cr`}>
+      <span className="truncate text-muted-foreground">{d.name}</span>
+      <span className="h-2 rounded-full" style={{ width: `${Math.max(3, (d.value / max) * 100)}%`, background: "linear-gradient(90deg, color-mix(in oklab, var(--chart-2) 60%, transparent), var(--chart-2))" }} />
+      <b className="text-right text-foreground">{cr(d.value).toFixed(2)}</b></li>)}</ul></div>;
 }
 
 function Donut({ data, total }: { data: { name: string; value: number }[]; total: number }) {
@@ -65,7 +80,7 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
   const filtered = rows.filter((r) => !q || [r.customerName, r.invoiceNo, r.billingDocument, r.material].some((v) => v.toLowerCase().includes(q.toLowerCase())));
   const pages = Math.max(1, Math.ceil(filtered.length / 10));
   const has = rows.length > 0;
-  const heads = ["Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Total Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
+  const heads = ["Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Total Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
 
   return <div className="space-y-3">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -75,8 +90,8 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
       <Tile icon={<Receipt className="size-5" />} label="Unique Billing Documents" value={has ? String(a.documents) : "—"} tone="var(--chart-3)" />
     </div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Card title="Sales by Plant (Top 10)"><HBars data={a.byPlant} /></Card>
-      <Card title="Top 10 Customers"><HBars data={a.topCustomers} /></Card>
+      <Card title="Sales by Plant (Top 10)"><PlantColumns data={a.byPlant} /></Card>
+      <Card title="Top 10 Customers"><RankList data={a.topCustomers} /></Card>
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
@@ -90,12 +105,13 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
         <Grad id="sr-tax" /><XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
         {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
-      <Card title="Sales by Product Category (Top 10)"><HBars data={a.byCategory} /></Card>
+      <Card title="Sales by Product Category (Top 10)"><RankList data={a.byCategory} /></Card>
     </div>
     <section className="rounded-xl border border-border bg-card shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-2">
         <h2 className="flex min-w-0 items-center gap-2 truncate text-xs font-semibold"><BarChart3 className="size-4 shrink-0 text-primary" />Sales Register Details</h2>
         <div className="flex items-center gap-2">
+          <button type="button" disabled={!filtered.length} onClick={() => void downloadSalesRegisterExcel(filtered)} className="inline-flex items-center gap-1 rounded border border-border bg-chart-2/10 px-2 py-1 text-xs font-semibold text-chart-2 disabled:opacity-40"><FileSpreadsheet className="size-3.5" />Excel</button>
           <div className="relative"><Search className="absolute left-2 top-2 size-3.5 text-muted-foreground" /><Input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search customer, invoice no, material..." className="h-8 w-56 pl-7 text-xs" /></div>
           <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-40">‹</button>
           <span className="text-xs">{page + 1} / {pages}</span>
@@ -103,10 +119,10 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
         </div>
       </div>
       <div className="max-h-[320px] overflow-auto">
-        <table className="w-full text-[11px]"><thead className="sticky top-0 bg-muted"><tr>{heads.map((h) => <th key={h} className="whitespace-nowrap px-2 py-1.5 text-left font-semibold">{h}</th>)}</tr></thead>
-          <tbody>{filtered.length ? filtered.slice(page * 10, page * 10 + 10).map((r) => <tr key={r.billingDocument + r.invoiceNo + r.material} className="border-t border-border">
-            {[r.billingDate, r.billingDocument, r.invoiceNo, r.customerName, r.plant, r.profitCenter, `${r.mainGroup} / ${r.subGroup}`, r.material, r.billedQty.toFixed(3), inr(r.netValue), inr(r.invoiceValue), inr(r.cgst), inr(r.sgst), inr(r.igst)].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1.5">{v}</td>)}
-            <td className="px-2 py-1.5"><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{r.status}</span></td>
+        <table className="w-full text-[11px]"><thead className="sticky top-0 bg-primary text-primary-foreground"><tr>{heads.map((h) => <th key={h} className="whitespace-nowrap px-2 py-1.5 text-left font-semibold">{h}</th>)}</tr></thead>
+          <tbody>{filtered.length ? filtered.slice(page * 10, page * 10 + 10).map((r, ri) => <tr key={r.billingDocument + r.invoiceNo + r.material + ri} className={`border-t border-border hover:bg-accent/40 ${ri % 2 ? "bg-muted/40" : ""}`}>
+            {[r.billingDate, r.billingDocument, r.invoiceNo, r.customerName, r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode, r.plant, r.profitCenter, `${r.mainGroup} / ${r.subGroup}`, r.material, r.billedQty.toFixed(3), inr(r.netValue), inr(r.invoiceValue), inr(r.cgst), inr(r.sgst), inr(r.igst)].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1.5">{v}</td>)}
+            <td className="px-2 py-1.5"><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-chart-2/15 font-semibold text-chart-2" : "bg-chart-4/20 font-semibold text-foreground"}`}>{r.status}</span></td>
           </tr>) : <tr><td colSpan={heads.length} className="py-8 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</td></tr>}</tbody></table>
       </div>
     </section>
