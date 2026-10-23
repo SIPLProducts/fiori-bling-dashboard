@@ -218,3 +218,4 @@ create index if not exists sales_register_prctr_idx on public.sales_register (pr
 drop trigger if exists sales_register_updated_at on public.sales_register;
 create trigger sales_register_updated_at before update on public.sales_register
   for each row execute function public.update_updated_at_column();
+
