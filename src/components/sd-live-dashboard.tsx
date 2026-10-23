@@ -1,3 +1,4 @@
+import { SyncNowButton } from "@/components/sync-now-button";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -2461,6 +2462,7 @@ export function SdLiveDashboard() {
             const [result] = await Promise.all([refetch(), refetchSync()]);
             return result;
           }} />
+          <SyncNowButton endpointName="Sales_Reports_KPI" label="Net Sales" className="h-9" onSynced={() => Promise.all([refetch(), refetchSync()])} />
           <Button
             variant="outline"
             size="sm"
@@ -2498,7 +2500,7 @@ export function SdLiveDashboard() {
               />
             </div>
             <Button
-              variant="outline"
+              variant="action"
               size="sm"
               className="h-9"
               disabled={!activeChips.length}

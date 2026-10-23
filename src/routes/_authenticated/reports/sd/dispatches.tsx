@@ -1,3 +1,4 @@
+import { SyncNowButton } from "@/components/sync-now-button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -47,6 +48,7 @@ function SalesRegisterPage() {
   const actions = <>
     <span className="text-xs text-muted-foreground"><span className="font-medium">Data available:</span> {range ? `${dmy(range.from)} – ${dmy(range.to)}` : "—"}</span>
     <Button type="button" variant="action" size="sm" className="h-7 text-xs" onClick={() => void query.refetch()} disabled={query.isFetching}><RefreshCw className={`size-3.5 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
+    <SyncNowButton endpointName="Sales _Register" label="Sales Register" className="h-7 text-xs" onSynced={() => query.refetch()} />
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
   return <ReportShell title="Sales Register" compact actions={allowed ? actions : undefined}>
