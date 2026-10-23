@@ -1,3 +1,4 @@
+import { SyncNowButton } from "@/components/sync-now-button";
 import { useUserAccess } from "@/lib/use-user-access";
 import { restrictToAssigned, scopeRowsToAssigned } from "@/lib/user-access";
 import { useMemo, useState } from "react";
@@ -34,7 +35,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
   const ledgerSum = cashLedgerTotals(ledger);
   async function download() { setDownloading(true); setDownloadError(""); try { await downloadCashLedger(ledger); } catch { setDownloadError("Could not download the report. Please try again."); } finally { setDownloading(false); } }
   return <main className="cash-dashboard">
-    <header className="cash-header"><div><h1>CASH FLOW DASHBOARD</h1><p>Realtime Financial & Cash Position Tracking</p></div><div className="flex items-center gap-2">{query.data?.syncedAt ? <span className="text-xs text-muted-foreground">Last synced: {new Date(query.data.syncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }).replace(/\//g, ".")} IST</span> : null}<Button variant="outline" size="icon" aria-label="Refresh cash flow data" title="Reload cash flow data from the database" disabled={query.isFetching} onClick={() => query.refetch()}><RefreshCw className={query.isFetching ? "animate-spin" : ""} /></Button>{canSync ? <Button size="sm" disabled={syncing} onClick={sync} aria-label="Sync ZCASH_FLOW from SAP" title="Sync ZCASH_FLOW data from SAP"><CloudDownload className={syncing ? "animate-pulse" : ""} />{syncing ? "Syncing…" : "Sync"}</Button> : null}</div></header>
+    <header className="cash-header"><div><h1>CASH FLOW DASHBOARD</h1><p>Realtime Financial & Cash Position Tracking</p></div><div className="flex items-center gap-2">{query.data?.syncedAt ? <span className="text-xs text-muted-foreground">Last synced: {new Date(query.data.syncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }).replace(/\//g, ".")} IST</span> : null}<Button variant="action" size="icon" aria-label="Refresh cash flow data" title="Reload cash flow data from the database" disabled={query.isFetching} onClick={() => query.refetch()}><RefreshCw className={query.isFetching ? "animate-spin" : ""} /></Button><SyncNowButton endpointName="ZCASH_FLOW" label="Cash Flow" onSynced={() => query.refetch()} /></div></header>
     {query.isLoading ? <div className="py-16 text-center text-muted-foreground"><Loader2 className="mx-auto mb-2 animate-spin" />Loading cash flow data…</div> : query.isError ? <div className="py-16 text-center text-destructive">Could not load cash flow data. Click Refresh to try again.</div> : !all.length ? <div className="py-16 text-center text-muted-foreground">No ZCASH_FLOW data yet. Run the ZCASH_FLOW sync in SAP API Settings.</div> : <>
     <section data-pdf-exclude className="cash-filter-card rounded-md border border-border bg-card shadow-tile">
       <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-1">
@@ -45,7 +46,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
           <span className="hidden text-[10px] text-muted-foreground sm:inline">{rows.length.toLocaleString("en-IN")} of {all.length.toLocaleString("en-IN")} records</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
+          <Button type="button" variant="action" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
           <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="cash-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
         </div>
       </div>

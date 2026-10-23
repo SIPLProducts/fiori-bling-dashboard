@@ -467,7 +467,7 @@ function SalesKpiPage() {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="action"
                   className="h-9 rounded-sm"
                   onClick={() => {
                     const next = defaultFilters();

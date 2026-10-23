@@ -1,3 +1,4 @@
+import { SyncNowButton } from "@/components/sync-now-button";
 import { roundWhole3 } from "@/lib/format";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -371,11 +372,11 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
           <p className="mt-1 text-xs text-muted-foreground" data-pdf-exclude>{lastSyncedLabel(lastSynced)}</p>
         </div>
          <div className="flex min-w-0 items-center justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
+          <Button type="button" variant="action" size="sm" aria-label="Refresh Open Sales Orders" title="Refresh Open Sales Orders" disabled={isFetching} onClick={async () => {
            const [result] = await Promise.all([refetch(), refetchSync()]);
           if (result.error) toast.error(result.error.message);
           else toast.success(`${screenTitle} refreshed`);
-         }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><Button type="button" variant="outline" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
+         }}><RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">{isFetching ? "Refreshing…" : "Refresh"}</span></Button><SyncNowButton endpointName={isSit ? "Sales In Transit (SIT)" : isBook ? "Order_Book" : "Open _Sales _Orders"} label={screenTitle} onSynced={() => Promise.all([refetch(), refetchSync()])} /><Button type="button" variant="export" size="sm" aria-label="Download Open Sales Orders PDF" title="Download PDF" disabled={pdfBusy || !filteredData.length} onClick={downloadDashboardPdf}><Download className="size-4" /><span className="hidden sm:inline">{pdfBusy ? "Preparing…" : "PDF"}</span></Button></div>
       </header> : null}
 
       {error ? <section className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error.message}</section> : null}
@@ -390,7 +391,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
             <span className="hidden text-[10px] text-muted-foreground sm:inline">{formatNumber(filteredData.length)} of {formatNumber(data.length)} line items</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button type="button" variant="default" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={isLoading || activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
+            <Button type="button" variant="action" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={isLoading || activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
             <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="open-order-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
           </div>
         </div>
