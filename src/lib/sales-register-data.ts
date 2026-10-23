@@ -22,7 +22,7 @@ export function toSalesRegisterRow(r: Rec): SalesRegisterRow {
     descs: {
       distributionChannel: t(r.vtext_dc), division: t(r.vtext_sd) || t(r.div_name), plant: t(r.name1_p), billingType: t(r.vtext),
       billingDocument: t(r.xblnr), salesDocument: t(r.bstnk), salesDocumentItem: t(r.arktx), customer: t(r.name_c),
-      material: t(r.arktx), profitCenter: t(r.mctxt),
+      material: t(r.arktx), profitCenter: t(r.mctxt), plantShort: t(r.div_name),
     },
     status: t(r.rfbsk).toUpperCase() === "C" ? "Posted" : "Pending",
   };
@@ -41,4 +41,4 @@ export async function getSalesRegisterRows(): Promise<SalesRegisterRow[]> {
   return out.map(toSalesRegisterRow);
 }
 
-export const salesRegisterQuery = { queryKey: ["sales-register", "v2-code-desc"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const salesRegisterQuery = { queryKey: ["sales-register", "v3-plant-short"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;

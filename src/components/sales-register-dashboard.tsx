@@ -5,6 +5,7 @@ import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadshe
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { buildSalesRegister, salesRegisterGroupRows, type SalesRegisterRow } from "@/lib/sales-register";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
@@ -34,7 +35,7 @@ function grad(id: string, horizontal = false) {
     <stop offset="100%" style={{ stopColor: c, stopOpacity: 1 }} /></linearGradient>)}</defs>;
 }
 
-const shortPlant = (name: string) => { const rest = name.split(" ").slice(1).join(" ").replace(/^HBL\s+/i, "") || name; return rest.length > 12 ? `${rest.slice(0, 11)}…` : rest; };
+const shortPlant = (name: string) => { const rest = name.split(" ").slice(1).join(" ") || name; return rest.length > 14 ? `${rest.slice(0, 13)}…` : rest; };
 
 function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -77,10 +78,14 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
   const filtered = rows.filter((r) => !q || [r.customerName, r.invoiceNo, r.billingDocument, r.material].some((v) => v.toLowerCase().includes(q.toLowerCase())));
-  const pages = Math.max(1, Math.ceil(filtered.length / 10));
+  const pages = Math.max(1, Math.ceil(filtered.length / size));
   const has = rows.length > 0;
-  const heads = ["Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Total Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
+  const sum = (k: "billedQty" | "netValue" | "invoiceValue" | "cgst" | "sgst" | "igst") => filtered.reduce((s, r) => s + r[k], 0);
+  const channels = [...new Set(rows.map((r) => r.channelCode || r.channel))];
+  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Total Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
+  const R = "text-right tabular-nums whitespace-nowrap";
 
   return <div className="space-y-3">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -95,7 +100,7 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
       <Card title="Sales Register (Daily)">{a.daily.length ? <ResponsiveContainer width="100%" height={150}><ComposedChart data={a.daily.map((d) => ({ ...d, invoice: cr(d.invoice), net: cr(d.net) }))}>
         <XAxis dataKey="date" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
@@ -105,7 +110,6 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
         {grad("sr-tax")}<XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
         {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
-      <Card title="Sales by Product Category (Top 10)"><RankList data={a.byCategory} /></Card>
     </div>
     <section className="rounded-xl border border-border bg-card shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-2">
@@ -113,17 +117,50 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
         <div className="flex items-center gap-2">
           <button type="button" disabled={!filtered.length} onClick={() => void downloadSalesRegisterExcel(filtered)} className="inline-flex items-center gap-1 rounded border border-border bg-chart-2/10 px-2 py-1 text-xs font-semibold text-chart-2 disabled:opacity-40"><FileSpreadsheet className="size-3.5" />Excel</button>
           <div className="relative"><Search className="absolute left-2 top-2 size-3.5 text-muted-foreground" /><Input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search customer, invoice no, material..." className="h-8 w-56 pl-7 text-xs" /></div>
-          <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-40">‹</button>
-          <span className="text-xs">{page + 1} / {pages}</span>
-          <button type="button" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="rounded border border-border px-2 py-1 text-xs disabled:opacity-40">›</button>
         </div>
       </div>
-      <div className="max-h-[320px] overflow-auto">
-        <table className="w-full text-[11px]"><thead className="sticky top-0 bg-primary text-primary-foreground"><tr>{heads.map((h) => <th key={h} className="whitespace-nowrap px-2 py-1.5 text-left font-semibold">{h}</th>)}</tr></thead>
-          <tbody>{filtered.length ? filtered.slice(page * 10, page * 10 + 10).map((r, ri) => <tr key={r.billingDocument + r.invoiceNo + r.material + ri} className={`border-t border-border hover:bg-accent/40 ${ri % 2 ? "bg-muted/40" : ""}`}>
-            {[r.billingDate, r.billingDocument, r.invoiceNo, r.customerName, r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode, r.plant, r.profitCenter, `${r.mainGroup} / ${r.subGroup}`, r.material, r.billedQty.toFixed(3), inr(r.netValue), inr(r.invoiceValue), inr(r.cgst), inr(r.sgst), inr(r.igst)].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1.5">{v}</td>)}
-            <td className="px-2 py-1.5"><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-chart-2/15 font-semibold text-chart-2" : "bg-chart-4/20 font-semibold text-foreground"}`}>{r.status}</span></td>
-          </tr>) : <tr><td colSpan={heads.length} className="py-8 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</td></tr>}</tbody></table>
+      <Table>
+        <TableHeader className="bg-primary/5"><TableRow>{heads.map((h) => <TableHead key={h} className="h-9 whitespace-nowrap text-[10px] font-semibold text-primary">{h}</TableHead>)}</TableRow></TableHeader>
+        <TableBody>{filtered.length ? filtered.slice(page * size, page * size + size).map((r, ri) => {
+          const ch = r.channelCode || r.channel; const ci = Math.max(0, channels.indexOf(ch));
+          return <TableRow key={r.billingDocument + r.invoiceNo + r.material + ri} className="text-[11px]">
+            <TableCell>{page * size + ri + 1}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.billingDate}</TableCell>
+            <TableCell className="whitespace-nowrap font-medium text-primary">{r.billingDocument}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.invoiceNo}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.customerName}</TableCell>
+            <TableCell className="whitespace-nowrap font-medium"><span className="inline-flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm" style={{ background: COLORS[ci % COLORS.length] }} />{r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode || "—"}</span></TableCell>
+            <TableCell className="whitespace-nowrap">{[r.plant, r.descs?.["plantShort"] || r.descs?.["plant"]].filter(Boolean).join(" — ")}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.profitCenter}</TableCell>
+            <TableCell className="whitespace-nowrap">{`${r.mainGroup} / ${r.subGroup}`}</TableCell>
+            <TableCell className="min-w-56">{r.material}</TableCell>
+            <TableCell className={R}>{r.billedQty.toFixed(3)}</TableCell>
+            <TableCell className={R}>{inr(r.netValue)}</TableCell>
+            <TableCell className={R}>{inr(r.invoiceValue)}</TableCell>
+            <TableCell className={R}>{inr(r.cgst)}</TableCell>
+            <TableCell className={R}>{inr(r.sgst)}</TableCell>
+            <TableCell className={R}>{inr(r.igst)}</TableCell>
+            <TableCell><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-chart-2/15 font-semibold text-chart-2" : "bg-chart-4/20 font-semibold text-foreground"}`}>{r.status}</span></TableCell>
+          </TableRow>;
+        }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
+        {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
+          <TableCell colSpan={10}>Total ({filtered.length} lines)</TableCell>
+          <TableCell className={R}>{sum("billedQty").toFixed(3)}</TableCell>
+          <TableCell className={R}>{inr(sum("netValue"))}</TableCell>
+          <TableCell className={R}>{inr(sum("invoiceValue"))}</TableCell>
+          <TableCell className={R}>{inr(sum("cgst"))}</TableCell>
+          <TableCell className={R}>{inr(sum("sgst"))}</TableCell>
+          <TableCell className={R}>{inr(sum("igst"))}</TableCell>
+          <TableCell />
+        </TableRow></TableFooter>}
+      </Table>
+      <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
+        <span>Rows</span>
+        <select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((s) => <option key={s} value={s}>{s}</option>)}</select>
+        <span className="text-muted-foreground">Showing {filtered.length ? page * size + 1 : 0}–{Math.min(filtered.length, page * size + size)} of {filtered.length}</span>
+        <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)} className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Previous</button>
+        <span>{page + 1} / {pages}</span>
+        <button type="button" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Next</button>
       </div>
     </section>
   </div>;

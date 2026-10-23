@@ -88,3 +88,10 @@ describe("sales register export", () => {
     expect(SALES_REGISTER_EXPORT_COLUMNS.map(([h]) => h)).toContain("Distribution Channel");
   });
 });
+
+describe("sales register plant short name", () => {
+  it("labels plants with DIV_NAME short name", () => {
+    const r = toSalesRegisterRow({ werks: "1100", name1_p: "HBL NCPP-SHPT", div_name: "NCPP" });
+    expect(buildSalesRegister([r]).byPlant[0]!.name).toBe("1100 NCPP");
+  });
+});
