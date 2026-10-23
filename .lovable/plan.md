@@ -14,10 +14,8 @@ That's why "From date" and "To date" each appear twice. The **Date window** drop
    - Posting Date From (BUDAT_F) / Posting Date To (BUDAT_T)
    - Any other key falls back to "<KEY> From" / "<KEY> To"
 2. **Date window comes first.** It sits as the first field in the Request fields grid, with the label "Date window (daily sync)" and the hint "Rolls Billing Date From/To to today on every sync".
-3. **The window controls one pair only.** For Sales Register that is FKDAT_F/FKDAT_T, the same pair the daily sync rolls. Other endpoints keep their current pair: the first date pair in the payload. When a preset is picked:
-   - only that pair is filled and locked
-   - ERDAT and other date pairs stay editable and optional (empty means not filtered)
-4. **The payload box stays.** It is the raw request body and stays in sync with the fields, so the values also show there. That is expected, not a second copy.
+3. **The Date window only changes `fkdat_f` / `fkdat_t`.** For Sales Register, picking a preset (for example Last 7 days) writes only these two values, in the fields and in the payload. Every other field is left exactly as saved: `fkart_f`, `fkart_t`, `erdat_f`, `erdat_t`, `vbeln_f`, `werks_f` and all the rest, and empty ones stay empty. Only the two billing date fields are locked while a preset is active; everything else stays editable. Other endpoints keep their current date pair (BUDAT for Net Sales, ERDAT for Order Book).
+4. **The payload box stays.** It is the raw request body and stays in sync with the fields, so `fkdat_f` / `fkdat_t` also show there. That is expected, not a second copy.
 
 ## Technical notes
 - `src/routes/_authenticated/admin/sap-api.tsx` → `PayloadRequestFields`:
