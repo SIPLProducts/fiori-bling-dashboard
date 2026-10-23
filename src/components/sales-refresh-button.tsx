@@ -14,7 +14,7 @@ export function SalesRefreshButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="action"
       size="sm"
       className={className}
       disabled={refreshing}
