@@ -24,6 +24,9 @@ import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authe
 import { Route as AuthenticatedReportsFiAssetRegisterRouteImport } from './routes/_authenticated/reports/fi/asset-register'
 import { Route as AuthenticatedReportsFiCashFlowRouteImport } from './routes/_authenticated/reports/fi/cash-flow'
 import { Route as AuthenticatedReportsFiTbnRouteRouteImport } from './routes/_authenticated/reports/fi/tbn/route'
+import { Route as AuthenticatedReportsMmOpenPurchaseOrdersRouteImport } from './routes/_authenticated/reports/mm/open-purchase-orders'
+import { Route as AuthenticatedReportsMmPurchaseOrdersRouteImport } from './routes/_authenticated/reports/mm/purchase-orders'
+import { Route as AuthenticatedReportsMmPurchaseRegisterRouteImport } from './routes/_authenticated/reports/mm/purchase-register'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
 import { Route as AuthenticatedReportsSdDispatchesRouteImport } from './routes/_authenticated/reports/sd/dispatches'
 import { Route as AuthenticatedReportsSdDrilldownRouteImport } from './routes/_authenticated/reports/sd/drilldown'
@@ -121,6 +124,24 @@ const AuthenticatedReportsFiTbnRouteRoute =
     path: '/reports/fi/tbn',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsMmOpenPurchaseOrdersRoute =
+  AuthenticatedReportsMmOpenPurchaseOrdersRouteImport.update({
+    id: '/reports/mm/open-purchase-orders',
+    path: '/reports/mm/open-purchase-orders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsMmPurchaseOrdersRoute =
+  AuthenticatedReportsMmPurchaseOrdersRouteImport.update({
+    id: '/reports/mm/purchase-orders',
+    path: '/reports/mm/purchase-orders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsMmPurchaseRegisterRoute =
+  AuthenticatedReportsMmPurchaseRegisterRouteImport.update({
+    id: '/reports/mm/purchase-register',
+    path: '/reports/mm/purchase-register',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsModuleModuleRoute =
   AuthenticatedReportsModuleModuleRouteImport.update({
     id: '/reports/module/$module',
@@ -215,6 +236,9 @@ export interface FileRoutesByFullPath {
   '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
+  '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
+  '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
@@ -243,6 +267,9 @@ export interface FileRoutesByTo {
   '/tables': typeof AuthenticatedTablesIndexRoute
   '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
+  '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
+  '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
@@ -274,6 +301,9 @@ export interface FileRoutesById {
   '/_authenticated/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/_authenticated/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/_authenticated/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/_authenticated/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
+  '/_authenticated/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
+  '/_authenticated/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
   '/_authenticated/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/_authenticated/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
@@ -305,6 +335,9 @@ export interface FileRouteTypes {
     | '/reports/fi/tbn'
     | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
+    | '/reports/mm/open-purchase-orders'
+    | '/reports/mm/purchase-orders'
+    | '/reports/mm/purchase-register'
     | '/reports/module/$module'
     | '/reports/sd/dispatches'
     | '/reports/sd/drilldown'
@@ -333,6 +366,9 @@ export interface FileRouteTypes {
     | '/tables'
     | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
+    | '/reports/mm/open-purchase-orders'
+    | '/reports/mm/purchase-orders'
+    | '/reports/mm/purchase-register'
     | '/reports/module/$module'
     | '/reports/sd/dispatches'
     | '/reports/sd/drilldown'
@@ -363,6 +399,9 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/fi/tbn'
     | '/_authenticated/reports/fi/asset-register'
     | '/_authenticated/reports/fi/cash-flow'
+    | '/_authenticated/reports/mm/open-purchase-orders'
+    | '/_authenticated/reports/mm/purchase-orders'
+    | '/_authenticated/reports/mm/purchase-register'
     | '/_authenticated/reports/module/$module'
     | '/_authenticated/reports/sd/dispatches'
     | '/_authenticated/reports/sd/drilldown'
@@ -493,6 +532,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsFiTbnRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/mm/open-purchase-orders': {
+      id: '/_authenticated/reports/mm/open-purchase-orders'
+      path: '/reports/mm/open-purchase-orders'
+      fullPath: '/reports/mm/open-purchase-orders'
+      preLoaderRoute: typeof AuthenticatedReportsMmOpenPurchaseOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/mm/purchase-orders': {
+      id: '/_authenticated/reports/mm/purchase-orders'
+      path: '/reports/mm/purchase-orders'
+      fullPath: '/reports/mm/purchase-orders'
+      preLoaderRoute: typeof AuthenticatedReportsMmPurchaseOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/mm/purchase-register': {
+      id: '/_authenticated/reports/mm/purchase-register'
+      path: '/reports/mm/purchase-register'
+      fullPath: '/reports/mm/purchase-register'
+      preLoaderRoute: typeof AuthenticatedReportsMmPurchaseRegisterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/module/$module': {
       id: '/_authenticated/reports/module/$module'
       path: '/reports/module/$module'
@@ -616,6 +676,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsFiTbnRouteRoute: typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   AuthenticatedReportsFiAssetRegisterRoute: typeof AuthenticatedReportsFiAssetRegisterRoute
   AuthenticatedReportsFiCashFlowRoute: typeof AuthenticatedReportsFiCashFlowRoute
+  AuthenticatedReportsMmOpenPurchaseOrdersRoute: typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
+  AuthenticatedReportsMmPurchaseOrdersRoute: typeof AuthenticatedReportsMmPurchaseOrdersRoute
+  AuthenticatedReportsMmPurchaseRegisterRoute: typeof AuthenticatedReportsMmPurchaseRegisterRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
   AuthenticatedReportsSdDispatchesRoute: typeof AuthenticatedReportsSdDispatchesRoute
   AuthenticatedReportsSdDrilldownRoute: typeof AuthenticatedReportsSdDrilldownRoute
@@ -643,6 +706,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsFiAssetRegisterRoute:
     AuthenticatedReportsFiAssetRegisterRoute,
   AuthenticatedReportsFiCashFlowRoute: AuthenticatedReportsFiCashFlowRoute,
+  AuthenticatedReportsMmOpenPurchaseOrdersRoute:
+    AuthenticatedReportsMmOpenPurchaseOrdersRoute,
+  AuthenticatedReportsMmPurchaseOrdersRoute:
+    AuthenticatedReportsMmPurchaseOrdersRoute,
+  AuthenticatedReportsMmPurchaseRegisterRoute:
+    AuthenticatedReportsMmPurchaseRegisterRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
   AuthenticatedReportsSdDispatchesRoute: AuthenticatedReportsSdDispatchesRoute,
   AuthenticatedReportsSdDrilldownRoute: AuthenticatedReportsSdDrilldownRoute,
