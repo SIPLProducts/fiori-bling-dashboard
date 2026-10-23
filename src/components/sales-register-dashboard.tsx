@@ -1,4 +1,3 @@
-import { toCr, toLah } from "@/lib/sales-register";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
@@ -7,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie
 import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { buildSalesRegister, salesRegisterGroupRows, salesRegisterTrend, type SalesRegisterDateRange, type SalesRegisterRow } from "@/lib/sales-register";
+import { toCr, toLah, buildSalesRegister, salesRegisterGroupRows, salesRegisterTrend, type SalesRegisterDateRange, type SalesRegisterRow } from "@/lib/sales-register";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const cr = (v: number) => Math.round((v / 1e7) * 100) / 100;
