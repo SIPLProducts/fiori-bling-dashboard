@@ -467,7 +467,7 @@ function SalesKpiPage() {
                 </Button>
                 <Button
                   type="button"
-                  variant="action"
+                  variant="reset"
                   className="h-9 rounded-sm"
                   onClick={() => {
                     const next = defaultFilters();

@@ -30,7 +30,7 @@ export function SyncNowButton({ endpointName, label, onSynced, className = "" }:
     } finally { setBusy(false); }
   };
   return (
-    <Button type="button" variant="action" size="sm" className={className} disabled={busy} onClick={run} aria-label={`Sync ${label} from SAP`} title={`Sync ${label} from SAP`}>
+    <Button type="button" variant="sync" size="sm" className={className} disabled={busy} onClick={run} aria-label={`Sync ${label} from SAP`} title={`Sync ${label} from SAP`}>
       <CloudDownload className={`size-4 ${busy ? "animate-pulse" : ""}`} />
       <span className="hidden sm:inline">{busy ? "Syncing…" : "Sync"}</span>
     </Button>

@@ -2500,7 +2500,7 @@ export function SdLiveDashboard() {
               />
             </div>
             <Button
-              variant="action"
+              variant="reset"
               size="sm"
               className="h-9"
               disabled={!activeChips.length}

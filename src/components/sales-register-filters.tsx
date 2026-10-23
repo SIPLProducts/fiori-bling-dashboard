@@ -48,7 +48,7 @@ export function SalesRegisterFilters({ defaultOpen = true, rows, value, onChange
         {active ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">{active} active</span> : null}
         <ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
-      <Button type="button" variant="action" size="sm" onClick={() => onChange(emptySalesRegisterFilters)}><RotateCcw className="size-3.5" />Reset</Button>
+      <Button type="button" variant="reset" size="sm" onClick={() => onChange(emptySalesRegisterFilters)}><RotateCcw className="size-3.5" />Reset</Button>
     </div>
     {open ? <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-2 md:grid-cols-4">
       {FIELDS.map(([key, label]) => {

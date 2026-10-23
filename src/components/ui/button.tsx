@@ -13,6 +13,8 @@ const buttonVariants = cva(
         destructive: "btn-danger",
         action: "btn-action",
         export: "btn-export",
+        sync: "btn-sync",
+        reset: "btn-reset",
         soft: "btn-soft",
         outline:
           "btn-soft",
