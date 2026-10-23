@@ -66,7 +66,7 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
     <div className="relative"><ResponsiveContainer width="100%" height={140}><PieChart>{grad(id)}
       <Pie data={data} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} label={false} labelLine={false}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}</Pie>
       <Tooltip formatter={(v: number) => `₹ ${cr(v)} Cr`} /></PieChart></ResponsiveContainer>
-      <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight text-foreground">₹ {cr(total)} Cr<br /><span className="text-[8px] font-normal text-muted-foreground">Total Sales</span></div></div>
+      <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight text-foreground"><div>₹ {cr(total)} Cr<br /><span className="text-[8px] font-normal text-muted-foreground">Total Sales</span></div></div></div>
     <ul className="max-h-[140px] min-w-0 space-y-1 overflow-auto text-[10px]">{data.map((d, i) => <li key={d.name} className="flex min-w-0 items-center gap-1" title={d.name}><span className="size-2 shrink-0 rounded-full" style={{ background: COLORS[i % COLORS.length] }} /><span className="truncate">{d.name}</span> <b className="ml-auto shrink-0 pl-2">{total ? ((d.value / total) * 100).toFixed(1) : 0}%</b></li>)}</ul>
   </div>;
 }
