@@ -24,8 +24,7 @@ function Tile({ icon, label, value, tone }: { icon: ReactNode; label: string; va
   return <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm" style={{ backgroundImage: `linear-gradient(135deg, color-mix(in oklab, ${tone} 12%, transparent), transparent)` }}>
     <div className="grid size-8 shrink-0 place-items-center rounded-full text-primary-foreground" style={{ background: tone }}>{icon}</div>
     <div className="min-w-0"><p className="truncate text-xs font-semibold text-foreground">{label}</p>
-      <p className="truncate text-lg font-bold text-foreground">{value}</p>
-      <p className="text-[10px] text-muted-foreground">vs. previous period</p></div>
+      <p className="truncate text-lg font-bold text-foreground">{value}</p></div>
   </div>;
 }
 
