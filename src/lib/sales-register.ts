@@ -27,6 +27,8 @@ export type SalesRegisterRow = {
   salesDocumentItem: string;
   salesOffice: string;
   materialCode: string;
+  /** SAP descriptions per filter key (code → description shown as "code — desc"). */
+  descs?: Partial<Record<string, string>>;
 };
 
 /** Smart Filter keys → row values. null/absent selection = unrestricted, [] = none. */
@@ -67,6 +69,14 @@ export function filterSalesRegister(rows: SalesRegisterRow[], f: SalesRegisterFi
 export function salesRegisterOptions(rows: SalesRegisterRow[], key: SalesRegisterCodeKey): string[] {
   const get = SALES_REGISTER_CODE_KEYS[key];
   return [...new Set(rows.map(get).filter(Boolean))].sort();
+}
+
+/** Dropdown options as "code — description" (code alone when SAP sends no description). */
+export function salesRegisterOptionLabels(rows: SalesRegisterRow[], key: SalesRegisterCodeKey): { value: string; label: string }[] {
+  const get = SALES_REGISTER_CODE_KEYS[key];
+  const m = new Map<string, string>();
+  for (const r of rows) { const c = get(r); if (!c) continue; const d = r.descs?.[key]; if (!m.has(c) || (d && m.get(c) === c)) m.set(c, d && d !== c ? `${c} — ${d}` : c); }
+  return [...m].sort(([a], [b]) => a.localeCompare(b)).map(([value, label]) => ({ value, label }));
 }
 
 export type Named = { name: string; value: number };

@@ -57,8 +57,8 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
 
   return <div className="space-y-3">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Invoice Value" value={has ? inr(a.totalInvoice) : "—"} tone="var(--chart-1)" />
-      <Tile icon={<FileText className="size-5" />} label="Total Net Value" value={has ? inr(a.totalNet) : "—"} tone="var(--chart-2)" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Invoice Value" value={has ? `₹ ${cr(a.totalInvoice).toFixed(2)} Cr` : "—"} tone="var(--chart-1)" />
+      <Tile icon={<FileText className="size-5" />} label="Total Net Value" value={has ? `₹ ${cr(a.totalNet).toFixed(2)} Cr` : "—"} tone="var(--chart-2)" />
       <Tile icon={<Users className="size-5" />} label="Unique Customers" value={has ? String(a.customers) : "—"} tone="var(--chart-4)" />
       <Tile icon={<Receipt className="size-5" />} label="Unique Billing Documents" value={has ? String(a.documents) : "—"} tone="var(--chart-3)" />
     </div>

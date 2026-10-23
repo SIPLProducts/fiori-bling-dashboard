@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSalesRegister, type SalesRegisterRow } from "../src/lib/sales-register";
+import { buildSalesRegister, salesRegisterOptionLabels, type SalesRegisterRow } from "../src/lib/sales-register";
 
 const row = (p: Partial<SalesRegisterRow>): SalesRegisterRow => ({
   billingDate: "2026-03-02", billingDocument: "B1", invoiceNo: "I1", customer: "C1", customerName: "A",
@@ -50,5 +50,16 @@ describe("sales register SAP mapping", () => {
     const a = row({ plant: "1800", billingDate: "2026-03-02" }), b = row({ plant: "1100", billingDate: "2026-04-02" });
     expect(filterSalesRegister([a, b], { codes: { plant: ["1800"] }, dates: {} })).toEqual([a]);
     expect(filterSalesRegister([a, b], { codes: {}, dates: { billingDate: { mode: "range", from: "2026-04-01", to: "" } } })).toEqual([b]);
+  });
+});
+
+describe("sales register code + description", () => {
+  it("uses AUART with VTEXT_DC for distribution channel", () => {
+    const r = toSalesRegisterRow({ auart: "ZDOR", vtext_dc: "Domestic Sales", vtweg_auft: "01" });
+    expect(r.channelCode).toBe("ZDOR");
+    expect(salesRegisterOptionLabels([r], "distributionChannel")).toEqual([{ value: "ZDOR", label: "ZDOR — Domestic Sales" }]);
+  });
+  it("shows the code alone when no description", () => {
+    expect(salesRegisterOptionLabels([toSalesRegisterRow({ spart: "01" })], "division")).toEqual([{ value: "01", label: "01" }]);
   });
 });

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useUserAccess } from "@/lib/use-user-access";
 import { restrictToAssigned } from "@/lib/user-access";
 import {
-  emptySalesRegisterFilters, salesRegisterOptions,
+  emptySalesRegisterFilters, salesRegisterOptionLabels,
   type SalesRegisterCodeKey, type SalesRegisterDateRange, type SalesRegisterFilterState, type SalesRegisterRow,
 } from "@/lib/sales-register";
 
@@ -32,10 +32,10 @@ export function SalesRegisterFilters({ defaultOpen = true, rows, value, onChange
 }) {
   const access = useUserAccess();
   const [open, setOpen] = useState(defaultOpen);
-  const optionsFor = (key: SalesRegisterCodeKey): string[] => {
-    const all = salesRegisterOptions(rows, key);
-    if (key === "plant") return restrictToAssigned(all, access?.plants, access?.unrestricted, (o) => o);
-    if (key === "profitCenter") return restrictToAssigned(all, access?.profitCenters, access?.unrestricted, (o) => o);
+  const optionsFor = (key: SalesRegisterCodeKey) => {
+    const all = salesRegisterOptionLabels(rows, key);
+    if (key === "plant") return restrictToAssigned(all, access?.plants, access?.unrestricted, (o) => o.value);
+    if (key === "profitCenter") return restrictToAssigned(all, access?.profitCenters, access?.unrestricted, (o) => o.value);
     return all;
   };
   const active = Object.values(value.codes).filter((v) => v !== null && v !== undefined).length
