@@ -62,3 +62,16 @@ test("order book groups by order type and keeps every group without Others", () 
     ], { byCode: true, all: true });
     expect(r.breakdown.map((g) => [g.name, g.value])).toEqual([["ZDOR", 15], ["ZSOR", 4], ["ZEOR", 2]]);
   });
+
+import { summarizeLaunchOrders as summarizeByDescription } from "../src/lib/open-orders-launch-summary";
+test("Sales Register tile combines codes sharing a description", () => {
+  const s = summarizeByDescription([
+    { p_value1: 100, sales_type: "Domestic Sales", order_type: "ZDOR" },
+    { p_value1: 50, sales_type: "Domestic Sales", order_type: "ZSOR" },
+    { p_value1: 10, sales_type: null, order_type: "ZRE2" },
+  ] as any, { all: true });
+  const json = JSON.stringify(s);
+  expect(json).toContain("Domestic Sales");
+  expect(json).toContain("ZRE2");
+  expect(json).not.toContain("ZSOR");
+});
