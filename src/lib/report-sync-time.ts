@@ -1,7 +1,8 @@
-export type ReportDataset = "net-sales" | "open-sales-orders" | "order-book" | "sit";
+export type ReportDataset = "net-sales" | "open-sales-orders" | "order-book" | "sit" | "sales-register";
 
 export function matchesReportEndpoint(endpoint: string, dataset: ReportDataset) {
   const normalized = endpoint.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  if (dataset === "sales-register") return normalized === "salesregister";
   if (dataset === "sit") return normalized.includes("salesintransit") || normalized === "sit" || normalized === "zsit";
   return normalized === (dataset === "net-sales" ? "salesreportskpi" : dataset === "order-book" ? "orderbook" : "opensalesorders");
 }
