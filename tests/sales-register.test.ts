@@ -78,3 +78,13 @@ describe("sales register cards", () => {
     expect(groups[0]!.parts.NCPP!.value).toBe(1);
   });
 });
+
+import { channelLabel, SALES_REGISTER_EXPORT_COLUMNS } from "../src/lib/sales-register-export";
+describe("sales register export", () => {
+  it("labels channel as code — description", () => {
+    expect(channelLabel({ channelCode: "ZDOR", channel: "Domestic Sales" })).toBe("ZDOR — Domestic Sales");
+  });
+  it("includes Distribution Channel in Excel columns", () => {
+    expect(SALES_REGISTER_EXPORT_COLUMNS.map(([h]) => h)).toContain("Distribution Channel");
+  });
+});
