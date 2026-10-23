@@ -2,8 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
 const PAGE_SIZE = 1000;
-const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt";
-type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt", string | number | null>>;
+const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt,tot_ah";
+type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt" | "tot_ah", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
@@ -17,7 +17,7 @@ export function toSalesRegisterRow(r: Rec): SalesRegisterRow {
     productCategory: t(r.div_name), channel: t(r.vtext_dc), channelCode: t(r.auart) || t(r.vtweg_auft),
     division: t(r.spart), billingType: t(r.fkart), salesDocument: t(r.aubel), salesDocumentItem: t(r.aupos),
     salesOffice: t(r.bezei_so), materialCode: t(r.matnr), material: t(r.arktx) || t(r.matnr),
-    billedQty: n(r.fkimg), netValue: n(r.netwr_tot), invoiceValue: n(r.netwr_t),
+    billedQty: n(r.fkimg), totalAh: n(r.tot_ah), netValue: n(r.netwr_tot), invoiceValue: n(r.netwr_t),
     cgst: n(r.kwert_cgst), sgst: n(r.kwert_sgst), igst: n(r.kwert_igst), tcs: n(r.tcs),
     descs: {
       distributionChannel: t(r.vtext_dc), division: t(r.vtext_sd) || t(r.div_name), plant: t(r.name1_p), billingType: t(r.vtext),
