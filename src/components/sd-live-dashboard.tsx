@@ -838,9 +838,9 @@ function HBar({
   );
 }
 
-type ModelLimit = 10 | 20 | "all";
+export type ModelLimit = 10 | 20 | "all";
 
-function SalesByModelChart({
+export function SalesByModelChart({
   items,
   limit,
   full,
@@ -947,7 +947,7 @@ function SalesByModelChart({
   );
 }
 
-function ModelWiseChart({ items, exportMode = false }: { items: TypePerformance[]; exportMode?: boolean }) {
+export function ModelWiseChart({ items, exportMode = false }: { items: TypePerformance[]; exportMode?: boolean }) {
   if (!items.length) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No Type values match the current filters.</p>;
   }

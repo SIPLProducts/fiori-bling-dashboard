@@ -14,6 +14,9 @@ export type SalesRegisterRow = {
   billedQty: number;
   /** SAP TOT_AH (total ampere-hours) for the line. */
   totalAh?: number;
+  /** SAP MODEL / TYPE. */
+  model?: string;
+  productType?: string;
   netValue: number;
   invoiceValue: number;
   cgst: number;
