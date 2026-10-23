@@ -41,4 +41,4 @@ export async function getSalesRegisterRows(): Promise<SalesRegisterRow[]> {
   return out.map(toSalesRegisterRow);
 }
 
-export const salesRegisterQuery = { queryKey: ["sales-register", "v3-plant-short"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const salesRegisterQuery = { queryKey: ["sales-register", "v4-tot-ah"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;

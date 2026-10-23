@@ -93,16 +93,20 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       <Tile icon={<IndianRupee className="size-5" />} label="Total Sales Count" value={has ? String(a.documents) : "—"} tone="var(--chart-1)" />
       <Tile icon={<FileText className="size-5" />} label="Total Net Value" value={has ? `₹ ${cr(a.totalNet).toFixed(2)} Cr` : "—"} tone="var(--chart-2)" />
       <Tile icon={<Users className="size-5" />} label="Unique Customers" value={has ? String(a.customers) : "—"} tone="var(--chart-4)" />
-      <Tile icon={<Receipt className="size-5" />} label="Unique Billing Documents" value={has ? String(a.documents) : "—"} tone="var(--chart-3)" />
+      <Tile icon={<Receipt className="size-5" />} label="Total LAH" value={has ? `${toLah(a.totalAh).toFixed(2)} LAH` : "—"} tone="var(--chart-3)" />
     </div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Card title="Sales by Plant (Top 10)"><PlantColumns data={a.byPlant} /></Card>
+      <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
       <Card title="Top 10 Customers"><RankList data={a.topCustomers} /></Card>
+      <Card title="Top 10 Profit Centres"><RankList data={a.topProfitCenters} /></Card>
+      <Card title="Top 10 Materials"><RankList data={a.topMaterials} /></Card>
+    </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Card title="Sales by Plant (Top 10)"><PlantColumns data={a.byPlant} /></Card>
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
         {grad("sr-trend")}<CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => [`₹ ${v} Cr`, "Net Value"]} />
@@ -111,7 +115,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
         {grad("sr-tax")}<XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}
+        {([["cgst", 0], ["sgst", 3], ["igst", 4], ["tcs", 5]] as const).map(([k, c]) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${c})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
     </div>
     <section className="rounded-xl border border-border bg-card shadow-sm">
