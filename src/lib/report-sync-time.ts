@@ -16,3 +16,13 @@ export function lastSyncedLabel(value: string | null | undefined) {
   const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
   return `Last Sync: ${part("day")}.${part("month")}.${part("year")}, ${part("hour")}:${part("minute")} ${part("dayPeriod").toLowerCase()} IST`;
 }
+/** Compact card footer form: "Last Sync: 23.10.26, 1:20 pm" (IST). */
+export function lastSyncShortLabel(value: string | null | undefined) {
+  if (!value || !Number.isFinite(Date.parse(value))) return "Sync time unavailable";
+  const parts = new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "numeric", minute: "2-digit", hour12: true,
+  }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
+  return `Last Sync: ${part("day")}.${part("month")}.${part("year")}, ${part("hour")}:${part("minute")} ${part("dayPeriod").toLowerCase()}`;
+}

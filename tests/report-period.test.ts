@@ -25,3 +25,7 @@ test("sync timestamp is exact India time and absent/invalid times are not invent
   expect(lastSyncedLabel(null)).toBe("Sync time unavailable");
   expect(lastSyncedLabel("invalid")).toBe("Sync time unavailable");
 });
+import { lastSyncShortLabel } from "../src/lib/report-sync-time";
+test("card footer uses short IST sync label", () => {
+  expect(lastSyncShortLabel("2026-10-23T07:50:00Z")).toBe("Last Sync: 23.10.26, 1:20 pm");
+});
