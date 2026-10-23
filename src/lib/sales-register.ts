@@ -142,3 +142,7 @@ export function salesRegisterTrend(rows: SalesRegisterRow[], range?: SalesRegist
 export function salesRegisterGroupRows(rows: SalesRegisterRow[], group: "mainGroup" | "subGroup") {
   return rows.map((r) => ({ name: r[group], value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.["division"] || r.productCategory || r.division }));
 }
+
+/** Table/Excel units: crores and lakhs (LAH), 2 decimals. */
+export const toCr = (v: number) => Math.round((v / 1e7) * 100) / 100;
+export const toLah = (v: number) => Math.round((v / 1e5) * 100) / 100;
