@@ -28,7 +28,7 @@ function Tile({ icon, label, value, tone }: { icon: ReactNode; label: string; va
   </div>;
 }
 
-function Grad({ id, horizontal = false }: { id: string; horizontal?: boolean }) {
+function grad(id: string, horizontal = false) {
   return <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2={horizontal ? "1" : "0"} y2={horizontal ? "0" : "1"}>
     <stop offset="0%" style={{ stopColor: c, stopOpacity: 0.55 }} /><stop offset="55%" style={{ stopColor: c, stopOpacity: 0.9 }} />
     <stop offset="100%" style={{ stopColor: c, stopOpacity: 1 }} /></linearGradient>)}</defs>;
@@ -37,9 +37,9 @@ function Grad({ id, horizontal = false }: { id: string; horizontal?: boolean }) 
 const shortPlant = (name: string) => { const rest = name.split(" ").slice(1).join(" ").replace(/^HBL\s+/i, "") || name; return rest.length > 12 ? `${rest.slice(0, 11)}…` : rest; };
 
 function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
-  const id = useId().replace(/:/g, "");
+  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <Empty />;
-  return <ResponsiveContainer width="100%" height={170}><BarChart data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}><Grad id={id} />
+  return <ResponsiveContainer width="100%" height={170}><BarChart data={data.map((d) => ({ ...d, value: cr(d.value) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>{grad(id)}
     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
     <XAxis dataKey="name" interval={0} tick={{ fontSize: 8, fontWeight: 600 }} tickFormatter={shortPlant} angle={-30} textAnchor="end" height={40} />
     <YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${v} Cr`} />
@@ -60,10 +60,10 @@ function RankList({ data }: { data: { name: string; value: number }[] }) {
 }
 
 function Donut({ data, total }: { data: { name: string; value: number }[]; total: number }) {
-  const id = useId().replace(/:/g, "");
+  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <Empty />;
   return <div className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] items-center gap-2">
-    <div className="relative"><ResponsiveContainer width="100%" height={140}><PieChart><Grad id={id} />
+    <div className="relative"><ResponsiveContainer width="100%" height={140}><PieChart>{grad(id)}
       <Pie data={data} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} label={false} labelLine={false}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}</Pie>
       <Tooltip formatter={(v: number) => `₹ ${cr(v)} Cr`} /></PieChart></ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight text-foreground">₹ {cr(total)} Cr<br /><span className="text-[8px] font-normal text-muted-foreground">Total Sales</span></div></div>
@@ -99,10 +99,10 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
       <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
       <Card title="Sales Register (Daily)">{a.daily.length ? <ResponsiveContainer width="100%" height={150}><ComposedChart data={a.daily.map((d) => ({ ...d, invoice: cr(d.invoice), net: cr(d.net) }))}>
         <XAxis dataKey="date" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        <Grad id="sr-daily" /><Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="#0f9d8a" />
+        {grad("sr-daily")}<Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="#0f9d8a" />
       </ComposedChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
-        <Grad id="sr-tax" /><XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
+        {grad("sr-tax")}<XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
         {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Sales by Product Category (Top 10)"><RankList data={a.byCategory} /></Card>
