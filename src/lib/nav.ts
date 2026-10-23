@@ -47,6 +47,7 @@ export function canAccessPath(path: NavPath, screens: readonly string[] | undefi
 /** Which tile groups matter most to each role — drives launchpad ordering. */
 const ALL_GROUPS = [
   "sales-distribution",
+  "purchase",
   "financial-accounting",
   "production-planning",
   "tables-master",
