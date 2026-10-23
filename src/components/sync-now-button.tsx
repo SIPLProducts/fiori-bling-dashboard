@@ -15,7 +15,7 @@ export function SyncNowButton({ endpointName, label, onSynced, className = "" }:
 }) {
   const { data } = useLaunchpad();
   const [busy, setBusy] = useState(false);
-  if (!canSyncSap(data?.roleKeys)) return null;
+  if (!canSyncSap(data?.roles)) return null;
   const run = async () => {
     setBusy(true);
     try {
