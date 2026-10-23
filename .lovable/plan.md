@@ -4,7 +4,8 @@
 - "Total Sales Count" → **Sales Invoices**
 - "Total Net Value" → **Net Value**
 - "Unique Customers" stays **Unique Customers**
-- Total LAH unchanged.
+- "Total LAH" → **LAH**; value shown without the trailing "LAH" word (e.g. 756).
+- Net Value and LAH tile values rounded to whole numbers (e.g. ₹ 125 Cr, 756).
 
 ## New cards (Sales Register and Order Book)
 Add the same two side-by-side cards used on Net Sales:
