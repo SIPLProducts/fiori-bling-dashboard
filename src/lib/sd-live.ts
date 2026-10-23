@@ -730,7 +730,8 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     positiveAhTotal += salesNumber(row.totalAh);
     // Negative local-currency amounts remain included when Total AH is positive.
     positiveAhSales += salesNumber(row.amount);
-    const model = row.model.trim() || "Unassigned";
+    const model = row.model.trim();
+    if (!model) continue;
     const current = byModel.get(model) ?? { model, totalAmount: 0, totalAh: 0, recordCount: 0 };
     current.totalAmount += salesNumber(row.amount);
     current.totalAh += salesNumber(row.totalAh);
@@ -753,7 +754,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     if (r.docNo) docs.add(`${r.fiscalYear}/${r.docNo}`);
     if (r.customer) customers.add(r.customer);
     add(byType, r.salesType, r.amount);
-    add(byProductType, r.productType.trim() || "Unassigned", r.amount);
+    if (r.productType.trim()) add(byProductType, r.productType.trim(), r.amount);
     if (r.newRepl.trim()) add(byNewRepl, r.newRepl.trim(), r.amount);
     else unassignedNewReplCount += 1;
     add(byPc, profitCentreLabel(r.profitCtr, r.profitCtrName) || r.pcShortName, r.amount);
