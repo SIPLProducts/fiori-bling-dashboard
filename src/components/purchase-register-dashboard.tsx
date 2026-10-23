@@ -110,7 +110,7 @@ export function PurchaseRegisterDashboard() {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Card title="Top 10 Materials"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, extra: m.group, value: m.value }))} /></Card>
       <Card title="Top 10 Vendors"><RankList data={TOP_VENDORS} /></Card>
-      <Card title="Material Group" sub="₹ Cr"><RankList data={groups} /></Card>
+      <Card title="Material Group"><RankList data={groups} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
