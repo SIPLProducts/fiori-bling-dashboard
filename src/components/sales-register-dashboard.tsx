@@ -1,5 +1,6 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { ModelTypeCards } from "@/components/model-type-cards";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -89,10 +90,10 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
 
   return <div className="space-y-3">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Sales Count" value={has ? String(a.documents) : "—"} tone="var(--chart-1)" />
-      <Tile icon={<FileText className="size-5" />} label="Total Net Value" value={has ? `₹ ${cr(a.totalNet).toFixed(2)} Cr` : "—"} tone="var(--chart-2)" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Sales Invoices" value={has ? String(a.documents) : "—"} tone="var(--chart-1)" />
+      <Tile icon={<FileText className="size-5" />} label="Net Value" value={has ? `₹ ${Math.round(a.totalNet / 1e7).toLocaleString("en-IN")} Cr` : "—"} tone="var(--chart-2)" />
       <Tile icon={<Users className="size-5" />} label="Unique Customers" value={has ? String(a.customers) : "—"} tone="var(--chart-4)" />
-      <Tile icon={<Receipt className="size-5" />} label="Total LAH" value={has ? `${toLah(a.totalAh).toFixed(2)} LAH` : "—"} tone="var(--chart-3)" />
+      <Tile icon={<Receipt className="size-5" />} label="LAH" value={has ? Math.round(toLah(a.totalAh)).toLocaleString("en-IN") : "—"} tone="var(--chart-3)" />
     </div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
@@ -105,6 +106,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
+    <ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} />
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
         {grad("sr-trend")}<CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
