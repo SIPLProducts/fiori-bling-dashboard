@@ -650,7 +650,7 @@ function isOrderBookName(value: string): boolean {
 }
 
 /** Keys the Date window drives: fkdat_f/fkdat_t when present, else the first _F/_T date pair. */
-export function salesRegisterWindowKeys(keys: string[]): string[] {
+function salesRegisterWindowKeys(keys: string[]): string[] {
   const pair = (base: string) => [keys.find((k) => k.toLowerCase() === `${base}_f`), keys.find((k) => k.toLowerCase() === `${base}_t`)].filter((k): k is string => !!k);
   const fk = pair("fkdat");
   if (fk.length) return fk;
