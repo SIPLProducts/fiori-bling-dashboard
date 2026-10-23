@@ -649,6 +649,24 @@ function isOrderBookName(value: string): boolean {
   return (value ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook");
 }
 
+/** Keys the Date window drives: fkdat_f/fkdat_t when present, else the first _F/_T date pair. */
+function salesRegisterWindowKeys(keys: string[]): string[] {
+  const pair = (base: string) => [keys.find((k) => k.toLowerCase() === `${base}_f`), keys.find((k) => k.toLowerCase() === `${base}_t`)].filter((k): k is string => !!k);
+  const fk = pair("fkdat");
+  if (fk.length) return fk;
+  const first = keys.find((k) => /_F$/i.test(k));
+  return first ? pair(first.slice(0, -2).toLowerCase()) : [];
+}
+
+const DATE_NAMES: Record<string, string> = { fkdat: "Billing Date", erdat: "Creation Date", budat: "Posting Date" };
+function dateFieldLabel(key: string): string {
+  const m = key.match(/^(.*)_(F|T)$/i);
+  if (!m) return key;
+  const base = m[1] ?? "";
+  const name = DATE_NAMES[base.toLowerCase()] ?? base.toUpperCase();
+  return `${name} ${/f/i.test(m[2] ?? "") ? "From" : "To"} (${key.toUpperCase()})`;
+}
+
 function PayloadRequestFields({
   value, range, onChange, onRange,
 }: { value: string; range: string; onChange: (v: string) => void; onRange: (r: string) => void }) {
@@ -657,16 +675,17 @@ function PayloadRequestFields({
   if (!fields.length) return <p className="text-xs text-muted-foreground">Paste the request payload below — its fields appear here automatically.</p>;
   const update = (key: string, v: string) => onChange(buildPayloadText(fields.map((f) => (f.key === key ? { ...f, value: v } : f))));
   const dateFields = fields.filter((f) => f.date && /_(F|T)$/i.test(f.key));
-  const rolling = range !== "custom" && dateFields.length > 0;
-  const label = (key: string) => (/_F$/i.test(key) ? "From" : /_T$/i.test(key) ? "To" : key);
+  const windowKeys = salesRegisterWindowKeys(dateFields.map((f) => f.key));
+  const rolling = range !== "custom" && windowKeys.length > 0;
+  const label = dateFieldLabel;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {dateFields.length ? (
-        <Field label="Date window" hint="Preset windows follow today on every sync; custom dates stay fixed.">
+        <Field label="Date window (daily sync)" hint={`Rolls ${windowKeys.map((k) => k.toUpperCase()).join(" / ")} to today on every sync; custom dates stay fixed.`}>
           <Select value={range} onValueChange={(r) => {
             onRange(r);
             const w = postingWindow(r);
-            if (w) onChange(buildPayloadText(fields.map((f) => (dateFields.includes(f) ? { ...f, value: /_F$/i.test(f.key) ? w.from : w.to } : f))));
+            if (w) onChange(buildPayloadText(fields.map((f) => (windowKeys.includes(f.key) ? { ...f, value: /_F$/i.test(f.key) ? w.from : w.to } : f))));
           }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -676,9 +695,9 @@ function PayloadRequestFields({
         </Field>
       ) : null}
       {fields.map((f) => (
-        <Field key={f.key} label={`${f.date ? `${label(f.key)} date` : f.key}${f.optional ? "" : " *"}`} hint={`${f.optional ? "Optional. " : ""}Sent as ${f.key}${f.date ? " (YYYYMMDD)" : ""}.`}>
+        <Field key={f.key} label={`${f.date ? label(f.key) : f.key}${f.optional ? "" : " *"}`} hint={`${f.optional ? "Optional. " : ""}Sent as ${f.key}${f.date ? " (YYYYMMDD)" : ""}.`}>
           {f.date ? (
-            <Input type="date" disabled={rolling} value={fromSapDate(f.value)} onChange={(e) => update(f.key, e.target.value ? toSapDate(e.target.value) : "")} />
+            <Input type="date" disabled={rolling && windowKeys.includes(f.key)} value={fromSapDate(f.value)} onChange={(e) => update(f.key, e.target.value ? toSapDate(e.target.value) : "")} />
           ) : (
             <Input value={f.value} onChange={(e) => update(f.key, e.target.value)} />
           )}

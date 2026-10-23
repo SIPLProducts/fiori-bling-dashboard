@@ -49,3 +49,11 @@ describe("sales register MODE", () => {
     expect(out.fkdat_t).toBe("20260331");
   });
 });
+
+describe("Sales Register daily sync window", () => {
+  test("Last 7 days rolls only fkdat_f/fkdat_t and sends MODE DAILY", () => {
+    const body = JSON.stringify({ fkdat_f: "20260301", fkdat_t: "20260331", erdat_f: "20260101", erdat_t: "", fkart_f: "" });
+    const r = JSON.parse(withEndpointDates("Sales _Register", body, "last7d", new Date(2026, 9, 23), true) ?? "{}");
+    expect(r).toEqual({ fkdat_f: "20261016", fkdat_t: "20261023", erdat_f: "20260101", erdat_t: "", fkart_f: "", MODE: "DAILY" });
+  });
+});
