@@ -712,3 +712,30 @@
   .sd-compact .launch-footer > a, .sd-compact .launch-footer > button { flex: 0 0 auto; width: auto; margin-top: 0; min-height: 1.5rem; padding-inline: 0.5rem; gap: 0.25rem; font-size: 9px; }
   @container (max-width: 200px) { .sd-compact .launch-details { display: none; } }
 }
+
+/* Gradient action buttons (shared by Button variants and plain buttons). */
+:root {
+  --gradient-action: linear-gradient(135deg, color-mix(in oklab, var(--primary) 78%, white), var(--primary) 55%, color-mix(in oklab, var(--primary) 80%, black));
+  --gradient-export: linear-gradient(135deg, color-mix(in oklab, var(--chart-2) 80%, white), var(--chart-2) 50%, color-mix(in oklab, var(--chart-2) 55%, oklch(0.55 0.14 150)));
+  --gradient-danger: linear-gradient(135deg, color-mix(in oklab, var(--destructive) 78%, white), var(--destructive) 55%, color-mix(in oklab, var(--destructive) 80%, black));
+  --gradient-soft: linear-gradient(135deg, color-mix(in oklab, var(--primary) 8%, var(--background)), color-mix(in oklab, var(--chart-2) 10%, var(--background)));
+  --gradient-text: linear-gradient(90deg, var(--primary), var(--chart-2));
+  --shadow-action: 0 4px 12px -4px color-mix(in oklab, var(--primary) 45%, transparent);
+  --shadow-export: 0 4px 12px -4px color-mix(in oklab, var(--chart-2) 50%, transparent);
+}
+@utility btn-action {
+  background-image: var(--gradient-action); color: var(--primary-foreground); border-color: transparent; box-shadow: var(--shadow-action);
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+}
+@utility btn-export {
+  background-image: var(--gradient-export); color: var(--primary-foreground); border-color: transparent; box-shadow: var(--shadow-export);
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+}
+@utility btn-danger {
+  background-image: var(--gradient-danger); color: var(--destructive-foreground); border-color: transparent;
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+}
+@utility btn-soft {
+  background-image: var(--gradient-soft); color: var(--primary); border: 1px solid color-mix(in oklab, var(--primary) 30%, var(--border)); box-shadow: 0 1px 2px color-mix(in oklab, var(--primary) 12%, transparent);
+  &:hover:not(:disabled) { border-color: var(--primary); filter: brightness(0.98); }
+}
