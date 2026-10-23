@@ -46,7 +46,7 @@ export function CashFlowDashboard({ canSync = false }: { canSync?: boolean }) {
           <span className="hidden text-[10px] text-muted-foreground sm:inline">{rows.length.toLocaleString("en-IN")} of {all.length.toLocaleString("en-IN")} records</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button type="button" variant="action" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
+          <Button type="button" variant="reset" className="disabled:opacity-75" size="sm" onClick={resetFilters} disabled={activeFilterCount === 0}><RotateCcw className="size-3.5" />Reset</Button>
           <Button type="button" variant="ghost" size="icon" aria-expanded={filtersOpen} aria-controls="cash-smart-filters" aria-label={filtersOpen ? "Collapse Smart Filters" : "Expand Smart Filters"} onClick={() => setFiltersOpen((open) => !open)}>{filtersOpen ? <ChevronUp /> : <ChevronDown />}</Button>
         </div>
       </div>
