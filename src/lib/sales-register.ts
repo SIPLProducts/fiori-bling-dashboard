@@ -113,6 +113,31 @@ export function buildSalesRegister(rows: SalesRegisterRow[]) {
   };
 }
 
+export type TrendGranularity = "weekly" | "monthly" | "quarterly";
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dayNum = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 864e5;
+
+/** Net Value trend: ≤31 days weekly, ≤366 days monthly, longer quarterly (April–March FY). */
+export function salesRegisterTrend(rows: SalesRegisterRow[], range?: SalesRegisterDateRange | undefined) {
+  const dates = rows.map((r) => r.billingDate).filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d)).sort();
+  const useRange = range && range.mode === "range" && range.from && range.to;
+  const from = useRange ? range!.from : range?.mode === "single" && range.from ? range.from : dates[0];
+  const to = useRange ? range!.to : range?.mode === "single" && range.from ? range.from : dates[dates.length - 1];
+  const span = from && to ? dayNum(to) - dayNum(from) : 0;
+  const granularity: TrendGranularity = span <= 31 ? "weekly" : span <= 366 ? "monthly" : "quarterly";
+  const m = new Map<string, { key: string; name: string; net: number }>();
+  for (const r of rows) {
+    const d = r.billingDate; if (!/^\d{4}-\d{2}-\d{2}/.test(d)) continue;
+    const y = Number(d.slice(0, 4)), mo = Number(d.slice(5, 7)), day = Number(d.slice(8, 10));
+    let key: string, name: string;
+    if (granularity === "weekly") { const w = Math.ceil(day / 7); key = `${d.slice(0, 7)}-W${w}`; name = `${MON[mo - 1]} ${String(y).slice(2)} W${w}`; }
+    else if (granularity === "monthly") { key = d.slice(0, 7); name = `${MON[mo - 1]} ${String(y).slice(2)}`; }
+    else { const fy = mo >= 4 ? y : y - 1; const q = Math.floor(((mo + 8) % 12) / 3) + 1; key = `${fy}-Q${q}`; name = `Q${q} FY${String(fy).slice(2)}-${String(fy + 1).slice(2)}`; }
+    const p = m.get(key) ?? { key, name, net: 0 }; p.net += r.netValue; m.set(key, p);
+  }
+  return { granularity, points: [...m.values()].sort((a, b) => a.key.localeCompare(b.key)) };
+}
+
 /** Rows for the division-stacked group charts; value in ₹ Cr, order = billing document. */
 export function salesRegisterGroupRows(rows: SalesRegisterRow[], group: "mainGroup" | "subGroup") {
   return rows.map((r) => ({ name: r[group], value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.["division"] || r.productCategory || r.division }));

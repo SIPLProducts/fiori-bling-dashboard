@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie
 import { downloadSalesRegisterExcel } from "@/lib/sales-register-export";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { buildSalesRegister, salesRegisterGroupRows, type SalesRegisterRow } from "@/lib/sales-register";
+import { buildSalesRegister, salesRegisterGroupRows, salesRegisterTrend, type SalesRegisterDateRange, type SalesRegisterRow } from "@/lib/sales-register";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const cr = (v: number) => Math.round((v / 1e7) * 100) / 100;
@@ -72,8 +72,9 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
   </div>;
 }
 
-export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[] }) {
+export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
+  const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const [q, setQ] = useState("");
@@ -102,10 +103,12 @@ export function SalesRegisterDashboard({ rows = [] }: { rows?: SalesRegisterRow[
     </div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Card title="Distribution Channel"><Donut data={a.byChannel} total={a.totalInvoice} /></Card>
-      <Card title="Sales Register (Daily)">{a.daily.length ? <ResponsiveContainer width="100%" height={150}><ComposedChart data={a.daily.map((d) => ({ ...d, invoice: cr(d.invoice), net: cr(d.net) }))}>
-        <XAxis dataKey="date" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        {grad("sr-daily")}<Bar dataKey="invoice" name="Invoice Value" fill="url(#sr-daily-0)" radius={[3, 3, 0, 0]} /><Line dataKey="net" name="Net Value" stroke="#0f9d8a" />
-      </ComposedChart></ResponsiveContainer> : <Empty />}</Card>
+      <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
+        {grad("sr-trend")}<CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => [`₹ ${v} Cr`, "Net Value"]} />
+        <Bar dataKey="net" name="Net Value" radius={[3, 3, 0, 0]} maxBarSize={32}>{trend.points.map((_, i) => <Cell key={i} fill={`url(#sr-trend-${i % COLORS.length})`} />)}
+          <LabelList dataKey="net" position="top" style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
+      </BarChart></ResponsiveContainer> : <Empty />}</Card>
       <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
         {grad("sr-tax")}<XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
         {["cgst", "sgst", "igst", "tcs"].map((k, i) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${i})`} />)}

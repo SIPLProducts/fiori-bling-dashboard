@@ -53,7 +53,7 @@ function SalesRegisterPage() {
     {!isLoading && !allowed ? <AccessDenied area="Sales Register" /> : <div ref={ref} className="space-y-3">
       {query.error ? <p className="text-xs text-destructive">{query.error.message}</p> : null}
       <SalesRegisterFilters defaultOpen={false} rows={all} value={filters} onChange={setFilters} />
-      <SalesRegisterDashboard rows={rows} />
+      <SalesRegisterDashboard rows={rows} range={filters.dates.billingDate} />
     </div>}
   </ReportShell>;
 }

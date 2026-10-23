@@ -95,3 +95,23 @@ describe("sales register plant short name", () => {
     expect(buildSalesRegister([r]).byPlant[0]!.name).toBe("1100 NCPP");
   });
 });
+
+import { salesRegisterTrend } from "../src/lib/sales-register";
+describe("Sales Register trend granularity", () => {
+  const row = (billingDate: string, netValue: number) => ({ billingDate, netValue } as any);
+  it("≤1 month is weekly", () => {
+    const t = salesRegisterTrend([row("2026-03-02", 1), row("2026-03-20", 2)]);
+    expect(t.granularity).toBe("weekly");
+    expect(t.points.map((p) => p.name)).toEqual(["Mar 26 W1", "Mar 26 W3"]);
+  });
+  it("≤1 year is monthly", () => {
+    const t = salesRegisterTrend([row("2025-04-05", 1)], { mode: "range", from: "2025-04-01", to: "2026-03-31" });
+    expect(t.granularity).toBe("monthly");
+    expect(t.points[0]!.name).toBe("Apr 25");
+  });
+  it(">1 year is quarterly on April–March FY", () => {
+    const t = salesRegisterTrend([row("2024-05-01", 1), row("2026-02-10", 3)]);
+    expect(t.granularity).toBe("quarterly");
+    expect(t.points.map((p) => p.name)).toEqual(["Q1 FY24-25", "Q4 FY25-26"]);
+  });
+});
