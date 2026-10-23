@@ -46,8 +46,8 @@ function SalesRegisterPage() {
   };
   const actions = <>
     <span className="text-xs text-muted-foreground"><span className="font-medium">Data available:</span> {range ? `${dmy(range.from)} – ${dmy(range.to)}` : "—"}</span>
-    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => void query.refetch()} disabled={query.isFetching}><RefreshCw className={`size-3.5 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
-    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
+    <Button type="button" variant="action" size="sm" className="h-7 text-xs" onClick={() => void query.refetch()} disabled={query.isFetching}><RefreshCw className={`size-3.5 ${query.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
+    <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
   return <ReportShell title="Sales Register" compact actions={allowed ? actions : undefined}>
     {!isLoading && !allowed ? <AccessDenied area="Sales Register" /> : <div ref={ref} className="space-y-3">

@@ -1896,7 +1896,7 @@ function FocusTable({
       accent={1}
       actions={
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onExport}>
+          <Button variant="export" size="sm" onClick={onExport}>
             <Download className="mr-1 size-3.5" /> CSV
           </Button>
           <Button size="sm" onClick={onBack}>
@@ -2044,7 +2044,7 @@ function LinesTable({
             }
             placeholder="Columns"
           />
-          <Button variant="outline" size="sm" onClick={exportVisibleRows} disabled={!visible.length}>
+          <Button variant="export" size="sm" onClick={exportVisibleRows} disabled={!visible.length}>
             <Download className="mr-1 size-3.5" /> CSV
           </Button>
         </div>

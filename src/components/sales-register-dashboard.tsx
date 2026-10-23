@@ -121,7 +121,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-2">
         <h2 className="flex min-w-0 items-center gap-2 truncate text-xs font-semibold"><BarChart3 className="size-4 shrink-0 text-primary" />Sales Register Details</h2>
         <div className="flex items-center gap-2">
-          <button type="button" disabled={!filtered.length} onClick={() => void downloadSalesRegisterExcel(filtered)} className="inline-flex items-center gap-1 rounded border border-border bg-chart-2/10 px-2 py-1 text-xs font-semibold text-chart-2 disabled:opacity-40"><FileSpreadsheet className="size-3.5" />Excel</button>
+          <button type="button" disabled={!filtered.length} onClick={() => void downloadSalesRegisterExcel(filtered)} className="btn-export inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-40"><FileSpreadsheet className="size-3.5" />Excel</button>
           <div className="relative"><Search className="absolute left-2 top-2 size-3.5 text-muted-foreground" /><Input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search customer, invoice no, material..." className="h-8 w-56 pl-7 text-xs" /></div>
         </div>
       </div>
@@ -162,9 +162,9 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
         <span>Rows</span>
         <select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((s) => <option key={s} value={s}>{s}</option>)}</select>
         <span className="text-muted-foreground">Showing {filtered.length ? page * size + 1 : 0}–{Math.min(filtered.length, page * size + size)} of {filtered.length}</span>
-        <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)} className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Previous</button>
+        <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Previous</button>
         <span>{page + 1} / {pages}</span>
-        <button type="button" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Next</button>
+        <button type="button" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Next</button>
       </div>
     </section>
   </div>;
