@@ -218,3 +218,15 @@ create index if not exists sales_register_prctr_idx on public.sales_register (pr
 drop trigger if exists sales_register_updated_at on public.sales_register;
 create trigger sales_register_updated_at before update on public.sales_register
   for each row execute function public.update_updated_at_column();
+
+-- Register the Sales Register (ZVF05) SAP API if it is not configured yet (edit it in SAP API Settings).
+-- MODE is added at send time: scheduled runs DAILY, manual runs ONETIME.
+INSERT INTO public.sap_endpoints (name, module_key, description, endpoint_path, system_key, http_method, auth_type, query_params, headers, body_template, scheduler_enabled, schedule_expression, is_active, posting_range)
+SELECT 'Sales _Register', 'common', 'Sales Register (ZVF05) — stored in public.sales_register', '/zvf05_fin_n/finance?sap-client=234',
+  (SELECT system_key FROM public.sap_endpoints WHERE system_key IS NOT NULL LIMIT 1),
+  'POST', 'proxy', '[]'::jsonb, '[]'::jsonb,
+  E'{\n  "vkorg": "1000",\n  "vtweg_f": "",\n  "vtweg_t": "",\n  "spart_f": "",\n  "spart_t": "",\n  "werks_f": "",\n  "werks_t": "",\n  "fkart_f": "",\n  "fkart_t": "",\n  "fkdat_f": "20260401",\n  "fkdat_t": "20261023",\n  "vbeln_f": "",\n  "vbeln_t": "",\n  "erdat_f": "",\n  "erdat_t": "",\n  "kunnr_f": "",\n  "kunnr_t": "",\n  "vkbur_f": "",\n  "vkbur_t": "",\n  "matnr_f": "",\n  "matnr_t": "",\n  "prctr_f": "",\n  "prctr_t": "",\n  "lifnr_f": "",\n  "lifnr_t": "",\n  "mtart_f": "",\n  "mtart_t": "",\n  "regio_f": "",\n  "regio_t": "",\n  "zterm_f": "",\n  "zterm_t": ""\n}',
+  true, 'IST:05:30', true, 'custom'
+WHERE NOT EXISTS (SELECT 1 FROM public.sap_endpoints WHERE regexp_replace(lower(name), '[^a-z0-9]', '', 'g') LIKE '%salesregister%');
+
+NOTIFY pgrst, 'reload schema';
