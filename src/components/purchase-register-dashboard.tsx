@@ -56,6 +56,12 @@ function CodeTable({ rows, codeLabel }: { rows: { code: string; name: string; va
     <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
 }
 
+function DataTable({ cols, rows }: { cols: string[]; rows: { cells: string[]; value: number }[] }) {
+  return <table className="mt-2 w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr>{cols.map((c) => <th key={c} className="px-1.5 py-1 text-left">{c}</th>)}<th className="px-1.5 py-1 text-right">Amount (₹ Cr)</th></tr></thead>
+    <tbody>{rows.map((r, i) => <tr key={i} className={`border-t border-border/60 ${i % 2 ? "bg-muted/40" : ""}`}>{r.cells.map((c, j) => <td key={j} className={`px-1.5 py-0.5 ${j === 0 ? "font-medium text-primary" : ""}`}>{c}</td>)}<td className="px-1.5 py-0.5 text-right tabular-nums">{fmt(r.value)}</td></tr>)}</tbody>
+    <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={cols.length}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
+}
+
 const sel = "h-8 rounded-md border border-border bg-background px-2 text-xs";
 
 export function PurchaseRegisterDashboard() {
@@ -107,10 +113,26 @@ export function PurchaseRegisterDashboard() {
       </Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Card title="Top 10 Materials"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, extra: m.group, value: m.value }))} /></Card>
-      <Card title="Top 10 Vendors"><RankList data={TOP_VENDORS} /></Card>
-      <Card title="Material Group"><RankList data={groups} /></Card>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card title="Top Materials" sub="Amount in ₹ Cr"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, value: m.value }))} />
+        <DataTable cols={["Material Code", "Material Name", "Material Group"]} rows={materials.map((m) => ({ cells: [m.code || "-", m.name, m.group], value: m.value }))} /></Card>
+      <Card title="Top Vendors" sub="Amount in ₹ Cr"><RankList data={TOP_VENDORS} />
+        <DataTable cols={["Vendor Code", "Vendor Name"]} rows={TOP_VENDORS.map((v) => ({ cells: [v.code || "-", v.name], value: v.value }))} /></Card>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card title="Material Group" sub={<span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">Click to filter</span>}>
+        <div className="relative"><ResponsiveContainer width="100%" height={200}><PieChart>{grad(`${id}g`)}
+          <Pie data={groups} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} onClick={(d: { name: string }) => setGroup(group === d.name ? "" : d.name)}>
+            {groups.map((g) => <Cell key={g.name} className="cursor-pointer" fill={`url(#${id}g-${MATERIAL_GROUPS.findIndex((x) => x.name === g.name) % COLORS.length})`} />)}</Pie>
+          <Tooltip formatter={(v: number) => `₹ ${fmt(v)} Cr`} /></PieChart></ResponsiveContainer>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center"><div><p className="text-[9px] text-muted-foreground">TOTAL</p><p className="text-sm font-bold">{fmt(sumValues(groups))}</p></div></div></div>
+      </Card>
+      <Card title="Material Group Summary" sub="Amount in ₹ Cr">
+        <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">Material Group</th><th className="px-1.5 py-1 text-right">Amount (₹ Cr)</th></tr></thead>
+          <tbody>{groups.map((g, i) => <tr key={g.name} className={`cursor-pointer border-t border-border/60 ${i % 2 ? "bg-muted/40" : ""}`} onClick={() => setGroup(group === g.name ? "" : g.name)}><td className="px-1.5 py-1"><span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: COLORS[MATERIAL_GROUPS.findIndex((x) => x.name === g.name) % COLORS.length] }} />{g.name}</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(g.value)}</td></tr>)}</tbody>
+          <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1">Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(groups))}</td></tr></tfoot></table>
+      </Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
