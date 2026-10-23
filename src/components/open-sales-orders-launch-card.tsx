@@ -141,7 +141,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
   return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Open Sales Orders" subtitle="Total Open Orders" lineLabel="open order lines" href="/reports/sd/open-sales-orders" />;
 }
 
-function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" | "/reports/sd/sit" }) {
+function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" | "/reports/sd/sit" | "/reports/sd/dispatches" }) {
   return (
     <section aria-label={`${title} all dates`} className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-1) 28%, var(--color-border))",
