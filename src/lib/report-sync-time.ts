@@ -14,5 +14,5 @@ export function lastSyncedLabel(value: string | null | undefined) {
     hour: "2-digit", minute: "2-digit", hour12: true,
   }).formatToParts(new Date(value));
   const part = (type: string) => parts.find((entry) => entry.type === type)?.value ?? "";
-  return `Last synced: ${part("day")}.${part("month")}.${part("year")}, ${part("hour")}:${part("minute")} ${part("dayPeriod").toLowerCase()} IST`;
+  return `Last Sync: ${part("day")}.${part("month")}.${part("year")}, ${part("hour")}:${part("minute")} ${part("dayPeriod").toLowerCase()} IST`;
 }

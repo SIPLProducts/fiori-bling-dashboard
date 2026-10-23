@@ -117,13 +117,13 @@ export function NetSalesLaunchCard({ fallback }: { fallback: React.ReactNode }) 
             ))}
           </div>
         ) : null}
-        <div className="mt-auto launch-footer grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pt-4 text-[10px] text-muted-foreground">
-          <span className="min-w-0 leading-relaxed">{lastSyncedLabel(lastSynced)}</span>
+        <div className="mt-auto launch-footer flex items-center justify-between gap-2 pt-3 text-[9px] text-muted-foreground">
+          <span className="min-w-0 truncate whitespace-nowrap">{lastSyncedLabel(lastSynced)}</span>
           <Link
             to="/reports/module/$module"
             params={{ module: "sd" }}
             aria-label="Open Net Sales details"
-            className="group inline-flex min-h-8 items-center gap-1 rounded-full btn-action px-4 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
+            className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 font-semibold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
           >
             Open<span className="launch-details"> Details</span>
             <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />

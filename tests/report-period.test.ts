@@ -21,7 +21,7 @@ test("sync endpoint matching isolates datasets and supports legacy spacing", () 
   expect(matchesReportEndpoint("Sales_Reports_KPI", "open-sales-orders")).toBe(false);
 });
 test("sync timestamp is exact India time and absent/invalid times are not invented", () => {
-  expect(lastSyncedLabel("2026-10-09T05:53:00Z")).toBe("Last synced: 09.10.2026, 11:23 am IST");
+  expect(lastSyncedLabel("2026-10-09T05:53:00Z")).toBe("Last Sync: 09.10.2026, 11:23 am IST");
   expect(lastSyncedLabel(null)).toBe("Sync time unavailable");
   expect(lastSyncedLabel("invalid")).toBe("Sync time unavailable");
 });
