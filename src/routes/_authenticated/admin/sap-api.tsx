@@ -685,7 +685,7 @@ function PayloadRequestFields({
           <Select value={range} onValueChange={(r) => {
             onRange(r);
             const w = postingWindow(r);
-            if (w) onChange(buildPayloadText(fields.map((f) => (windowKeys.includes(f.key) ? { ...f, value: /_F$/i.test(f.key) ? w.from : w.to } : f))));
+            if (w) onChange(buildPayloadText(fields.map((f) => (windowKeys.includes(f.key) ? { ...f, value: /_F$/i.test(f.key) ? w.from : r === "today" ? "" : w.to } : f))));
           }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>

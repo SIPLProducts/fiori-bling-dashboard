@@ -10,8 +10,8 @@ export function useOrderWording() {
   return {
     book,
     value: sit ? "SIT Value" : book ? "Order Value" : "Open Value",
-    count: sit ? "SIT Count" : book ? "Order Count" : "Orders",
-    openOrders: sit ? "SIT Count" : book ? "Order Count" : "Open Orders",
+    count: sit ? "SIT Invoices" : book ? "Order Count" : "Orders",
+    openOrders: sit ? "SIT Invoices" : book ? "Order Count" : "Open Orders",
     pendingValue: sit ? "SIT Value (₹ Cr)" : book ? "Order Value (₹ Cr)" : "Pending Value (₹ Cr)",
   };
 }
