@@ -8,7 +8,7 @@ import { mapOpenSalesOrdersPayload } from "./open-sales-orders-map";
 import { isZcashFlowEndpoint, mapZcashFlowPayload } from "./zcash-flow-map";
 import { isUserDropdownEndpoint, mapUserDropdownPayload } from "./user-dropdown-map";
 import { isOrderBookEndpoint, mapOrderBookPayload } from "./order-book-map";
-import { isSitEndpoint, mapSitPayload } from "./sit-map";
+import { isSitEndpoint, mapSitPayload, staleSitKeys } from "./sit-map";
 import { isSalesRegisterEndpoint, mapSalesRegisterPayload } from "./sales-register-map";
 import {
   extractEmbeddedBody,
