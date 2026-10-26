@@ -74,7 +74,7 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
     const summary = summarizeLaunchOrders(scoped, { all: true });
     const invoices = new Map<string, Set<string>>();
     for (const r of scoped) {
-      const key = r.sales_type || r.order_type || "";
+      const d = r.sales_type?.trim(); const key = d && d !== "Unassigned" ? d : r.order_type || "Unassigned";
       if (!invoices.has(key)) invoices.set(key, new Set());
       invoices.get(key)!.add(r.vbeln ?? "");
     }
