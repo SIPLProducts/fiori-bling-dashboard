@@ -861,6 +861,8 @@ function postingWindow(range, now = /* @__PURE__ */ new Date()) {
   const to = new Date(now);
   const from = new Date(now);
   switch (range) {
+    case "today":
+      break;
     case "last7d":
       from.setDate(from.getDate() - 7);
       break;
@@ -953,7 +955,7 @@ function withSitDates(raw, range, now = /* @__PURE__ */ new Date(), scheduled = 
     const window = postingWindow(range, now);
     if (window) {
       obj["FKDAT_F"] = window.from;
-      obj["FKDAT_T"] = window.to;
+      obj["FKDAT_T"] = range === "today" ? "" : window.to;
     }
     const from = String(obj["FKDAT_F"] ?? "").trim();
     if (scheduled || !/^\d{8}$/.test(from)) obj["FKDAT_F"] = sapDateOf(now);
