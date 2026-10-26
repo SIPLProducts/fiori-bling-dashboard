@@ -67,3 +67,11 @@ describe("SIT From date", () => {
     expect(JSON.parse(withEndpointDates("Sales In Transit (SIT)", '{"VKORG":"1000","FKDAT_F":""}', "custom", day)!).FKDAT_F).toBe("20261022");
   });
 });
+
+import { staleSitKeys } from "../src/lib/sit-map";
+describe("staleSitKeys", () => {
+  const a = { vbeln: "1", posnr: "10" }, b = { vbeln: "1", posnr: "20" }, c = { vbeln: "2", posnr: "10" };
+  it("flags lines missing from the response", () => expect(staleSitKeys([a, b, c], [a, c])).toEqual([b]));
+  it("keeps lines present in the response", () => expect(staleSitKeys([a], [a])).toEqual([]));
+  it("empty response flags every line", () => expect(staleSitKeys([a, b], [])).toEqual([a, b]));
+});
