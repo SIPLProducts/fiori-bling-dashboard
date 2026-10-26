@@ -358,8 +358,8 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
 
   const groupRow = (
       <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title={isSit ? "SIT by Main Group" : isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue">{isSit ? <OrderBookSubGroupChart groupLabel="Main Group" groups={groupCharts.mainByDivision.groups} divisions={[...groupCharts.subByDivision.divisions, ...groupCharts.mainByDivision.divisions.filter((d) => !groupCharts.subByDivision.divisions.includes(d))]} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} />}</Panel>
-        <Panel title={isSit ? "SIT by Sub Group" : isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
+        <Panel title={isSit ? "SIT by Main Group" : isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue">{isSit ? <OrderBookSubGroupChart sit={isSit} groupLabel="Main Group" groups={groupCharts.mainByDivision.groups} divisions={[...groupCharts.subByDivision.divisions, ...groupCharts.mainByDivision.divisions.filter((d) => !groupCharts.subByDivision.divisions.includes(d))]} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} />}</Panel>
+        <Panel title={isSit ? "SIT by Sub Group" : isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart sit={isSit} groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
       </div>
   );
   return (
@@ -451,7 +451,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
       </div> : null}
 
       <div data-pdf-page-block className={`order-overview-row grid gap-4 sm:grid-cols-2 ${isBook ? "order-overview-book lg:grid-cols-12 [&>*]:min-w-0 " + (isSit ? "[&>*:nth-child(1)]:lg:col-span-8 [&>*:nth-child(2)]:lg:col-span-4" : "[&>*:nth-child(1)]:lg:col-span-7 [&>*:nth-child(2)]:lg:col-span-3 [&>*:nth-child(3)]:lg:col-span-2") : "lg:grid-cols-12 [&>*]:lg:col-span-4"}`}>
-        {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} /></Panel> : null}
+        {isBook ? <Panel title="Month on Month" headerDivider dividerColor="amber"><OrderBookMonthChart data={monthSeries} pdf={pdfBusy} sit={isSit} /></Panel> : null}
         <Panel title={isSit ? "SIT by Sales Document Type" : isBook ? "Orders by Sales Document Type" : "Open Orders by Sales Document Type"} headerDivider dividerColor="blue">
           <div className={pdfBusy ? "overflow-visible" : "min-w-0 overflow-x-auto"}>
           <div className={`order-document-grid grid min-h-64 min-w-0 items-center gap-2 ${isBook ? "grid-cols-1 [&_.order-document-donut]:h-36" : "grid-cols-[112px_minmax(0,1fr)]"}`}>
