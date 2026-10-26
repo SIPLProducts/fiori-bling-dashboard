@@ -1,3 +1,4 @@
+import { sitDocTypeLabel } from "@/lib/sit-data";
 import { useMemo } from "react";
 import { useUserAccess } from "@/lib/use-user-access";
 import { scopeRowsToAssigned } from "@/lib/user-access";
@@ -60,7 +61,7 @@ async function fetchSitRows() {
 
 export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["sit-launch-summary", "netwr-tot-auart-v3"],
+    queryKey: ["sit-launch-summary", "netwr-tot-auart-v4-sit-label"],
     queryFn: fetchSitRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
@@ -68,7 +69,7 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const period = useMemo(() => currentReportPeriod(), []);
   // SIT is a current in-transit snapshot: count every stored line regardless of billing date.
   const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
-    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access, period]);
+    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc ? sitDocTypeLabel(r.vtext_dc) : r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access, period]);
   const { data: lastSynced } = useReportSync("sit");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
