@@ -47,9 +47,9 @@ export function OrderBookLaunchCard({ fallback }: { fallback: React.ReactNode })
 
 async function fetchSitRows() {
   const pageSize = 1_000;
-  const allRows: { netwr_tot: number | string | null; vtext_dc: string | null; auart: string | null; werks: string | null; prctr: string | null; fkdat: string | null }[] = [];
+  const allRows: { vbeln: string | null; netwr_tot: number | string | null; vtext_dc: string | null; auart: string | null; werks: string | null; prctr: string | null; fkdat: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("sales_in_transit").select("netwr_tot,vtext_dc,auart,werks,prctr,fkdat")
+    const result = await supabase.from("sales_in_transit").select("vbeln,netwr_tot,vtext_dc,auart,werks,prctr,fkdat")
       .order("id", { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
@@ -61,19 +61,33 @@ async function fetchSitRows() {
 
 export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["sit-launch-summary", "netwr-tot-auart-v4-sit-label"],
+    queryKey: ["sit-launch-summary", "netwr-tot-auart-v5-sit-invoices"],
     queryFn: fetchSitRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
   const access = useUserAccess();
-  const period = useMemo(() => currentReportPeriod(), []);
-  // SIT is a current in-transit snapshot: count every stored line regardless of billing date.
-  const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
-    .map((r) => ({ p_value1: r.netwr_tot, sales_type: r.vtext_dc ? sitDocTypeLabel(r.vtext_dc) : r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access, period]);
+  // SIT is a current in-transit snapshot: every stored line, counted as distinct SIT invoices (VBELN).
+  const data = useMemo(() => {
+    if (!rows) return undefined;
+    const scoped = scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
+      .map((r) => ({ vbeln: r.vbeln, p_value1: r.netwr_tot, sales_type: r.vtext_dc ? sitDocTypeLabel(r.vtext_dc) : r.vtext_dc, order_type: r.auart }));
+    const summary = summarizeLaunchOrders(scoped, { all: true });
+    const invoices = new Map<string, Set<string>>();
+    for (const r of scoped) {
+      const key = r.sales_type || r.order_type || "";
+      if (!invoices.has(key)) invoices.set(key, new Set());
+      invoices.get(key)!.add(r.vbeln ?? "");
+    }
+    return {
+      ...summary,
+      count: new Set(scoped.map((r) => r.vbeln ?? "")).size,
+      breakdown: summary.breakdown.map((g) => ({ ...g, count: invoices.get(g.name)?.size ?? g.count })),
+    };
+  }, [rows, access]);
   const { data: lastSynced } = useReportSync("sit");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data) return <>{fallback}</>;
-  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales In Transit (SIT)" subtitle="All SIT" caption="All billing dates" lineLabel="SIT lines" href="/reports/sd/sit" />;
+  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales In Transit (SIT)" subtitle="All SIT" caption="All billing dates" lineLabel="SIT Invoices" groupLabel="SIT invoices" href="/reports/sd/sit" />;
 }
 
 async function fetchSalesRegisterRows() {
@@ -142,7 +156,7 @@ export function OpenSalesOrdersLaunchCard({ fallback }: { fallback: React.ReactN
   return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Open Sales Orders" subtitle="Total Open Orders" lineLabel="open order lines" href="/reports/sd/open-sales-orders" />;
 }
 
-function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" | "/reports/sd/sit" | "/reports/sd/dispatches" }) {
+function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLabel, groupLabel = "lines", href }: { data: Summary; lastSynced: string | null | undefined; title: string; subtitle: string; caption?: string; lineLabel: string; groupLabel?: string; href: "/reports/sd/open-sales-orders" | "/reports/sd/order-book" | "/reports/sd/sit" | "/reports/sd/dispatches" }) {
   return (
     <section aria-label={`${title} all dates`} className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
       borderColor: "color-mix(in oklab, var(--kpi-1) 28%, var(--color-border))",
@@ -166,7 +180,7 @@ function LaunchSummaryCard({ data, lastSynced, title, subtitle, caption, lineLab
             <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[9px] leading-snug">
               <span className="min-w-0 font-medium text-foreground">{group.name}</span>
               <span className="flex flex-wrap gap-x-2 text-muted-foreground tabular-nums">
-                <span>{group.count.toLocaleString("en-IN")} lines</span>
+                <span>{group.count.toLocaleString("en-IN")} {groupLabel}</span>
                 <span className="font-semibold text-foreground">{formatValue(group.value)}</span>
               </span>
             </div>
