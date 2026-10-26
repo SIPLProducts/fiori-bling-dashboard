@@ -57,3 +57,9 @@ export function mapSitPayload(payload: unknown, endpointName: string, now = new 
   const rows = [...byKey.values()];
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
+
+/** Keys stored in the table but absent from the latest SAP response (to be deleted). */
+export function staleSitKeys(existing: { vbeln: string; posnr: string }[], incoming: { vbeln: string; posnr: string }[]) {
+  const keep = new Set(incoming.map((r) => `${r.vbeln}|${r.posnr}`));
+  return existing.filter((r) => !keep.has(`${r.vbeln}|${r.posnr}`));
+}

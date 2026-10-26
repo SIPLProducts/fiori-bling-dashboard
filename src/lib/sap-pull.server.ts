@@ -308,8 +308,22 @@ export async function storeSitPayload(
       const { error } = await db.from("sales_in_transit").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "vbeln,posnr" });
       if (error) throw error;
     }
-    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${invalid} without VBELN + POSNR` : "SAP returned no rows — existing data left unchanged" });
-    return { ...base, stored: rows.length };
+    const existing: { vbeln: string; posnr: string }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await db.from("sales_in_transit").select("vbeln,posnr").order("vbeln").order("posnr").range(from, from + 999);
+      if (error) throw error;
+      existing.push(...((data ?? []) as { vbeln: string; posnr: string }[]));
+      if (!data || data.length < 1000) break;
+    }
+    const stale = staleSitKeys(existing, rows);
+    const byDoc = new Map<string, string[]>();
+    for (const k of stale) byDoc.set(k.vbeln, [...(byDoc.get(k.vbeln) ?? []), k.posnr]);
+    for (const [vbeln, posnrs] of byDoc) {
+      const { error } = await db.from("sales_in_transit").delete().eq("vbeln", vbeln).in("posnr", posnrs);
+      if (error) throw error;
+    }
+    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: `${rows.length} added or updated, ${stale.length} removed; ${invalid} without VBELN + POSNR` });
+    return { ...base, replaced: stale.length, stored: rows.length };
   } catch (err) {
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "SIT write failed" });
     throw err;
