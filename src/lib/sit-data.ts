@@ -32,7 +32,7 @@ export function toSitDashboardRow(r: Rec, now = new Date()): OpenSalesOrder {
     orderDate, daysOpen: daysSince(orderDate, now), salesOrg: t(r.bukrs, "1000"), channel: t(r.vtweg_auft),
     plant: t(r.werks, ""), plantName: t(r.name1_p, ""), office: t(r.bezei_so), salesGroup: t(r.bezei_sg),
     salesRepName: t(r.name_se, ""), zone: t(r.bezei_so, "Unassigned"), region: t(r.bezei_c, ""),
-    country: t(r.landx50_c, ""), salesType: t(r.vtext_dc), profitCentre: t(r.prctr),
+    country: t(r.landx50_c, ""), salesType: sitDocTypeLabel(t(r.vtext_dc)), profitCentre: t(r.prctr),
     mainGroup: t(r.main_grp), category: t(r.sub_grp), customerGroup: "", industryDescription: t(r.brtxt, ""),
     usageDescription: "", deliveryStatus: "", overallStatus: t(r.rfbsk, ""), onTime: false,
   };
@@ -50,4 +50,9 @@ export async function getSitRows(): Promise<OpenSalesOrder[]> {
   }
   const now = new Date();
   return out.map((r) => toSitDashboardRow(r, now));
+}
+
+/** SIT shows document types in SIT wording: "Domestic Sales" → "Domestic SIT". */
+export function sitDocTypeLabel(description: string): string {
+  return description.replace(/\bSales\b/g, "SIT");
 }
