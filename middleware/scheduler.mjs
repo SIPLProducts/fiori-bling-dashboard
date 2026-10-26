@@ -200,7 +200,24 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         const { error } = await db.from("sales_in_transit").upsert(rows.slice(i, i + BATCH), { onConflict: "vbeln,posnr" });
         if (error) throw new Error(error.message);
       }
-      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "sales_in_transit", snapshotId: null, postingFrom: null, postingTo: null };
+      // SAP returns the full current in-transit set: remove lines absent from this successful reply.
+      const existing = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db.from("sales_in_transit").select("vbeln,posnr").range(from, from + 999);
+        if (error) throw new Error(error.message);
+        existing.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      const keep = new Set(rows.map((r) => `${r.vbeln}|${r.posnr}`));
+      const stale = existing.filter((r) => !keep.has(`${r.vbeln}|${r.posnr}`));
+      const byVbeln = new Map();
+      for (const r of stale) byVbeln.set(r.vbeln, [...(byVbeln.get(r.vbeln) ?? []), r.posnr]);
+      for (const [vbeln, posnrs] of byVbeln) {
+        const { error } = await db.from("sales_in_transit").delete().eq("vbeln", vbeln).in("posnr", posnrs);
+        if (error) throw new Error(error.message);
+      }
+      console.log(`[SIT] ${rows.length} added or updated, ${stale.length} removed`);
+      return { received, stored: rows.length, replaced: stale.length, skipped: 0, invalid, duplicates, syncScopeKey: "sales_in_transit", snapshotId: null, postingFrom: null, postingTo: null };
     }
     if (isOrderBookEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapOrderBookPayload(payload, endpoint);
