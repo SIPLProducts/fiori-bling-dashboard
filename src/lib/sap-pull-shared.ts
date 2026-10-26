@@ -73,9 +73,10 @@ export function extractEmbeddedBody(text: string): string | null {
 }
 
 /** Posting-date window options saved on each endpoint. */
-export type PostingRange = "last7d" | "last1m" | "last6m" | "last1y" | "custom";
+export type PostingRange = "today" | "last7d" | "last1m" | "last6m" | "last1y" | "custom";
 
 export const POSTING_RANGES: { value: PostingRange; label: string }[] = [
+  { value: "today", label: "Current date" },
   { value: "last7d", label: "Last 7 days" },
   { value: "last1m", label: "Last 1 month" },
   { value: "last6m", label: "Last 6 months" },
@@ -95,6 +96,8 @@ export function postingWindow(range: string | null | undefined, now: Date = new 
   const to = new Date(now);
   const from = new Date(now);
   switch (range) {
+    case "today":
+      break;
     case "last7d":
       from.setDate(from.getDate() - 7);
       break;
@@ -196,7 +199,7 @@ export function withSitDates(raw: string | null | undefined, range?: string | nu
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
     const obj = { ...(parsed as Record<string, unknown>) };
     const window = postingWindow(range, now);
-    if (window) { obj["FKDAT_F"] = window.from; obj["FKDAT_T"] = window.to; }
+    if (window) { obj["FKDAT_F"] = window.from; obj["FKDAT_T"] = range === "today" ? "" : window.to; }
     const from = String(obj["FKDAT_F"] ?? "").trim();
     if (scheduled || !/^\d{8}$/.test(from)) obj["FKDAT_F"] = sapDateOf(now);
     if (!String(obj["FKDAT_T"] ?? "").trim()) delete obj["FKDAT_T"];

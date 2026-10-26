@@ -11,7 +11,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
   });
   sheet.columns = [
     { header: "#", key: "row", width: 7 },
-    { header: sit ? "SIT Invoice No." : "Order No.", key: "order", width: 16 },
+    { header: ahInLakhs ? "SIT Invoice No." : "Order No.", key: "order", width: 16 },
     { header: "Line Item", key: "item", width: 11 },
     { header: "Preceding Document", key: "precedingDocument", width: 20 },
     { header: "Purchase Order", key: "purchaseOrder", width: 18 },
