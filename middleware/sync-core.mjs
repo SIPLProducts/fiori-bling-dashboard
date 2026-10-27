@@ -906,6 +906,11 @@ function postingWindow(range, now = /* @__PURE__ */ new Date()) {
     case "last1y":
       from.setFullYear(from.getFullYear() - 1);
       break;
+    case "fytd": {
+      const y = to.getMonth() >= 3 ? to.getFullYear() : to.getFullYear() - 1;
+      from.setFullYear(y, 3, 1);
+      break;
+    }
     default:
       return null;
   }

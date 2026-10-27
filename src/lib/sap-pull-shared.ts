@@ -73,7 +73,7 @@ export function extractEmbeddedBody(text: string): string | null {
 }
 
 /** Posting-date window options saved on each endpoint. */
-export type PostingRange = "today" | "last7d" | "last1m" | "last6m" | "last1y" | "custom";
+export type PostingRange = "today" | "last7d" | "last1m" | "last6m" | "last1y" | "fytd" | "custom";
 
 export const POSTING_RANGES: { value: PostingRange; label: string }[] = [
   { value: "today", label: "Current date" },
@@ -81,6 +81,7 @@ export const POSTING_RANGES: { value: PostingRange; label: string }[] = [
   { value: "last1m", label: "Last 1 month" },
   { value: "last6m", label: "Last 6 months" },
   { value: "last1y", label: "Last 1 year" },
+  { value: "fytd", label: "Financial year to date" },
   { value: "custom", label: "Custom dates" },
 ];
 
@@ -110,6 +111,11 @@ export function postingWindow(range: string | null | undefined, now: Date = new 
     case "last1y":
       from.setFullYear(from.getFullYear() - 1);
       break;
+    case "fytd": {
+      const y = to.getMonth() >= 3 ? to.getFullYear() : to.getFullYear() - 1;
+      from.setFullYear(y, 3, 1);
+      break;
+    }
     default:
       return null;
   }
