@@ -69,6 +69,8 @@ export function PurchaseRegisterDashboard() {
   const [month, setMonth] = useState("");
   const [plant, setPlant] = useState("");
   const [group, setGroup] = useState("");
+  const [postFrom, setPostFrom] = useState("");
+  const [postTo, setPostTo] = useState("");
   const types = type ? [type] : PURCHASE_TYPES;
   const monthly = useMemo(() => monthlyRows(types, month || null), [type, month]); // eslint-disable-line react-hooks/exhaustive-deps
   const plants = plant ? PLANTS.filter((p) => p.code === plant) : PLANTS;
@@ -88,7 +90,9 @@ export function PurchaseRegisterDashboard() {
       <select className={sel} value={type} onChange={(e) => setType(e.target.value as "" | PurchaseType)} aria-label="Type"><option value="">All Types</option>{PURCHASE_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
       <select className={sel} value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Material Group"><option value="">All Material Groups</option>{MATERIAL_GROUPS.map((g) => <option key={g.name}>{g.name}</option>)}</select>
       <select className={sel} value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month"><option value="">All Months</option>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select>
-      <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setType(""); setMonth(""); setPlant(""); setGroup(""); }}>Reset</Button>
+      <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date From<input type="date" className={sel} value={postFrom} max={postTo || undefined} onChange={(e) => setPostFrom(e.target.value)} aria-label="Posting Date From" /></label>
+      <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date To<input type="date" className={sel} value={postTo} min={postFrom || undefined} onChange={(e) => setPostTo(e.target.value)} aria-label="Posting Date To" /></label>
+      <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setType(""); setMonth(""); setPlant(""); setGroup(""); setPostFrom(""); setPostTo(""); }}>Reset</Button>
       <span className="ml-auto rounded-full bg-chart-4/20 px-2 py-0.5 text-[10px] font-semibold text-foreground">Sample data · ₹ values in Crores</span>
     </div>
 
