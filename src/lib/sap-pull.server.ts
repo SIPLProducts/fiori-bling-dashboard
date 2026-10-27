@@ -10,6 +10,7 @@ import { isUserDropdownEndpoint, mapUserDropdownPayload } from "./user-dropdown-
 import { isOrderBookEndpoint, mapOrderBookPayload } from "./order-book-map";
 import { isSitEndpoint, mapSitPayload, staleSitKeys } from "./sit-map";
 import { isSalesRegisterEndpoint, mapSalesRegisterPayload } from "./sales-register-map";
+import { isPurchaseRegisterEndpoint, mapPurchaseRegisterPayload } from "./purchase-register-map";
 import {
   extractEmbeddedBody,
   keyValueObject,
