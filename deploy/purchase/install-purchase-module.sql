@@ -17,3 +17,9 @@ FROM public.roles r
 CROSS JOIN (VALUES ('mm.purchase-register'), ('mm.purchase-orders'), ('mm.open-purchase-orders')) AS s(k)
 WHERE r.key IN ('admin', 'super_admin')
 ON CONFLICT DO NOTHING;
+
+-- Module-level permission for the Purchase section (safe to rerun).
+INSERT INTO public.role_screens (role_key, screen_key)
+SELECT r.key, 'module.mm' FROM public.roles r
+WHERE r.key IN ('admin', 'super_admin')
+ON CONFLICT DO NOTHING;

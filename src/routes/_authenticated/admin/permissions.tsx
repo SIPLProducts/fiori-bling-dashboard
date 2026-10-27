@@ -57,8 +57,8 @@ function AdminPermissions() {
   const grantsQuery = useQuery({ queryKey: ["role-screens"], queryFn: () => listRoleScreens() });
 
   const roles = useMemo(
-    () => (rolesQuery.data ?? []).filter((role) => role.key !== SUPER_ADMIN_ROLE_KEY),
-    [rolesQuery.data],
+    () => (rolesQuery.data ?? []).filter((role) => isSuperAdmin || role.key !== SUPER_ADMIN_ROLE_KEY),
+    [rolesQuery.data, isSuperAdmin],
   );
 
   const granted = useMemo(() => {
@@ -161,14 +161,14 @@ function AdminPermissions() {
                         </TableCell>
                         {roles.map((role) => {
                           const count = module.children.filter((child) =>
-                            granted.has(`${role.key}::${child.key}`),
+                            (role.key === SUPER_ADMIN_ROLE_KEY || granted.has(`${role.key}::${child.key}`)),
                           ).length;
                           const state = count === module.children.length ? true : count > 0 ? "indeterminate" : false;
                           return (
                             <TableCell key={role.key} className="text-center">
                               <Checkbox
                                 checked={state}
-                                disabled={pending}
+                                disabled={pending || role.key === SUPER_ADMIN_ROLE_KEY}
                                 aria-label={`${module.label} for ${role.name}`}
                                 onCheckedChange={() =>
                                   batchMutation.mutate({
@@ -189,12 +189,12 @@ function AdminPermissions() {
                                 {screen.label}
                               </TableCell>
                               {roles.map((role) => {
-                                const checked = granted.has(`${role.key}::${screen.key}`);
+                                const checked = (role.key === SUPER_ADMIN_ROLE_KEY || granted.has(`${role.key}::${screen.key}`));
                                 return (
                                   <TableCell key={role.key} className="text-center">
                                     <Checkbox
                                       checked={checked}
-                                      disabled={pending}
+                                      disabled={pending || role.key === SUPER_ADMIN_ROLE_KEY}
                                       aria-label={`${screen.label} for ${role.name}`}
                                       onCheckedChange={(value) =>
                                         mutation.mutate({
@@ -232,12 +232,12 @@ function AdminPermissions() {
                         <TableRow key={screen.key}>
                           <TableCell className="font-medium">{screen.label}</TableCell>
                           {roles.map((role) => {
-                            const checked = granted.has(`${role.key}::${screen.key}`);
+                            const checked = (role.key === SUPER_ADMIN_ROLE_KEY || granted.has(`${role.key}::${screen.key}`));
                             return (
                               <TableCell key={role.key} className="text-center">
                                 <Checkbox
                                   checked={checked}
-                                   disabled={pending}
+                                   disabled={pending || role.key === SUPER_ADMIN_ROLE_KEY}
                                   aria-label={`${screen.label} for ${role.name}`}
                                   onCheckedChange={(value) =>
                                     mutation.mutate({
