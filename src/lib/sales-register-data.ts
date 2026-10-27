@@ -2,12 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
 const PAGE_SIZE = 1000;
-const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt,tot_ah,model,type";
-type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt" | "tot_ah" | "model" | "type", string | number | null>>;
+const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_ex,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt,tot_ah,model,type";
+type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_ex" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt" | "tot_ah" | "model" | "type", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
-/** Net = NETWR_TOT, invoice = NETWR_T (net + tax), date = FKDAT, status RFBSK "C" = Posted. */
+/** Net = NETWR_EX, invoice = NETWR_T (net + tax), date = FKDAT, status RFBSK "C" = Posted. */
 export function toSalesRegisterRow(r: Rec): SalesRegisterRow {
   return {
     billingDate: t(r.fkdat), creationDate: t(r.erdat), billingDocument: t(r.vbeln), invoiceNo: t(r.xblnr),
@@ -18,7 +18,7 @@ export function toSalesRegisterRow(r: Rec): SalesRegisterRow {
     division: t(r.spart), billingType: t(r.fkart), salesDocument: t(r.aubel), salesDocumentItem: t(r.aupos),
     salesOffice: t(r.bezei_so), materialCode: t(r.matnr), material: t(r.arktx) || t(r.matnr),
     model: t(r.model), productType: t(r.type),
-    billedQty: n(r.fkimg), totalAh: n(r.tot_ah), netValue: n(r.netwr_tot), invoiceValue: n(r.netwr_t),
+    billedQty: n(r.fkimg), totalAh: n(r.tot_ah), netValue: n(r.netwr_ex), invoiceValue: n(r.netwr_t),
     cgst: n(r.kwert_cgst), sgst: n(r.kwert_sgst), igst: n(r.kwert_igst), tcs: n(r.tcs),
     descs: {
       distributionChannel: t(r.vtext_dc), division: t(r.vtext_sd) || t(r.div_name), plant: t(r.name1_p), billingType: t(r.vtext),
@@ -42,4 +42,4 @@ export async function getSalesRegisterRows(): Promise<SalesRegisterRow[]> {
   return out.map(toSalesRegisterRow);
 }
 
-export const salesRegisterQuery = { queryKey: ["sales-register", "v5-model-type"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const salesRegisterQuery = { queryKey: ["sales-register", "v6-netwr-ex"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
