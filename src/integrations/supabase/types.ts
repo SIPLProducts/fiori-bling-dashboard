@@ -641,6 +641,153 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_register: {
+        Row: {
+          aedat: string | null
+          belnr: string
+          budat: string | null
+          buzei: string
+          bwart: string | null
+          cgst: number | null
+          create_dt: string | null
+          dis: number | null
+          gl_acc: number | null
+          gross_price: number | null
+          id: string
+          igst: number | null
+          kursf: number | null
+          lifnr: string | null
+          maktx: string | null
+          matnr: string | null
+          mblnr: string
+          meins_g: string | null
+          meins_i: string | null
+          menge_g: number | null
+          menge_i: number | null
+          mtbez: string | null
+          mwskz: string | null
+          name1: string | null
+          name1_wer: string | null
+          net_amt: number | null
+          net_price: number | null
+          no_cr: number | null
+          oth: number | null
+          plan_del: number | null
+          prctr: string | null
+          ptext: string | null
+          raw: Json
+          sgst: number | null
+          shkzg: string | null
+          source_endpoint: string | null
+          synced_at: string
+          tax: number | null
+          text1_m: string | null
+          total: number | null
+          ty_mat: string | null
+          ty_purch: string | null
+          waers: string | null
+          werks: string | null
+          wrbtr: number | null
+          zeile: string
+        }
+        Insert: {
+          aedat?: string | null
+          belnr?: string
+          budat?: string | null
+          buzei?: string
+          bwart?: string | null
+          cgst?: number | null
+          create_dt?: string | null
+          dis?: number | null
+          gl_acc?: number | null
+          gross_price?: number | null
+          id?: string
+          igst?: number | null
+          kursf?: number | null
+          lifnr?: string | null
+          maktx?: string | null
+          matnr?: string | null
+          mblnr?: string
+          meins_g?: string | null
+          meins_i?: string | null
+          menge_g?: number | null
+          menge_i?: number | null
+          mtbez?: string | null
+          mwskz?: string | null
+          name1?: string | null
+          name1_wer?: string | null
+          net_amt?: number | null
+          net_price?: number | null
+          no_cr?: number | null
+          oth?: number | null
+          plan_del?: number | null
+          prctr?: string | null
+          ptext?: string | null
+          raw?: Json
+          sgst?: number | null
+          shkzg?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          tax?: number | null
+          text1_m?: string | null
+          total?: number | null
+          ty_mat?: string | null
+          ty_purch?: string | null
+          waers?: string | null
+          werks?: string | null
+          wrbtr?: number | null
+          zeile?: string
+        }
+        Update: {
+          aedat?: string | null
+          belnr?: string
+          budat?: string | null
+          buzei?: string
+          bwart?: string | null
+          cgst?: number | null
+          create_dt?: string | null
+          dis?: number | null
+          gl_acc?: number | null
+          gross_price?: number | null
+          id?: string
+          igst?: number | null
+          kursf?: number | null
+          lifnr?: string | null
+          maktx?: string | null
+          matnr?: string | null
+          mblnr?: string
+          meins_g?: string | null
+          meins_i?: string | null
+          menge_g?: number | null
+          menge_i?: number | null
+          mtbez?: string | null
+          mwskz?: string | null
+          name1?: string | null
+          name1_wer?: string | null
+          net_amt?: number | null
+          net_price?: number | null
+          no_cr?: number | null
+          oth?: number | null
+          plan_del?: number | null
+          prctr?: string | null
+          ptext?: string | null
+          raw?: Json
+          sgst?: number | null
+          shkzg?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          tax?: number | null
+          text1_m?: string | null
+          total?: number | null
+          ty_mat?: string | null
+          ty_purch?: string | null
+          waers?: string | null
+          werks?: string | null
+          wrbtr?: number | null
+          zeile?: string
+        }
+        Relationships: []
+      }
       role_screens: {
         Row: {
           created_at: string

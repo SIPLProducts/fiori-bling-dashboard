@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { PurchaseRegisterDashboard } from "@/components/purchase-register-dashboard";
 import { Button } from "@/components/ui/button";
+import { SyncNowButton } from "@/components/sync-now-button";
 import { exportDashboardPdf } from "@/lib/chart-export";
 import { datedFileName } from "@/lib/format";
 import { hasScreen } from "@/lib/screens";
@@ -35,6 +36,7 @@ function Page() {
   };
   const actions = <>
     <span className="text-xs text-muted-foreground"><span className="font-medium">Data available:</span> 01.04.2026 – 31.03.2027</span>
+    <SyncNowButton endpointName="Purchase Register" label="Purchase Register" />
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
   return <ReportShell title="Purchase Register" compact actions={allowed ? actions : undefined}>

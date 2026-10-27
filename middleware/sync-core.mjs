@@ -749,6 +749,37 @@ function mapSalesRegisterPayload(payload, endpointName, now = /* @__PURE__ */ ne
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/purchase-register-map.ts
+var PR_TEXT = ["WERKS","NAME1_WER","PRCTR","PTEXT","LIFNR","NAME1","MTBEZ","MATNR","MAKTX","MEINS_I","MWSKZ","TEXT1_M","BWART","MEINS_G","WAERS","SHKZG","TY_PURCH","TY_MAT"];
+var PR_NUM = ["MENGE_I","MENGE_G","WRBTR","KURSF","DIS","OTH","PLAN_DEL","TAX","SGST","CGST","IGST","NO_CR","GL_ACC","TOTAL","NET_AMT","GROSS_PRICE","NET_PRICE"];
+var PR_DATE = ["BUDAT","AEDAT","CREATE_DT"];
+function isPurchaseRegisterEndpoint(name) {
+  return (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("purchaseregister");
+}
+function prText(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows4(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const belnr = prText(pick5(raw, "BELNR"));
+    if (!belnr) { invalid++; continue; }
+    const buzei = prText(pick5(raw, "BUZEI")) ?? "", mblnr = prText(pick5(raw, "MBLNR")) ?? "", zeile = prText(pick5(raw, "ZEILE")) ?? "";
+    const row = { belnr, buzei, mblnr, zeile, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of PR_TEXT) row[k.toLowerCase()] = prText(pick5(raw, k));
+    for (const k of PR_NUM) row[k.toLowerCase()] = orderBookNum(pick5(raw, k));
+    for (const k of PR_DATE) row[k.toLowerCase()] = orderBookDate(pick5(raw, k));
+    byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
@@ -1007,6 +1038,7 @@ export {
   formatBytes,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
+  isPurchaseRegisterEndpoint,
   isSalesRegisterEndpoint,
   isSitEndpoint,
   isUserDropdownEndpoint,
@@ -1017,6 +1049,7 @@ export {
   mapOrderBookPayload,
   mapPayload,
   mapRow,
+  mapPurchaseRegisterPayload,
   mapSalesRegisterPayload,
   mapSitPayload,
   mapUserDropdownPayload,
