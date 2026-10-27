@@ -148,6 +148,13 @@
       "when": 1793027878010,
       "tag": "0020_allow_today_posting_range",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793081779070,
+      "tag": "0021_purchase_register_table",
+      "breakpoints": true
     }
   ]
 }
