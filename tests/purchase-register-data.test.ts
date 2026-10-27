@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { fyOf, monthOf, rankBy, toPurchaseRow, typeTotals } from "../src/lib/purchase-register-data";
 
-const row = (o: Record<string, string | number | null>) => toPurchaseRow({ budat: "2026-06-05", ty_mat: "RAW MATERIAL", ty_purch: "Domestic", shkzg: "S", ...o });
+const row = (o: Parameters<typeof toPurchaseRow>[0]) => toPurchaseRow({ budat: "2026-06-05", ty_mat: "RAW MATERIAL", ty_purch: "Domestic", shkzg: "S", ...o });
 
 describe("purchase register data", () => {
   test("uses NET_AMT in crores and negates unsigned credit lines", () => {

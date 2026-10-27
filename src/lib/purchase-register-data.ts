@@ -5,7 +5,7 @@ export type PurchaseRow = {
   date: string; plant: string; plantName: string; profitCenter: string; profitCenterName: string;
   vendor: string; vendorName: string; material: string; materialName: string; group: string; type: PurchaseType; value: number;
 };
-type Rec = Record<string, string | number | null>;
+type Rec = Partial<Record<"budat" | "werks" | "name1_wer" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const CR = 1e7;
 
