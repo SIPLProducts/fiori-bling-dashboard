@@ -155,6 +155,13 @@
       "when": 1793081779070,
       "tag": "0021_purchase_register_table",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793110266197,
+      "tag": "0022_allow_fytd_window",
+      "breakpoints": true
     }
   ]
 }
