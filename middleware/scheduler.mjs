@@ -29,6 +29,8 @@ import {
   isSitEndpoint,
   mapSalesRegisterPayload,
   isSalesRegisterEndpoint,
+  mapPurchaseRegisterPayload,
+  isPurchaseRegisterEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -186,6 +188,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isPurchaseRegisterEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapPurchaseRegisterPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("purchase_register").upsert(rows.slice(i, i + BATCH), { onConflict: "belnr,buzei,mblnr,zeile" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_register", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isSalesRegisterEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapSalesRegisterPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {
