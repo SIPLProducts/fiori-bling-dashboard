@@ -42,4 +42,4 @@ export async function getSalesRegisterRows(): Promise<SalesRegisterRow[]> {
   return out.map(toSalesRegisterRow);
 }
 
-export const salesRegisterQuery = { queryKey: ["sales-register", "v5-model-type"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const salesRegisterQuery = { queryKey: ["sales-register", "v6-netwr-ex"], queryFn: getSalesRegisterRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;

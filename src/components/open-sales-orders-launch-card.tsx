@@ -91,9 +91,9 @@ export function SitLaunchCard({ fallback }: { fallback: React.ReactNode }) {
 }
 
 async function fetchSalesRegisterRows() {
-  const allRows: { netwr_t: number | string | null; vtext_dc: string | null; auart: string | null; werks: string | null; prctr: string | null }[] = [];
+  const allRows: { netwr_ex: number | string | null; vtext_dc: string | null; auart: string | null; werks: string | null; prctr: string | null }[] = [];
   for (let page = 0; ; page += 1) {
-    const result = await supabase.from("sales_register").select("netwr_t,vtext_dc,auart,werks,prctr")
+    const result = await supabase.from("sales_register").select("netwr_ex,vtext_dc,auart,werks,prctr")
       .order("id", { ascending: true }).range(page * 1000, (page + 1) * 1000 - 1);
     if (result.error) throw result.error;
     const rows = result.data ?? [];
@@ -105,13 +105,13 @@ async function fetchSalesRegisterRows() {
 
 export function SalesRegisterLaunchCard({ fallback }: { fallback: React.ReactNode }) {
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["sales-register-launch-summary", "netwr-t-auart-v1"],
+    queryKey: ["sales-register-launch-summary", "netwr-ex-auart-v1"],
     queryFn: fetchSalesRegisterRows,
     staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
   const access = useUserAccess();
   const data = useMemo(() => rows ? summarizeLaunchOrders(scopeRowsToAssigned(rows, access, { plant: (r) => r.werks, profitCentre: (r) => r.prctr })
-    .map((r) => ({ p_value1: r.netwr_t, sales_type: r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access]);
+    .map((r) => ({ p_value1: r.netwr_ex, sales_type: r.vtext_dc, order_type: r.auart })), { all: true }) : undefined, [rows, access]);
   const { data: lastSynced } = useReportSync("sales-register");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data || !rows?.length) return <>{fallback}</>;
