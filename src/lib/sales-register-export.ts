@@ -1,5 +1,6 @@
 import { toCr, toLah } from "./sales-register";
 import { datedFileName } from "@/lib/format";
+import { industryTotals } from "@/lib/industry-name";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
 export const channelLabel = (r: Pick<SalesRegisterRow, "channelCode" | "channel">) =>
@@ -10,7 +11,7 @@ export const SALES_REGISTER_EXPORT_COLUMNS: [string, (r: SalesRegisterRow) => st
   ["Billing Document", (r) => r.billingDocument], ["Invoice No", (r) => r.invoiceNo],
   ["Billing Type", (r) => r.billingType], ["Distribution Channel", channelLabel],
   ["Division", (r) => r.division], ["Product Category", (r) => r.productCategory],
-  ["Customer", (r) => r.customer], ["Customer Name", (r) => r.customerName],
+  ["Customer", (r) => r.customer], ["Customer Name", (r) => r.customerName], ["Industry Name", (r) => r.industry ?? ""],
   ["Plant", (r) => r.plant], ["Plant Name", (r) => r.descs?.["plant"] ?? ""],
   ["Profit Center", (r) => r.profitCenter], ["Sales Office", (r) => r.salesOffice],
   ["Sales Document", (r) => r.salesDocument], ["Sales Document Item", (r) => r.salesDocumentItem],
@@ -30,6 +31,10 @@ export async function downloadSalesRegisterExcel(rows: SalesRegisterRow[]) {
   header.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
   rows.forEach((r) => sheet.addRow(SALES_REGISTER_EXPORT_COLUMNS.map(([, get]) => get(r))));
   sheet.columns.forEach((c) => { c.width = 20; });
+  const ind = wb.addWorksheet("Industry Name");
+  const ih = ind.addRow(["Industry Name", "Net Value (₹ Cr)", "Lines"]); ih.font = { bold: true };
+  industryTotals(rows, (r) => r.industry, (r) => r.netValue).forEach((d) => ind.addRow([d.name, toCr(d.value), d.count]));
+  ind.columns.forEach((c) => { c.width = 28; });
   const buf = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
   const a = document.createElement("a"); a.href = url; a.download = datedFileName("Sales Register", "xlsx"); a.click();
