@@ -16,3 +16,6 @@ SELECT r.key, s.k FROM public.roles r
 CROSS JOIN (VALUES ('pp.daily-production-report'), ('module.pp')) AS s(k)
 WHERE r.key IN ('admin', 'super_admin')
 ON CONFLICT DO NOTHING;
+
+-- Remove the old PP overview card so only Daily Production Report remains.
+DELETE FROM public.tiles WHERE group_key = 'production-planning' AND target_path = '/reports/module/pp';
