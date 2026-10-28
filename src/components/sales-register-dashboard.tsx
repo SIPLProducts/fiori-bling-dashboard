@@ -124,9 +124,9 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
         <Bar dataKey="net" name="Net Value" radius={[3, 3, 0, 0]} maxBarSize={32}>{trend.points.map((_, i) => <Cell key={i} fill={`url(#sr-trend-${i % COLORS.length})`} />)}
           <LabelList dataKey="net" position="top" style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
-      <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst), tcs: cr(t.tcs) }))}>
+      <Card title="Tax Breakdown">{a.tax.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={a.tax.map((t) => ({ week: t.week, cgst: cr(t.cgst), sgst: cr(t.sgst), igst: cr(t.igst)}))}>
         {grad("sr-tax")}<XAxis dataKey="week" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
-        {([["cgst", 0], ["sgst", 3], ["igst", 4], ["tcs", 5]] as const).map(([k, c]) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${c})`} />)}
+        {([["cgst", 0], ["sgst", 3], ["igst", 4]] as const).map(([k, c]) => <Bar key={k} dataKey={k} name={k.toUpperCase()} stackId="t" fill={`url(#sr-tax-${c})`} />)}
       </BarChart></ResponsiveContainer> : <Empty />}</Card>
     </div>
     <section className="rounded-xl border border-border bg-card shadow-sm">
