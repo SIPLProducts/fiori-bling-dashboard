@@ -76,10 +76,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     label: "Production Planning",
     groupKey: "production-planning",
     children: [
-      { key: "pp.open-production-orders", label: "Open Production Orders", tileKey: "pp_open_orders" },
-      { key: "pp.schedule-adherence", label: "Schedule Adherence", tileKey: "pp_schedule_adherence" },
-      { key: "pp.capacity-utilisation", label: "Capacity Utilisation", tileKey: "pp_capacity_load" },
-      { key: "pp.output-trend", label: "Output Trend", tileKey: "pp_output_trend" },
+      { key: "pp.daily-production-report", label: "Daily Production Report", tileKey: "pp_daily_production" },
     ],
   },
   {
