@@ -144,10 +144,7 @@ export const MODULES: ModuleDef[] = [
     documentPrefix: "PO-",
     statuses: ["Created", "Released", "In Progress", "Confirmed", "Delayed"],
     kpis: [
-      { key: "pp_open_orders", label: "Open Production Orders", subtitle: "Released and in progress", base: 412, kind: "kpi", icon: "list" },
-      { key: "pp_schedule_adherence", label: "Schedule Adherence", subtitle: "Last 30 days", unit: "%", base: 91, kind: "kpi", icon: "check" },
-      { key: "pp_capacity_load", label: "Capacity Utilisation", subtitle: "All work centres", unit: "%", base: 84, kind: "kpi", icon: "pie" },
-      { key: "pp_output_trend", label: "Output Trend", subtitle: "Monthly confirmed output", unit: "units", base: 62_400, kind: "chart", icon: "trend" },
+      { key: "pp_daily_production", label: "Daily Production Report", subtitle: "Daily production output", base: 0, kind: "kpi", icon: "list" },
     ],
   },
 ];

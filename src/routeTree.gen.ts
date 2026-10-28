@@ -28,6 +28,7 @@ import { Route as AuthenticatedReportsMmOpenPurchaseOrdersRouteImport } from './
 import { Route as AuthenticatedReportsMmPurchaseOrdersRouteImport } from './routes/_authenticated/reports/mm/purchase-orders'
 import { Route as AuthenticatedReportsMmPurchaseRegisterRouteImport } from './routes/_authenticated/reports/mm/purchase-register'
 import { Route as AuthenticatedReportsModuleModuleRouteImport } from './routes/_authenticated/reports/module.$module'
+import { Route as AuthenticatedReportsPpDailyProductionReportRouteImport } from './routes/_authenticated/reports/pp/daily-production-report'
 import { Route as AuthenticatedReportsSdDispatchesRouteImport } from './routes/_authenticated/reports/sd/dispatches'
 import { Route as AuthenticatedReportsSdDrilldownRouteImport } from './routes/_authenticated/reports/sd/drilldown'
 import { Route as AuthenticatedReportsSdFinanceGstRouteImport } from './routes/_authenticated/reports/sd/finance-gst'
@@ -148,6 +149,12 @@ const AuthenticatedReportsModuleModuleRoute =
     path: '/reports/module/$module',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsPpDailyProductionReportRoute =
+  AuthenticatedReportsPpDailyProductionReportRouteImport.update({
+    id: '/reports/pp/daily-production-report',
+    path: '/reports/pp/daily-production-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSdDispatchesRoute =
   AuthenticatedReportsSdDispatchesRouteImport.update({
     id: '/reports/sd/dispatches',
@@ -240,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/pp/daily-production-report': typeof AuthenticatedReportsPpDailyProductionReportRoute
   '/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
   '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/reports/pp/daily-production-report': typeof AuthenticatedReportsPpDailyProductionReportRoute
   '/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
@@ -305,6 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/_authenticated/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
   '/_authenticated/reports/module/$module': typeof AuthenticatedReportsModuleModuleRoute
+  '/_authenticated/reports/pp/daily-production-report': typeof AuthenticatedReportsPpDailyProductionReportRoute
   '/_authenticated/reports/sd/dispatches': typeof AuthenticatedReportsSdDispatchesRoute
   '/_authenticated/reports/sd/drilldown': typeof AuthenticatedReportsSdDrilldownRoute
   '/_authenticated/reports/sd/finance-gst': typeof AuthenticatedReportsSdFinanceGstRoute
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/reports/mm/purchase-orders'
     | '/reports/mm/purchase-register'
     | '/reports/module/$module'
+    | '/reports/pp/daily-production-report'
     | '/reports/sd/dispatches'
     | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/reports/mm/purchase-orders'
     | '/reports/mm/purchase-register'
     | '/reports/module/$module'
+    | '/reports/pp/daily-production-report'
     | '/reports/sd/dispatches'
     | '/reports/sd/drilldown'
     | '/reports/sd/finance-gst'
@@ -403,6 +415,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/mm/purchase-orders'
     | '/_authenticated/reports/mm/purchase-register'
     | '/_authenticated/reports/module/$module'
+    | '/_authenticated/reports/pp/daily-production-report'
     | '/_authenticated/reports/sd/dispatches'
     | '/_authenticated/reports/sd/drilldown'
     | '/_authenticated/reports/sd/finance-gst'
@@ -560,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsModuleModuleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/pp/daily-production-report': {
+      id: '/_authenticated/reports/pp/daily-production-report'
+      path: '/reports/pp/daily-production-report'
+      fullPath: '/reports/pp/daily-production-report'
+      preLoaderRoute: typeof AuthenticatedReportsPpDailyProductionReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/sd/dispatches': {
       id: '/_authenticated/reports/sd/dispatches'
       path: '/reports/sd/dispatches'
@@ -680,6 +700,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsMmPurchaseOrdersRoute: typeof AuthenticatedReportsMmPurchaseOrdersRoute
   AuthenticatedReportsMmPurchaseRegisterRoute: typeof AuthenticatedReportsMmPurchaseRegisterRoute
   AuthenticatedReportsModuleModuleRoute: typeof AuthenticatedReportsModuleModuleRoute
+  AuthenticatedReportsPpDailyProductionReportRoute: typeof AuthenticatedReportsPpDailyProductionReportRoute
   AuthenticatedReportsSdDispatchesRoute: typeof AuthenticatedReportsSdDispatchesRoute
   AuthenticatedReportsSdDrilldownRoute: typeof AuthenticatedReportsSdDrilldownRoute
   AuthenticatedReportsSdFinanceGstRoute: typeof AuthenticatedReportsSdFinanceGstRoute
@@ -713,6 +734,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsMmPurchaseRegisterRoute:
     AuthenticatedReportsMmPurchaseRegisterRoute,
   AuthenticatedReportsModuleModuleRoute: AuthenticatedReportsModuleModuleRoute,
+  AuthenticatedReportsPpDailyProductionReportRoute:
+    AuthenticatedReportsPpDailyProductionReportRoute,
   AuthenticatedReportsSdDispatchesRoute: AuthenticatedReportsSdDispatchesRoute,
   AuthenticatedReportsSdDrilldownRoute: AuthenticatedReportsSdDrilldownRoute,
   AuthenticatedReportsSdFinanceGstRoute: AuthenticatedReportsSdFinanceGstRoute,

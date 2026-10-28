@@ -33,6 +33,7 @@ const ICONS = {
   fi_payables: Banknote,
   fi_dso: CalendarClock,
   fi_cash_trend: TrendingUp,
+  pp_daily_production: Factory,
   pp_open_orders: Factory,
   pp_schedule_adherence: PackageCheck,
   pp_capacity_load: Gauge,
