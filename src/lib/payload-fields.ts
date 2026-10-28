@@ -61,3 +61,20 @@ export function buildPayloadText(fields: PayloadField[]): string {
   const lastActive = lines.map((l) => l.comment).lastIndexOf(false);
   return ["{", ...lines.map((l, i) => (l.comment ? `//  ${l.entry}` : `  ${l.entry}${i < lastActive ? "," : ""}`)), "}"].join("\n");
 }
+
+/**
+ * Rewrites the date-window keys with a freshly computed window, so a preset
+ * range shows today's dates instead of the ones saved earlier. `null` window
+ * (custom range) leaves fields unchanged; "today" leaves the _T key empty.
+ */
+export function applyDateWindow(
+  fields: PayloadField[],
+  windowKeys: string[],
+  range: string,
+  window: { from: string; to: string } | null,
+): PayloadField[] {
+  if (!window) return fields;
+  return fields.map((f) =>
+    windowKeys.includes(f.key) ? { ...f, value: /_F$/i.test(f.key) ? window.from : range === "today" ? "" : window.to } : f,
+  );
+}
