@@ -59,7 +59,7 @@ type FieldKey = Exclude<keyof MgmtFilters, "from" | "to">;
 
 export const FILTER_DEFS: { key: FieldKey; label: string; pick: (r: SdLine) => string }[] = [
   { key: "salesType", label: "Sales Type", pick: (r) => r.salesType },
-  { key: "businessSegment", label: "Segment", pick: (r) => r.businessSegment || r.segment },
+  { key: "businessSegment", label: "Segment", pick: (r) => r.businessSegment },
   { key: "customer", label: "Customer", pick: (r) => r.customerName || r.customer },
   { key: "profitCentre", label: "Profit Centre", pick: (r) => r.pcShortName || r.profitCtrName || r.profitCtr },
   { key: "mainGroup", label: "Main Group", pick: (r) => r.mainGroup },
@@ -362,7 +362,7 @@ export function buildManagementView(
   /* ------------------------------- breakdowns ------------------------------ */
   const totalAmount = cur.amount || 1;
 
-  const segRows = group(current, (r) => r.businessSegment || r.segment);
+  const segRows = group(current, (r) => r.businessSegment);
   const segTop = segRows.slice(0, 5);
   const segOthers = segRows.slice(5).reduce((s, [, v]) => s + v, 0);
   const segments: SegmentSlice[] = [
