@@ -162,6 +162,13 @@
       "when": 1793110266197,
       "tag": "0022_allow_fytd_window",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793157939007,
+      "tag": "0023_pp_daily_production_only",
+      "breakpoints": true
     }
   ]
 }
