@@ -1,4 +1,4 @@
-import { industryTotals } from "@/lib/industry-name";
+import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
 import { SyncNowButton } from "@/components/sync-now-button";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -1849,6 +1849,7 @@ const COLUMNS: Column[] = [
 
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
   { key: "industryText", label: "Industry Name", render: (r) => r.industryText || "—" },
+  { key: "segmentName", label: "Segment", render: (r) => r.segmentName || r.segmentCode || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   { key: "mainGroup", label: "Main Group", render: (r) => r.mainGroup || "—" },
   { key: "subGroup", label: "Sub Group", render: (r) => r.subGroup || "—" },
@@ -2172,7 +2173,7 @@ export function SdLiveDashboard() {
   const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync("net-sales");
   const { data: lines, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["sd-live-lines", "v2-industry"],
+    queryKey: ["sd-live-lines", "v3-segment"],
     queryFn: fetchSdLines,
     ...STABLE_SALES_QUERY_OPTIONS,
   });
@@ -2208,6 +2209,9 @@ export function SdLiveDashboard() {
   const filtered = useMemo(() => applySdFilters(typeFiltered, effectiveFilters), [typeFiltered, effectiveFilters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
   const industries = useMemo(() => industryTotals(filtered, (r) => r.industryText, (r) => r.amount), [filtered]);
+  const segments = useMemo(() => segmentTotals(filtered, (r) => r.segmentCode, (r) => r.industryText, (r) => r.amount), [filtered]);
+  const segmentNames = useMemo(() => segmentNameMap(all, (r) => r.segmentCode, (r) => r.industryText), [all]);
+  const tableRows = useMemo(() => filtered.map((r) => ({ ...r, segmentName: segmentNames.get(r.segmentCode.trim()) ?? "" })), [filtered, segmentNames]);
   const quarterComparisonRows = useMemo(
     () => applySdFilters(typeFiltered, { ...filters, from: "", to: "", fiscalYears: [], quarters: [] }),
     [typeFiltered, filters],
@@ -3194,8 +3198,13 @@ export function SdLiveDashboard() {
             </Panel>
 
             {industries.length > 0 && (
-              <Panel title="Industry Name" accent={4} expandable className="lg:col-span-2">
+              <Panel title="Industry Name" accent={4} expandable>
                 {(full: boolean) => <BarList items={industries} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
+              </Panel>
+            )}
+            {segments.length > 0 && (
+              <Panel title="Segment" accent={1} expandable>
+                {(full: boolean) => <BarList items={segments} tone={4} full={full} valueFormatter={CRORES_VALUE} />}
               </Panel>
             )}
 
@@ -3286,7 +3295,7 @@ export function SdLiveDashboard() {
 
           <div data-pdf-exclude>
             <LinesTable
-              rows={filtered}
+              rows={tableRows}
               pcColors={pcColors.map}
               pcLegend={pcLegend}
             />

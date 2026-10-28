@@ -18,6 +18,8 @@ export type SalesRegisterRow = {
   model?: string;
   productType?: string;
   industry?: string;
+  segmentCode?: string;
+  segmentName?: string;
   netValue: number;
   invoiceValue: number;
   cgst: number;

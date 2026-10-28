@@ -1,7 +1,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { ModelTypeCards } from "@/components/model-type-cards";
-import { industryTotals } from "@/lib/industry-name";
+import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -73,12 +73,14 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
   </div>;
 }
 
-export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
+export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
+  const rows = useMemo(() => { const m = segmentNameMap(rawRows, (r) => r.segmentCode, (r) => r.industry); return rawRows.map((r) => ({ ...r, segmentName: m.get((r.segmentCode ?? "").trim()) ?? "" })); }, [rawRows]);
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const industries = useMemo(() => industryTotals(rows, (r) => r.industry, (r) => r.netValue), [rows]);
+  const segments = useMemo(() => segmentTotals(rows, (r) => r.segmentCode, (r) => r.industry, (r) => r.netValue), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -87,7 +89,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
   const has = rows.length > 0;
   const sum = (k: "billedQty" | "netValue" | "invoiceValue" | "cgst" | "sgst" | "igst") => filtered.reduce((s, r) => s + r[k], 0);
   const channels = [...new Set(rows.map((r) => r.channelCode || r.channel))];
-  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty (LAH)", "Net Value (₹ Cr)", "CGST (LAH)", "SGST (LAH)", "IGST (LAH)", "Posting Status"];
+  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Segment", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty (LAH)", "Net Value (₹ Cr)", "CGST (LAH)", "SGST (LAH)", "IGST (LAH)", "Posting Status"];
   const R = "text-right tabular-nums whitespace-nowrap";
 
   return <div className="space-y-3">
@@ -108,7 +110,10 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
-    {industries.length > 0 && <Card title="Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries} /></div></Card>}
+    {(industries.length > 0 || segments.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {industries.length > 0 && <Card title="Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries} /></div></Card>}
+      {segments.length > 0 && <Card title="Segment"><div className="max-h-[260px] overflow-auto"><RankList data={segments} /></div></Card>}
+    </div>}
     <ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} />
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
@@ -140,6 +145,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
             <TableCell className="whitespace-nowrap font-medium text-primary">{r.billingDocument}</TableCell>
             <TableCell className="whitespace-nowrap">{r.invoiceNo}</TableCell>
             <TableCell className="whitespace-nowrap">{r.customerName}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.segmentName || r.segmentCode || "—"}</TableCell>
             <TableCell className="whitespace-nowrap font-medium"><span className="inline-flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm" style={{ background: COLORS[ci % COLORS.length] }} />{r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode || "—"}</span></TableCell>
             <TableCell className="whitespace-nowrap">{[r.plant, r.descs?.["plantShort"] || r.descs?.["plant"]].filter(Boolean).join(" — ")}</TableCell>
             <TableCell className="whitespace-nowrap">{r.profitCenter}</TableCell>
@@ -154,7 +160,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
           </TableRow>;
         }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
         {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
-          <TableCell colSpan={10}>Total ({filtered.length} lines)</TableCell>
+          <TableCell colSpan={11}>Total ({filtered.length} lines)</TableCell>
           <TableCell className={R}>{toLah(sum("billedQty")).toFixed(2)}</TableCell>
           <TableCell className={R}>{toCr(sum("netValue")).toFixed(2)}</TableCell>
                     <TableCell className={R}>{toLah(sum("cgst")).toFixed(2)}</TableCell>
