@@ -1,7 +1,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { ModelTypeCards } from "@/components/model-type-cards";
-import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
+import { industryTotals, segmentTotals } from "@/lib/industry-name";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -74,7 +74,7 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
 }
 
 export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
-  const rows = useMemo(() => { const m = segmentNameMap(rawRows, (r) => r.segmentCode, (r) => r.industry); return rawRows.map((r) => ({ ...r, segmentName: m.get((r.segmentCode ?? "").trim()) ?? "" })); }, [rawRows]);
+  const rows = rawRows;
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
