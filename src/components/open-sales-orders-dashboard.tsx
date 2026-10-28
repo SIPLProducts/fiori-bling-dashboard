@@ -363,7 +363,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
         <Panel title={`${groupPrefix} by Main Group`} headerDivider dividerColor="blue"><OrderBookSubGroupChart sit={isSit} groupLabel="Main Group" groups={groupCharts.mainByDivision.groups} divisions={groupCharts.mainByDivision.divisions} pdf={pdfBusy} /></Panel>
       </div>
       <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-3">
-        {([["Sub Group 1", groupCharts.sub1, "violet"], ["Sub Group 2", groupCharts.sub2, "green"], ["Sub Group 3", groupCharts.sub3, "orange"]] as const).map(([label, g, color]) => (
+        {([["Sub Group 1", groupCharts.sub1, "violet"], ["Sub Group 2", groupCharts.sub2, "green"], ["Sub Group 3", groupCharts.sub3, "amber"]] as const).map(([label, g, color]) => (
           <Panel key={label} title={`${groupPrefix} by ${label}`} headerDivider dividerColor={color}><OrderBookSubGroupChart sit={isSit} groupLabel={label} groups={g.groups} divisions={g.divisions} pdf={pdfBusy} /></Panel>
         ))}
       </div>
