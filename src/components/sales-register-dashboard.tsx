@@ -79,6 +79,8 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
+  const sub2 = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup2"), (r) => r.name), [rows]);
+  const sub3 = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup3"), (r) => r.name), [rows]);
   const industries = useMemo(() => industryTotals(rows, (r) => r.industry, (r) => r.netValue), [rows]);
   const salesMen = useMemo(() => industryTotals(rows, (r) => r.salesMan, (r) => r.netValue).slice(0, 10), [rows]);
   const segments = useMemo(() => segmentTotals(rows, (r) => r.segmentCode, (r) => r.segmentName, (r) => r.netValue), [rows]);
@@ -106,10 +108,12 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
       <Card title="Top 10 Profit Centres"><RankList data={a.topProfitCenters} /></Card>
       <Card title="Top 10 Materials"><RankList data={a.topMaterials} /></Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       <Card title="Sales by Plant (Top 10)"><PlantColumns data={a.byPlant} /></Card>
-      <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
-      <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
+      <div className="min-w-0 lg:col-span-2"><Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card></div>
+    </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {([["Sub Group 1", sub], ["Sub Group 2", sub2], ["Sub Group 3", sub3]] as const).map(([label, g]) => <Card key={label} title={`Sales by ${label}`}>{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <Empty />}</Card>)}
     </div>
     {(industries.length > 0 || segments.length > 0 || salesMen.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {salesMen.length > 0 && <Card title="Top 10 Sales Men"><div className="max-h-[260px] overflow-auto"><RankList data={salesMen} /></div></Card>}

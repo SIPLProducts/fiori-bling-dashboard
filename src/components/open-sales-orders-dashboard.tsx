@@ -253,7 +253,7 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     setFiscalYears(isSit ? orderBookFiscalYears(data).slice(0, 1) : [currentFiscalYear()]);
     setQuarterFilter([]);
   };
-  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup), mainByDivision: summarizeGroupsByDivision(filteredData, (row) => row.sapMainGroup) }), [filteredData]);
+  const groupCharts = useMemo(() => ({ main: summarizeOpenOrderGroups(filteredData, (row) => row.sapMainGroup), sub: summarizeOpenOrderGroups(filteredData, (row) => row.subGroup), subByDivision: summarizeGroupsByDivision(filteredData, (row) => row.subGroup), mainByDivision: summarizeGroupsByDivision(filteredData, (row) => row.sapMainGroup), sub1: summarizeGroupsByDivision(filteredData, (row) => row.subGroup), sub2: summarizeGroupsByDivision(filteredData, (row) => row.subGroup2 ?? ""), sub3: summarizeGroupsByDivision(filteredData, (row) => row.subGroup3 ?? "") }), [filteredData]);
   const monthSeries = useMemo(() => summarizeByCreatedMonth(filteredData), [filteredData]);
   const metrics = useMemo(() => {
     const totalValue = filteredData.reduce((sum, row) => sum + row.value, 0);
@@ -356,10 +356,17 @@ export function OpenSalesOrdersDashboard({ variant = "open-orders" }: { variant?
     }
   };
 
+  const groupPrefix = isSit ? "SIT" : isBook ? "Orders" : "Open Orders";
   const groupRow = (
-      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-2">
-        <Panel title={isSit ? "SIT by Main Group" : isBook ? "Orders by Main Group" : "Open Orders by Main Group"} headerDivider dividerColor="blue">{isSit ? <OrderBookSubGroupChart sit={isSit} groupLabel="Main Group" groups={groupCharts.mainByDivision.groups} divisions={[...groupCharts.subByDivision.divisions, ...groupCharts.mainByDivision.divisions.filter((d) => !groupCharts.subByDivision.divisions.includes(d))]} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.main} color="var(--chart-1)" pdf={pdfBusy} />}</Panel>
-        <Panel title={isSit ? "SIT by Sub Group" : isBook ? "Orders by Sub Group" : "Open Orders by Sub Group"} headerDivider dividerColor="violet">{isBook ? <OrderBookSubGroupChart sit={isSit} groups={groupCharts.subByDivision.groups} divisions={groupCharts.subByDivision.divisions} pdf={pdfBusy} /> : <OpenOrdersGroupChart data={groupCharts.sub} color="var(--quick-view-violet)" pdf={pdfBusy} />}</Panel>
+      <div className="space-y-4">
+      <div data-pdf-page-block className="order-group-row grid gap-4">
+        <Panel title={`${groupPrefix} by Main Group`} headerDivider dividerColor="blue"><OrderBookSubGroupChart sit={isSit} groupLabel="Main Group" groups={groupCharts.mainByDivision.groups} divisions={groupCharts.mainByDivision.divisions} pdf={pdfBusy} /></Panel>
+      </div>
+      <div data-pdf-page-block className="order-group-row grid gap-4 md:grid-cols-3">
+        {([["Sub Group 1", groupCharts.sub1, "violet"], ["Sub Group 2", groupCharts.sub2, "green"], ["Sub Group 3", groupCharts.sub3, "orange"]] as const).map(([label, g, color]) => (
+          <Panel key={label} title={`${groupPrefix} by ${label}`} headerDivider dividerColor={color}><OrderBookSubGroupChart sit={isSit} groupLabel={label} groups={g.groups} divisions={g.divisions} pdf={pdfBusy} /></Panel>
+        ))}
+      </div>
       </div>
   );
   return (
