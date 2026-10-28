@@ -50,7 +50,7 @@ export type SdLine = {
 };
 
 const COLUMNS =
-  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, branch, industry, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, ah, total_ah, amount, business_segment";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, branch, industry, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, ah, total_ah, amount, business_segment, customer_group";
 
 const PAGE = 1000;
 /** How many page requests run at once; keeps the first paint fast on 30k+ lines. */
@@ -188,7 +188,7 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         newRepl: s(r["new_repl"]),
         salesType: s(r["sales_type"]),
         segment: s(r["segment"]),
-        businessSegment: s(r["business_segment"]),
+        businessSegment: s(r["customer_group"]) || s(r["business_segment"]),
         material: s(r["material"]),
         materialDesc: s(r["material_desc"]),
         productGroup: s(r["product_group"]),
@@ -547,7 +547,7 @@ export function applySdFilters(rows: SdLine[], f: SdFilters): SdLine[] {
     )
       return false;
     // profit centre filter values are PRCTR codes (labels show "PRCTR — LTEXT")
-    if (!inList(f.segments, r.businessSegment || r.segment)) return false;
+    if (!inList(f.segments, r.businessSegment)) return false;
     if (!inList(f.customers, r.customerName || r.customer)) return false;
     if (
       term &&
@@ -768,7 +768,7 @@ export function buildSdAnalytics(rows: SdLine[]): SdAnalytics {
     add(byCust, r.customerName || r.customer, r.amount);
     add(byMat, r.materialDesc || r.material, r.amount);
     add(byEmp, r.salesRepName, r.amount);
-    add(bySeg, r.businessSegment || r.segment || "Unassigned", r.amount);
+    if (r.businessSegment.trim()) add(bySeg, r.businessSegment.trim(), r.amount);
 
     const main = r.mainGroup || "Unassigned";
     add(byMain, main, r.amount);
