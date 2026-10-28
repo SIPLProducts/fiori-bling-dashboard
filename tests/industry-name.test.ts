@@ -10,3 +10,17 @@ describe("industryTotals", () => {
     ]);
   });
 });
+
+import { segmentTotals } from "@/lib/industry-name";
+describe("segmentTotals", () => {
+  it("groups by BRSCH, labels with most common BRTXT, falls back to code, skips blank codes", () => {
+    const rows = [
+      { c: "001", n: "Defence", v: 5 }, { c: "001", n: "Defence", v: 5 }, { c: "001", n: "Metro", v: 1 },
+      { c: "002", n: "", v: 20 }, { c: "", n: "Telecom", v: 99 },
+    ];
+    expect(segmentTotals(rows, (r) => r.c, (r) => r.n, (r) => r.v)).toEqual([
+      { code: "002", name: "002", value: 20, count: 1 },
+      { code: "001", name: "Defence", value: 11, count: 3 },
+    ]);
+  });
+});
