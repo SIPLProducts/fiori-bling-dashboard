@@ -3188,7 +3188,7 @@ export function SdLiveDashboard() {
           </Dialog>
 
           {/* Additional analysis kept below the management view */}
-          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-2">
+          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
             <Panel title="Top 10 Materials" accent={3} expandable>
               {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
@@ -3198,8 +3198,8 @@ export function SdLiveDashboard() {
             </Panel>
 
             {industries.length > 0 && (
-              <Panel title="Industry Name" accent={4} expandable>
-                {(full: boolean) => <BarList items={industries} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
+              <Panel title="Top 10 Industry Name" accent={4} expandable>
+                {(full: boolean) => <BarList items={industries.slice(0, 10)} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
               </Panel>
             )}
 

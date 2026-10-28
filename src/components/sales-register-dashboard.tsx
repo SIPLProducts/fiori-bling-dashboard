@@ -111,7 +111,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
     {(industries.length > 0 || segments.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {industries.length > 0 && <Card title="Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries} /></div></Card>}
+      {industries.length > 0 && <Card title="Top 10 Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries.slice(0, 10)} /></div></Card>}
       {segments.length > 0 && <Card title="Segment"><Donut data={segments} total={segments.reduce((s, d) => s + d.value, 0)} showPercent={false} size={110} /></Card>}
     </div>}
     <ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} />
