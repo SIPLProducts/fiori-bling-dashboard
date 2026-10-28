@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
 import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
@@ -678,6 +678,13 @@ function PayloadRequestFields({
   const windowKeys = salesRegisterWindowKeys(dateFields.map((f) => f.key));
   const rolling = range !== "custom" && windowKeys.length > 0;
   const label = dateFieldLabel;
+  // Preset windows show today's dates on open, not the ones saved on an earlier day.
+  useEffect(() => {
+    if (!rolling) return;
+    const refreshed = applyDateWindow(fields, windowKeys, range, postingWindow(range));
+    if (refreshed.some((f, i) => f.value !== fields[i]?.value)) onChange(buildPayloadText(refreshed));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, range]);
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {dateFields.length ? (
