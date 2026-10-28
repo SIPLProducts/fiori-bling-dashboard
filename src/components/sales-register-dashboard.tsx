@@ -90,7 +90,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
   const has = rows.length > 0;
   const sum = (k: "billedQty" | "netValue" | "invoiceValue" | "cgst" | "sgst" | "igst") => filtered.reduce((s, r) => s + r[k], 0);
   const channels = [...new Set(rows.map((r) => r.channelCode || r.channel))];
-  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Segment", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty (LAH)", "Net Value (₹ Cr)", "CGST (LAH)", "SGST (LAH)", "IGST (LAH)", "Posting Status"];
+  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Industry Name", "Segment", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty (LAH)", "Net Value (₹ Cr)", "CGST (LAH)", "SGST (LAH)", "IGST (LAH)", "Posting Status"];
   const R = "text-right tabular-nums whitespace-nowrap";
 
   return <div className="space-y-3">
@@ -147,6 +147,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
             <TableCell className="whitespace-nowrap font-medium text-primary">{r.billingDocument}</TableCell>
             <TableCell className="whitespace-nowrap">{r.invoiceNo}</TableCell>
             <TableCell className="whitespace-nowrap">{r.customerName}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.industry || ""}</TableCell>
             <TableCell className="whitespace-nowrap">{r.segmentName || r.segmentCode || "—"}</TableCell>
             <TableCell className="whitespace-nowrap font-medium"><span className="inline-flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm" style={{ background: COLORS[ci % COLORS.length] }} />{r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode || "—"}</span></TableCell>
             <TableCell className="whitespace-nowrap">{[r.plant, r.descs?.["plantShort"] || r.descs?.["plant"]].filter(Boolean).join(" — ")}</TableCell>
@@ -162,7 +163,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
           </TableRow>;
         }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
         {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
-          <TableCell colSpan={11}>Total ({filtered.length} lines)</TableCell>
+          <TableCell colSpan={12}>Total ({filtered.length} lines)</TableCell>
           <TableCell className={R}>{toLah(sum("billedQty")).toFixed(2)}</TableCell>
           <TableCell className={R}>{toCr(sum("netValue")).toFixed(2)}</TableCell>
                     <TableCell className={R}>{toLah(sum("cgst")).toFixed(2)}</TableCell>
