@@ -8,6 +8,9 @@ export type SalesRegisterRow = {
   profitCenter: string;
   mainGroup: string;
   subGroup: string;
+  /** SAP PCGRP2 / PCGRP3. */
+  subGroup2?: string;
+  subGroup3?: string;
   productCategory: string;
   channel: string;
   material: string;
@@ -151,8 +154,8 @@ export function salesRegisterTrend(rows: SalesRegisterRow[], range?: SalesRegist
 }
 
 /** Rows for the division-stacked group charts; value in ₹ Cr, order = billing document. */
-export function salesRegisterGroupRows(rows: SalesRegisterRow[], group: "mainGroup" | "subGroup") {
-  return rows.map((r) => ({ name: r[group], value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.["division"] || r.productCategory || r.division }));
+export function salesRegisterGroupRows(rows: SalesRegisterRow[], group: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") {
+  return rows.map((r) => ({ name: r[group] ?? "", value: r.invoiceValue / 1e7, order: r.billingDocument, division: r.descs?.["division"] || r.productCategory || r.division }));
 }
 
 /** Table/Excel units: crores and lakhs (LAH), 2 decimals. */

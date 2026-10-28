@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 
 /** Reads every public.order_book row (paginated) and maps it to the shared order-dashboard row shape. */
-type Rec = Partial<Record<"absta" | "auart" | "basic_ah" | "bezei" | "bezei_sp" | "bstdk" | "bstnk" | "created_date" | "delv_dat" | "div_name" | "gbsta" | "kunnr_bp" | "kunnr_sh" | "kunnr_sp" | "kwmeng" | "kwmeng_p" | "ld_status" | "model" | "range" | "type" | "landx_sp" | "ld_terms" | "main_grp" | "maktx" | "matnr" | "meins" | "name1_bp" | "name1_se" | "name1_sh" | "name1_sp" | "netwr" | "pc_name" | "plant" | "plant_name" | "profit_center" | "sales_order" | "sales_order_item" | "sector" | "spart" | "sub_grp" | "tot_ah" | "tot_inr" | "vgbel" | "vkbur" | "vkgrp" | "vrkme" | "vtext_dc" | "vtweg" | "waerk", string | number | null>>;
+type Rec = Partial<Record<"absta" | "auart" | "basic_ah" | "bezei" | "bezei_sp" | "bstdk" | "bstnk" | "created_date" | "delv_dat" | "div_name" | "gbsta" | "kunnr_bp" | "kunnr_sh" | "kunnr_sp" | "kwmeng" | "kwmeng_p" | "ld_status" | "model" | "range" | "type" | "landx_sp" | "ld_terms" | "main_grp" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3" | "maktx" | "matnr" | "meins" | "name1_bp" | "name1_se" | "name1_sh" | "name1_sp" | "netwr" | "pc_name" | "plant" | "plant_name" | "profit_center" | "sales_order" | "sales_order_item" | "sector" | "spart" | "sub_grp" | "tot_ah" | "tot_inr" | "vgbel" | "vkbur" | "vkgrp" | "vrkme" | "vtext_dc" | "vtweg" | "waerk", string | number | null>>;
 
 const PAGE_SIZE = 1000;
 const t = (v: unknown, fallback = "Unassigned") => (v == null ? "" : String(v)).trim() || fallback;
@@ -25,7 +25,7 @@ export function toOrderBookDashboardRow(r: Rec, now = new Date()): OpenSalesOrde
     customerShipTo: t(r.kunnr_sh, ""), customerShipToName: t(r.name1_sh, ""),
     customer: t(r.name1_sp, t(r.kunnr_sp)), material: t(r.matnr), description: t(r.maktx, t(r.matnr)),
     materialType: "", model: t(r.model), productRange: t(r.range, ""), productType: t(r.type, ""),
-    division: t(r.div_name, t(r.spart)), sapMainGroup: t(r.main_grp, ""), subGroup: t(r.sub_grp, ""),
+    division: t(r.div_name, t(r.spart)), sapMainGroup: t(r.mngrp1, t(r.main_grp, "")), subGroup: t(r.pcgrp1, t(r.sub_grp, "")), subGroup2: t(r.pcgrp2, ""), subGroup3: t(r.pcgrp3, ""),
     profitCentreName: t(r.pc_name, ""), quantity, openQuantity: pending || quantity,
     deliveredQuantity: pending ? Math.max(0, quantity - pending) : 0,
     ah: n(r.basic_ah), totalAh: n(r.tot_ah), unit: t(r.vrkme, t(r.meins, "")), currency: t(r.waerk, ""),

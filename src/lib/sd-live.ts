@@ -19,6 +19,9 @@ export type SdLine = {
   pcShortName: string;
   mainGroup: string;
   subGroup: string;
+  /** SAP PCGRP2 / PCGRP3. */
+  subGroup2: string;
+  subGroup3: string;
   newRepl: string;
   salesType: string;
   segment: string;
@@ -50,7 +53,7 @@ export type SdLine = {
 };
 
 const COLUMNS =
-  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, branch, industry, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, ah, total_ah, amount, business_segment, customer_group";
+  "doc_no, doc_item, posting_date, month, fiscal_year, plant, gl, gl_name, company_code, customer, customer_name, customer_profile, profit_ctr, profit_ctr_name, pc_short_name, main_group, sub_group, mngrp1, pcgrp1, pcgrp2, pcgrp3, new_repl, sales_type, segment, material, material_desc, product_group, model, product_range, product_type, division_name, industry_name, branch, industry, country_name, sales_order, sales_zone, sales_rep_name, incoterms, usage_desc, unit, quantity, ah, total_ah, amount, business_segment, customer_group";
 
 const PAGE = 1000;
 /** How many page requests run at once; keeps the first paint fast on 30k+ lines. */
@@ -183,8 +186,10 @@ export async function fetchSdLines(): Promise<SdLine[]> {
         profitCtr: s(r["profit_ctr"]),
         profitCtrName: s(r["profit_ctr_name"]),
         pcShortName: s(r["pc_short_name"]),
-        mainGroup: s(r["main_group"]),
-        subGroup: s(r["sub_group"]),
+        mainGroup: s(r["mngrp1"]) || s(r["main_group"]),
+        subGroup: s(r["pcgrp1"]) || s(r["sub_group"]),
+        subGroup2: s(r["pcgrp2"]),
+        subGroup3: s(r["pcgrp3"]),
         newRepl: s(r["new_repl"]),
         salesType: s(r["sales_type"]),
         segment: s(r["segment"]),
