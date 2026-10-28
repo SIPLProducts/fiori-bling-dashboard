@@ -1,12 +1,12 @@
-# Rename Daily Production Report to "PP Overview Daily Production Report"
+# Production Planning card: "PP Overview" becomes "Daily Production Report"
 
 ## What changes
-- The single Production Planning card on the launchpad, its screen title, browser tab title and the Screen Permissions row all read **PP Overview Daily Production Report**.
-- The section heading "Production Planning" stays as is.
-- Link and permission stay the same, so existing access is unaffected.
+- The **PP Overview** card in the Production Planning section on the launchpad is renamed **Daily Production Report**.
+- Its note reads "Daily production output" and the button reads **Open Details**, like the other cards.
+- Clicking it opens the Daily Production Report screen (the "coming soon" page for now) instead of the old overview page.
+- The card only shows for users who have the Daily Production Report permission.
+- The section heading "Production Planning" stays the same.
 
 ## Technical details
-- `src/lib/screens.ts` and `src/lib/sap-modules.ts`: label updated.
-- `src/routes/_authenticated/reports/pp/daily-production-report.tsx`: title, head() meta, AccessDenied/ComingSoon text.
-- Data update on `public.tiles` title for `screen_key = 'pp.daily-production-report'`; same UPDATE appended to `deploy/production-planning/daily-production-report.sql`.
-- Update test label check.
+- `src/routes/_authenticated/launchpad.tsx`: the generic-section branch hard-codes a `TableStatusTile` titled "PP Overview" linking to `/reports/module/pp`. Production Planning gets its own branch that renders the `launch` tile for `pp.daily-production-report` (title from `public.tiles`, already "Daily Production Report") with href `/reports/pp/daily-production-report`. The hard-coded overview card is removed for Production Planning.
+- No database change is needed: the tile row is already titled "Daily Production Report".
