@@ -18,6 +18,7 @@ export type SalesRegisterRow = {
   model?: string;
   productType?: string;
   industry?: string;
+  salesMan?: string;
   segmentCode?: string;
   segmentName?: string;
   netValue: number;
