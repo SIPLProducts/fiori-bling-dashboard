@@ -80,6 +80,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const industries = useMemo(() => industryTotals(rows, (r) => r.industry, (r) => r.netValue), [rows]);
+  const salesMen = useMemo(() => industryTotals(rows, (r) => r.salesMan, (r) => r.netValue).slice(0, 10), [rows]);
   const segments = useMemo(() => segmentTotals(rows, (r) => r.segmentCode, (r) => r.segmentName, (r) => r.netValue), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -110,7 +111,8 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
-    {(industries.length > 0 || segments.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    {(industries.length > 0 || segments.length > 0 || salesMen.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {salesMen.length > 0 && <Card title="Top 10 Sales Men"><div className="max-h-[260px] overflow-auto"><RankList data={salesMen} /></div></Card>}
       {industries.length > 0 && <Card title="Top 10 Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries.slice(0, 10)} /></div></Card>}
       {segments.length > 0 && <Card title="Segment"><Donut data={segments} total={segments.reduce((s, d) => s + d.value, 0)} showPercent={false} size={110} /></Card>}
     </div>}
