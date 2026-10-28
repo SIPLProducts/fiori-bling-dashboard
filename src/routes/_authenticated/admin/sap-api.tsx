@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
+import { applyDateWindow, buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
 import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -671,6 +671,15 @@ function PayloadRequestFields({
   value, range, onChange, onRange,
 }: { value: string; range: string; onChange: (v: string) => void; onRange: (r: string) => void }) {
   const fields = parsePayloadFields(value);
+  // Preset windows show today's dates on open, not the ones saved on an earlier day.
+  useEffect(() => {
+    if (!fields?.length || range === "custom") return;
+    const keys = salesRegisterWindowKeys(fields.filter((f) => f.date && /_(F|T)$/i.test(f.key)).map((f) => f.key));
+    if (!keys.length) return;
+    const refreshed = applyDateWindow(fields, keys, range, postingWindow(range));
+    if (refreshed.some((f, i) => f.value !== fields[i]?.value)) onChange(buildPayloadText(refreshed));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, range]);
   if (fields === null) return <p className="text-xs text-destructive">Request payload must be a valid JSON object to edit these fields.</p>;
   if (!fields.length) return <p className="text-xs text-muted-foreground">Paste the request payload below — its fields appear here automatically.</p>;
   const update = (key: string, v: string) => onChange(buildPayloadText(fields.map((f) => (f.key === key ? { ...f, value: v } : f))));
@@ -678,13 +687,6 @@ function PayloadRequestFields({
   const windowKeys = salesRegisterWindowKeys(dateFields.map((f) => f.key));
   const rolling = range !== "custom" && windowKeys.length > 0;
   const label = dateFieldLabel;
-  // Preset windows show today's dates on open, not the ones saved on an earlier day.
-  useEffect(() => {
-    if (!rolling) return;
-    const refreshed = applyDateWindow(fields, windowKeys, range, postingWindow(range));
-    if (refreshed.some((f, i) => f.value !== fields[i]?.value)) onChange(buildPayloadText(refreshed));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, range]);
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {dateFields.length ? (
