@@ -1,7 +1,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { ModelTypeCards } from "@/components/model-type-cards";
-import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
+import { industryTotals, segmentTotals } from "@/lib/industry-name";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -74,13 +74,13 @@ function Donut({ data, total }: { data: { name: string; value: number }[]; total
 }
 
 export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
-  const rows = useMemo(() => { const m = segmentNameMap(rawRows, (r) => r.segmentCode, (r) => r.industry); return rawRows.map((r) => ({ ...r, segmentName: m.get((r.segmentCode ?? "").trim()) ?? "" })); }, [rawRows]);
+  const rows = rawRows;
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
   const industries = useMemo(() => industryTotals(rows, (r) => r.industry, (r) => r.netValue), [rows]);
-  const segments = useMemo(() => segmentTotals(rows, (r) => r.segmentCode, (r) => r.industry, (r) => r.netValue), [rows]);
+  const segments = useMemo(() => segmentTotals(rows, (r) => r.segmentCode, (r) => r.segmentName, (r) => r.netValue), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -112,7 +112,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
     </div>
     {(industries.length > 0 || segments.length > 0) && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {industries.length > 0 && <Card title="Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries} /></div></Card>}
-      {segments.length > 0 && <Card title="Segment"><div className="max-h-[260px] overflow-auto"><RankList data={segments} /></div></Card>}
+      {segments.length > 0 && <Card title="Segment"><Donut data={segments} total={segments.reduce((s, d) => s + d.value, 0)} /></Card>}
     </div>}
     <ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} />
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

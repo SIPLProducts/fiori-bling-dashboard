@@ -3202,11 +3202,6 @@ export function SdLiveDashboard() {
                 {(full: boolean) => <BarList items={industries} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
               </Panel>
             )}
-            {segments.length > 0 && (
-              <Panel title="Segment" accent={1} expandable>
-                {(full: boolean) => <BarList items={segments} tone={4} full={full} valueFormatter={CRORES_VALUE} />}
-              </Panel>
-            )}
 
           </div>
 

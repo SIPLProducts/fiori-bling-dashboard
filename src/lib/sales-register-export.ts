@@ -37,7 +37,7 @@ export async function downloadSalesRegisterExcel(rows: SalesRegisterRow[]) {
   ind.columns.forEach((c) => { c.width = 28; });
   const seg = wb.addWorksheet("Segment");
   const sh = seg.addRow(["Segment", "Net Value (₹ Cr)", "Lines"]); sh.font = { bold: true };
-  segmentTotals(rows, (r) => r.segmentCode, (r) => r.industry, (r) => r.netValue).forEach((d) => seg.addRow([d.name, toCr(d.value), d.count]));
+  segmentTotals(rows, (r) => r.segmentCode, (r) => r.segmentName, (r) => r.netValue).forEach((d) => seg.addRow([d.name, toCr(d.value), d.count]));
   seg.columns.forEach((c) => { c.width = 28; });
   const buf = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
