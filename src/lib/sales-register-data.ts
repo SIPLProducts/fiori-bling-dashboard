@@ -2,8 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
 const PAGE_SIZE = 1000;
-const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_ex,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt,tot_ah,model,type,brtxt,brsch,kdgrp,kdgrp_desp,sales_man:raw->>NAME_SE";
-type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_ex" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt" | "tot_ah" | "model" | "type" | "brtxt" | "brsch" | "kdgrp" | "kdgrp_desp" | "sales_man", string | number | null>>;
+const COLS = "vbeln,posnr,fkdat,erdat,xblnr,kunag,name_c,werks,name1_p,prctr,main_grp,sub_grp,mngrp1,pcgrp1,pcgrp2,pcgrp3,main_group,sub_group,vtext_dc,vtweg_auft,div_name,spart,fkart,aubel,aupos,bezei_so,matnr,arktx,fkimg,netwr_tot,netwr_ex,netwr_t,kwert_cgst,kwert_sgst,kwert_igst,tcs,rfbsk,auart,vtext_sd,vtext,bstnk,mctxt,tot_ah,model,type,brtxt,brsch,kdgrp,kdgrp_desp,sales_man:raw->>NAME_SE";
+type Rec = Partial<Record<"vbeln" | "posnr" | "fkdat" | "erdat" | "xblnr" | "kunag" | "name_c" | "werks" | "name1_p" | "prctr" | "main_grp" | "sub_grp" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3" | "main_group" | "sub_group" | "vtext_dc" | "vtweg_auft" | "div_name" | "spart" | "fkart" | "aubel" | "aupos" | "bezei_so" | "matnr" | "arktx" | "fkimg" | "netwr_tot" | "netwr_ex" | "netwr_t" | "kwert_cgst" | "kwert_sgst" | "kwert_igst" | "tcs" | "rfbsk" | "auart" | "vtext_sd" | "vtext" | "bstnk" | "mctxt" | "tot_ah" | "model" | "type" | "brtxt" | "brsch" | "kdgrp" | "kdgrp_desp" | "sales_man", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
@@ -13,7 +13,7 @@ export function toSalesRegisterRow(r: Rec): SalesRegisterRow {
     billingDate: t(r.fkdat), creationDate: t(r.erdat), billingDocument: t(r.vbeln), invoiceNo: t(r.xblnr),
     customer: t(r.kunag), customerName: t(r.name_c) || t(r.kunag),
     plant: t(r.werks), profitCenter: t(r.prctr),
-    mainGroup: t(r.main_grp) || t(r.main_group), subGroup: t(r.sub_grp) || t(r.sub_group),
+    mainGroup: t(r.mngrp1) || t(r.main_grp) || t(r.main_group), subGroup: t(r.pcgrp1) || t(r.sub_grp) || t(r.sub_group), subGroup2: t(r.pcgrp2), subGroup3: t(r.pcgrp3),
     productCategory: t(r.div_name), channel: t(r.vtext_dc), channelCode: t(r.auart) || t(r.vtweg_auft),
     division: t(r.spart), billingType: t(r.fkart), salesDocument: t(r.aubel), salesDocumentItem: t(r.aupos),
     salesOffice: t(r.bezei_so), materialCode: t(r.matnr), material: t(r.arktx) || t(r.matnr),

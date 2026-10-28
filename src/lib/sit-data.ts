@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
 
 /** Reads every public.sales_in_transit row (paginated) and maps it to the shared order-dashboard row shape. */
-type Rec = Partial<Record<"arktx" | "auart" | "aubel" | "basic_ah" | "bezei_c" | "bezei_sg" | "bezei_so" | "brtxt" | "bstdk" | "bstnk" | "bukrs" | "div_name" | "division" | "erdat" | "fkart" | "fkdat" | "fkimg" | "kunag" | "kunnr_re" | "kunnr_s" | "landx50_c" | "lfdat_del" | "main_grp" | "matnr" | "mctxt" | "meins" | "message" | "mtart" | "name1_p" | "name_c" | "name_re" | "name_s" | "name_se" | "netwr_tot" | "posnr" | "prctr" | "rfbsk" | "spart" | "sub_grp" | "tot_ah" | "vbeln" | "vrkme" | "vtext" | "vtext_dc" | "vtweg_auft" | "waerk" | "werks", string | number | null>>;
+type Rec = Partial<Record<"arktx" | "auart" | "aubel" | "basic_ah" | "bezei_c" | "bezei_sg" | "bezei_so" | "brtxt" | "bstdk" | "bstnk" | "bukrs" | "div_name" | "division" | "erdat" | "fkart" | "fkdat" | "fkimg" | "kunag" | "kunnr_re" | "kunnr_s" | "landx50_c" | "lfdat_del" | "main_grp" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3" | "matnr" | "mctxt" | "meins" | "message" | "mtart" | "name1_p" | "name_c" | "name_re" | "name_s" | "name_se" | "netwr_tot" | "posnr" | "prctr" | "rfbsk" | "spart" | "sub_grp" | "tot_ah" | "vbeln" | "vrkme" | "vtext" | "vtext_dc" | "vtweg_auft" | "waerk" | "werks", string | number | null>>;
 
 const PAGE_SIZE = 1000;
 const t = (v: unknown, fallback = "Unassigned") => (v == null ? "" : String(v)).trim() || fallback;
@@ -25,7 +25,7 @@ export function toSitDashboardRow(r: Rec, now = new Date()): OpenSalesOrder {
     customerShipTo: t(r.kunnr_s, ""), customerShipToName: t(r.name_s, ""),
     customer: t(r.name_c, t(r.kunag)), material: t(r.matnr), description: t(r.arktx, t(r.matnr)),
     materialType: t(r.mtart, ""), model: "", productRange: "", productType: "",
-    division: t(r.div_name, t(r.division, t(r.spart))), sapMainGroup: t(r.main_grp, ""), subGroup: t(r.sub_grp, ""),
+    division: t(r.div_name, t(r.division, t(r.spart))), sapMainGroup: t(r.mngrp1, t(r.main_grp, "")), subGroup: t(r.pcgrp1, t(r.sub_grp, "")), subGroup2: t(r.pcgrp2, ""), subGroup3: t(r.pcgrp3, ""),
     profitCentreName: t(r.mctxt, ""), quantity, openQuantity: quantity, deliveredQuantity: 0,
     ah: n(r.basic_ah), totalAh: n(r.tot_ah), unit: t(r.vrkme, t(r.meins, "")), currency: t(r.waerk, ""),
     value: n(r.netwr_tot) / 10_000_000, ldStatus: "", deliveryDate: t(r.lfdat_del, ""),

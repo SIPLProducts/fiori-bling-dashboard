@@ -171,6 +171,10 @@ export type ZfisalesDetailRow = {
   product_range: string;
   product_group: string;
   main_group: string;
+  mngrp1: string | null;
+  pcgrp1: string | null;
+  pcgrp2: string | null;
+  pcgrp3: string | null;
   customer_group: string;
   usage_desc: string;
   sales_org: string;
@@ -274,6 +278,10 @@ export function mapRow(raw: Raw, sourceEndpoint: string, syncedAt: string): Zfis
     product_range: str(pickField(raw, ["RANGE", "range"])),
     product_group: str(pickField(raw, ["PCGRP1", "pcgrp1", "productGroup"])),
     main_group: str(pickField(raw, ["MNGRP1", "mngrp1", "mainGroup"])),
+    mngrp1: str(pickField(raw, ["MNGRP1", "mngrp1"])) || null,
+    pcgrp1: str(pickField(raw, ["PCGRP1", "pcgrp1"])) || null,
+    pcgrp2: str(pickField(raw, ["PCGRP2", "pcgrp2"])) || null,
+    pcgrp3: str(pickField(raw, ["PCGRP3", "pcgrp3"])) || null,
     customer_group: str(pickField(raw, ["KDGRP_DESP", "KDGRP", "customerGroup"])),
     usage_desc: str(pickField(raw, ["ABRVW_DESP", "ABRVW", "usage"])),
     sales_org: str(pickField(raw, ["SALES_ORG_DESP", "VKORG", "salesOrg"])),

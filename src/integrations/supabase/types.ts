@@ -58,6 +58,7 @@ export type Database = {
           material: string | null
           material_description: string | null
           material_type: string | null
+          mngrp1: string | null
           model: string | null
           occurrence_no: number
           open_quantity: number
@@ -66,6 +67,9 @@ export type Database = {
           order_type: string | null
           overall_status: string | null
           p_value1: number
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           plant: string | null
           plant_name: string | null
           preceding_document: string | null
@@ -127,6 +131,7 @@ export type Database = {
           material?: string | null
           material_description?: string | null
           material_type?: string | null
+          mngrp1?: string | null
           model?: string | null
           occurrence_no?: number
           open_quantity?: number
@@ -135,6 +140,9 @@ export type Database = {
           order_type?: string | null
           overall_status?: string | null
           p_value1?: number
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plant_name?: string | null
           preceding_document?: string | null
@@ -196,6 +204,7 @@ export type Database = {
           material?: string | null
           material_description?: string | null
           material_type?: string | null
+          mngrp1?: string | null
           model?: string | null
           occurrence_no?: number
           open_quantity?: number
@@ -204,6 +213,9 @@ export type Database = {
           order_type?: string | null
           overall_status?: string | null
           p_value1?: number
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plant_name?: string | null
           preceding_document?: string | null
@@ -297,6 +309,7 @@ export type Database = {
           maktx: string | null
           matnr: string | null
           meins: string | null
+          mngrp1: string | null
           model: string | null
           name1_bp: string | null
           name1_se: string | null
@@ -307,6 +320,9 @@ export type Database = {
           p_value: number
           pay_vtext: string | null
           pc_name: string | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           plant: string | null
           plant_name: string | null
           profit_center: string | null
@@ -405,6 +421,7 @@ export type Database = {
           maktx?: string | null
           matnr?: string | null
           meins?: string | null
+          mngrp1?: string | null
           model?: string | null
           name1_bp?: string | null
           name1_se?: string | null
@@ -415,6 +432,9 @@ export type Database = {
           p_value?: number
           pay_vtext?: string | null
           pc_name?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plant_name?: string | null
           profit_center?: string | null
@@ -513,6 +533,7 @@ export type Database = {
           maktx?: string | null
           matnr?: string | null
           meins?: string | null
+          mngrp1?: string | null
           model?: string | null
           name1_bp?: string | null
           name1_se?: string | null
@@ -523,6 +544,9 @@ export type Database = {
           p_value?: number
           pay_vtext?: string | null
           pc_name?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plant_name?: string | null
           profit_center?: string | null
@@ -948,6 +972,7 @@ export type Database = {
           mctxt_i: string | null
           meins: string | null
           mjahr: string | null
+          mngrp1: string | null
           mtart: string | null
           mwsbk: number
           mwsbk_ex: number
@@ -966,6 +991,9 @@ export type Database = {
           netwr_t_ex: number
           netwr_tot: number
           noti_text: string | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           pfchrg: number
           pfchrg_ex: number
           poddate: string | null
@@ -1129,6 +1157,7 @@ export type Database = {
           mctxt_i?: string | null
           meins?: string | null
           mjahr?: string | null
+          mngrp1?: string | null
           mtart?: string | null
           mwsbk?: number
           mwsbk_ex?: number
@@ -1147,6 +1176,9 @@ export type Database = {
           netwr_t_ex?: number
           netwr_tot?: number
           noti_text?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pfchrg?: number
           pfchrg_ex?: number
           poddate?: string | null
@@ -1310,6 +1342,7 @@ export type Database = {
           mctxt_i?: string | null
           meins?: string | null
           mjahr?: string | null
+          mngrp1?: string | null
           mtart?: string | null
           mwsbk?: number
           mwsbk_ex?: number
@@ -1328,6 +1361,9 @@ export type Database = {
           netwr_t_ex?: number
           netwr_tot?: number
           noti_text?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pfchrg?: number
           pfchrg_ex?: number
           poddate?: string | null
@@ -1502,6 +1538,7 @@ export type Database = {
           mctxt_i: string | null
           meins: string | null
           mjahr: string | null
+          mngrp1: string | null
           model: string | null
           mtart: string | null
           mwsbk: number
@@ -1522,6 +1559,9 @@ export type Database = {
           netwr_tot: number
           noti_text: string | null
           overhead_cost: number
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           pfchrg: number
           pfchrg_ex: number
           poddate: string | null
@@ -1702,6 +1742,7 @@ export type Database = {
           mctxt_i?: string | null
           meins?: string | null
           mjahr?: string | null
+          mngrp1?: string | null
           model?: string | null
           mtart?: string | null
           mwsbk?: number
@@ -1722,6 +1763,9 @@ export type Database = {
           netwr_tot?: number
           noti_text?: string | null
           overhead_cost?: number
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pfchrg?: number
           pfchrg_ex?: number
           poddate?: string | null
@@ -1902,6 +1946,7 @@ export type Database = {
           mctxt_i?: string | null
           meins?: string | null
           mjahr?: string | null
+          mngrp1?: string | null
           model?: string | null
           mtart?: string | null
           mwsbk?: number
@@ -1922,6 +1967,9 @@ export type Database = {
           netwr_tot?: number
           noti_text?: string | null
           overhead_cost?: number
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pfchrg?: number
           pfchrg_ex?: number
           poddate?: string | null
@@ -2664,11 +2712,15 @@ export type Database = {
           material_desc: string | null
           material_profit_ctr: string | null
           material_profit_ctr_name: string | null
+          mngrp1: string | null
           model: string | null
           month: string | null
           new_repl: string | null
           occurrence_no: number
           pc_short_name: string | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           pk: string | null
           plant: string | null
           posting_date: string | null
@@ -2741,11 +2793,15 @@ export type Database = {
           material_desc?: string | null
           material_profit_ctr?: string | null
           material_profit_ctr_name?: string | null
+          mngrp1?: string | null
           model?: string | null
           month?: string | null
           new_repl?: string | null
           occurrence_no?: number
           pc_short_name?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null
@@ -2818,11 +2874,15 @@ export type Database = {
           material_desc?: string | null
           material_profit_ctr?: string | null
           material_profit_ctr_name?: string | null
+          mngrp1?: string | null
           model?: string | null
           month?: string | null
           new_repl?: string | null
           occurrence_no?: number
           pc_short_name?: string | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           pk?: string | null
           plant?: string | null
           posting_date?: string | null

@@ -1,3 +1,5 @@
+import { OrderBookSubGroupChart } from "./order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
 import { SyncNowButton } from "@/components/sync-now-button";
 import { datedFileName } from "@/lib/format";
@@ -2207,6 +2209,10 @@ export function SdLiveDashboard() {
     [filters, today],
   );
   const filtered = useMemo(() => applySdFilters(typeFiltered, effectiveFilters), [typeFiltered, effectiveFilters]);
+  const subGroupCharts = useMemo(() => {
+    const rows = filtered.map((r) => ({ order: r.docNo, value: r.amount / 1e7, division: r.divisionName, s1: r.subGroup, s2: r.subGroup2, s3: r.subGroup3 }));
+    return { sub1: summarizeGroupsByDivision(rows, (r) => r.s1), sub2: summarizeGroupsByDivision(rows, (r) => r.s2), sub3: summarizeGroupsByDivision(rows, (r) => r.s3) };
+  }, [filtered]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
   const industries = useMemo(() => industryTotals(filtered, (r) => r.industryText, (r) => r.amount), [filtered]);
   const segments = useMemo(() => segmentTotals(filtered, (r) => r.segmentCode, (r) => r.industryText, (r) => r.amount), [filtered]);
@@ -2810,6 +2816,15 @@ export function SdLiveDashboard() {
             </div>
           </div>
 
+          <div data-pdf-page-block className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {([["Sub Group 1", subGroupCharts.sub1, 4], ["Sub Group 2", subGroupCharts.sub2, 6], ["Sub Group 3", subGroupCharts.sub3, 1]] as const).map(([label, g, accent]) => (
+              <div key={label} className="min-w-0">
+                <Panel title={`Sales by ${label}`} accent={accent}>
+                  {g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No {label} data from SAP yet</p>}
+                </Panel>
+              </div>
+            ))}
+          </div>
 
           {focus ? (
             <FocusTable
