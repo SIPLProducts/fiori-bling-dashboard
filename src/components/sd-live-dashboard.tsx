@@ -1590,7 +1590,7 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
-      <div className="cxo-chart-surface relative h-[230px] w-full max-w-[240px] shrink-0">
+      <div className="cxo-chart-surface relative h-[170px] w-full max-w-[160px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -1637,7 +1637,7 @@ function SegmentDonut({ items, total }: { items: { name: string; value: number }
                 </span>
               </span>
               <span className="tabular shrink-0 whitespace-nowrap text-muted-foreground">
-                ₹{compact(item.value)} · {((item.value / total) * 100).toFixed(1)}%
+                ₹{compact(item.value)}
               </span>
             </div>
           );
