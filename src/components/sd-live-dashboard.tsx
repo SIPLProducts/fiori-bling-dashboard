@@ -1,3 +1,4 @@
+import { industryTotals } from "@/lib/industry-name";
 import { SyncNowButton } from "@/components/sync-now-button";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -2206,6 +2207,7 @@ export function SdLiveDashboard() {
   );
   const filtered = useMemo(() => applySdFilters(typeFiltered, effectiveFilters), [typeFiltered, effectiveFilters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
+  const industries = useMemo(() => industryTotals(filtered, (r) => r.industryText, (r) => r.amount), [filtered]);
   const quarterComparisonRows = useMemo(
     () => applySdFilters(typeFiltered, { ...filters, from: "", to: "", fiscalYears: [], quarters: [] }),
     [typeFiltered, filters],
