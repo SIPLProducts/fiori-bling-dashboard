@@ -1,3 +1,4 @@
+import { industryTotals } from "@/lib/industry-name";
 import { SyncNowButton } from "@/components/sync-now-button";
 import { datedFileName } from "@/lib/format";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -1847,6 +1848,7 @@ const COLUMNS: Column[] = [
   },
 
   { key: "customer", label: "Customer", render: (r) => r.customerName || r.customer || "—" },
+  { key: "industryText", label: "Industry Name", render: (r) => r.industryText || "—" },
   { key: "salesType", label: "Sales type", render: (r) => r.salesType || "—" },
   { key: "mainGroup", label: "Main Group", render: (r) => r.mainGroup || "—" },
   { key: "subGroup", label: "Sub Group", render: (r) => r.subGroup || "—" },
@@ -2170,7 +2172,7 @@ export function SdLiveDashboard() {
   const [showRevenuePerAh, setShowRevenuePerAh] = useState(false);
   const { data: lastSynced, refetch: refetchSync } = useReportSync("net-sales");
   const { data: lines, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["sd-live-lines"],
+    queryKey: ["sd-live-lines", "v2-industry"],
     queryFn: fetchSdLines,
     ...STABLE_SALES_QUERY_OPTIONS,
   });
@@ -2205,6 +2207,7 @@ export function SdLiveDashboard() {
   );
   const filtered = useMemo(() => applySdFilters(typeFiltered, effectiveFilters), [typeFiltered, effectiveFilters]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
+  const industries = useMemo(() => industryTotals(filtered, (r) => r.industryText, (r) => r.amount), [filtered]);
   const quarterComparisonRows = useMemo(
     () => applySdFilters(typeFiltered, { ...filters, from: "", to: "", fiscalYears: [], quarters: [] }),
     [typeFiltered, filters],
@@ -3189,6 +3192,12 @@ export function SdLiveDashboard() {
             <Panel title="Top 10 Sales Men" accent={2} expandable>
               {(full: boolean) => <BarList items={analytics.topSalesEmployees} tone={1} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
+
+            {industries.length > 0 && (
+              <Panel title="Industry Name" accent={4} expandable className="lg:col-span-2">
+                {(full: boolean) => <BarList items={industries} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
+              </Panel>
+            )}
 
           </div>
 

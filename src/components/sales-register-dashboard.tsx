@@ -1,6 +1,7 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { ModelTypeCards } from "@/components/model-type-cards";
+import { industryTotals } from "@/lib/industry-name";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { FileText, IndianRupee, Receipt, Search, Users, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -77,6 +78,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
   const main = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "mainGroup"), (r) => r.name), [rows]);
   const sub = useMemo(() => summarizeGroupsByDivision(salesRegisterGroupRows(rows, "subGroup"), (r) => r.name), [rows]);
+  const industries = useMemo(() => industryTotals(rows, (r) => r.industry, (r) => r.netValue), [rows]);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -106,6 +108,7 @@ export function SalesRegisterDashboard({ rows = [], range }: { rows?: SalesRegis
       <Card title="Sales by Main Group">{has ? <OrderBookSubGroupChart groups={main.groups} divisions={main.divisions} groupLabel="Main Group" /> : <Empty />}</Card>
       <Card title="Sales by Sub Group">{has ? <OrderBookSubGroupChart groups={sub.groups} divisions={sub.divisions} /> : <Empty />}</Card>
     </div>
+    {industries.length > 0 && <Card title="Industry Name"><div className="max-h-[260px] overflow-auto"><RankList data={industries} /></div></Card>}
     <ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} />
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>

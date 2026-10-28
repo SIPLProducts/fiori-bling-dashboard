@@ -65,7 +65,7 @@ function NetSalesDrilldown() {
   const { data: launchpad, isLoading: accessLoading } = useLaunchpad();
   const allowed = hasScreen(launchpad?.screens, "sd.total-sales");
   const { data, isLoading } = useQuery({
-    queryKey: ["sd-live-lines"],
+    queryKey: ["sd-live-lines", "v2-industry"],
     queryFn: fetchSdLines,
     enabled: allowed,
     ...STABLE_SALES_QUERY_OPTIONS,

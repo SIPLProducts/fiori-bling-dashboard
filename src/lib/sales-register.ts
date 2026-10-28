@@ -17,6 +17,7 @@ export type SalesRegisterRow = {
   /** SAP MODEL / TYPE. */
   model?: string;
   productType?: string;
+  industry?: string;
   netValue: number;
   invoiceValue: number;
   cgst: number;
