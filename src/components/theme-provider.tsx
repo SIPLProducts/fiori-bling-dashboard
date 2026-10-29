@@ -1,35 +1,45 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark" | "glassy";
 const STORAGE_KEY = "hbl-mis-appearance";
-const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | null>(null);
+const ORDER: Theme[] = ["light", "dark", "glassy"];
+const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void; setTheme: (t: Theme) => void } | null>(null);
+
+function parse(value: string | null): Theme {
+  return value === "dark" || value === "glassy" ? value : "light";
+}
+
+/** Glassy builds on the dark palette, so it applies both classes. */
+function apply(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme !== "light");
+  root.classList.toggle("glassy", theme === "glassy");
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const next = saved === "dark" ? "dark" : "light";
-      document.documentElement.classList.toggle("dark", next === "dark");
-      setTheme(next);
+      const next = parse(localStorage.getItem(STORAGE_KEY));
+      apply(next);
+      setThemeState(next);
     } catch {
       // Appearance remains usable when browser storage is unavailable.
     }
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY && event.key !== null) return;
-      const next = event.newValue === "dark" ? "dark" : "light";
-      document.documentElement.classList.toggle("dark", next === "dark");
-      setTheme(next);
+      const next = parse(event.newValue);
+      apply(next);
+      setThemeState(next);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  function toggleTheme() {
-    const next = theme === "light" ? "dark" : "light";
-    document.documentElement.classList.toggle("dark", next === "dark");
-    setTheme(next);
+  function setTheme(next: Theme) {
+    apply(next);
+    setThemeState(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
@@ -37,7 +47,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  function toggleTheme() {
+    setTheme(ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length]);
+  }
+
+  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
