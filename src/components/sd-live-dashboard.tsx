@@ -1,3 +1,5 @@
+import { RadiantDefs, radiantFill } from "@/components/radiant-defs";
+import { radiantBar } from "@/lib/radiant";
 import { OrderBookSubGroupChart } from "./order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
@@ -828,7 +830,8 @@ function HBar({
           tickLine={false}
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INRC(v), valueLabel]} />
-        <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={color}>
+        <Bar dataKey="value" radius={[6, 6, 6, 6]} fill={color}>
+          {data.map((_, i) => <Cell key={i} fill={radiantFill(i)} />)}
           <LabelList
             dataKey="value"
             position="right"
@@ -1099,7 +1102,7 @@ function BarList({
                 height: full ? "45%" : 10,
                 minHeight: 8,
                 maxHeight: 14,
-                background: radiantBar(items.indexOf(item) + tone * 0),
+                background: radiantBar(items.indexOf(item)),
               }}
             />
           </div>
