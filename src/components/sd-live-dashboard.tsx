@@ -1,3 +1,5 @@
+import { RadiantDefs, radiantFill } from "@/components/radiant-defs";
+import { radiantBar } from "@/lib/radiant";
 import { OrderBookSubGroupChart } from "./order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { industryTotals, segmentTotals, segmentNameMap } from "@/lib/industry-name";
@@ -813,6 +815,7 @@ function HBar({
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, data.length * 34)}>
 
       <BarChart data={data} layout="vertical" margin={{ left: 0, right: 76 }}>
+        <RadiantDefs />
         <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
         <XAxis type="number" tickFormatter={compact} tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
         <YAxis
@@ -827,7 +830,8 @@ function HBar({
           tickLine={false}
         />
         <Tooltip {...tooltipStyle} formatter={(v: number) => [INRC(v), valueLabel]} />
-        <Bar dataKey="value" radius={[3, 3, 3, 3]} fill={color}>
+        <Bar dataKey="value" radius={[6, 6, 6, 6]} fill={color}>
+          {data.map((_, i) => <Cell key={i} fill={radiantFill(i)} />)}
           <LabelList
             dataKey="value"
             position="right"
@@ -1092,12 +1096,13 @@ function BarList({
           </span>
           <div className="min-w-0 flex-1">
             <div
-              className="rounded-sm"
+              className="rounded-full"
               style={{
                 width: `${Math.max(2, (item.value / max) * 100)}%`,
-                height: full ? "55%" : 12,
-                minHeight: 10,
-                background: KPI_TONES[tone % KPI_TONES.length],
+                height: full ? "45%" : 10,
+                minHeight: 8,
+                maxHeight: 14,
+                background: radiantBar(items.indexOf(item)),
               }}
             />
           </div>
@@ -1136,6 +1141,7 @@ function MixBars({
     <ResponsiveContainer width="100%" height={height ?? Math.max(220, items.length * 46)}>
 
       <BarChart data={items} layout="vertical" margin={{ left: 0, right: 140, top: 4, bottom: 4 }}>
+        <RadiantDefs />
         <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" horizontal={false} />
         <XAxis type="number" tickFormatter={(value: number) => (value / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 1 })} tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} />
         <YAxis
@@ -1153,9 +1159,9 @@ function MixBars({
             p?.payload?.name ?? "Revenue",
           ]}
         />
-        <Bar dataKey="value" radius={[3, 3, 3, 3]}>
+        <Bar dataKey="value" radius={[6, 6, 6, 6]}>
           {items.map((item, i) => (
-            <Cell key={item.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+            <Cell key={item.name} fill={radiantFill(i)} />
           ))}
           <LabelList
             dataKey="value"
