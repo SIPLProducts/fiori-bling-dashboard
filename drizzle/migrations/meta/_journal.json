@@ -176,6 +176,13 @@
       "when": 1793204939973,
       "tag": "0024_sd_group_hierarchy_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793267193771,
+      "tag": "0025_posting_range_yesterday",
+      "breakpoints": true
     }
   ]
 }
