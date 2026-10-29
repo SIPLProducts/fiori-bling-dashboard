@@ -761,11 +761,60 @@ function mapSalesRegisterPayload(payload, endpointName, now = /* @__PURE__ */ ne
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/purchase-register-map.ts
+var PURCHASE_REGISTER_TEXT_FIELDS = ["WERKS", "NAME1_WER", "PRCTR", "PTEXT", "LIFNR", "NAME1", "MTBEZ", "MATNR", "MAKTX", "MEINS_I", "MWSKZ", "TEXT1_M", "BWART", "MEINS_G", "WAERS", "SHKZG", "TY_PURCH", "TY_MAT"];
+var PURCHASE_REGISTER_NUMERIC_FIELDS = ["MENGE_I", "MENGE_G", "WRBTR", "KURSF", "DIS", "OTH", "PLAN_DEL", "TAX", "SGST", "CGST", "IGST", "NO_CR", "GL_ACC", "TOTAL", "NET_AMT", "GROSS_PRICE", "NET_PRICE"];
+var PURCHASE_REGISTER_DATE_FIELDS = ["BUDAT", "AEDAT", "CREATE_DT"];
+function isPurchaseRegisterEndpoint(name) {
+  return (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("purchaseregister");
+}
+function pick6(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text5(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows5(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows5(obj[key]);
+  }
+  return [];
+}
+function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows5(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const belnr = text5(pick6(raw, "BELNR"));
+    if (!belnr) {
+      invalid++;
+      continue;
+    }
+    const buzei = text5(pick6(raw, "BUZEI")) ?? "";
+    const mblnr = text5(pick6(raw, "MBLNR")) ?? "";
+    const zeile = text5(pick6(raw, "ZEILE")) ?? "";
+    const row = { belnr, buzei, mblnr, zeile, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of PURCHASE_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text5(pick6(raw, k));
+    for (const k of PURCHASE_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick6(raw, k));
+    for (const k of PURCHASE_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick6(raw, k));
+    byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text5(v) {
+function text6(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -793,7 +842,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text5(field(raw, codeKey));
+      const code = text6(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -801,7 +850,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text5(field(raw, nameKey)),
+        name: text6(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -820,8 +869,8 @@ function stripJsonComments(raw) {
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text6) {
-  const trimmed = text6.trimStart();
+function salvageTruncatedArray(text7) {
+  const trimmed = text7.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -856,11 +905,11 @@ function salvageTruncatedArray(text6) {
     return null;
   }
 }
-function extractEmbeddedBody(text6) {
+function extractEmbeddedBody(text7) {
   const marker = '"body":"';
-  const start = text6.indexOf(marker);
+  const start = text7.indexOf(marker);
   if (start < 0) return null;
-  const raw = text6.slice(start + marker.length);
+  const raw = text7.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -1028,6 +1077,7 @@ export {
   formatBytes,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
+  isPurchaseRegisterEndpoint,
   isSalesRegisterEndpoint,
   isSitEndpoint,
   isUserDropdownEndpoint,
@@ -1037,6 +1087,7 @@ export {
   mapOpenSalesOrdersPayload,
   mapOrderBookPayload,
   mapPayload,
+  mapPurchaseRegisterPayload,
   mapRow,
   mapSalesRegisterPayload,
   mapSitPayload,
