@@ -115,9 +115,9 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)} Cr`} tone="var(--chart-1)" />
-      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)} Cr`} note={pct(TYPE_TOTALS.Domestic)} tone="var(--chart-2)" />
-      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)} Cr`} note={pct(TYPE_TOTALS.Imported)} tone="var(--chart-4)" />
-      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)} Cr`} note={pct(TYPE_TOTALS.Service)} tone="var(--chart-3)" />
+      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)} Cr`} tone="var(--chart-2)" />
+      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)} Cr`} tone="var(--chart-4)" />
+      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)} Cr`} tone="var(--chart-3)" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
@@ -175,5 +175,52 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
       <Card title="Profit Center Analytics" sub="Top 10 · ₹ Cr">
         <Columns data={pcs.map((p) => ({ name: p.code.slice(-5), value: p.value }))} height={150} /><CodeTable rows={pcs} codeLabel="Profit Center" /></Card>
     </div>
+    <DetailsTable rows={filtered} />
   </div>;
+}
+
+function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const s = q.toLowerCase();
+  const list = useMemo(() => [...rows].filter((r) => !s || [r.docNo, r.grNo, r.vendorName, r.vendor, r.material, r.materialName, r.plant].some((v) => (v ?? "").toLowerCase().includes(s))).sort((a, b) => b.date.localeCompare(a.date)), [rows, s]);
+  const pages = Math.max(1, Math.ceil(list.length / size));
+  const p = Math.min(page, pages - 1);
+  const dmy = (d: string) => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "";
+  const excel = async () => {
+    const XLSX = await import("xlsx");
+    const ws = XLSX.utils.json_to_sheet(list.map((r, i) => ({ "#": i + 1, "Posting Date": dmy(r.date), "Document No": r.docNo, "GR No": r.grNo, Type: r.type, Plant: `${r.plant} ${r.plantName}`.trim(), "Profit Center": r.profitCenter, Vendor: `${r.vendor} ${r.vendorName}`.trim(), Material: r.material, "Material Name": r.materialName, "Material Group": r.group, "Amount (₹ Cr)": Number(r.value.toFixed(4)) })));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Purchase Register");
+    const { datedFileName } = await import("@/lib/format");
+    XLSX.writeFile(wb, datedFileName("Purchase Register", "xlsx"));
+  };
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (₹ Cr)"];
+  return <section className="rounded-xl border border-border bg-card shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+      <h2 className="text-xs font-semibold">Purchase Register Details</h2>
+      <div className="flex items-center gap-2">
+        <button type="button" disabled={!list.length} onClick={() => void excel()} className="btn-export rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-40">Excel</button>
+        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search document, vendor, material..." className={`${sel} w-56`} />
+      </div>
+    </div>
+    <div className="overflow-x-auto"><table className="w-full text-[11px]">
+      <thead className="bg-primary/5 text-primary"><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${h.startsWith("Amount") ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r, i) => <tr key={i} className="border-t border-border/60">
+        <td className="px-2 py-1">{p * size + i + 1}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.date)}</td>
+        <td className="px-2 py-1 font-medium text-primary">{r.docNo}</td><td className="px-2 py-1">{r.grNo}</td><td className="px-2 py-1">{r.type}</td>
+        <td className="whitespace-nowrap px-2 py-1">{[r.plant, r.plantName].filter(Boolean).join(" — ")}</td><td className="px-2 py-1">{r.profitCenter}</td>
+        <td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.group}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{fmt(r.value)}</td></tr>)
+        : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No Purchase Register data for these filters.</td></tr>}</tbody>
+      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={heads.length - 1} className="px-2 py-1.5">Total ({list.length} lines)</td><td className="px-2 py-1.5 text-right tabular-nums">{fmt(list.reduce((a, r) => a + r.value, 0))}</td></tr></tfoot>}
+    </table></div>
+    <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
+      <span>Rows</span><select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select>
+      <span className="text-muted-foreground">Showing {list.length ? p * size + 1 : 0}–{Math.min(list.length, p * size + size)} of {list.length}</span>
+      <button type="button" disabled={p === 0} onClick={() => setPage(p - 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Previous</button>
+      <span>{p + 1} / {pages}</span>
+      <button type="button" disabled={p >= pages - 1} onClick={() => setPage(p + 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Next</button>
+    </div>
+  </section>;
 }
