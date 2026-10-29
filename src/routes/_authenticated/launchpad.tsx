@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio, ShoppingCart } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
 import { PlaceholderTile, TableStatusTile, TileCard } from "@/components/tile-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GlassLoadingPage } from "@/components/glass-loading-page";
 import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
 import { useLaunchpad } from "@/lib/use-launchpad";
 
@@ -67,7 +67,7 @@ function Launchpad() {
       {data && data.roles.length === 0 ? <div className="mb-6 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Your account has no role assigned yet. Ask an administrator to grant you access.</div> : null}
       {data && data.roles.length > 0 && !isLoading && data.tiles.length === 0 ? <div className="mb-6 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Your role has no screens assigned yet. Ask an administrator to grant screen access.</div> : null}
 
-      {isLoading ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-[188px] rounded-2xl" />)}</div> : visibleGroups.map((group) => {
+      {isLoading ? <GlassLoadingPage /> : visibleGroups.map((group) => {
         const groupTiles = data?.tiles.filter((tile) => tile.group_key === group.key) ?? [];
         if (!groupTiles.length) return null;
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
