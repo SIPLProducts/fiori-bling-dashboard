@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   function toggleTheme() {
-    setTheme(ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length]);
+    setTheme(ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length] ?? "light");
   }
 
   return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>;
