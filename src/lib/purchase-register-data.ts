@@ -36,7 +36,7 @@ export async function getPurchaseRows(): Promise<PurchaseRow[]> {
   return out.map(toPurchaseRow);
 }
 
-export const purchaseRegisterQuery = { queryKey: ["purchase-register", "v2-total"], queryFn: getPurchaseRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const purchaseRegisterQuery = { queryKey: ["purchase-register", "v3-docs"], queryFn: getPurchaseRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
 
 /** FY start year (April–March) for a YYYY-MM-DD date. */
 export const fyOf = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return m >= 4 ? y : y - 1; };

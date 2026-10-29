@@ -95,7 +95,6 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
   const yoy = prevSum ? Math.round(((done.reduce((s, q) => s + q.current, 0) - prevSum) / prevSum) * 1000) / 10 : 0;
   const typeData = types.map((t) => ({ name: t, value: TYPE_TOTALS[t] }));
   const total = type ? TYPE_TOTALS[type] : TOTAL_PURCHASE;
-  const pct = (v: number) => TOTAL_PURCHASE ? `${((v / TOTAL_PURCHASE) * 100).toFixed(1)}% of total` : "";
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const curL = year != null ? fyLabel(year) : "-", prevL = year != null ? fyLabel(year - 1) : "-";
 
