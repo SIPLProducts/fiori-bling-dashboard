@@ -73,10 +73,11 @@ export function extractEmbeddedBody(text: string): string | null {
 }
 
 /** Posting-date window options saved on each endpoint. */
-export type PostingRange = "today" | "last7d" | "last1m" | "last6m" | "last1y" | "fytd" | "custom";
+export type PostingRange = "today" | "yesterday" | "last7d" | "last1m" | "last6m" | "last1y" | "fytd" | "custom";
 
 export const POSTING_RANGES: { value: PostingRange; label: string }[] = [
   { value: "today", label: "Current date" },
+  { value: "yesterday", label: "Previous date" },
   { value: "last7d", label: "Last 7 days" },
   { value: "last1m", label: "Last 1 month" },
   { value: "last6m", label: "Last 6 months" },
@@ -98,6 +99,10 @@ export function postingWindow(range: string | null | undefined, now: Date = new 
   const from = new Date(now);
   switch (range) {
     case "today":
+      break;
+    case "yesterday":
+      from.setDate(from.getDate() - 1);
+      to.setDate(to.getDate() - 1);
       break;
     case "last7d":
       from.setDate(from.getDate() - 7);
