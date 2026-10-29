@@ -6,13 +6,13 @@ export type PurchaseRow = {
   vendor: string; vendorName: string; material: string; materialName: string; group: string; type: PurchaseType; value: number;
   docNo?: string; grNo?: string;
 };
-type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "total", string | number | null>>;
+type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const CR = 1e7;
 
-/** Amount = TOTAL (₹, SAP purchase value). Credit lines (SHKZG H) count negative; SAP usually already signs them. */
+/** Amount = NET_AMT (₹, SAP net purchase value). Credit lines (SHKZG H) count negative; SAP usually already signs them. */
 export function toPurchaseRow(r: Rec): PurchaseRow {
-  const raw = Number(r.total) || 0;
+  const raw = Number(r.net_amt) || 0;
   const value = t(r.shkzg).toUpperCase() === "H" && raw > 0 ? -raw : raw;
   const tp = t(r.ty_purch).toLowerCase();
   const type: PurchaseType = tp.startsWith("imp") ? "Imported" : tp.startsWith("serv") ? "Service" : "Domestic";
@@ -27,7 +27,7 @@ export async function getPurchaseRows(): Promise<PurchaseRow[]> {
   const out: Rec[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase.from("purchase_register")
-      .select("belnr,buzei,mblnr,zeile,budat,werks,name1_wer,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,total")
+      .select("belnr,buzei,mblnr,zeile,budat,werks,name1_wer,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt")
       .order("belnr").order("buzei").order("mblnr").order("zeile").range(from, from + 999);
     if (error) throw new Error(`Unable to load Purchase Register: ${error.message}`);
     out.push(...((data ?? []) as unknown as Rec[]));
@@ -36,7 +36,7 @@ export async function getPurchaseRows(): Promise<PurchaseRow[]> {
   return out.map(toPurchaseRow);
 }
 
-export const purchaseRegisterQuery = { queryKey: ["purchase-register", "v3-docs"], queryFn: getPurchaseRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+export const purchaseRegisterQuery = { queryKey: ["purchase-register", "v4-net-amt"], queryFn: getPurchaseRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
 
 /** FY start year (April–March) for a YYYY-MM-DD date. */
 export const fyOf = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return m >= 4 ? y : y - 1; };
