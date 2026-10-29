@@ -191,7 +191,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
-    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount (₹ Cr)"]);
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount (NET_AMT) Cr"]);
     h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
     list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, Number(r.value.toFixed(4))]));
     sh.columns.forEach((c) => { c.width = 20; });
@@ -199,7 +199,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (₹ Cr)"];
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (NET_AMT) Cr"];
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Purchase Register Details</h2>
