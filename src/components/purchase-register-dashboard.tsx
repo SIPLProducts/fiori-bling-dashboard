@@ -2,6 +2,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { fyLabel, fyOf, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
 
@@ -188,11 +189,15 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
   const p = Math.min(page, pages - 1);
   const dmy = (d: string) => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "";
   const excel = async () => {
-    const XLSX = await import("xlsx");
-    const ws = XLSX.utils.json_to_sheet(list.map((r, i) => ({ "#": i + 1, "Posting Date": dmy(r.date), "Document No": r.docNo, "GR No": r.grNo, Type: r.type, Plant: `${r.plant} ${r.plantName}`.trim(), "Profit Center": r.profitCenter, Vendor: `${r.vendor} ${r.vendorName}`.trim(), Material: r.material, "Material Name": r.materialName, "Material Group": r.group, "Amount (₹ Cr)": Number(r.value.toFixed(4)) })));
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Purchase Register");
-    const { datedFileName } = await import("@/lib/format");
-    XLSX.writeFile(wb, datedFileName("Purchase Register", "xlsx"));
+    const { Workbook } = await import("exceljs");
+    const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount (₹ Cr)"]);
+    h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
+    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, Number(r.value.toFixed(4))]));
+    sh.columns.forEach((c) => { c.width = 20; });
+    const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (₹ Cr)"];
   return <section className="rounded-xl border border-border bg-card shadow-sm">
