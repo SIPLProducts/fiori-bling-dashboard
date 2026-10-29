@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Home, LogOut, Maximize, Minimize, Moon, Settings, Sun, User } from "lucide-react";
+import { Bell, Home, LogOut, Maximize, Minimize, Moon, Settings, Sparkles, Sun, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
@@ -84,12 +84,12 @@ export function ShellBar({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          aria-label={`Switch to ${theme === "light" ? "dark" : theme === "dark" ? "glassy" : "light"} mode`}
+          title={`Switch to ${theme === "light" ? "dark" : theme === "dark" ? "glassy" : "light"} mode`}
           onClick={toggleTheme}
           className="shrink-0 rounded-full text-shell-foreground hover:bg-shell-foreground/10 hover:text-shell-foreground"
         >
-          {theme === "light" ? <Moon /> : <Sun />}
+          {theme === "light" ? <Moon /> : theme === "dark" ? <Sparkles /> : <Sun />}
         </Button>
         {fsSupported ? (
           <Button
