@@ -52,6 +52,7 @@ import { Button } from "@/components/ui/button";
 import { SalesRefreshButton } from "@/components/sales-refresh-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GlassLoadingPage } from "@/components/glass-loading-page";
 import {
   Dialog,
   DialogContent,
@@ -2371,11 +2372,7 @@ export function SdLiveDashboard() {
 
 
   if (isLoading) {
-    return (
-      <div className="grid gap-4">
-        <Skeleton className="h-28" />
-      </div>
-    );
+    return <GlassLoadingPage />;
   }
 
   const totalRevenue = analytics.kpis.revenue;
