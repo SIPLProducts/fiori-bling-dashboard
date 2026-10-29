@@ -2,6 +2,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { fyLabel, fyOf, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
 
@@ -95,7 +96,6 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
   const yoy = prevSum ? Math.round(((done.reduce((s, q) => s + q.current, 0) - prevSum) / prevSum) * 1000) / 10 : 0;
   const typeData = types.map((t) => ({ name: t, value: TYPE_TOTALS[t] }));
   const total = type ? TYPE_TOTALS[type] : TOTAL_PURCHASE;
-  const pct = (v: number) => TOTAL_PURCHASE ? `${((v / TOTAL_PURCHASE) * 100).toFixed(1)}% of total` : "";
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const curL = year != null ? fyLabel(year) : "-", prevL = year != null ? fyLabel(year - 1) : "-";
 
@@ -115,9 +115,9 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)} Cr`} tone="var(--chart-1)" />
-      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)} Cr`} note={pct(TYPE_TOTALS.Domestic)} tone="var(--chart-2)" />
-      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)} Cr`} note={pct(TYPE_TOTALS.Imported)} tone="var(--chart-4)" />
-      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)} Cr`} note={pct(TYPE_TOTALS.Service)} tone="var(--chart-3)" />
+      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)} Cr`} tone="var(--chart-2)" />
+      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)} Cr`} tone="var(--chart-4)" />
+      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)} Cr`} tone="var(--chart-3)" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
@@ -175,5 +175,56 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
       <Card title="Profit Center Analytics" sub="Top 10 · ₹ Cr">
         <Columns data={pcs.map((p) => ({ name: p.code.slice(-5), value: p.value }))} height={150} /><CodeTable rows={pcs} codeLabel="Profit Center" /></Card>
     </div>
+    <DetailsTable rows={filtered} />
   </div>;
+}
+
+function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const s = q.toLowerCase();
+  const list = useMemo(() => [...rows].filter((r) => !s || [r.docNo, r.grNo, r.vendorName, r.vendor, r.material, r.materialName, r.plant].some((v) => (v ?? "").toLowerCase().includes(s))).sort((a, b) => b.date.localeCompare(a.date)), [rows, s]);
+  const pages = Math.max(1, Math.ceil(list.length / size));
+  const p = Math.min(page, pages - 1);
+  const dmy = (d: string) => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "";
+  const excel = async () => {
+    const { Workbook } = await import("exceljs");
+    const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount (₹ Cr)"]);
+    h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
+    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, Number(r.value.toFixed(4))]));
+    sh.columns.forEach((c) => { c.width = 20; });
+    const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (₹ Cr)"];
+  return <section className="rounded-xl border border-border bg-card shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+      <h2 className="text-xs font-semibold">Purchase Register Details</h2>
+      <div className="flex items-center gap-2">
+        <button type="button" disabled={!list.length} onClick={() => void excel()} className="btn-export rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-40">Excel</button>
+        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search document, vendor, material..." className={`${sel} w-56`} />
+      </div>
+    </div>
+    <div className="overflow-x-auto"><table className="w-full text-[11px]">
+      <thead className="bg-primary/5 text-primary"><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${h.startsWith("Amount") ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r, i) => <tr key={i} className="border-t border-border/60">
+        <td className="px-2 py-1">{p * size + i + 1}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.date)}</td>
+        <td className="px-2 py-1 font-medium text-primary">{r.docNo}</td><td className="px-2 py-1">{r.grNo}</td><td className="px-2 py-1">{r.type}</td>
+        <td className="whitespace-nowrap px-2 py-1">{[r.plant, r.plantName].filter(Boolean).join(" — ")}</td><td className="px-2 py-1">{r.profitCenter}</td>
+        <td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.group}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{fmt(r.value)}</td></tr>)
+        : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No Purchase Register data for these filters.</td></tr>}</tbody>
+      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={heads.length - 1} className="px-2 py-1.5">Total ({list.length} lines)</td><td className="px-2 py-1.5 text-right tabular-nums">{fmt(list.reduce((a, r) => a + r.value, 0))}</td></tr></tfoot>}
+    </table></div>
+    <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
+      <span>Rows</span><select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select>
+      <span className="text-muted-foreground">Showing {list.length ? p * size + 1 : 0}–{Math.min(list.length, p * size + size)} of {list.length}</span>
+      <button type="button" disabled={p === 0} onClick={() => setPage(p - 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Previous</button>
+      <span>{p + 1} / {pages}</span>
+      <button type="button" disabled={p >= pages - 1} onClick={() => setPage(p + 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Next</button>
+    </div>
+  </section>;
 }

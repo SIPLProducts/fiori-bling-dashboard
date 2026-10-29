@@ -22,6 +22,7 @@ import type { TileRecord } from "@/lib/sap.functions";
 import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
 import { OpenSalesOrdersLaunchCard, OrderBookLaunchCard, SitLaunchCard, SalesRegisterLaunchCard } from "@/components/open-sales-orders-launch-card";
 import { CashFlowLaunchCard } from "@/components/cash-flow-launch-card";
+import { PurchaseRegisterLaunchCard } from "@/components/purchase-register-launch-card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
@@ -111,6 +112,7 @@ export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {
   if (tile.kpi_key === "sd_sit" || tile.target_path === "/reports/sd/sit") return <SitLaunchCard fallback={fallback} />;
   if (tile.target_path === "/reports/sd/dispatches") return <SalesRegisterLaunchCard fallback={fallback} />;
   if (tile.kpi_key === "fi_cash_flow") return <CashFlowLaunchCard fallback={fallback} />;
+  if (tile.target_path === "/reports/mm/purchase-register") return <PurchaseRegisterLaunchCard fallback={fallback} />;
   const Icon = ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties;
   const href = tile.target_path || "/launchpad";
   return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={(tile.sort_order % 6) + 1} />;
