@@ -177,6 +177,10 @@ function mapRow(raw, sourceEndpoint, syncedAt) {
     product_range: str(pickField(raw, ["RANGE", "range"])),
     product_group: str(pickField(raw, ["PCGRP1", "pcgrp1", "productGroup"])),
     main_group: str(pickField(raw, ["MNGRP1", "mngrp1", "mainGroup"])),
+    mngrp1: str(pickField(raw, ["MNGRP1", "mngrp1"])) || null,
+    pcgrp1: str(pickField(raw, ["PCGRP1", "pcgrp1"])) || null,
+    pcgrp2: str(pickField(raw, ["PCGRP2", "pcgrp2"])) || null,
+    pcgrp3: str(pickField(raw, ["PCGRP3", "pcgrp3"])) || null,
     customer_group: str(pickField(raw, ["KDGRP_DESP", "KDGRP", "customerGroup"])),
     usage_desc: str(pickField(raw, ["ABRVW_DESP", "ABRVW", "usage"])),
     sales_org: str(pickField(raw, ["SALES_ORG_DESP", "VKORG", "salesOrg"])),
@@ -322,6 +326,10 @@ function mapOpenSalesOrderRow(raw, sourceEndpoint, syncedAt) {
     profit_center_name: str2(pick(raw, ["PRCTR_NAME", "prctr_name"])),
     main_group: str2(pick(raw, ["MNGRP1", "mngrp1"])),
     sub_group: str2(pick(raw, ["PCGRP1", "pcgrp1"])),
+    mngrp1: str2(pick(raw, ["MNGRP1"])) || null,
+    pcgrp1: str2(pick(raw, ["PCGRP1"])) || null,
+    pcgrp2: str2(pick(raw, ["PCGRP2"])) || null,
+    pcgrp3: str2(pick(raw, ["PCGRP3"])) || null,
     sales_rep_name: str2(pick(raw, ["NAME1_SE", "salesRepName"])),
     customer_sold_to: str2(pick(raw, ["KUNNR_SP", "KUNNR"])),
     customer_sold_to_name: str2(pick(raw, ["NAME1_SP", "NAME1"])),
@@ -534,7 +542,11 @@ var ORDER_BOOK_TEXT_FIELDS = [
   "PC_CODE",
   "PC_NAME",
   "MAIN_GRP",
-  "SUB_GRP"
+  "SUB_GRP",
+  "MNGRP1",
+  "PCGRP1",
+  "PCGRP2",
+  "PCGRP3"
 ];
 var ORDER_BOOK_NUMERIC_FIELDS = [
   "KWMENG",
@@ -647,7 +659,7 @@ function mapOrderBookPayload(payload, endpointName, now = /* @__PURE__ */ new Da
 }
 
 // ../src/lib/sit-map.ts
-var SIT_TEXT_FIELDS = ["APPTYP", "SECTOR", "WERKS", "NAME1_P", "EXGRP", "VTWEG_AUFT", "MATKL", "VTEXT_DC", "SPART", "VTEXT_SD", "PRCTR", "PRCTR_I", "MCTXT", "MCTXT_I", "KUNAG", "NAME_C", "GSTIN_C", "LANDX50_C", "BEZEI_C", "J_1ICSTNO_C", "KUNNR", "NAME_P", "GSTIN_PY", "KUNNR_S", "NAME_S", "GSTIN_SH", "LANDX50_S", "BEZEI_S", "J_1ICSTNO_S", "KUNNR_RE", "NAME_RE", "GSTIN_RE", "FKART", "VTEXT", "AUBEL", "BSTNK", "MATNR", "HSN_CODE", "ARKTX", "XBLNR", "LIFNR", "VTXT_C", "VTXT_V", "WAERK", "RFBSK", "BEZEI_SO", "BEZEI_SG", "SEGMENT", "ZTERM", "VTEXT_PAY", "NAME_SE", "NAME_TF", "LR_NO", "PREPRN", "EXNUM", "FAWREF", "HKONT", "TXT50", "REMARKS_F2", "NOTI_TEXT", "EX_COM_TEXT", "INCO1", "INCO2", "J_1ICHID", "VBELN_DEL", "MEINS", "VRKME", "MTART", "LAND1", "REGIO", "BUKRS", "KUNNR_SP", "KUNNR_SH", "KUNNR_BP", "BRSCH", "BRTXT", "DIVISION", "INV", "REF", "BELNR1", "BELNR2", "JV3", "JV4", "AUART", "RACCT", "MBLNR", "BELNR3", "TXT500", "AGE", "VBELN_C", "VGBEL", "LGORT", "LGOBE", "DIV_NAME", "MAIN_GRP", "SUB_GRP", "AUPOS", "GJAHR1", "GJAHR2", "MJAHR", "CELLCOLOR"];
+var SIT_TEXT_FIELDS = ["APPTYP", "SECTOR", "WERKS", "NAME1_P", "EXGRP", "VTWEG_AUFT", "MATKL", "VTEXT_DC", "SPART", "VTEXT_SD", "PRCTR", "PRCTR_I", "MCTXT", "MCTXT_I", "KUNAG", "NAME_C", "GSTIN_C", "LANDX50_C", "BEZEI_C", "J_1ICSTNO_C", "KUNNR", "NAME_P", "GSTIN_PY", "KUNNR_S", "NAME_S", "GSTIN_SH", "LANDX50_S", "BEZEI_S", "J_1ICSTNO_S", "KUNNR_RE", "NAME_RE", "GSTIN_RE", "FKART", "VTEXT", "AUBEL", "BSTNK", "MATNR", "HSN_CODE", "ARKTX", "XBLNR", "LIFNR", "VTXT_C", "VTXT_V", "WAERK", "RFBSK", "BEZEI_SO", "BEZEI_SG", "SEGMENT", "ZTERM", "VTEXT_PAY", "NAME_SE", "NAME_TF", "LR_NO", "PREPRN", "EXNUM", "FAWREF", "HKONT", "TXT50", "REMARKS_F2", "NOTI_TEXT", "EX_COM_TEXT", "INCO1", "INCO2", "J_1ICHID", "VBELN_DEL", "MEINS", "VRKME", "MTART", "LAND1", "REGIO", "BUKRS", "KUNNR_SP", "KUNNR_SH", "KUNNR_BP", "BRSCH", "BRTXT", "DIVISION", "INV", "REF", "BELNR1", "BELNR2", "JV3", "JV4", "AUART", "RACCT", "MBLNR", "BELNR3", "TXT500", "AGE", "VBELN_C", "VGBEL", "LGORT", "LGOBE", "DIV_NAME", "MAIN_GRP", "SUB_GRP", "MNGRP1", "PCGRP1", "PCGRP2", "PCGRP3", "AUPOS", "GJAHR1", "GJAHR2", "MJAHR", "CELLCOLOR"];
 var SIT_NUMERIC_FIELDS = ["FKIMG", "KBETR", "NETWR", "NETWR_B", "NETWR_BEX", "NETWR_TOT", "KWERT_D", "KWERT_DEX", "CST", "CST_EX", "TOT_BP", "PRICE_CELL", "PRICE_CELLINR", "VAT", "VAT_EX", "TCS", "TCS_EX", "MWSBK", "MWSBK_EX", "NETWR_T", "NETWR_T_EX", "NETWR_EX", "TAX_RATE", "KWERT_CGST", "KWERT_SGST", "KWERT_IGST", "KURRF", "FRGHT1", "FRGHT1_EX", "FRGHT2", "FRGHT2_EX", "DISCNT", "DISCNT_EX", "KWERT_ZNRC", "KWERT_ZNRC_INR", "SBCESS", "SBCESS_EX", "PFCHRG", "PFCHRG_EX", "SERVI", "SERVI_EX", "ECESS", "ECESS_EX", "SHESS", "SHESS_EX", "JLSR", "JLSR_EX", "ZGST", "ZGST_EX", "ZKKC", "ZKKC_EX", "UMREN", "TOT_AH", "AH", "KWMENG", "UMVKZ", "FKIMG_TOT", "BASIC_AH", "BASIC_AHINR", "DMBTR"];
 var SIT_DATE_FIELDS = ["ERDAT", "FKDAT", "BSTDK", "FKDAT_BILL", "EXDAT", "AUDAT", "LFDAT_DEL", "BUDAT", "PODDATE", "FKDAT_C"];
 function isSitEndpoint(name) {
@@ -699,7 +711,7 @@ function mapSitPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) 
 }
 
 // ../src/lib/sales-register-map.ts
-var SALES_REGISTER_TEXT_FIELDS = ["APPTYP", "SECTOR", "WERKS", "NAME1_P", "EXGRP", "VTWEG_AUFT", "MATKL", "VTEXT_DC", "SPART", "VTEXT_SD", "PRCTR", "PRCTR_I", "MCTXT", "MCTXT_I", "KUNAG", "NAME_C", "GSTIN_C", "LANDX50_C", "BEZEI_C", "J_1ICSTNO_C", "KUNNR", "NAME_P", "GSTIN_PY", "KUNNR_S", "NAME_S", "GSTIN_SH", "LANDX50_S", "BEZEI_S", "J_1ICSTNO_S", "KUNNR_RE", "NAME_RE", "GSTIN_RE", "FKART", "VTEXT", "AUBEL", "BSTNK", "MATNR", "HSN_CODE", "ARKTX", "XBLNR", "LIFNR", "VTXT_C", "VTXT_V", "WAERK", "RFBSK", "BEZEI_SO", "BEZEI_SG", "SEGMENT", "ZTERM", "VTEXT_PAY", "NAME_SE", "NAME_TF", "LR_NO", "PREPRN", "EXNUM", "FAWREF", "HKONT", "TXT50", "REMARKS_F2", "NOTI_TEXT", "EX_COM_TEXT", "INCO1", "INCO2", "J_1ICHID", "VBELN_DEL", "MEINS", "VRKME", "MTART", "LAND1", "REGIO", "BUKRS", "KUNNR_SP", "KUNNR_SH", "KUNNR_BP", "BRSCH", "BRTXT", "DIVISION", "INV", "REF", "BELNR1", "BELNR2", "JV3", "JV4", "AUART", "RACCT", "MBLNR", "BELNR3", "TXT500", "AGE", "VBELN_C", "VGBEL", "LGORT", "LGOBE", "DIV_NAME", "MAIN_GRP", "SUB_GRP", "AUPOS", "GJAHR1", "GJAHR2", "MJAHR", "CELLCOLOR", "ABRVW", "ABRVW_DESP", "BATTERY_SERIAL_NO", "GST_TDS", "KDGRP", "KDGRP_DESP", "MAIN_GROUP", "MODEL", "SUB_GROUP", "TYPE", "VTEXT_DESP", "WRDETS", "WRMNTS"];
+var SALES_REGISTER_TEXT_FIELDS = ["APPTYP", "SECTOR", "WERKS", "NAME1_P", "EXGRP", "VTWEG_AUFT", "MATKL", "VTEXT_DC", "SPART", "VTEXT_SD", "PRCTR", "PRCTR_I", "MCTXT", "MCTXT_I", "KUNAG", "NAME_C", "GSTIN_C", "LANDX50_C", "BEZEI_C", "J_1ICSTNO_C", "KUNNR", "NAME_P", "GSTIN_PY", "KUNNR_S", "NAME_S", "GSTIN_SH", "LANDX50_S", "BEZEI_S", "J_1ICSTNO_S", "KUNNR_RE", "NAME_RE", "GSTIN_RE", "FKART", "VTEXT", "AUBEL", "BSTNK", "MATNR", "HSN_CODE", "ARKTX", "XBLNR", "LIFNR", "VTXT_C", "VTXT_V", "WAERK", "RFBSK", "BEZEI_SO", "BEZEI_SG", "SEGMENT", "ZTERM", "VTEXT_PAY", "NAME_SE", "NAME_TF", "LR_NO", "PREPRN", "EXNUM", "FAWREF", "HKONT", "TXT50", "REMARKS_F2", "NOTI_TEXT", "EX_COM_TEXT", "INCO1", "INCO2", "J_1ICHID", "VBELN_DEL", "MEINS", "VRKME", "MTART", "LAND1", "REGIO", "BUKRS", "KUNNR_SP", "KUNNR_SH", "KUNNR_BP", "BRSCH", "BRTXT", "DIVISION", "INV", "REF", "BELNR1", "BELNR2", "JV3", "JV4", "AUART", "RACCT", "MBLNR", "BELNR3", "TXT500", "AGE", "VBELN_C", "VGBEL", "LGORT", "LGOBE", "DIV_NAME", "MAIN_GRP", "SUB_GRP", "MNGRP1", "PCGRP1", "PCGRP2", "PCGRP3", "AUPOS", "GJAHR1", "GJAHR2", "MJAHR", "CELLCOLOR", "ABRVW", "ABRVW_DESP", "BATTERY_SERIAL_NO", "GST_TDS", "KDGRP", "KDGRP_DESP", "MAIN_GROUP", "MODEL", "SUB_GROUP", "TYPE", "VTEXT_DESP", "WRDETS", "WRMNTS"];
 var SALES_REGISTER_NUMERIC_FIELDS = ["FKIMG", "KBETR", "NETWR", "NETWR_B", "NETWR_BEX", "NETWR_TOT", "KWERT_D", "KWERT_DEX", "CST", "CST_EX", "TOT_BP", "PRICE_CELL", "PRICE_CELLINR", "VAT", "VAT_EX", "TCS", "TCS_EX", "MWSBK", "MWSBK_EX", "NETWR_T", "NETWR_T_EX", "NETWR_EX", "TAX_RATE", "KWERT_CGST", "KWERT_SGST", "KWERT_IGST", "KURRF", "FRGHT1", "FRGHT1_EX", "FRGHT2", "FRGHT2_EX", "DISCNT", "DISCNT_EX", "KWERT_ZNRC", "KWERT_ZNRC_INR", "SBCESS", "SBCESS_EX", "PFCHRG", "PFCHRG_EX", "SERVI", "SERVI_EX", "ECESS", "ECESS_EX", "SHESS", "SHESS_EX", "JLSR", "JLSR_EX", "ZGST", "ZGST_EX", "ZKKC", "ZKKC_EX", "UMREN", "TOT_AH", "AH", "KWMENG", "UMVKZ", "FKIMG_TOT", "BASIC_AH", "BASIC_AHINR", "DMBTR", "MATERIAL_COST", "OVERHEAD_COST", "TOTAL_COST", "ZAH", "TWAR"];
 var SALES_REGISTER_DATE_FIELDS = ["ERDAT", "FKDAT", "BSTDK", "FKDAT_BILL", "EXDAT", "AUDAT", "LFDAT_DEL", "BUDAT", "PODDATE", "FKDAT_C", "ZWREXPDT"];
 function isSalesRegisterEndpoint(name) {
@@ -744,37 +756,6 @@ function mapSalesRegisterPayload(payload, endpointName, now = /* @__PURE__ */ ne
     for (const k of SALES_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick5(raw, k));
     for (const k of SALES_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick5(raw, k));
     byKey.set(`${vbeln}|${posnr}`, row);
-  }
-  const rows = [...byKey.values()];
-  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
-}
-
-// ../src/lib/purchase-register-map.ts
-var PR_TEXT = ["WERKS","NAME1_WER","PRCTR","PTEXT","LIFNR","NAME1","MTBEZ","MATNR","MAKTX","MEINS_I","MWSKZ","TEXT1_M","BWART","MEINS_G","WAERS","SHKZG","TY_PURCH","TY_MAT"];
-var PR_NUM = ["MENGE_I","MENGE_G","WRBTR","KURSF","DIS","OTH","PLAN_DEL","TAX","SGST","CGST","IGST","NO_CR","GL_ACC","TOTAL","NET_AMT","GROSS_PRICE","NET_PRICE"];
-var PR_DATE = ["BUDAT","AEDAT","CREATE_DT"];
-function isPurchaseRegisterEndpoint(name) {
-  return (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("purchaseregister");
-}
-function prText(v) {
-  if (v === void 0 || v === null || typeof v === "object") return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
-function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
-  const source = extractRows4(payload);
-  const syncedAt = now.toISOString();
-  const byKey = /* @__PURE__ */ new Map();
-  let invalid = 0;
-  for (const raw of source) {
-    const belnr = prText(pick5(raw, "BELNR"));
-    if (!belnr) { invalid++; continue; }
-    const buzei = prText(pick5(raw, "BUZEI")) ?? "", mblnr = prText(pick5(raw, "MBLNR")) ?? "", zeile = prText(pick5(raw, "ZEILE")) ?? "";
-    const row = { belnr, buzei, mblnr, zeile, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of PR_TEXT) row[k.toLowerCase()] = prText(pick5(raw, k));
-    for (const k of PR_NUM) row[k.toLowerCase()] = orderBookNum(pick5(raw, k));
-    for (const k of PR_DATE) row[k.toLowerCase()] = orderBookDate(pick5(raw, k));
-    byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
   }
   const rows = [...byKey.values()];
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
@@ -893,6 +874,10 @@ function postingWindow(range, now = /* @__PURE__ */ new Date()) {
   const from = new Date(now);
   switch (range) {
     case "today":
+      break;
+    case "yesterday":
+      from.setDate(from.getDate() - 1);
+      to.setDate(to.getDate() - 1);
       break;
     case "last7d":
       from.setDate(from.getDate() - 7);
@@ -1043,7 +1028,6 @@ export {
   formatBytes,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
-  isPurchaseRegisterEndpoint,
   isSalesRegisterEndpoint,
   isSitEndpoint,
   isUserDropdownEndpoint,
@@ -1054,7 +1038,6 @@ export {
   mapOrderBookPayload,
   mapPayload,
   mapRow,
-  mapPurchaseRegisterPayload,
   mapSalesRegisterPayload,
   mapSitPayload,
   mapUserDropdownPayload,
