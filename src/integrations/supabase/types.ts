@@ -2170,6 +2170,68 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_master_rows: {
+        Row: {
+          data: Json
+          id: string
+          key_value: string
+          master_id: string
+          updated_at: string
+        }
+        Insert: {
+          data?: Json
+          id?: string
+          key_value: string
+          master_id: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          id?: string
+          key_value?: string
+          master_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_master_rows_master_id_fkey"
+            columns: ["master_id"]
+            isOneToOne: false
+            referencedRelation: "sap_masters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sap_masters: {
+        Row: {
+          columns: string[]
+          created_at: string
+          id: string
+          key_column: string
+          last_uploaded_at: string
+          name: string
+          row_count: number
+        }
+        Insert: {
+          columns?: string[]
+          created_at?: string
+          id?: string
+          key_column: string
+          last_uploaded_at?: string
+          name: string
+          row_count?: number
+        }
+        Update: {
+          columns?: string[]
+          created_at?: string
+          id?: string
+          key_column?: string
+          last_uploaded_at?: string
+          name?: string
+          row_count?: number
+        }
+        Relationships: []
+      }
       sap_middleware_config: {
         Row: {
           connection_mode: string
@@ -3834,6 +3896,10 @@ export type Database = {
           _started_at: string
         }
         Returns: string
+      }
+      upsert_sap_master_rows: {
+        Args: { _columns: string[]; _master_id: string; _rows: Json }
+        Returns: number
       }
       user_can_see: {
         Args: { _plant: string; _profit_center: string }
