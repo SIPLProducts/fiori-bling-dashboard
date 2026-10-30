@@ -84,9 +84,9 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
   return <div className="space-y-4">
     <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
       <div className="min-w-56">
-        <div className="mb-1 text-xs text-muted-foreground">Master</div>
+        <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); }}>
-          <SelectTrigger><SelectValue placeholder={masters.isLoading ? "Loading…" : "No masters yet"} /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={masters.isLoading ? "Loading…" : "Upload Excel to see sheets"} /></SelectTrigger>
           <SelectContent>{(masters.data ?? []).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
       </div>
