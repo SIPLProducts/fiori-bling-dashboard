@@ -55,11 +55,6 @@ function CodeTable({ rows, codeLabel }: { rows: { code: string; name: string; va
     <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
 }
 
-function DataTable({ cols, rows }: { cols: string[]; rows: { cells: string[]; value: number }[] }) {
-  return <table className="mt-2 w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr>{cols.map((c) => <th key={c} className="px-1.5 py-1 text-left">{c}</th>)}<th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
-    <tbody>{rows.map((r, i) => <tr key={i} className={`border-t border-border/60 ${i % 2 ? "bg-muted/40" : ""}`}>{r.cells.map((c, j) => <td key={j} className={`px-1.5 py-0.5 ${j === 0 ? "font-medium text-primary" : ""}`}>{c}</td>)}<td className="px-1.5 py-0.5 text-right tabular-nums">{fmt(r.value)}</td></tr>)}</tbody>
-    <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={cols.length}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
-}
 
 const sel = "h-8 rounded-md border border-border bg-background px-2 text-xs";
 
