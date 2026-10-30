@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio, ShoppingCart } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
-import { PlaceholderTile, TableStatusTile, TileCard } from "@/components/tile-card";
+import { TableStatusTile, TileCard } from "@/components/tile-card";
 import { GlassLoadingPage } from "@/components/glass-loading-page";
 import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
 import { useLaunchpad } from "@/lib/use-launchpad";
