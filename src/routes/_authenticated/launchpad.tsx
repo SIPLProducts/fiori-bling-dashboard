@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio, ShoppingCart } from "lucide-react";
 import { ShellBar } from "@/components/shell-bar";
-import { PlaceholderTile, TableStatusTile, TileCard } from "@/components/tile-card";
+import { TableStatusTile, TileCard } from "@/components/tile-card";
 import { GlassLoadingPage } from "@/components/glass-loading-page";
 import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -78,8 +78,7 @@ function Launchpad() {
           {group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <PlaceholderTile type="kna1" /><PlaceholderTile type="mara" /><PlaceholderTile type="lfa1" /><PlaceholderTile type="t001w" />
-            {groupTiles.filter((tile) => tile.target_path?.startsWith("/tables/")).map((tile) => (
+            {groupTiles.filter((tile) => tile.screen_key === "tables.sap-master").map((tile) => (
               <TableStatusTile
                 key={tile.id}
                 title={tile.title}
