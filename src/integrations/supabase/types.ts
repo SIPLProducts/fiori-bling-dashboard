@@ -3808,6 +3808,20 @@ export type Database = {
               type_total: number
             }[]
           }
+      purchase_register_fiscal_years: {
+        Args: never
+        Returns: {
+          fy_start: number
+        }[]
+      }
+      purchase_register_kpis: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          line_count: number
+          total_value: number
+          ty_purch: string
+        }[]
+      }
       resolve_login_email: { Args: { _identifier: string }; Returns: string }
       set_sap_credential: {
         Args: { _cred_key: string; _secret: string }
