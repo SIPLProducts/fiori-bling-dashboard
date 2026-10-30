@@ -60,7 +60,7 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
   const onFile = async (f: File) => {
     try {
       const s = await parseWorkbook(f);
-      if (!s.length) return toast.error("No sheets with a header row found");
+      if (!s.length) { toast.error("No sheets with a header row found"); return; }
       const known = new Map((masters.data ?? []).map((m) => [m.name, m.key_column]));
       setKeys(Object.fromEntries(s.map((x) => [x.name, known.get(x.name) && x.columns.includes(known.get(x.name)!) ? known.get(x.name)! : x.columns[0]!])));
       setSheets(s);
@@ -124,7 +124,7 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
           {sheets?.map((s) => <div key={s.name} className="rounded border p-3">
             <div className="font-medium">{s.name} <span className="text-xs text-muted-foreground">· {s.rows.length} rows · {s.columns.length} columns</span></div>
             <div className="mt-2 flex items-center gap-2 text-sm">Key column
-              <Select value={keys[s.name]} onValueChange={(v) => setKeys({ ...keys, [s.name]: v })}>
+              <Select value={keys[s.name] ?? ""} onValueChange={(v) => setKeys({ ...keys, [s.name]: v })}>
                 <SelectTrigger className="h-8 w-48"><SelectValue /></SelectTrigger>
                 <SelectContent>{s.columns.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
