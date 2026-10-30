@@ -94,8 +94,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     label: "Tables Master",
     groupKey: TABLES_MASTER_GROUP_KEY,
     children: [
-      { key: "tables.zfisales-detail", label: "ZFISALES Detail", tileKey: "table_zfisales_detail" },
-      { key: "tables.ztbn", label: "ZTBN", tileKey: "table_ztbn" },
       { key: "tables.sap-master", label: "SAP MASTER", tileKey: "table_sap_master" },
     ],
   },
