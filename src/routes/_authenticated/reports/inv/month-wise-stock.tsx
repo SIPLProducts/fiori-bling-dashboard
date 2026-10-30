@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModuleComingSoon } from "@/components/module-coming-soon";
+import { useState } from "react";
+import { InventoryMasterFilters, type InventoryFilters } from "@/components/inventory-master-filters";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -18,8 +19,9 @@ export const Route = createFileRoute("/_authenticated/reports/inv/month-wise-sto
 
 function Page() {
   const { data, isLoading } = useLaunchpad();
+  const [filters, setFilters] = useState<InventoryFilters>({});
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "inv.month-wise-stock");
   return <ReportShell title="Month Wise Stock" description="Inventory">
-    {!isLoading && !allowed ? <AccessDenied area="Month Wise Stock" /> : <ModuleComingSoon title="Month Wise Stock" />}
+    {!isLoading && !allowed ? <AccessDenied area="Month Wise Stock" /> : <><InventoryMasterFilters value={filters} onChange={setFilters} /><div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">Month Wise Stock data will appear here once the SAP API is connected.</div></>}
   </ReportShell>;
 }

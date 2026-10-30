@@ -128,3 +128,25 @@ export async function downloadMasterExcel(name: string, columns: string[], rows:
   const a = document.createElement("a"); a.href = url; a.download = datedFileName("SAP MASTER", "xlsx"); a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Pure: unique sorted {value,label} options from master rows; label "code - desc" when a description column is given. */
+export function buildMasterOptions(rows: Record<string, string>[], column: string, descColumn?: string): { value: string; label: string }[] {
+  const map = new Map<string, string>();
+  for (const r of rows) {
+    const code = String(r[column] ?? "").trim();
+    if (!code || map.has(code)) continue;
+    const desc = descColumn ? String(r[descColumn] ?? "").trim() : "";
+    map.set(code, desc ? `${code} - ${desc}` : code);
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true })).map(([value, label]) => ({ value, label }));
+}
+
+/** Rows of one master by sheet name (stable query; refreshed by uploads invalidating ["sap-master-rows"]). */
+export const masterRowsByNameQuery = (masterName: string) => ({
+  queryKey: ["sap-master-rows", "by-name", masterName] as const,
+  queryFn: async (): Promise<Record<string, string>[]> => {
+    const { data: m } = await supabase.from("sap_masters").select("id").eq("name", masterName).maybeSingle();
+    return m ? getMasterRows(m.id) : [];
+  },
+  staleTime: Infinity,
+});
