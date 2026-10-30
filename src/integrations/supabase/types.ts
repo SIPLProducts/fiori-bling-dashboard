@@ -697,6 +697,7 @@ export type Database = {
           no_cr: number | null
           oth: number | null
           plan_del: number | null
+          plant_sh: string | null
           prctr: string | null
           ptext: string | null
           raw: Json
@@ -745,6 +746,7 @@ export type Database = {
           no_cr?: number | null
           oth?: number | null
           plan_del?: number | null
+          plant_sh?: string | null
           prctr?: string | null
           ptext?: string | null
           raw?: Json
@@ -793,6 +795,7 @@ export type Database = {
           no_cr?: number | null
           oth?: number | null
           plan_del?: number | null
+          plant_sh?: string | null
           prctr?: string | null
           ptext?: string | null
           raw?: Json
