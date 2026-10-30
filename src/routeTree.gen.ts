@@ -24,6 +24,9 @@ import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authe
 import { Route as AuthenticatedReportsFiAssetRegisterRouteImport } from './routes/_authenticated/reports/fi/asset-register'
 import { Route as AuthenticatedReportsFiCashFlowRouteImport } from './routes/_authenticated/reports/fi/cash-flow'
 import { Route as AuthenticatedReportsFiTbnRouteRouteImport } from './routes/_authenticated/reports/fi/tbn/route'
+import { Route as AuthenticatedReportsInvCurrentStockRouteImport } from './routes/_authenticated/reports/inv/current-stock'
+import { Route as AuthenticatedReportsInvInventoryAgingRouteImport } from './routes/_authenticated/reports/inv/inventory-aging'
+import { Route as AuthenticatedReportsInvMonthWiseStockRouteImport } from './routes/_authenticated/reports/inv/month-wise-stock'
 import { Route as AuthenticatedReportsMmOpenPurchaseOrdersRouteImport } from './routes/_authenticated/reports/mm/open-purchase-orders'
 import { Route as AuthenticatedReportsMmPurchaseOrdersRouteImport } from './routes/_authenticated/reports/mm/purchase-orders'
 import { Route as AuthenticatedReportsMmPurchaseRegisterRouteImport } from './routes/_authenticated/reports/mm/purchase-register'
@@ -123,6 +126,24 @@ const AuthenticatedReportsFiTbnRouteRoute =
   AuthenticatedReportsFiTbnRouteRouteImport.update({
     id: '/reports/fi/tbn',
     path: '/reports/fi/tbn',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsInvCurrentStockRoute =
+  AuthenticatedReportsInvCurrentStockRouteImport.update({
+    id: '/reports/inv/current-stock',
+    path: '/reports/inv/current-stock',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsInvInventoryAgingRoute =
+  AuthenticatedReportsInvInventoryAgingRouteImport.update({
+    id: '/reports/inv/inventory-aging',
+    path: '/reports/inv/inventory-aging',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsInvMonthWiseStockRoute =
+  AuthenticatedReportsInvMonthWiseStockRouteImport.update({
+    id: '/reports/inv/month-wise-stock',
+    path: '/reports/inv/month-wise-stock',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportsMmOpenPurchaseOrdersRoute =
@@ -243,6 +264,9 @@ export interface FileRoutesByFullPath {
   '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
+  '/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
+  '/reports/inv/month-wise-stock': typeof AuthenticatedReportsInvMonthWiseStockRoute
   '/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
   '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
@@ -275,6 +299,9 @@ export interface FileRoutesByTo {
   '/tables': typeof AuthenticatedTablesIndexRoute
   '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
+  '/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
+  '/reports/inv/month-wise-stock': typeof AuthenticatedReportsInvMonthWiseStockRoute
   '/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
   '/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
@@ -310,6 +337,9 @@ export interface FileRoutesById {
   '/_authenticated/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   '/_authenticated/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/_authenticated/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
+  '/_authenticated/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
+  '/_authenticated/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
+  '/_authenticated/reports/inv/month-wise-stock': typeof AuthenticatedReportsInvMonthWiseStockRoute
   '/_authenticated/reports/mm/open-purchase-orders': typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
   '/_authenticated/reports/mm/purchase-orders': typeof AuthenticatedReportsMmPurchaseOrdersRoute
   '/_authenticated/reports/mm/purchase-register': typeof AuthenticatedReportsMmPurchaseRegisterRoute
@@ -345,6 +375,9 @@ export interface FileRouteTypes {
     | '/reports/fi/tbn'
     | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
+    | '/reports/inv/current-stock'
+    | '/reports/inv/inventory-aging'
+    | '/reports/inv/month-wise-stock'
     | '/reports/mm/open-purchase-orders'
     | '/reports/mm/purchase-orders'
     | '/reports/mm/purchase-register'
@@ -377,6 +410,9 @@ export interface FileRouteTypes {
     | '/tables'
     | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
+    | '/reports/inv/current-stock'
+    | '/reports/inv/inventory-aging'
+    | '/reports/inv/month-wise-stock'
     | '/reports/mm/open-purchase-orders'
     | '/reports/mm/purchase-orders'
     | '/reports/mm/purchase-register'
@@ -411,6 +447,9 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/fi/tbn'
     | '/_authenticated/reports/fi/asset-register'
     | '/_authenticated/reports/fi/cash-flow'
+    | '/_authenticated/reports/inv/current-stock'
+    | '/_authenticated/reports/inv/inventory-aging'
+    | '/_authenticated/reports/inv/month-wise-stock'
     | '/_authenticated/reports/mm/open-purchase-orders'
     | '/_authenticated/reports/mm/purchase-orders'
     | '/_authenticated/reports/mm/purchase-register'
@@ -543,6 +582,27 @@ declare module '@tanstack/react-router' {
       path: '/reports/fi/tbn'
       fullPath: '/reports/fi/tbn'
       preLoaderRoute: typeof AuthenticatedReportsFiTbnRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/inv/current-stock': {
+      id: '/_authenticated/reports/inv/current-stock'
+      path: '/reports/inv/current-stock'
+      fullPath: '/reports/inv/current-stock'
+      preLoaderRoute: typeof AuthenticatedReportsInvCurrentStockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/inv/inventory-aging': {
+      id: '/_authenticated/reports/inv/inventory-aging'
+      path: '/reports/inv/inventory-aging'
+      fullPath: '/reports/inv/inventory-aging'
+      preLoaderRoute: typeof AuthenticatedReportsInvInventoryAgingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/inv/month-wise-stock': {
+      id: '/_authenticated/reports/inv/month-wise-stock'
+      path: '/reports/inv/month-wise-stock'
+      fullPath: '/reports/inv/month-wise-stock'
+      preLoaderRoute: typeof AuthenticatedReportsInvMonthWiseStockRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/mm/open-purchase-orders': {
@@ -696,6 +756,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsFiTbnRouteRoute: typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
   AuthenticatedReportsFiAssetRegisterRoute: typeof AuthenticatedReportsFiAssetRegisterRoute
   AuthenticatedReportsFiCashFlowRoute: typeof AuthenticatedReportsFiCashFlowRoute
+  AuthenticatedReportsInvCurrentStockRoute: typeof AuthenticatedReportsInvCurrentStockRoute
+  AuthenticatedReportsInvInventoryAgingRoute: typeof AuthenticatedReportsInvInventoryAgingRoute
+  AuthenticatedReportsInvMonthWiseStockRoute: typeof AuthenticatedReportsInvMonthWiseStockRoute
   AuthenticatedReportsMmOpenPurchaseOrdersRoute: typeof AuthenticatedReportsMmOpenPurchaseOrdersRoute
   AuthenticatedReportsMmPurchaseOrdersRoute: typeof AuthenticatedReportsMmPurchaseOrdersRoute
   AuthenticatedReportsMmPurchaseRegisterRoute: typeof AuthenticatedReportsMmPurchaseRegisterRoute
@@ -727,6 +790,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsFiAssetRegisterRoute:
     AuthenticatedReportsFiAssetRegisterRoute,
   AuthenticatedReportsFiCashFlowRoute: AuthenticatedReportsFiCashFlowRoute,
+  AuthenticatedReportsInvCurrentStockRoute:
+    AuthenticatedReportsInvCurrentStockRoute,
+  AuthenticatedReportsInvInventoryAgingRoute:
+    AuthenticatedReportsInvInventoryAgingRoute,
+  AuthenticatedReportsInvMonthWiseStockRoute:
+    AuthenticatedReportsInvMonthWiseStockRoute,
   AuthenticatedReportsMmOpenPurchaseOrdersRoute:
     AuthenticatedReportsMmOpenPurchaseOrdersRoute,
   AuthenticatedReportsMmPurchaseOrdersRoute:
