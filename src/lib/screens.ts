@@ -80,6 +80,16 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     ],
   },
   {
+    key: "module.inv",
+    label: "Inventory",
+    groupKey: "inventory",
+    children: [
+      { key: "inv.current-stock", label: "Current Stock", tileKey: "inv_current_stock" },
+      { key: "inv.month-wise-stock", label: "Month Wise Stock", tileKey: "inv_month_wise_stock" },
+      { key: "inv.inventory-aging", label: "Inventory Aging", tileKey: "inv_inventory_aging" },
+    ],
+  },
+  {
     key: groupScreenKey(TABLES_MASTER_GROUP_KEY),
     label: "Tables Master",
     groupKey: TABLES_MASTER_GROUP_KEY,
