@@ -1,21 +1,14 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingCart } from "lucide-react";
-import { purchaseRegisterQuery } from "@/lib/purchase-register-data";
-import { PURCHASE_TYPES } from "@/lib/purchase-register-sample";
+import { purchaseRegisterKpiQuery } from "@/lib/purchase-register-data";
 
 const TONES = ["var(--kpi-2)", "var(--kpi-4)", "var(--kpi-3)"];
 const cr = (v: number) => `₹${v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
 
 export function PurchaseRegisterLaunchCard({ fallback }: { fallback: React.ReactNode }) {
-  const { data: rows, isLoading, isError } = useQuery({ ...purchaseRegisterQuery, gcTime: Infinity, refetchOnMount: false });
-  const s = useMemo(() => {
-    if (!rows) return null;
-    const by = PURCHASE_TYPES.map((t) => { const r = rows.filter((x) => x.type === t); return { name: t, count: r.length, value: r.reduce((a, x) => a + x.value, 0) }; });
-    const total = by.reduce((a, b) => a + b.value, 0);
-    return { by, total, count: rows.length, max: Math.max(...by.map((b) => Math.abs(b.value)), 1e-9) };
-  }, [rows]);
+  const { data, isLoading, isError } = useQuery(purchaseRegisterKpiQuery);
+  const s = data ? { ...data, max: Math.max(...data.by.map((b) => Math.abs(b.value)), 1e-9) } : null;
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (isError || !s) return <>{fallback}</>;
   return <section aria-label="Purchase Register" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 text-left shadow-launchpad-tile">
