@@ -104,6 +104,7 @@ export function mapOrderBookPayload(payload: unknown, endpointName: string, now 
     for (const k of ORDER_BOOK_TEXT_FIELDS) if (k !== "VBELN" && k !== "POSNR") row[orderBookColumn(k)] = text(pick(raw, k));
     for (const k of ORDER_BOOK_NUMERIC_FIELDS) row[orderBookColumn(k)] = orderBookNum(pick(raw, k));
     for (const k of ORDER_BOOK_DATE_FIELDS) row[orderBookColumn(k)] = orderBookDate(pick(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     // Same order line twice in one response: last occurrence wins.
     byKey.set(`${vbeln}|${posnr}`, row);
   }

@@ -52,6 +52,7 @@ export function mapSitPayload(payload: unknown, endpointName: string, now = new 
     for (const k of SIT_TEXT_FIELDS) row[k.toLowerCase()] = text(pick(raw, k));
     for (const k of SIT_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick(raw, k));
     for (const k of SIT_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${vbeln}|${posnr}`, row);
   }
   const rows = [...byKey.values()];
