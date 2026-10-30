@@ -132,10 +132,8 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card title="Top Materials"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, value: m.value }))} />
-        <DataTable cols={["Material Name", "Material Group"]} rows={materials.map((m) => ({ cells: [m.name, m.group], value: m.value }))} /></Card>
-      <Card title="Top Vendors"><RankList data={vendors} />
-        <DataTable cols={["Vendor Name"]} rows={vendors.map((v) => ({ cells: [v.name], value: v.value }))} /></Card>
+      <Card title="Top Materials"><RankList data={materials.map((m) => ({ name: m.name, value: m.value }))} /></Card>
+      <Card title="Top Vendors"><RankList data={vendors.map((v) => ({ name: v.name, value: v.value }))} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
