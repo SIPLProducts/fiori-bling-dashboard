@@ -34,7 +34,7 @@ function Columns({ data, height = 170 }: { data: { name: string; value: number }
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <ResponsiveContainer width="100%" height={height}><BarChart data={data} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>{grad(id)}
     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
-    <XAxis dataKey="name" interval={0} tick={{ fontSize: 9, fontWeight: 600 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} />
+    <XAxis dataKey="name" interval={0} height={30} tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => { const [a, b] = String(payload.value).split("\n"); return <text x={x} y={y + 10} textAnchor="middle" fontSize={9} fill="var(--foreground)"><tspan x={x} fontWeight={600}>{a}</tspan>{b ? <tspan x={x} dy={11} fill="var(--muted-foreground)">{b}</tspan> : null}</text>; }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} />
     <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={28}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
       <LabelList dataKey="value" position="top" formatter={(v: number) => Math.round(v)} style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
   </BarChart></ResponsiveContainer>;
@@ -78,6 +78,8 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const monthlyData = monthly(filtered, types).filter((r) => !month || r.month === month);
   const PLANTS = rankBy(yearRows, (r) => r.plant, (r) => r.plantName, 1000);
   const plants = rankBy(filtered, (r) => r.plant, (r) => r.plantName);
+  const plantInfo = new Map<string, { full: string; sh: string }>();
+  for (const r of yearRows) { const e = plantInfo.get(r.plant); if (!e || (!e.sh && r.plantSh) || (!e.full && r.plantFull)) plantInfo.set(r.plant, { full: e?.full || r.plantFull || "", sh: e?.sh || r.plantSh || "" }); }
   const allGroups = rankBy(yearRows.filter((r) => !type || r.type === type), (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const groups = rankBy(filtered, (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const materials = rankBy(filtered, (r) => r.material, (r) => r.materialName);
@@ -161,7 +163,10 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
 
     <div className="grid grid-cols-1 gap-3">
       <Card title="Plant Analytics" sub={<span className="inline-flex items-center gap-1"><Factory className="size-3" />Top 10</span>}>
-        <Columns data={plants.map((p) => ({ name: p.code, value: p.value }))} height={150} /><CodeTable rows={plants} codeLabel="Plant Code" /></Card>
+        <Columns data={plants.map((p) => ({ name: plantInfo.get(p.code)?.sh ? `${p.code}\n${plantInfo.get(p.code)!.sh}` : p.code, value: p.value }))} height={170} />
+        <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Plant Name</th><th className="px-1.5 py-1 text-left">PLANT_SH</th><th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
+          <tbody>{plants.map((r, i) => <tr key={r.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{r.code}</td><td className="truncate px-1.5 py-0.5">{plantInfo.get(r.code)?.full || "-"}</td><td className="px-1.5 py-0.5">{plantInfo.get(r.code)?.sh || "-"}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{fmt(r.value)}</td></tr>)}</tbody>
+          <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={3}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(plants))}</td></tr></tfoot></table></Card>
     </div>
     <DetailsTable rows={filtered} />
   </div>;

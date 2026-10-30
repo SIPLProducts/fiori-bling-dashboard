@@ -4,7 +4,7 @@ import { MONTHS, PURCHASE_TYPES, type PurchaseType } from "@/lib/purchase-regist
 export type PurchaseRow = {
   date: string; plant: string; plantName: string; profitCenter: string; profitCenterName: string;
   vendor: string; vendorName: string; material: string; materialName: string; group: string; type: PurchaseType; value: number;
-  docNo?: string; grNo?: string;
+  docNo?: string; grNo?: string; plantFull?: string; plantSh?: string;
 };
 type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -17,7 +17,7 @@ export function toPurchaseRow(r: Rec): PurchaseRow {
   const tp = t(r.ty_purch).toLowerCase();
   const type: PurchaseType = tp.startsWith("imp") ? "Imported" : tp.startsWith("serv") ? "Service" : "Domestic";
   return {
-    date: t(r.budat), plant: t(r.werks), plantName: t(r.plant_sh) || t(r.name1_wer), profitCenter: t(r.prctr), profitCenterName: t(r.ptext),
+    date: t(r.budat), plant: t(r.werks), plantName: t(r.plant_sh) || t(r.name1_wer), plantFull: t(r.name1_wer), plantSh: t(r.plant_sh), profitCenter: t(r.prctr), profitCenterName: t(r.ptext),
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr), material: t(r.matnr), materialName: t(r.maktx) || t(r.matnr),
     group: t(r.ty_mat) || "Others", type, value: value / CR, docNo: t(r.belnr), grNo: t(r.mblnr),
   };
