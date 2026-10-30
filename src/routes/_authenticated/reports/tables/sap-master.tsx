@@ -103,10 +103,10 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
     </div>
 
     <div className="overflow-x-auto rounded-lg border bg-card">
-      <table className="w-full text-sm">
-        <thead className="bg-muted"><tr>{cols.map((c) => <th key={c} className="whitespace-nowrap px-3 py-2 text-left font-semibold">{c}</th>)}</tr></thead>
+      <table className="w-full text-xs">
+        <thead className="sticky top-0 z-10 bg-primary text-primary-foreground"><tr>{cols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}</tr></thead>
         <tbody>
-          {view.map((r, i) => <tr key={i} className="border-t">{cols.map((c) => <td key={c} className="whitespace-nowrap px-3 py-1.5">{r[c] ?? ""}</td>)}</tr>)}
+          {view.map((r, i) => <tr key={i} className="border-t odd:bg-muted/40 hover:bg-accent/50">{cols.map((c) => <td key={c} className="whitespace-nowrap px-2.5 py-1">{r[c] ?? ""}</td>)}</tr>)}
           {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create your first master." : "No masters uploaded yet."}</td></tr>}
         </tbody>
       </table>
