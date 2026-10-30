@@ -34,7 +34,7 @@ function Columns({ data, height = 170 }: { data: { name: string; value: number }
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <ResponsiveContainer width="100%" height={height}><BarChart data={data} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>{grad(id)}
     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
-    <XAxis dataKey="name" interval={0} tick={{ fontSize: 9, fontWeight: 600 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)} Cr`} />
+    <XAxis dataKey="name" interval={0} tick={{ fontSize: 9, fontWeight: 600 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} />
     <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={28}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
       <LabelList dataKey="value" position="top" formatter={(v: number) => Math.round(v)} style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
   </BarChart></ResponsiveContainer>;
@@ -42,21 +42,21 @@ function Columns({ data, height = 170 }: { data: { name: string; value: number }
 
 function RankList({ data }: { data: { name: string; code?: string; extra?: string; value: number }[] }) {
   const max = Math.max(...data.map((d) => d.value), 1);
-  return <div className="text-[10px]"><p className="mb-1 text-right text-muted-foreground">₹ Cr</p>
-    <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name + i} className="grid grid-cols-[minmax(0,45%)_minmax(0,1fr)_auto] items-center gap-2" title={`${d.name}${d.code ? ` (${d.code})` : ""}: ₹ ${fmt(d.value)} Cr`}>
+  return <div className="text-[10px]">
+    <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name + i} className="grid grid-cols-[minmax(0,45%)_minmax(0,1fr)_auto] items-center gap-2" title={`${d.name}${d.code ? ` (${d.code})` : ""}: ₹ ${fmt(d.value)}`}>
       <span className="min-w-0"><span className="block truncate text-foreground">{d.name}</span>{d.code || d.extra ? <span className="block truncate text-[9px] text-muted-foreground">{[d.code, d.extra].filter(Boolean).join(" · ")}</span> : null}</span>
       <span className="h-2 rounded-full" style={{ width: `${Math.max(3, (d.value / max) * 100)}%`, background: `linear-gradient(90deg, ${COLORS[i % COLORS.length]}99, ${COLORS[i % COLORS.length]})` }} />
       <b className="text-right text-foreground">{fmt(d.value)}</b></li>)}</ul></div>;
 }
 
 function CodeTable({ rows, codeLabel }: { rows: { code: string; name: string; value: number }[]; codeLabel: string }) {
-  return <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">{codeLabel}</th><th className="px-1.5 py-1 text-left">Name</th><th className="px-1.5 py-1 text-right">Amount (₹ Cr)</th></tr></thead>
+  return <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">{codeLabel}</th><th className="px-1.5 py-1 text-left">Name</th><th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
     <tbody>{rows.map((r, i) => <tr key={r.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{r.code}</td><td className="truncate px-1.5 py-0.5">{r.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{fmt(r.value)}</td></tr>)}</tbody>
     <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
 }
 
 function DataTable({ cols, rows }: { cols: string[]; rows: { cells: string[]; value: number }[] }) {
-  return <table className="mt-2 w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr>{cols.map((c) => <th key={c} className="px-1.5 py-1 text-left">{c}</th>)}<th className="px-1.5 py-1 text-right">Amount (₹ Cr)</th></tr></thead>
+  return <table className="mt-2 w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr>{cols.map((c) => <th key={c} className="px-1.5 py-1 text-left">{c}</th>)}<th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
     <tbody>{rows.map((r, i) => <tr key={i} className={`border-t border-border/60 ${i % 2 ? "bg-muted/40" : ""}`}>{r.cells.map((c, j) => <td key={j} className={`px-1.5 py-0.5 ${j === 0 ? "font-medium text-primary" : ""}`}>{c}</td>)}<td className="px-1.5 py-0.5 text-right tabular-nums">{fmt(r.value)}</td></tr>)}</tbody>
     <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1" colSpan={cols.length}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(rows))}</td></tr></tfoot></table>;
 }
@@ -87,7 +87,6 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const groups = rankBy(filtered, (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const materials = rankBy(filtered, (r) => r.material, (r) => r.materialName);
   const vendors = rankBy(filtered, (r) => r.vendor, (r) => r.vendorName);
-  const pcs = rankBy(filtered, (r) => r.profitCenter, (r) => r.profitCenterName);
   const qData = quarters(filtered, prevRows);
   const done = qData.filter((q) => q.current !== 0);
   const prevSum = done.reduce((s, q) => s + q.previous, 0);
@@ -108,35 +107,35 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date From<input type="date" className={sel} value={postFrom} max={postTo || undefined} onChange={(e) => setPostFrom(e.target.value)} aria-label="Posting Date From" /></label>
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date To<input type="date" className={sel} value={postTo} min={postFrom || undefined} onChange={(e) => setPostTo(e.target.value)} aria-label="Posting Date To" /></label>
       <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setYear(null); setType(""); setMonth(""); setPlant(""); setGroup(""); setPostFrom(""); setPostTo(""); }}>Reset</Button>
-      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{filtered.length.toLocaleString("en-IN")} lines · ₹ values in Crores</span>
+      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{filtered.length.toLocaleString("en-IN")} lines</span>
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)} Cr`} tone="var(--chart-1)" />
-      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)} Cr`} tone="var(--chart-2)" />
-      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)} Cr`} tone="var(--chart-4)" />
-      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)} Cr`} tone="var(--chart-3)" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)}`} tone="var(--chart-1)" />
+      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)}`} tone="var(--chart-2)" />
+      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)}`} tone="var(--chart-4)" />
+      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)}`} tone="var(--chart-3)" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
-      <Card title="Purchase Trend" sub="Monthly · ₹ Cr"><Columns data={monthlyData.map((r) => ({ name: r.month, value: r.total }))} /></Card>
+      <Card title="Purchase Trend" sub="Monthly"><Columns data={monthlyData.map((r) => ({ name: r.month, value: r.total }))} /></Card>
       <Card title="Purchase by Type" sub="Click to filter">
         <div className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] items-center gap-2">
           <div className="relative"><ResponsiveContainer width="100%" height={150}><PieChart>{grad(id)}
             <Pie data={typeData.filter((d) => d.value > 0)} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} onClick={(d: { name: PurchaseType }) => setType(type === d.name ? "" : d.name)}>
               {typeData.filter((d) => d.value > 0).map((d) => <Cell key={d.name} className="cursor-pointer" fill={`url(#${id}-${TYPE_COLOR[d.name]})`} />)}</Pie>
-            <Tooltip formatter={(v: number) => `₹ ${fmt(v)} Cr`} /></PieChart></ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight">₹ {Math.round(total).toLocaleString("en-IN")} Cr</div></div>
+            <Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} /></PieChart></ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-[10px] font-bold leading-tight">₹ {Math.round(total).toLocaleString("en-IN")}</div></div>
           <ul className="space-y-1 text-[10px]">{typeData.map((d) => <li key={d.name}><button type="button" onClick={() => setType(type === d.name ? "" : d.name)} className="flex w-full items-center gap-1 text-left"><span className="size-2 rounded-full" style={{ background: COLORS[TYPE_COLOR[d.name]] }} />{d.name}<b className="ml-auto">{fmt(d.value)}</b></button></li>)}</ul>
         </div>
       </Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card title="Top Materials" sub="Amount in ₹ Cr"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, value: m.value }))} />
-        <DataTable cols={["Material Code", "Material Name", "Material Group"]} rows={materials.map((m) => ({ cells: [m.code || "-", m.name, m.group], value: m.value }))} /></Card>
-      <Card title="Top Vendors" sub="Amount in ₹ Cr"><RankList data={vendors} />
-        <DataTable cols={["Vendor Code", "Vendor Name"]} rows={vendors.map((v) => ({ cells: [v.code || "-", v.name], value: v.value }))} /></Card>
+      <Card title="Top Materials"><RankList data={materials.map((m) => ({ name: m.name, code: m.code, value: m.value }))} />
+        <DataTable cols={["Material Name", "Material Group"]} rows={materials.map((m) => ({ cells: [m.name, m.group], value: m.value }))} /></Card>
+      <Card title="Top Vendors"><RankList data={vendors} />
+        <DataTable cols={["Vendor Name"]} rows={vendors.map((v) => ({ cells: [v.name], value: v.value }))} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -144,34 +143,32 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
         <div className="relative"><ResponsiveContainer width="100%" height={200}><PieChart>{grad(`${id}g`)}
           <Pie data={groups} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="92%" paddingAngle={1} onClick={(d: { name: string }) => setGroup(group === d.name ? "" : d.name)}>
             {groups.map((g) => <Cell key={g.name} className="cursor-pointer" fill={`url(#${id}g-${allGroups.findIndex((x) => x.name === g.name) % COLORS.length})`} />)}</Pie>
-          <Tooltip formatter={(v: number) => `₹ ${fmt(v)} Cr`} /></PieChart></ResponsiveContainer>
+          <Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} /></PieChart></ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-center"><div><p className="text-[9px] text-muted-foreground">TOTAL</p><p className="text-sm font-bold">{fmt(sumValues(groups))}</p></div></div></div>
       </Card>
-      <Card title="Material Group Summary" sub="Amount in ₹ Cr">
-        <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">Material Group</th><th className="px-1.5 py-1 text-right">Amount (₹ Cr)</th></tr></thead>
+      <Card title="Material Group Summary">
+        <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">Material Group</th><th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
           <tbody>{groups.map((g, i) => <tr key={g.name} className={`cursor-pointer border-t border-border/60 ${i % 2 ? "bg-muted/40" : ""}`} onClick={() => setGroup(group === g.name ? "" : g.name)}><td className="px-1.5 py-1"><span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: COLORS[allGroups.findIndex((x) => x.name === g.name) % COLORS.length] }} />{g.name}</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(g.value)}</td></tr>)}</tbody>
           <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td className="px-1.5 py-1">Total</td><td className="px-1.5 py-1 text-right tabular-nums">{fmt(sumValues(groups))}</td></tr></tfoot></table>
       </Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card title="Monthly Expenditure" sub="Amount in ₹ Cr"><ResponsiveContainer width="100%" height={180}><BarChart data={monthlyData} margin={{ top: 8, left: -16, right: 4, bottom: 0 }}>{grad(`${id}m`)}
+      <Card title="Monthly Expenditure"><ResponsiveContainer width="100%" height={180}><BarChart data={monthlyData} margin={{ top: 8, left: -16, right: 4, bottom: 0 }}>{grad(`${id}m`)}
         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="month" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Legend wrapperStyle={{ fontSize: 10 }} />
         {types.map((t) => <Bar key={t} dataKey={t} stackId="m" fill={`url(#${id}m-${TYPE_COLOR[t]})`} />)}
       </BarChart></ResponsiveContainer></Card>
       <Card title="Quarterly Comparison" sub={<span>{curL} vs {prevL} · <b className={yoy < 0 ? "text-destructive" : "text-success"}>{yoy < 0 ? "▼" : "▲"} {Math.abs(yoy)}% YoY</b></span>}>
         <ResponsiveContainer width="100%" height={180}><BarChart data={qData} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>{grad(`${id}q`)}
-          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)} Cr`} /><Legend wrapperStyle={{ fontSize: 10 }} />
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} /><Legend wrapperStyle={{ fontSize: 10 }} />
           <Bar dataKey="current" name={curL} fill={`url(#${id}q-0)`} radius={[3, 3, 0, 0]} maxBarSize={26}><LabelList dataKey="current" position="top" style={{ fontSize: 8, fill: "var(--primary)" }} /></Bar>
           <Bar dataKey="previous" name={prevL} fill={`url(#${id}q-3)`} radius={[3, 3, 0, 0]} maxBarSize={26}><LabelList dataKey="previous" position="top" style={{ fontSize: 8, fill: "var(--muted-foreground)" }} /></Bar>
         </BarChart></ResponsiveContainer></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card title="Plant Analytics" sub={<span className="inline-flex items-center gap-1"><Factory className="size-3" />Top 10 · ₹ Cr</span>}>
+    <div className="grid grid-cols-1 gap-3">
+      <Card title="Plant Analytics" sub={<span className="inline-flex items-center gap-1"><Factory className="size-3" />Top 10</span>}>
         <Columns data={plants.map((p) => ({ name: p.code, value: p.value }))} height={150} /><CodeTable rows={plants} codeLabel="Plant Code" /></Card>
-      <Card title="Profit Center Analytics" sub="Top 10 · ₹ Cr">
-        <Columns data={pcs.map((p) => ({ name: p.code.slice(-5), value: p.value }))} height={150} /><CodeTable rows={pcs} codeLabel="Profit Center" /></Card>
     </div>
     <DetailsTable rows={filtered} />
   </div>;
@@ -189,7 +186,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
-    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount (NET_AMT) Cr"]);
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount"]);
     h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
     list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, Number(r.value.toFixed(4))]));
     sh.columns.forEach((c) => { c.width = 20; });
@@ -197,7 +194,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount (NET_AMT) Cr"];
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount"];
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Purchase Register Details</h2>
