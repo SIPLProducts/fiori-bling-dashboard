@@ -92,7 +92,7 @@ export async function getMasterOptions(masterName: string, column: string): Prom
   const { data: m } = await supabase.from("sap_masters").select("id").eq("name", masterName).maybeSingle();
   if (!m) return [];
   const rows = await getMasterRows(m.id);
-  return [...new Set(rows.map((r) => r[column]).filter(Boolean))].sort();
+  return [...new Set(rows.map((r) => r[column] ?? "").filter(Boolean))].sort();
 }
 
 export async function uploadSheet(sheet: ParsedSheet, keyColumn: string, onProgress: (done: number, total: number) => void) {
