@@ -7,6 +7,7 @@
 - The app cannot show a value that SAP never sent. Nothing is being dropped while saving: I tested the save step with a sample line containing PLANT_SH = "VZM" and it saved "VZM".
 
 ## Steps
+0. **Rename column:** in the Plant Analytics table, rename the "PLANT_SH" column header to "Short Name".
 1. **SAP side (your team):** confirm the Purchase Register API on the SAP system used for the preview (same SAP client and endpoint URL as in SAP API Settings) now returns `PLANT_SH`. Its new field may be on a different client or not transported yet.
 2. **Re-sync:** once SAP returns it, click **Sync** on Purchase Register. Matching lines are updated and PLANT_SH appears under the bars and in the table.
 3. **Check:** I query the database again to confirm PLANT_SH is filled, then check the screen.
