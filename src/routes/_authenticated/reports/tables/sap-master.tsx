@@ -77,6 +77,7 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
       }
       setSheets(null);
       await qc.invalidateQueries({ queryKey: ["sap-masters"] });
+      await qc.invalidateQueries({ queryKey: ["sap-master-rows"] });
     } catch (e) { toast.error(`Upload failed: ${(e as Error).message}`); }
     finally { setBusy(null); }
   };

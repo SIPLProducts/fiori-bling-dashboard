@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModuleComingSoon } from "@/components/module-coming-soon";
+import { useState } from "react";
+import { InventoryMasterFilters, type InventoryFilters } from "@/components/inventory-master-filters";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -18,8 +19,9 @@ export const Route = createFileRoute("/_authenticated/reports/inv/inventory-agin
 
 function Page() {
   const { data, isLoading } = useLaunchpad();
+  const [filters, setFilters] = useState<InventoryFilters>({});
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "inv.inventory-aging");
   return <ReportShell title="Inventory Aging" description="Inventory">
-    {!isLoading && !allowed ? <AccessDenied area="Inventory Aging" /> : <ModuleComingSoon title="Inventory Aging" />}
+    {!isLoading && !allowed ? <AccessDenied area="Inventory Aging" /> : <><InventoryMasterFilters value={filters} onChange={setFilters} /><div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">Inventory Aging data will appear here once the SAP API is connected.</div></>}
   </ReportShell>;
 }
