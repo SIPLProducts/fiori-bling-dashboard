@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, R
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
-import { fyLabel, fyOf, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
+import { currentFy, fyLabel, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const TYPE_COLOR: Record<PurchaseType, number> = { Domestic: 0, Imported: 3, Service: 4 };
@@ -63,10 +63,8 @@ function DataTable({ cols, rows }: { cols: string[]; rows: { cells: string[]; va
 
 const sel = "h-8 rounded-md border border-border bg-background px-2 text-xs";
 
-export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
-  const years = useMemo(() => [...new Set(rows.filter((r) => r.date).map((r) => fyOf(r.date)))].sort((a, b) => b - a), [rows]);
-  const [yearSel, setYear] = useState<number | null>(null);
-  const year = yearSel ?? years[0] ?? null;
+export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onYear }: { rows: PurchaseRow[]; prevYearRows: PurchaseRow[]; years: number[]; year: number; onYear: (y: number) => void }) {
+  const setYear = (y: number | null) => onYear(y ?? currentFy());
   const [type, setType] = useState<"" | PurchaseType>("");
   const [month, setMonth] = useState("");
   const [plant, setPlant] = useState("");
@@ -76,10 +74,10 @@ export function PurchaseRegisterDashboard({ rows }: { rows: PurchaseRow[] }) {
   const types = type ? [type] : PURCHASE_TYPES;
   const base = (r: PurchaseRow) => (!plant || r.plant === plant) && (!group || r.group === group) && (!month || monthOf(r.date) === month)
     && (!postFrom || r.date >= postFrom) && (!postTo || r.date <= postTo);
-  const yearRows = useMemo(() => rows.filter((r) => year == null || fyOf(r.date) === year), [rows, year]);
+  const yearRows = rows;
   const noType = useMemo(() => yearRows.filter(base), [yearRows, plant, group, month, postFrom, postTo]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => noType.filter((r) => !type || r.type === type), [noType, type]);
-  const prevRows = useMemo(() => rows.filter((r) => year != null && fyOf(r.date) === year - 1 && base(r) && (!type || r.type === type)), [rows, year, plant, group, month, postFrom, postTo, type]); // eslint-disable-line react-hooks/exhaustive-deps
+  const prevRows = useMemo(() => prevYearRows.filter((r) => base(r) && (!type || r.type === type)), [prevYearRows, plant, group, month, postFrom, postTo, type]); // eslint-disable-line react-hooks/exhaustive-deps
   const TYPE_TOTALS = typeTotals(noType);
   const TOTAL_PURCHASE = sumValues(PURCHASE_TYPES.map((t) => ({ value: TYPE_TOTALS[t] })));
   const monthlyData = monthly(filtered, types).filter((r) => !month || r.month === month);
