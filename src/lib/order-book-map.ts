@@ -4,6 +4,7 @@
  * Rows are upserted on VBELN + POSNR (no snapshots). Browser/worker/Node safe.
  */
 
+import { sapGroupColumns } from "./sap-group-fields";
 /** SAP key → column for identity/access fields. */
 const RENAMED: Record<string, string> = {
   VBELN: "sales_order",

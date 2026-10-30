@@ -477,6 +477,30 @@ function mapZcashFlowPayload(payload, endpointName, now = /* @__PURE__ */ new Da
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/sap-group-fields.ts
+function pick3(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function first(raw, keys) {
+  for (const k of keys) {
+    const v = pick3(raw, k);
+    if (v === void 0 || v === null || typeof v === "object") continue;
+    const s = String(v).trim();
+    if (s) return s;
+  }
+  return null;
+}
+function sapGroupColumns(raw) {
+  return {
+    mngrp1: first(raw, ["MNGRP1", "MAIN_GRP"]),
+    pcgrp1: first(raw, ["PCGRP1", "SUB_GRP"]),
+    pcgrp2: first(raw, ["PCGRP2", "SUB_GRP2"]),
+    pcgrp3: first(raw, ["PCGRP3", "SUB_GRP3"])
+  };
+}
+
 // ../src/lib/order-book-map.ts
 var RENAMED = {
   VBELN: "sales_order",
@@ -596,7 +620,7 @@ var orderBookColumn = (sapKey) => RENAMED[sapKey] ?? sapKey.toLowerCase();
 function isOrderBookEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook");
 }
-function pick3(raw, key) {
+function pick4(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
@@ -642,16 +666,17 @@ function mapOrderBookPayload(payload, endpointName, now = /* @__PURE__ */ new Da
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const vbeln = text2(pick3(raw, "VBELN"));
-    const posnr = text2(pick3(raw, "POSNR"));
+    const vbeln = text2(pick4(raw, "VBELN"));
+    const posnr = text2(pick4(raw, "POSNR"));
     if (!vbeln || !posnr) {
       invalid++;
       continue;
     }
     const row = { sales_order: vbeln, sales_order_item: posnr, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of ORDER_BOOK_TEXT_FIELDS) if (k !== "VBELN" && k !== "POSNR") row[orderBookColumn(k)] = text2(pick3(raw, k));
-    for (const k of ORDER_BOOK_NUMERIC_FIELDS) row[orderBookColumn(k)] = orderBookNum(pick3(raw, k));
-    for (const k of ORDER_BOOK_DATE_FIELDS) row[orderBookColumn(k)] = orderBookDate(pick3(raw, k));
+    for (const k of ORDER_BOOK_TEXT_FIELDS) if (k !== "VBELN" && k !== "POSNR") row[orderBookColumn(k)] = text2(pick4(raw, k));
+    for (const k of ORDER_BOOK_NUMERIC_FIELDS) row[orderBookColumn(k)] = orderBookNum(pick4(raw, k));
+    for (const k of ORDER_BOOK_DATE_FIELDS) row[orderBookColumn(k)] = orderBookDate(pick4(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${vbeln}|${posnr}`, row);
   }
   const rows = [...byKey.values()];
@@ -666,7 +691,7 @@ function isSitEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
   return n.includes("salesintransit") || n === "sit" || n === "zsit" || /(^|[^a-z])z?_?sit([^a-z]|$)/i.test(name ?? "");
 }
-function pick4(raw, key) {
+function pick5(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
@@ -694,16 +719,17 @@ function mapSitPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) 
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const vbeln = text3(pick4(raw, "VBELN"));
-    const posnr = text3(pick4(raw, "POSNR"));
+    const vbeln = text3(pick5(raw, "VBELN"));
+    const posnr = text3(pick5(raw, "POSNR"));
     if (!vbeln || !posnr) {
       invalid++;
       continue;
     }
     const row = { vbeln, posnr, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of SIT_TEXT_FIELDS) row[k.toLowerCase()] = text3(pick4(raw, k));
-    for (const k of SIT_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick4(raw, k));
-    for (const k of SIT_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick4(raw, k));
+    for (const k of SIT_TEXT_FIELDS) row[k.toLowerCase()] = text3(pick5(raw, k));
+    for (const k of SIT_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick5(raw, k));
+    for (const k of SIT_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick5(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${vbeln}|${posnr}`, row);
   }
   const rows = [...byKey.values()];
@@ -717,7 +743,7 @@ var SALES_REGISTER_DATE_FIELDS = ["ERDAT", "FKDAT", "BSTDK", "FKDAT_BILL", "EXDA
 function isSalesRegisterEndpoint(name) {
   return (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister");
 }
-function pick5(raw, key) {
+function pick6(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
@@ -745,16 +771,17 @@ function mapSalesRegisterPayload(payload, endpointName, now = /* @__PURE__ */ ne
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const vbeln = text4(pick5(raw, "VBELN"));
-    const posnr = text4(pick5(raw, "POSNR"));
+    const vbeln = text4(pick6(raw, "VBELN"));
+    const posnr = text4(pick6(raw, "POSNR"));
     if (!vbeln || !posnr) {
       invalid++;
       continue;
     }
     const row = { vbeln, posnr, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of SALES_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text4(pick5(raw, k));
-    for (const k of SALES_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick5(raw, k));
-    for (const k of SALES_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick5(raw, k));
+    for (const k of SALES_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text4(pick6(raw, k));
+    for (const k of SALES_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick6(raw, k));
+    for (const k of SALES_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick6(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${vbeln}|${posnr}`, row);
   }
   const rows = [...byKey.values()];
@@ -768,7 +795,7 @@ var PURCHASE_REGISTER_DATE_FIELDS = ["BUDAT", "AEDAT", "CREATE_DT"];
 function isPurchaseRegisterEndpoint(name) {
   return (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase().includes("purchaseregister");
 }
-function pick6(raw, key) {
+function pick7(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
@@ -792,18 +819,18 @@ function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const belnr = text5(pick6(raw, "BELNR"));
+    const belnr = text5(pick7(raw, "BELNR"));
     if (!belnr) {
       invalid++;
       continue;
     }
-    const buzei = text5(pick6(raw, "BUZEI")) ?? "";
-    const mblnr = text5(pick6(raw, "MBLNR")) ?? "";
-    const zeile = text5(pick6(raw, "ZEILE")) ?? "";
+    const buzei = text5(pick7(raw, "BUZEI")) ?? "";
+    const mblnr = text5(pick7(raw, "MBLNR")) ?? "";
+    const zeile = text5(pick7(raw, "ZEILE")) ?? "";
     const row = { belnr, buzei, mblnr, zeile, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of PURCHASE_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text5(pick6(raw, k));
-    for (const k of PURCHASE_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick6(raw, k));
-    for (const k of PURCHASE_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick6(raw, k));
+    for (const k of PURCHASE_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text5(pick7(raw, k));
+    for (const k of PURCHASE_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick7(raw, k));
+    for (const k of PURCHASE_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick7(raw, k));
     byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
   }
   const rows = [...byKey.values()];
