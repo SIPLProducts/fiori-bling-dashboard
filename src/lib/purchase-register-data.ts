@@ -23,20 +23,75 @@ export function toPurchaseRow(r: Rec): PurchaseRow {
   };
 }
 
-export async function getPurchaseRows(): Promise<PurchaseRow[]> {
-  const out: Rec[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await supabase.from("purchase_register")
-      .select("belnr,buzei,mblnr,zeile,budat,werks,name1_wer,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt")
-      .order("belnr").order("buzei").order("mblnr").order("zeile").range(from, from + 999);
-    if (error) throw new Error(`Unable to load Purchase Register: ${error.message}`);
-    out.push(...((data ?? []) as unknown as Rec[]));
-    if (!data || data.length < 1000) break;
-  }
-  return out.map(toPurchaseRow);
+const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt";
+const PAGE = 1000, CONCURRENCY = 8;
+
+/** April–March FY window (YYYY-MM-DD). */
+export const fyRange = (y: number) => ({ from: `${y}-04-01`, to: `${y + 1}-03-31` });
+/** Current FY start year in IST. */
+export const currentFy = (now = new Date()) => {
+  const ist = new Date(now.getTime() + 330 * 60000);
+  const y = ist.getUTCFullYear(), m = ist.getUTCMonth() + 1;
+  return m >= 4 ? y : y - 1;
+};
+
+/** Rows for one FY only, using the budat index and parallel pages. */
+export async function getPurchaseRows(fy: number): Promise<PurchaseRow[]> {
+  const { from, to } = fyRange(fy);
+  const head = await supabase.from("purchase_register").select("id", { count: "exact", head: true }).gte("budat", from).lte("budat", to);
+  if (head.error) throw new Error(`Unable to load Purchase Register: ${head.error.message}`);
+  const total = head.count ?? 0;
+  const offsets: number[] = [];
+  for (let o = 0; o < total; o += PAGE) offsets.push(o);
+  const pages: Rec[][] = new Array(offsets.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < offsets.length) {
+      const i = next++, o = offsets[i]!;
+      const { data, error } = await supabase.from("purchase_register").select(COLS).gte("budat", from).lte("budat", to)
+        .order("budat").order("id").range(o, o + PAGE - 1);
+      if (error) throw new Error(`Unable to load Purchase Register: ${error.message}`);
+      pages[i] = (data ?? []) as unknown as Rec[];
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, offsets.length) }, worker));
+  return pages.flat().map(toPurchaseRow);
 }
 
-export const purchaseRegisterQuery = { queryKey: ["purchase-register", "v4-net-amt"], queryFn: getPurchaseRows, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false } as const;
+const stable = { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false } as const;
+
+export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v5-fy", fy], queryFn: () => getPurchaseRows(fy), ...stable });
+
+export const purchaseRegisterYearsQuery = {
+  queryKey: ["purchase-register", "v5-years"],
+  queryFn: async (): Promise<number[]> => {
+    const { data, error } = await supabase.rpc("purchase_register_fiscal_years");
+    if (error) throw new Error(error.message);
+    const ys = ((data ?? []) as { fy_start: number }[]).map((r) => r.fy_start);
+    const cur = currentFy();
+    return ys.includes(cur) ? ys : [cur, ...ys].sort((a, b) => b - a);
+  },
+  ...stable,
+};
+
+export type PurchaseKpis = { by: { name: PurchaseType; count: number; value: number }[]; total: number; count: number };
+/** Launchpad totals for the current FY, aggregated in the database (3 rows). */
+export const purchaseRegisterKpiQuery = {
+  queryKey: ["purchase-register", "v5-kpis"],
+  queryFn: async (): Promise<PurchaseKpis> => {
+    const { from, to } = fyRange(currentFy());
+    const { data, error } = await supabase.rpc("purchase_register_kpis", { _from: from, _to: to });
+    if (error) throw new Error(error.message);
+    const by = PURCHASE_TYPES.map((t) => ({ name: t, count: 0, value: 0 }));
+    for (const r of (data ?? []) as { ty_purch: string; line_count: number; total_value: number }[]) {
+      const tp = String(r.ty_purch).toLowerCase();
+      const k = tp.startsWith("imp") ? 1 : tp.startsWith("serv") ? 2 : 0;
+      by[k]!.count += Number(r.line_count) || 0; by[k]!.value += (Number(r.total_value) || 0) / CR;
+    }
+    return { by, total: by.reduce((a, b) => a + b.value, 0), count: by.reduce((a, b) => a + b.count, 0) };
+  },
+  ...stable,
+};
 
 /** FY start year (April–March) for a YYYY-MM-DD date. */
 export const fyOf = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return m >= 4 ? y : y - 1; };
