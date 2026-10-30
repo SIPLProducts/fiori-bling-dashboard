@@ -34,7 +34,7 @@ function Columns({ data, height = 170 }: { data: { name: string; value: number }
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <ResponsiveContainer width="100%" height={height}><BarChart data={data} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>{grad(id)}
     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
-    <XAxis dataKey="name" interval={0} tick={{ fontSize: 9, fontWeight: 600 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} />
+    <XAxis dataKey="name" interval={0} height={30} tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => { const [a, b] = String(payload.value).split("\n"); return <text x={x} y={y + 10} textAnchor="middle" fontSize={9} fill="var(--foreground)"><tspan x={x} fontWeight={600}>{a}</tspan>{b ? <tspan x={x} dy={11} fill="var(--muted-foreground)">{b}</tspan> : null}</text>; }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => `₹ ${fmt(v)}`} />
     <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={28}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
       <LabelList dataKey="value" position="top" formatter={(v: number) => Math.round(v)} style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
   </BarChart></ResponsiveContainer>;
