@@ -6,7 +6,7 @@ export type PurchaseRow = {
   vendor: string; vendorName: string; material: string; materialName: string; group: string; type: PurchaseType; value: number;
   docNo?: string; grNo?: string;
 };
-type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
+type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const CR = 1e7;
 
@@ -17,13 +17,13 @@ export function toPurchaseRow(r: Rec): PurchaseRow {
   const tp = t(r.ty_purch).toLowerCase();
   const type: PurchaseType = tp.startsWith("imp") ? "Imported" : tp.startsWith("serv") ? "Service" : "Domestic";
   return {
-    date: t(r.budat), plant: t(r.werks), plantName: t(r.name1_wer), profitCenter: t(r.prctr), profitCenterName: t(r.ptext),
+    date: t(r.budat), plant: t(r.werks), plantName: t(r.plant_sh) || t(r.name1_wer), profitCenter: t(r.prctr), profitCenterName: t(r.ptext),
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr), material: t(r.matnr), materialName: t(r.maktx) || t(r.matnr),
     group: t(r.ty_mat) || "Others", type, value: value / CR, docNo: t(r.belnr), grNo: t(r.mblnr),
   };
 }
 
-const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt";
+const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,plant_sh,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt";
 const PAGE = 1000, CONCURRENCY = 8;
 
 /** April–March FY window (YYYY-MM-DD). */
@@ -60,7 +60,7 @@ export async function getPurchaseRows(fy: number): Promise<PurchaseRow[]> {
 
 const stable = { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false } as const;
 
-export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v5-fy", fy], queryFn: () => getPurchaseRows(fy), ...stable });
+export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v6-plant-sh", fy], queryFn: () => getPurchaseRows(fy), ...stable });
 
 export const purchaseRegisterYearsQuery = {
   queryKey: ["purchase-register", "v5-years"],

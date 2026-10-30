@@ -4,7 +4,7 @@
  */
 import { orderBookDate, orderBookNum } from "./order-book-map";
 
-export const PURCHASE_REGISTER_TEXT_FIELDS = ["WERKS", "NAME1_WER", "PRCTR", "PTEXT", "LIFNR", "NAME1", "MTBEZ", "MATNR", "MAKTX", "MEINS_I", "MWSKZ", "TEXT1_M", "BWART", "MEINS_G", "WAERS", "SHKZG", "TY_PURCH", "TY_MAT"] as const;
+export const PURCHASE_REGISTER_TEXT_FIELDS = ["WERKS", "NAME1_WER", "PLANT_SH", "PRCTR", "PTEXT", "LIFNR", "NAME1", "MTBEZ", "MATNR", "MAKTX", "MEINS_I", "MWSKZ", "TEXT1_M", "BWART", "MEINS_G", "WAERS", "SHKZG", "TY_PURCH", "TY_MAT"] as const;
 export const PURCHASE_REGISTER_NUMERIC_FIELDS = ["MENGE_I", "MENGE_G", "WRBTR", "KURSF", "DIS", "OTH", "PLAN_DEL", "TAX", "SGST", "CGST", "IGST", "NO_CR", "GL_ACC", "TOTAL", "NET_AMT", "GROSS_PRICE", "NET_PRICE"] as const;
 export const PURCHASE_REGISTER_DATE_FIELDS = ["BUDAT", "AEDAT", "CREATE_DT"] as const;
 

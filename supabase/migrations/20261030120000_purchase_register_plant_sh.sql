@@ -1,0 +1,2 @@
+ALTER TABLE public.purchase_register ADD COLUMN IF NOT EXISTS plant_sh text;
+UPDATE public.purchase_register SET plant_sh = NULLIF(trim(raw->>'PLANT_SH'), '') WHERE plant_sh IS NULL AND raw ? 'PLANT_SH';
