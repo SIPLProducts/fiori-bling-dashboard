@@ -5,8 +5,10 @@ export type PurchaseRow = {
   date: string; plant: string; plantName: string; profitCenter: string; profitCenterName: string;
   vendor: string; vendorName: string; material: string; materialName: string; group: string; type: PurchaseType; value: number;
   docNo?: string; grNo?: string; plantFull?: string; plantSh?: string;
+  /** Quantity (MENGE_I), unit (MEINS_I) and ₹ per unit (net value ÷ qty, else NET_PRICE). */
+  qty?: number; unit?: string; rate?: number;
 };
-type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt", string | number | null>>;
+type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt" | "menge_i" | "meins_i" | "net_price", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const CR = 1e7;
 
@@ -14,16 +16,18 @@ const CR = 1e7;
 export function toPurchaseRow(r: Rec): PurchaseRow {
   const raw = Number(r.net_amt) || 0;
   const value = t(r.shkzg).toUpperCase() === "H" && raw > 0 ? -raw : raw;
+  const qty = Math.abs(Number(r.menge_i) || 0);
   const tp = t(r.ty_purch).toLowerCase();
   const type: PurchaseType = tp.startsWith("imp") ? "Imported" : tp.startsWith("serv") ? "Service" : "Domestic";
   return {
     date: t(r.budat), plant: t(r.werks), plantName: t(r.plant_sh) || t(r.name1_wer), plantFull: t(r.name1_wer), plantSh: t(r.plant_sh), profitCenter: t(r.prctr), profitCenterName: t(r.ptext),
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr), material: t(r.matnr), materialName: t(r.maktx) || t(r.matnr),
     group: t(r.ty_mat) || "Others", type, value: value / CR, docNo: t(r.belnr), grNo: t(r.mblnr),
+    qty, unit: t(r.meins_i), rate: qty > 0 && raw > 0 ? raw / qty : Number(r.net_price) || 0,
   };
 }
 
-const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,plant_sh,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt";
+const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,plant_sh,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt,menge_i,meins_i,net_price";
 const PAGE = 1000, CONCURRENCY = 8;
 
 /** April–March FY window (YYYY-MM-DD). */
@@ -60,7 +64,7 @@ export async function getPurchaseRows(fy: number): Promise<PurchaseRow[]> {
 
 const stable = { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false } as const;
 
-export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v6-plant-sh", fy], queryFn: () => getPurchaseRows(fy), ...stable });
+export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v7-qty-rate", fy], queryFn: () => getPurchaseRows(fy), ...stable });
 
 export const purchaseRegisterYearsQuery = {
   queryKey: ["purchase-register", "v5-years"],
