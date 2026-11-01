@@ -2,6 +2,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { MaterialTrendSection } from "@/components/material-trend-card";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { currentFy, fyLabel, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
@@ -132,6 +133,8 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <Card title="Top Materials"><RankList data={materials.map((m) => ({ name: m.name, value: m.value }))} /></Card>
       <Card title="Top Vendors"><RankList data={vendors.map((v) => ({ name: v.name, value: v.value }))} /></Card>
     </div>
+
+    <MaterialTrendSection rows={filtered} />
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Material Group" sub={<span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">Click to filter</span>}>
