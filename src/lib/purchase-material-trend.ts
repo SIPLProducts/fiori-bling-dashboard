@@ -106,3 +106,20 @@ export function vendorSplit(rows: PurchaseRow[]) {
   for (const r of rows) if (r.value > 0) m.set(r.vendorName || r.vendor, (m.get(r.vendorName || r.vendor) ?? 0) + r.value);
   return [...m].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 }
+
+/** Keep a mover when |change| ≥ minPct, or when smaller but its ₹ value effect (|impact|) reaches minEffectInr. */
+export function filterMovers(trends: MaterialTrend[], minPct: number, minEffectInr: number | null) {
+  return trends.filter((t) => Math.abs(t.changePct) >= minPct || (minEffectInr != null && Math.abs(t.impact) * 1e7 >= minEffectInr));
+}
+
+export type TableRow = { kind: "buy"; point: PeriodPoint } | { kind: "gap"; from: string; to: string; count: number };
+/** Collapse runs of empty periods (input in display order) into one gap row. */
+export function collapseEmptyPeriods(points: PeriodPoint[]): TableRow[] {
+  const out: TableRow[] = [];
+  for (const p of points) {
+    if (p.rate != null) { out.push({ kind: "buy", point: p }); continue; }
+    const last = out[out.length - 1];
+    if (last?.kind === "gap") { last.to = p.label; last.count++; } else out.push({ kind: "gap", from: p.label, to: p.label, count: 1 });
+  }
+  return out;
+}
