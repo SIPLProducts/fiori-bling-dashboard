@@ -73,7 +73,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
           className="grid w-full grid-cols-[minmax(0,1fr)_90px_110px] items-center gap-2 border-b border-border/50 px-2 py-2 text-left hover:bg-accent/50 sm:grid-cols-[minmax(0,1fr)_120px_140px_110px]">
           <span className="min-w-0"><span className="block truncate text-[11px] font-semibold uppercase text-foreground">{t.name}</span>
             <span className="text-[9px] text-muted-foreground">{t.material} · ₹/{t.unit || "unit"} · {t.purchases} buys</span></span>
-          <span className="h-8"><ResponsiveContainer width="100%" height="100%"><LineChart data={sparks.get(t.material)}><YAxis hide domain={["dataMin", "dataMax"]} />
+          <span className="h-8"><ResponsiveContainer width="100%" height="100%"><LineChart data={sparks.get(t.material) ?? []}><YAxis hide domain={["dataMin", "dataMax"]} />
             <Line dataKey="rate" stroke={tone} strokeWidth={1.6} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer></span>
           <span className="hidden text-right text-[10px] tabular-nums text-muted-foreground sm:block">₹ {n2(t.firstRate)} → ₹ {n2(t.lastRate)}</span>
           <span className="text-right"><span className="block text-xs font-bold tabular-nums">₹ {n2(t.lastRate)}</span>

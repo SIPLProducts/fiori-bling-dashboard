@@ -39,7 +39,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const stats: [string, string, string?, string?][] = [
+  const stats: [string, string, (string | undefined)?, (string | undefined)?][] = [
     ["First price", `₹ ${n2(first?.rate ?? 0)}`, first?.label],
     ["Since first", `${sinceFirst >= 0 ? "+" : ""}${sinceFirst.toFixed(1)}%`, undefined, toneOf(sinceFirst)],
     ["Lowest paid", `₹ ${n2(rates.length ? Math.min(...rates) : 0)}`],
@@ -84,7 +84,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           <Area type="monotone" dataKey="rate" connectNulls stroke="none" fill="url(#mpp-area)" />
           <Line type="monotone" dataKey="rate" name="Price" connectNulls stroke="var(--primary)" strokeWidth={2.5}
             dot={(p: { cx?: number; cy?: number; index?: number; value?: number | null }) => {
-              if (p.value == null || p.cx == null) return <g key={p.index} />;
+              if (p.value == null || p.cx == null || p.cy == null) return <g key={p.index} />;
               const i = p.index ?? 0; const before = series.slice(0, i).reverse().find((x) => x.rate != null);
               const c = before ? toneOf(p.value - before.rate!) : "var(--primary)";
               return <Dot key={i} cx={p.cx} cy={p.cy} r={5} fill={c} stroke="var(--card)" strokeWidth={2} />;
