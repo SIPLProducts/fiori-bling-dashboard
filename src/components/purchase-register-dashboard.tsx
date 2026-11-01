@@ -3,6 +3,8 @@ import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { MaterialTrendSection } from "@/components/material-trend-card";
+import { MaterialPricePage } from "@/components/material-price-page";
+import type { MaterialTrend } from "@/lib/purchase-material-trend";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { currentFy, fyLabel, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
@@ -73,6 +75,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const yearRows = rows;
   const noType = useMemo(() => yearRows.filter(base), [yearRows, plant, group, month, postFrom, postTo]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => noType.filter((r) => !type || r.type === type), [noType, type]);
+  const [openMat, setOpenMat] = useState<MaterialTrend | null>(null);
   const prevRows = useMemo(() => prevYearRows.filter((r) => base(r) && (!type || r.type === type)), [prevYearRows, plant, group, month, postFrom, postTo, type]); // eslint-disable-line react-hooks/exhaustive-deps
   const TYPE_TOTALS = typeTotals(noType);
   const TOTAL_PURCHASE = sumValues(PURCHASE_TYPES.map((t) => ({ value: TYPE_TOTALS[t] })));
@@ -94,6 +97,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const curL = year != null ? fyLabel(year) : "-", prevL = year != null ? fyLabel(year - 1) : "-";
 
+  if (openMat) return <MaterialPricePage trend={openMat} rows={filtered} onBack={() => setOpenMat(null)} />;
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
       <span className="text-[10px] font-bold tracking-wide text-primary uppercase">Filters</span>
@@ -134,7 +138,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <Card title="Top Vendors"><RankList data={vendors.map((v) => ({ name: v.name, value: v.value }))} /></Card>
     </div>
 
-    <MaterialTrendSection rows={filtered} />
+    <MaterialTrendSection rows={filtered} onOpen={(t) => { setOpenMat(t); window.scrollTo({ top: 0 }); }} />
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Material Group" sub={<span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">Click to filter</span>}>

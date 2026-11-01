@@ -28,3 +28,20 @@ describe("materialTrends", () => {
     expect(r.rising).toHaveLength(0); expect(r.outliers).toBe(1);
   });
 });
+
+import { periodSeries, vendorSplit } from "./purchase-material-trend";
+describe("periodSeries", () => {
+  it("fills months without purchases as empty", () => {
+    const s = periodSeries([row("A", "2026-01-05", 10), row("A", "2026-03-05", 20)], "month");
+    expect(s.map((p) => p.label)).toEqual(["Jan-26", "Feb-26", "Mar-26"]);
+    expect(s[1]!.rate).toBeNull(); expect(s[2]!.rate).toBe(20);
+  });
+  it("groups by April–March financial year", () => {
+    const s = periodSeries([row("A", "2026-03-31", 10), row("A", "2026-04-01", 20)], "year");
+    expect(s.map((p) => p.label)).toEqual(["FY26", "FY27"]);
+  });
+  it("ranks vendors by spend", () => {
+    const r = [row("A", "2026-01-01", 10), { ...row("A", "2026-01-02", 50), vendorName: "W" }];
+    expect(vendorSplit(r)[0]!.name).toBe("W");
+  });
+});
