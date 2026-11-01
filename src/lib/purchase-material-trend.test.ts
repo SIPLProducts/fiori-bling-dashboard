@@ -63,3 +63,15 @@ describe("price change threshold", () => {
     expect(r[1]).toMatchObject({ kind: "gap", from: "Feb", to: "Jan", count: 2 });
   });
 });
+
+import { periodPasses } from "./purchase-material-trend";
+describe("material screen period filter", () => {
+  it("passes a 2% change, fails 1% with small effect", () => {
+    expect(periodPasses(100, 102, 1, 2, 500000)).toBe(true);
+    expect(periodPasses(100, 101, 1, 2, 500000)).toBe(false);
+  });
+  it("passes a 1% change with ₹5 lakh effect", () => {
+    expect(periodPasses(100, 101, 500000, 2, 500000)).toBe(true);
+  });
+  it("first purchase always passes", () => { expect(periodPasses(null, 5, 1, 50, null)).toBe(true); });
+});

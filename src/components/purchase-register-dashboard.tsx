@@ -21,10 +21,10 @@ function Card({ title, sub, children, className = "" }: { title: string; sub?: R
 }
 
 function Tile({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: string; note?: string; tone: string }) {
-  return <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm" style={{ backgroundImage: `linear-gradient(135deg, color-mix(in oklab, ${tone} 12%, transparent), transparent)` }}>
-    <div className="grid size-8 shrink-0 place-items-center rounded-full text-primary-foreground" style={{ background: tone }}>{icon}</div>
-    <div className="min-w-0"><p className="truncate text-xs font-semibold text-foreground">{label}</p>
-      <p className="truncate text-lg font-bold text-foreground">{value}</p>{note ? <p className="truncate text-[10px] text-muted-foreground">{note}</p> : null}</div>
+  return <div className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
+    <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</div>
+    <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p>
+      <p className="truncate text-lg font-bold">{value}</p>{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
   </div>;
 }
 
@@ -113,10 +113,10 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)}`} tone="var(--chart-1)" />
-      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)}`} tone="var(--chart-2)" />
-      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)}`} tone="var(--chart-4)" />
-      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)}`} tone="var(--chart-3)" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)}`} tone="#1f6fd1" />
+      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)}`} tone="#0f9d8a" />
+      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)}`} tone="#8e44ad" />
+      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)}`} tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">

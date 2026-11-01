@@ -3,7 +3,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Dot, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
-import { collapseEmptyPeriods, periodSeries, vendorSplit, type MaterialTrend, type Period } from "@/lib/purchase-material-trend";
+import { collapseEmptyPeriods, periodPasses, periodSeries, vendorSplit, type MaterialTrend, type Period } from "@/lib/purchase-material-trend";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 import { radiantBar, radiantColor } from "@/lib/radiant";
 
@@ -16,10 +16,13 @@ const toneOf = (v: number) => (v > 0 ? UP : v < 0 ? DOWN : "var(--muted-foregrou
 export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTrend; rows: PurchaseRow[]; onBack: () => void }) {
   const [period, setPeriod] = useState<Period>("month");
   const [hideEmpty, setHideEmpty] = useState(true);
+  const [minPct, setMinPct] = useState(2);
+  const [minEff, setMinEff] = useState<number | null>(500000);
   const lines = useMemo(() => rows.filter((r) => r.material === trend.material).sort((a, b) => a.date.localeCompare(b.date)), [rows, trend.material]);
   const series = useMemo(() => periodSeries(lines, period), [lines, period]);
   const vendors = useMemo(() => vendorSplit(lines), [lines]);
   const bought = series.filter((p) => p.rate != null);
+  const passKeys = useMemo(() => { const k = new Set<string>(); bought.forEach((p, i) => { if (periodPasses(bought[i - 1]?.rate, p.rate!, p.qty, minPct, minEff)) k.add(p.key); }); return k; }, [bought, minPct, minEff]);
   const first = bought[0], last = bought[bought.length - 1], prev = bought[bought.length - 2];
   const vsPrev = prev && last ? ((last.rate! - prev.rate!) / prev.rate!) * 100 : 0;
   const sinceFirst = first && last ? ((last.rate! - first.rate!) / first.rate!) * 100 : 0;
@@ -65,6 +68,17 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
       </div>
     </div>
 
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-[11px] shadow-sm">
+      <span>Show price changes of at least</span>
+      <select aria-label="Minimum change" value={minPct} onChange={(e) => setMinPct(Number(e.target.value))} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
+        {[2, 5, 10, 20, 50].map((v) => <option key={v} value={v}>{v}%</option>)}</select>
+      <span className="text-muted-foreground">(up or down) and smaller changes with a value effect of</span>
+      <select aria-label="Minimum value effect" value={minEff ?? "none"} onChange={(e) => setMinEff(e.target.value === "none" ? null : Number(e.target.value))} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
+        {([[100000, "at least ₹ 1 lakh"], [500000, "at least ₹ 5 lakh"], [1000000, "at least ₹ 10 lakh"], [5000000, "at least ₹ 50 lakh"]] as const).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        <option value="none">don't include</option></select>
+      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">{passKeys.size} of {bought.length} periods shown</span>
+    </div>
+
     <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="-m-4 mb-3 rounded-t-xl p-4 text-primary-foreground" style={{ background: `linear-gradient(120deg, #1f6fd1, ${sinceFirst >= 0 ? "#d64550" : "#2e8b57"})` }}>
         <p className="text-[10px] font-semibold uppercase tracking-wide opacity-90">{trend.material} · since first purchase</p>
@@ -92,9 +106,9 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           <Line type="monotone" dataKey="rate" name="Price" connectNulls stroke="var(--primary)" strokeWidth={2.5}
             dot={(p: { cx?: number; cy?: number; index?: number; value?: number | null }) => {
               if (p.value == null || p.cx == null || p.cy == null) return <g key={p.index} />;
-              const i = p.index ?? 0; const before = series.slice(0, i).reverse().find((x) => x.rate != null);
+              const i = p.index ?? 0; const on = passKeys.has(series[i]?.key ?? ""); const before = series.slice(0, i).reverse().find((x) => x.rate != null);
               const c = before ? toneOf(p.value - before.rate!) : "var(--primary)";
-              return <Dot key={i} cx={p.cx} cy={p.cy} r={5} fill={c} stroke="var(--card)" strokeWidth={2} />;
+              return <Dot key={i} cx={p.cx} cy={p.cy} r={on ? 6 : 3.5} fill={c} fillOpacity={on ? 1 : 0.3} stroke="var(--card)" strokeWidth={2} />;
             }}>
             <LabelList dataKey="rate" position="top" fontSize={10} fill="var(--foreground)" formatter={(v: number | null) => (v == null ? "" : n2(v))} />
           </Line>
@@ -134,7 +148,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           const lo = rates.length ? Math.min(...rates) : 0, hi = rates.length ? Math.max(...rates) : 1, span = hi - lo || 1;
           const pill = (v: number | null) => v == null ? <span className="text-muted-foreground">–</span> :
             <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: toneOf(v), background: `color-mix(in oklab, ${toneOf(v)} 14%, transparent)` }}>{sp(v)}</span>;
-          return collapseEmptyPeriods(rev).filter((r) => !(hideEmpty && r.kind === "gap")).map((r) => {
+          return collapseEmptyPeriods(rev).filter((r) => r.kind === "gap" ? !hideEmpty : passKeys.has(r.point.key)).map((r) => {
             if (r.kind === "gap") return <tr key={`g-${r.from}`} className="border-t border-border/60 text-muted-foreground/70 italic"><td colSpan={7} className="px-3 py-1.5 text-center">No purchase · {r.count > 1 ? `${r.to} to ${r.from}` : r.from}</td></tr>;
             const p = r.point, bi = bought.indexOf(p), before = bought[bi + 1];
             const d = before ? ((p.rate! - before.rate!) / before.rate!) * 100 : null;
