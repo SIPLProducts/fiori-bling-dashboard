@@ -25,7 +25,7 @@ export function materialPoints(rows: PurchaseRow[]) {
   return [...m.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, e]) => ({ date, qty: e.qty, rate: e.amt / e.qty }));
 }
 
-export function materialTrends(rows: PurchaseRow[], rules = TREND_RULES) {
+export function materialTrends(rows: PurchaseRow[], rules: { [K in keyof typeof TREND_RULES]: number } = TREND_RULES) {
   const by = new Map<string, PurchaseRow[]>();
   for (const r of rows) if (r.material && r.type !== "Service") { const a = by.get(r.material) ?? []; a.push(r); by.set(r.material, a); }
   const rising: MaterialTrend[] = [], falling: MaterialTrend[] = [];
