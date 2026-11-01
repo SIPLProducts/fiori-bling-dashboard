@@ -123,3 +123,10 @@ export function collapseEmptyPeriods(points: PeriodPoint[]): TableRow[] {
   }
   return out;
 }
+
+/** A period passes when its change vs the previous purchase is ≥ minPct, or its ₹ value effect (Δrate × qty) reaches minEffectInr. */
+export function periodPasses(prevRate: number | null | undefined, rate: number, qty: number, minPct: number, minEffectInr: number | null) {
+  if (prevRate == null || !prevRate) return true;
+  const d = rate - prevRate;
+  return Math.abs((d / prevRate) * 100) >= minPct || (minEffectInr != null && Math.abs(d * qty) >= minEffectInr);
+}

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { radiantColor } from "@/lib/radiant";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
-import { filterMovers, materialPoints, materialTrends, TREND_RULES, type MaterialTrend } from "@/lib/purchase-material-trend";
+import { materialPoints, materialTrends, TREND_RULES, type MaterialTrend } from "@/lib/purchase-material-trend";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 
 const n2 = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -27,11 +27,8 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
   const [sort, setSort] = useState<Sort>("spend");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
-  const [minPct, setMinPct] = useState(2);
-  const [minEff, setMinEff] = useState<number | null>(500000);
   const [peek, setPeek] = useState<MaterialTrend | null>(null);
-  const base = useMemo(() => materialTrends(rows, { ...TREND_RULES, minChangePct: 0 }), [rows]);
-  const res = useMemo(() => ({ ...base, rising: filterMovers(base.rising, minPct, minEff), falling: filterMovers(base.falling, minPct, minEff) }), [base, minPct, minEff]);
+  const res = useMemo(() => materialTrends(rows), [rows]);
   const sparks = useMemo(() => {
     const by = new Map<string, PurchaseRow[]>();
     for (const r of rows) { const a = by.get(r.material); if (a) a.push(r); else by.set(r.material, [r]); }
@@ -54,7 +51,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     style={filter === f && tone ? { color: tone, borderColor: tone, background: `color-mix(in oklab, ${tone} 10%, transparent)` } : undefined}>{label} {n}</button>;
 
   return <div className="space-y-3">
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Kpi icon={<Boxes className="size-5" />} value={n0(all.length)} label={`Materials with a steady price change (of ${n0(res.scanned)} checked)`} tone="#1f6fd1" />
       <Kpi icon={<TrendingUp className="size-5" />} value={n0(res.rising.length)} label="Price rising first → latest" tone="#d64550" />
       <Kpi icon={<TrendingDown className="size-5" />} value={n0(res.falling.length)} label="Price falling first → latest" tone="#2e8b57" />
@@ -70,15 +67,6 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
       </div>
       <div className="relative mb-2"><Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search material name or code…" className="h-8 w-full rounded-md border border-border bg-background pl-7 pr-2 text-xs" /></div>
-      <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px]">
-        <span>Show price changes of at least</span>
-        <select aria-label="Minimum change" value={minPct} onChange={(e) => { setMinPct(Number(e.target.value)); setPage(0); }} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
-          {[2, 5, 10, 20, 50].map((v) => <option key={v} value={v}>{v}%</option>)}</select>
-        <span className="text-muted-foreground">(up or down) and smaller changes with a value effect of</span>
-        <select aria-label="Minimum value effect" value={minEff ?? "none"} onChange={(e) => { setMinEff(e.target.value === "none" ? null : Number(e.target.value)); setPage(0); }} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
-          {[[100000, "at least ₹ 1 lakh"], [500000, "at least ₹ 5 lakh"], [1000000, "at least ₹ 10 lakh"], [5000000, "at least ₹ 50 lakh"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          <option value="none">don't include</option></select>
-      </div>
       <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "All", all.length)}{chip("rising", "▲ Rising", res.rising.length, UP)}{chip("falling", "▼ Falling", res.falling.length, DOWN)}</div>
       {list.length ? <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">{list.slice(pg * PAGE, pg * PAGE + PAGE).map((t, i) => {
         const tone = t.direction === "rising" ? UP : DOWN, rc = radiantColor(pg * PAGE + i);
