@@ -25,7 +25,7 @@ export function materialPoints(rows: PurchaseRow[]) {
   return [...m.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, e]) => ({ date, qty: e.qty, rate: e.amt / e.qty }));
 }
 
-export function materialTrends(rows: PurchaseRow[], rules = TREND_RULES) {
+export function materialTrends(rows: PurchaseRow[], rules: { [K in keyof typeof TREND_RULES]: number } = TREND_RULES) {
   const by = new Map<string, PurchaseRow[]>();
   for (const r of rows) if (r.material && r.type !== "Service") { const a = by.get(r.material) ?? []; a.push(r); by.set(r.material, a); }
   const rising: MaterialTrend[] = [], falling: MaterialTrend[] = [];
@@ -105,4 +105,21 @@ export function vendorSplit(rows: PurchaseRow[]) {
   const m = new Map<string, number>();
   for (const r of rows) if (r.value > 0) m.set(r.vendorName || r.vendor, (m.get(r.vendorName || r.vendor) ?? 0) + r.value);
   return [...m].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+}
+
+/** Keep a mover when |change| ≥ minPct, or when smaller but its ₹ value effect (|impact|) reaches minEffectInr. */
+export function filterMovers(trends: MaterialTrend[], minPct: number, minEffectInr: number | null) {
+  return trends.filter((t) => Math.abs(t.changePct) >= minPct || (minEffectInr != null && Math.abs(t.impact) * 1e7 >= minEffectInr));
+}
+
+export type TableRow = { kind: "buy"; point: PeriodPoint } | { kind: "gap"; from: string; to: string; count: number };
+/** Collapse runs of empty periods (input in display order) into one gap row. */
+export function collapseEmptyPeriods(points: PeriodPoint[]): TableRow[] {
+  const out: TableRow[] = [];
+  for (const p of points) {
+    if (p.rate != null) { out.push({ kind: "buy", point: p }); continue; }
+    const last = out[out.length - 1];
+    if (last?.kind === "gap") { last.to = p.label; last.count++; } else out.push({ kind: "gap", from: p.label, to: p.label, count: 1 });
+  }
+  return out;
 }

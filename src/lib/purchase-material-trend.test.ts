@@ -45,3 +45,21 @@ describe("periodSeries", () => {
     expect(vendorSplit(r)[0]!.name).toBe("W");
   });
 });
+
+import { filterMovers, collapseEmptyPeriods } from "./purchase-material-trend";
+describe("price change threshold", () => {
+  const t = (changePct: number, impact: number) => ({ changePct, impact } as never);
+  it("keeps 2%+ changes and drops 1% changes with small value effect", () => {
+    expect(filterMovers([t(2, 0), t(-3, 0), t(1, 0.001)], 2, 500000).length).toBe(2);
+  });
+  it("keeps a 1% change whose value effect is at least ₹5 lakh", () => {
+    expect(filterMovers([t(1, 0.05)], 2, 500000).length).toBe(1);
+    expect(filterMovers([t(1, 0.049)], 2, 500000).length).toBe(0);
+  });
+  it("collapses consecutive empty months into one row", () => {
+    const p = (label: string, rate: number | null) => ({ key: label, label, rate } as never);
+    const r = collapseEmptyPeriods([p("Mar", 5), p("Feb", null), p("Jan", null), p("Dec", 2)]);
+    expect(r.length).toBe(3);
+    expect(r[1]).toMatchObject({ kind: "gap", from: "Feb", to: "Jan", count: 2 });
+  });
+});
