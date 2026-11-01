@@ -60,3 +60,49 @@ export function materialTrends(rows: PurchaseRow[], rules = TREND_RULES) {
   rising.sort((a, b) => score(b) - score(a)); falling.sort((a, b) => score(b) - score(a));
   return { rising, falling, scanned, outliers };
 }
+
+export type Period = "month" | "quarter" | "year";
+export type PeriodPoint = { key: string; label: string; rate: number | null; low: number | null; high: number | null; qty: number; value: number; vendor: string };
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const periodOf = (date: string, p: Period) => {
+  const y = Number(date.slice(0, 4)), m = Number(date.slice(5, 7)) - 1;
+  if (p === "year") { const fy = m >= 3 ? y + 1 : y; return { key: `${fy}`, label: `FY${String(fy).slice(2)}` }; }
+  if (p === "quarter") { const fy = m >= 3 ? y + 1 : y, q = Math.floor(((m + 9) % 12) / 3) + 1; return { key: `${fy}-Q${q}`, label: `Q${q} FY${String(fy).slice(2)}` }; }
+  return { key: `${y}-${String(m + 1).padStart(2, "0")}`, label: `${MON[m]}-${String(y).slice(2)}` };
+};
+const nextKey = (key: string, p: Period) => {
+  if (p === "year") return `${Number(key) + 1}`;
+  if (p === "quarter") { const [fy, q] = [Number(key.slice(0, 4)), Number(key.slice(6))]; return q === 4 ? `${fy + 1}-Q1` : `${fy}-Q${q + 1}`; }
+  const [y, m] = [Number(key.slice(0, 4)), Number(key.slice(5, 7))]; return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+};
+const labelOf = (key: string, p: Period) => p === "year" ? `FY${key.slice(2)}` : p === "quarter" ? `${key.slice(5)} FY${key.slice(2, 4)}` : `${MON[Number(key.slice(5, 7)) - 1]}-${key.slice(2, 4)}`;
+
+/** One point per period (qty-weighted rate) from first to last purchase; empty periods have rate null. */
+export function periodSeries(rows: PurchaseRow[], p: Period): PeriodPoint[] {
+  const m = new Map<string, { label: string; qty: number; amt: number; low: number; high: number; value: number; vend: Map<string, number> }>();
+  for (const r of rows) {
+    if (!r.rate || r.rate <= 0 || r.value <= 0 || !r.date) continue;
+    const { key, label } = periodOf(r.date, p);
+    const q = r.qty && r.qty > 0 ? r.qty : 1;
+    const e = m.get(key) ?? { label, qty: 0, amt: 0, low: Infinity, high: 0, value: 0, vend: new Map() };
+    e.qty += q; e.amt += r.rate * q; e.low = Math.min(e.low, r.rate); e.high = Math.max(e.high, r.rate); e.value += r.value;
+    e.vend.set(r.vendorName, (e.vend.get(r.vendorName) ?? 0) + r.value); m.set(key, e);
+  }
+  const keys = [...m.keys()].sort();
+  if (!keys.length) return [];
+  const out: PeriodPoint[] = [];
+  for (let k = keys[0]!, guard = 0; guard < 500; k = nextKey(k, p), guard++) {
+    const e = m.get(k);
+    out.push(e ? { key: k, label: e.label, rate: e.amt / e.qty, low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0] }
+      : { key: k, label: labelOf(k, p), rate: null, low: null, high: null, qty: 0, value: 0, vendor: "" });
+    if (k === keys[keys.length - 1]) break;
+  }
+  return out;
+}
+
+/** Spend per vendor (₹ Cr), largest first. */
+export function vendorSplit(rows: PurchaseRow[]) {
+  const m = new Map<string, number>();
+  for (const r of rows) if (r.value > 0) m.set(r.vendorName || r.vendor, (m.get(r.vendorName || r.vendor) ?? 0) + r.value);
+  return [...m].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+}
