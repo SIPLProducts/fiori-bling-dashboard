@@ -15,3 +15,6 @@
   - Add an `--on-radiant` token (white in every theme) and a `text-on-radiant` utility.
   - Use it in place of `text-primary-foreground` on the radiant tiles in `material-trend-card.tsx`, `material-price-page.tsx` and `purchase-register-dashboard.tsx`.
 - Changes are only on screen.
+
+## Also
+- Move the search box onto the title row, right beside the "Highest spend" sort dropdown. The All / Rising / Falling chips stay below.
