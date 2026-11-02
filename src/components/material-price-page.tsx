@@ -80,7 +80,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
     </div>
 
     <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="-m-4 mb-3 rounded-t-xl p-4 text-primary-foreground" style={{ background: `linear-gradient(120deg, #1f6fd1, ${sinceFirst >= 0 ? "#d64550" : "#2e8b57"})` }}>
+      <div className="-m-4 mb-3 rounded-t-xl p-4 text-on-radiant" style={{ background: `linear-gradient(120deg, #1f6fd1, ${sinceFirst >= 0 ? "#d64550" : "#2e8b57"})` }}>
         <p className="text-[10px] font-semibold uppercase tracking-wide opacity-90">{trend.material} · since first purchase</p>
         <div className="flex flex-wrap items-baseline gap-3"><span className="text-lg font-bold">{trend.name}</span><span className="text-3xl font-extrabold">{sp(sinceFirst)}</span></div>
       </div>
@@ -90,7 +90,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
             {prev ? <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ color: toneOf(vsPrev), background: `color-mix(in oklab, ${toneOf(vsPrev)} 14%, transparent)` }}>{sp(vsPrev)}</span> : null}</div>
           {prev ? <p className="text-[10px] text-muted-foreground">vs {prev.label} (₹ {n2(prev.rate!)})</p> : null}</div>
         <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
-          {stats.map(([l, v, s], i) => <div key={l} className="rounded-lg p-2.5 text-primary-foreground shadow-sm" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${radiantColor(i)} 70%, white), ${radiantColor(i)})` }}>
+          {stats.map(([l, v, s], i) => <div key={l} className="rounded-lg p-2.5 text-on-radiant shadow-sm" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${radiantColor(i)} 70%, white), ${radiantColor(i)})` }}>
             <p className="text-[10px] font-semibold uppercase tracking-wide opacity-90">{l}</p>
             <p className="text-base font-bold">{v}</p>{s ? <p className="text-[10px] opacity-85">{s}</p> : null}</div>)}
         </div>

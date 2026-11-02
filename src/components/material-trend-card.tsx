@@ -16,9 +16,9 @@ type Filter = "all" | "rising" | "falling";
 type Sort = "spend" | "rise" | "fall";
 
 function Kpi({ icon, value, label, tone }: { icon: React.ReactNode; value: string; label: string; tone: string }) {
-  return <div className="flex items-center gap-3 rounded-xl p-3 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
-    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</span>
-    <div className="min-w-0"><p className="text-xl font-bold leading-tight">{value}</p><p className="truncate text-[10px] opacity-90">{label}</p></div>
+  return <div className="flex min-w-0 items-center gap-2 rounded-xl p-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
+    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</span>
+    <div className="min-w-0"><p className="text-lg font-bold leading-tight">{value}</p><p className="truncate text-[10px] opacity-90">{label}</p></div>
   </div>;
 }
 
@@ -50,23 +50,24 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${filter === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
     style={filter === f && tone ? { color: tone, borderColor: tone, background: `color-mix(in oklab, ${tone} 10%, transparent)` } : undefined}>{label} {n}</button>;
 
-  return <div className="space-y-3">
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  return <div className="rounded-2xl p-[2px] shadow-lg" style={{ background: "linear-gradient(120deg, #1f6fd1, #0f9d8a, #8e44ad, #e08a1e)", boxShadow: "0 8px 24px -10px color-mix(in oklab, #8e44ad 45%, transparent)" }}>
+    <section className="rounded-[14px] bg-card p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div><h2 className="text-xs font-semibold text-card-foreground">Material Price Movers</h2>
+          <p className="text-[10px] text-muted-foreground">{n0(list.length)} materials · click one to see its full price history</p></div>
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <div className="relative w-full max-w-xs"><Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search material name or code…" className="h-7 w-full rounded-md border border-border bg-background pl-7 pr-2 text-xs" /></div>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-7 rounded-md border border-border bg-background px-2 text-[11px]">
+            <option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
+        </div>
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
       <Kpi icon={<Boxes className="size-5" />} value={n0(all.length)} label={`Materials with a steady price change (of ${n0(res.scanned)} checked)`} tone="#1f6fd1" />
       <Kpi icon={<TrendingUp className="size-5" />} value={n0(res.rising.length)} label="Price rising first → latest" tone="#d64550" />
       <Kpi icon={<TrendingDown className="size-5" />} value={n0(res.falling.length)} label="Price falling first → latest" tone="#2e8b57" />
       <Kpi icon={<Percent className="size-5" />} value={`${avg >= 0 ? "+" : ""}${avg.toFixed(1)}%`} label="Average price change" tone="#8e44ad" />
-    </div>
-
-    <section className="rounded-xl border border-border bg-card p-3 shadow-sm">
-      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-        <div><h2 className="text-xs font-semibold text-card-foreground">Material Price Movers</h2>
-          <p className="text-[10px] text-muted-foreground">{n0(list.length)} materials · click one to see its full price history</p></div>
-        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-7 rounded-md border border-border bg-background px-2 text-[11px]">
-          <option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
       </div>
-      <div className="relative mb-2"><Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search material name or code…" className="h-8 w-full rounded-md border border-border bg-background pl-7 pr-2 text-xs" /></div>
       <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "All", all.length)}{chip("rising", "▲ Rising", res.rising.length, UP)}{chip("falling", "▼ Falling", res.falling.length, DOWN)}</div>
       {list.length ? <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">{list.slice(pg * PAGE, pg * PAGE + PAGE).map((t, i) => {
         const tone = t.direction === "rising" ? UP : DOWN, rc = radiantColor(pg * PAGE + i);
@@ -77,7 +78,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
               <span className="block text-[9px] text-muted-foreground">{t.material} · {t.purchases} buys · ₹/{t.unit || "unit"}</span>
               <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] tabular-nums">
                 <span className="text-muted-foreground">₹ {n2(t.firstRate)} →</span><b>₹ {n2(t.lastRate)}</b>
-                <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground" style={{ background: tone }}>{sp(t.changePct)}</span>
+                <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-on-radiant" style={{ background: tone }}>{sp(t.changePct)}</span>
                 <span className="text-[9px] text-muted-foreground">effect ₹ {n2(Math.abs(t.impact) * 100)} LAH</span></span></span>
             <span className="h-10"><ResponsiveContainer width="100%" height="100%"><LineChart data={sparks.get(t.material) ?? []}><YAxis hide domain={["dataMin", "dataMax"]} />
               <Line dataKey="rate" stroke={rc} strokeWidth={2} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer></span>
@@ -88,6 +89,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
       {pages > 1 ? <div className="mt-2 flex items-center gap-2 text-[10px]"><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg === 0} onClick={() => setPage(pg - 1)}>Prev</Button><span>{pg + 1} / {pages}</span><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg >= pages - 1} onClick={() => setPage(pg + 1)}>Next</Button></div> : null}
       <p className="mt-2 text-[9px] text-muted-foreground">Only materials bought {TREND_RULES.minPurchases}+ times on {TREND_RULES.minDates}+ dates, moving the same way in {TREND_RULES.minConsistency * 100}%+ of purchases{res.outliers ? `; ${res.outliers} unusual changes (over +1,000% or under −95%) left out` : ""}.</p>
     </section>
+    </div>
     <Dialog open={!!peek} onOpenChange={(o) => !o && setPeek(null)}>
       <DialogContent className="max-w-2xl">{peek ? <QuickView t={peek} rows={rows.filter((r) => r.material === peek.material)} onOpen={() => { onOpen(peek); setPeek(null); }} /> : null}</DialogContent>
     </Dialog>
