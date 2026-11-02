@@ -61,11 +61,12 @@ export function materialTrends(rows: PurchaseRow[], rules: { [K in keyof typeof 
   return { rising, falling, scanned, outliers };
 }
 
-export type Period = "month" | "quarter" | "year";
+export type Period = "day" | "month" | "quarter" | "year";
 export type PeriodPoint = { key: string; label: string; rate: number | null; low: number | null; high: number | null; qty: number; value: number; vendor: string };
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const periodOf = (date: string, p: Period) => {
   const y = Number(date.slice(0, 4)), m = Number(date.slice(5, 7)) - 1;
+  if (p === "day") return { key: date.slice(0, 10), label: `${date.slice(8, 10)}-${MON[m]}-${String(y).slice(2)}` };
   if (p === "year") { const fy = m >= 3 ? y + 1 : y; return { key: `${fy}`, label: `FY${String(fy).slice(2)}` }; }
   if (p === "quarter") { const fy = m >= 3 ? y + 1 : y, q = Math.floor(((m + 9) % 12) / 3) + 1; return { key: `${fy}-Q${q}`, label: `Q${q} FY${String(fy).slice(2)}` }; }
   return { key: `${y}-${String(m + 1).padStart(2, "0")}`, label: `${MON[m]}-${String(y).slice(2)}` };
@@ -91,6 +92,7 @@ export function periodSeries(rows: PurchaseRow[], p: Period): PeriodPoint[] {
   const keys = [...m.keys()].sort();
   if (!keys.length) return [];
   const out: PeriodPoint[] = [];
+  if (p === "day") return keys.map((k) => { const e = m.get(k)!; return { key: k, label: e.label, rate: e.amt / e.qty, low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0] }; });
   for (let k = keys[0]!, guard = 0; guard < 500; k = nextKey(k, p), guard++) {
     const e = m.get(k);
     out.push(e ? { key: k, label: e.label, rate: e.amt / e.qty, low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0] }
