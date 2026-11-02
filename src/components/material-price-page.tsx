@@ -120,7 +120,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
       </div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
         <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
-          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Diff from first (₹)"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Diff from first (₹)"].map((h, i) => <th key={h} title={h === "Low – High" ? "Lowest and highest rate paid within this period (not compared with the previous period)." : undefined} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"} ${h === "Low – High" ? "cursor-help" : ""}`}>{h}{h === "Low – High" ? " ⓘ" : ""}</th>)}</tr></thead>
         <tbody>{(() => {
           const rev = [...series].reverse();
           const bought = rev.filter((x) => x.rate != null);
@@ -135,7 +135,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
             return <tr key={p.key} className="border-t border-border/60 font-medium odd:bg-muted/30 hover:bg-accent/40">
               <td className="px-3 py-2 font-semibold">{p.label}</td><td className="px-3 py-2 text-right text-sm font-bold tabular-nums">{n2(p.rate!)}</td>
               <td className="px-3 py-2 text-right">{pill(d)}</td><td className="px-3 py-2 text-right">{pill(f)}</td>
-              <td className="px-3 py-2"><div className="ml-auto w-32"><div className="relative h-1.5 rounded-full bg-muted"><div className="absolute h-full rounded-full" style={{ left: `${((p.low! - lo) / span) * 100}%`, width: `${Math.max(3, ((p.high! - p.low!) / span) * 100)}%`, background: radiantBar(bi) }} /></div>
+              <td className="cursor-help px-3 py-2" title={`Lowest rate ₹${n2(p.low!)} · Highest rate ₹${n2(p.high!)} · Spread ₹${n2(p.high! - p.low!)}\nRates paid: ${(p.rates ?? []).map((x) => `₹${n2(x.rate)} × ${n0(x.qty)}`).join(", ")}\nPrice = total value ÷ total qty = ₹${n2(p.rate!)}`}><div className="ml-auto w-32"><div className="relative h-1.5 rounded-full bg-muted"><div className="absolute h-full rounded-full" style={{ left: `${((p.low! - lo) / span) * 100}%`, width: `${Math.max(3, ((p.high! - p.low!) / span) * 100)}%`, background: radiantBar(bi) }} /></div>
                 <p className="mt-0.5 text-right text-[9px] tabular-nums text-muted-foreground">{n2(p.low!)} – {n2(p.high!)}</p></div></td>
               <td className="px-3 py-2 text-right font-bold tabular-nums" style={{ color: p.diff ? toneOf(p.diff) : undefined }}>{p.diff == null || p.diff === 0 ? "–" : `${p.diff > 0 ? "+" : ""}${n2(p.diff)}`}</td></tr>;
           });
