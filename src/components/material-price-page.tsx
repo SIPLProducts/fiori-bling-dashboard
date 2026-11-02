@@ -14,7 +14,7 @@ const UP = "var(--destructive)", DOWN = "var(--success)";
 const toneOf = (v: number) => (v > 0 ? UP : v < 0 ? DOWN : "var(--muted-foreground)");
 
 export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTrend; rows: PurchaseRow[]; onBack: () => void }) {
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<Period>(() => new Set(rows.filter((r) => r.material === trend.material).map((r) => r.date.slice(0, 7))).size <= 1 ? "day" : "month");
   const [hideEmpty, setHideEmpty] = useState(true);
   const [minPct, setMinPct] = useState(2);
   const [minEff, setMinEff] = useState<number | null>(500000);
@@ -57,12 +57,10 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" variant="outline" className="h-8" onClick={onBack}><ArrowLeft className="mr-1 size-4" />Back</Button>
-      <div className="min-w-0"><h2 className="truncate text-sm font-semibold text-foreground">{trend.name}</h2>
-        <p className="text-[11px] text-muted-foreground">{trend.material} · price in ₹ per {unit}</p></div>
       <div className="ml-auto flex items-center gap-2">
         <div className="flex rounded-full border border-border bg-card p-0.5 text-[11px] font-semibold">
-          {(["month", "quarter", "year"] as const).map((p) => <button key={p} type="button" onClick={() => setPeriod(p)}
-            className={`rounded-full px-3 py-1 ${period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{p === "month" ? "Monthly" : p === "quarter" ? "Quarterly" : "Yearly"}</button>)}
+          {(["day", "month", "quarter", "year"] as const).map((p) => <button key={p} type="button" onClick={() => setPeriod(p)}
+            className={`rounded-full px-3 py-1 ${period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{p === "day" ? "Daily" : p === "month" ? "Monthly" : p === "quarter" ? "Quarterly" : "Yearly"}</button>)}
         </div>
         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={download}><Download className="mr-1 size-3" />Excel</Button>
       </div>
@@ -122,7 +120,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" /><YAxis tick={{ fontSize: 9 }} />
           <Tooltip formatter={(v: number) => `${n0(v)} ${unit}`} />
-          <Bar dataKey="qty" name="Quantity" radius={[4, 4, 0, 0]} maxBarSize={28}>{series.map((p, i) => <Cell key={p.key} fill={radiantColor(i)} />)}</Bar>
+          <Bar dataKey="qty" name="Quantity" radius={[4, 4, 0, 0]} maxBarSize={36} minPointSize={3}><LabelList dataKey="qty" position="top" fontSize={9} fill="var(--foreground)" formatter={(v: number) => (v ? n0(v) : "")} />{series.map((p, i) => <Cell key={p.key} fill={radiantColor(i)} />)}</Bar>
         </BarChart></ResponsiveContainer>
       </section>
       <section className="rounded-xl border border-border bg-card p-3 shadow-sm">
@@ -162,6 +160,23 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
               <td className="max-w-[200px] truncate px-3 py-2">{p.vendor}</td></tr>;
           });
         })()}</tbody></table></div>
+    </section>
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2"><h3 className="text-xs font-semibold">Purchases by date</h3><span className="text-[10px] text-muted-foreground">{n0(lines.length)} purchases</span></div>
+      <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
+        <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
+          {["Date", "Document No", "Vendor", "Plant", "Quantity", "Unit", "Rate (₹)", "vs previous", "Value (₹ Cr)"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i >= 4 && i !== 5 ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+        <tbody>{lines.map((r, i) => {
+          const pr = lines.slice(0, i).reverse().find((x) => (x.rate ?? 0) > 0);
+          const d = pr && r.rate ? ((r.rate - pr.rate!) / pr.rate!) * 100 : null;
+          return { r, d, i };
+        }).reverse().map(({ r, d, i }) => <tr key={i} className="border-t border-border/60 odd:bg-muted/30 hover:bg-accent/40">
+          <td className="px-3 py-2 font-semibold">{r.date}</td><td className="px-3 py-2">{r.docNo ?? ""}</td>
+          <td className="max-w-[220px] truncate px-3 py-2">{r.vendorName}</td><td className="px-3 py-2">{r.plantName}</td>
+          <td className="px-3 py-2 text-right tabular-nums">{n0(r.qty ?? 0)}</td><td className="px-3 py-2">{r.unit ?? ""}</td>
+          <td className="px-3 py-2 text-right font-bold tabular-nums">{n2(r.rate ?? 0)}</td>
+          <td className="px-3 py-2 text-right">{d == null ? <span className="text-muted-foreground">–</span> : <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: toneOf(d), background: `color-mix(in oklab, ${toneOf(d)} 14%, transparent)` }}>{sp(d)}</span>}</td>
+          <td className="px-3 py-2 text-right tabular-nums">{r.value.toFixed(3)}</td></tr>)}</tbody></table></div>
     </section>
   </div>;
 }
