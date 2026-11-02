@@ -13,12 +13,12 @@ const sp = (v: number) => `${v >= 0 ? "▲ +" : "▼ "}${v.toFixed(1)}%`;
 const UP = "var(--destructive)", DOWN = "var(--success)";
 const PAGE = 10;
 type Filter = "all" | "rising" | "falling";
-type Sort = "spend" | "rise" | "fall";
+type Sort = "count" | "spend" | "rise" | "fall";
 
 
 export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; onOpen: (t: MaterialTrend) => void }) {
   const [filter, setFilter] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("spend");
+  const [sort, setSort] = useState<Sort>("count");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [peek, setPeek] = useState<MaterialTrend | null>(null);
@@ -30,13 +30,18 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     for (const t of [...res.rising, ...res.falling]) m.set(t.material, materialPoints(by.get(t.material) ?? []).map((p) => ({ rate: p.rate })));
     return m;
   }, [rows, res]);
-  const all = [...res.rising, ...res.falling];
+  // Top 10 most frequently purchased per direction (ties broken by spend).
+  const top = useMemo(() => {
+    const pick = (a: MaterialTrend[]) => [...a].sort((x, y) => y.purchases - x.purchases || y.totalValue - x.totalValue).slice(0, 10);
+    return { rising: pick(res.rising), falling: pick(res.falling) };
+  }, [res]);
+  const all = [...top.rising, ...top.falling];
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const base = (filter === "rising" ? res.rising : filter === "falling" ? res.falling : [...res.rising, ...res.falling])
+    const base = (filter === "rising" ? top.rising : filter === "falling" ? top.falling : [...top.rising, ...top.falling])
       .filter((t) => !s || t.name.toLowerCase().includes(s) || t.material.toLowerCase().includes(s));
-    return [...base].sort((a, b) => sort === "spend" ? b.totalValue - a.totalValue : sort === "rise" ? b.changePct - a.changePct : a.changePct - b.changePct);
-  }, [res, filter, sort, q]);
+    return [...base].sort((a, b) => sort === "spend" ? b.totalValue - a.totalValue : sort === "rise" ? b.changePct - a.changePct : sort === "fall" ? a.changePct - b.changePct : b.purchases - a.purchases);
+  }, [top, filter, sort, q]);
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const pg = Math.min(page, pages - 1);
   const chip = (f: Filter, label: string, n: number, tone?: string) => <button type="button" onClick={() => { setFilter(f); setPage(0); }}
@@ -70,10 +75,10 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
           <div className="relative w-full max-w-xs"><Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search material name or code…" className="h-7 w-full rounded-md border border-border bg-background pl-7 pr-2 text-xs" /></div>
           <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-7 rounded-md border border-border bg-background px-2 text-[11px]">
-            <option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
+            <option value="count">Most purchased</option><option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
         </div>
       </div>
-      <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "All", all.length)}{chip("rising", "▲ Rising", res.rising.length, UP)}{chip("falling", "▼ Falling", res.falling.length, DOWN)}</div>
+      <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "Top 10 each", all.length)}{chip("rising", "▲ Top Rising", top.rising.length, UP)}{chip("falling", "▼ Top Falling", top.falling.length, DOWN)}</div>
       {filter === "all" ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <MoverPanel key={`r-${q}-${sort}`} title="▲ Rising" tone={UP} items={list.filter((t) => t.direction === "rising")} empty="No rising materials" renderTile={tile} />
         <MoverPanel key={`f-${q}-${sort}`} title="▼ Falling" tone={DOWN} items={list.filter((t) => t.direction !== "rising")} empty="No falling materials" renderTile={tile} />
