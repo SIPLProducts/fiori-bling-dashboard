@@ -58,7 +58,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
           <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] tabular-nums">
             <span className="text-muted-foreground">₹ {n2(t.firstRate)} →</span><b>₹ {n2(t.lastRate)}</b>
             <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-on-radiant" style={{ background: tone }}>{sp(t.changePct)}</span>
-            <span className="text-[9px] text-muted-foreground">effect ₹ {n2(Math.abs(t.impact) * 100)} LAH</span></span></span>
+            </span></span>
         <span className="h-10"><ResponsiveContainer width="100%" height="100%"><LineChart data={sparks.get(t.material) ?? []}><YAxis hide domain={["dataMin", "dataMax"]} />
           <Line dataKey="rate" stroke={rc} strokeWidth={2} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer></span>
       </button>
