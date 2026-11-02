@@ -30,13 +30,18 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     for (const t of [...res.rising, ...res.falling]) m.set(t.material, materialPoints(by.get(t.material) ?? []).map((p) => ({ rate: p.rate })));
     return m;
   }, [rows, res]);
-  const all = [...res.rising, ...res.falling];
+  // Top 10 most frequently purchased per direction (ties broken by spend).
+  const top = useMemo(() => {
+    const pick = (a: MaterialTrend[]) => [...a].sort((x, y) => y.purchases - x.purchases || y.totalValue - x.totalValue).slice(0, 10);
+    return { rising: pick(res.rising), falling: pick(res.falling) };
+  }, [res]);
+  const all = [...top.rising, ...top.falling];
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const base = (filter === "rising" ? res.rising : filter === "falling" ? res.falling : [...res.rising, ...res.falling])
+    const base = (filter === "rising" ? top.rising : filter === "falling" ? top.falling : [...top.rising, ...top.falling])
       .filter((t) => !s || t.name.toLowerCase().includes(s) || t.material.toLowerCase().includes(s));
-    return [...base].sort((a, b) => sort === "spend" ? b.totalValue - a.totalValue : sort === "rise" ? b.changePct - a.changePct : a.changePct - b.changePct);
-  }, [res, filter, sort, q]);
+    return [...base].sort((a, b) => sort === "spend" ? b.totalValue - a.totalValue : sort === "rise" ? b.changePct - a.changePct : sort === "fall" ? a.changePct - b.changePct : b.purchases - a.purchases);
+  }, [top, filter, sort, q]);
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const pg = Math.min(page, pages - 1);
   const chip = (f: Filter, label: string, n: number, tone?: string) => <button type="button" onClick={() => { setFilter(f); setPage(0); }}
