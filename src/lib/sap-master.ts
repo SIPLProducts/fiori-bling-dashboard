@@ -67,14 +67,64 @@ export async function parseWorkbook(file: File): Promise<ParsedSheet[]> {
   return out;
 }
 
-export const sapMastersQuery = {
-  queryKey: ["sap-masters"] as const,
+export type MasterCategory = "sap_master" | "zrmmat";
+export const mastersQuery = (category: MasterCategory = "sap_master") => ({
+  queryKey: ["sap-masters", category] as const,
   queryFn: async (): Promise<SapMaster[]> => {
-    const { data, error } = await supabase.from("sap_masters").select("id,name,columns,key_column,row_count,last_uploaded_at").order("name");
+    const { data, error } = await supabase.from("sap_masters").select("id,name,columns,key_column,row_count,last_uploaded_at").eq("category", category).order("name");
     if (error) throw error;
     return data ?? [];
   },
-};
+});
+export const sapMastersQuery = mastersQuery("sap_master");
+
+export type EditableRow = { id: string; data: Record<string, string> };
+export async function getMasterRowsWithId(masterId: string): Promise<EditableRow[]> {
+  const out: EditableRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase.from("sap_master_rows").select("id,data").eq("master_id", masterId).order("key_value").range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data ?? []).map((r) => ({ id: r.id, data: r.data as Record<string, string> })));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+async function refreshCount(masterId: string) {
+  const { count } = await supabase.from("sap_master_rows").select("id", { count: "exact", head: true }).eq("master_id", masterId);
+  await supabase.from("sap_masters").update({ row_count: count ?? 0 }).eq("id", masterId);
+}
+
+/** Save one edited row; key_value follows the master's key column. */
+export async function updateMasterRow(masterId: string, keyColumn: string, id: string, data: Record<string, string>) {
+  const key = (data[keyColumn] ?? "").trim();
+  if (!key) throw new Error(`${keyColumn} is required`);
+  const { error } = await supabase.from("sap_master_rows").update({ data, key_value: key }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function addMasterRow(masterId: string, keyColumn: string, data: Record<string, string>) {
+  const key = (data[keyColumn] ?? "").trim();
+  if (!key) throw new Error(`${keyColumn} is required`);
+  const { error } = await supabase.from("sap_master_rows").insert({ master_id: masterId, key_value: key, data });
+  if (error) throw error;
+  await refreshCount(masterId);
+}
+
+export async function deleteMasterRows(masterId: string, ids: string[]) {
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await supabase.from("sap_master_rows").delete().in("id", ids.slice(i, i + 200));
+    if (error) throw error;
+  }
+  await refreshCount(masterId);
+}
+
+export async function deleteMaster(masterId: string) {
+  const r = await supabase.from("sap_master_rows").delete().eq("master_id", masterId);
+  if (r.error) throw r.error;
+  const { error } = await supabase.from("sap_masters").delete().eq("id", masterId);
+  if (error) throw error;
+}
 
 export async function getMasterRows(masterId: string): Promise<Record<string, string>[]> {
   const out: Record<string, string>[] = [];
@@ -89,16 +139,16 @@ export async function getMasterRows(masterId: string): Promise<Record<string, st
 
 /** Dropdown options from any master column (for other screens). */
 export async function getMasterOptions(masterName: string, column: string): Promise<string[]> {
-  const { data: m } = await supabase.from("sap_masters").select("id").eq("name", masterName).maybeSingle();
+  const { data: m } = await supabase.from("sap_masters").select("id").eq("category", "sap_master").eq("name", masterName).maybeSingle();
   if (!m) return [];
   const rows = await getMasterRows(m.id);
   return [...new Set(rows.map((r) => r[column] ?? "").filter(Boolean))].sort();
 }
 
-export async function uploadSheet(sheet: ParsedSheet, keyColumn: string, onProgress: (done: number, total: number) => void) {
-  let { data: m } = await supabase.from("sap_masters").select("id").eq("name", sheet.name).maybeSingle();
+export async function uploadSheet(sheet: ParsedSheet, keyColumn: string, onProgress: (done: number, total: number) => void, category: MasterCategory = "sap_master") {
+  let { data: m } = await supabase.from("sap_masters").select("id").eq("category", category).eq("name", sheet.name).maybeSingle();
   if (!m) {
-    const ins = await supabase.from("sap_masters").insert({ name: sheet.name, key_column: keyColumn, columns: [] }).select("id").single();
+    const ins = await supabase.from("sap_masters").insert({ category, name: sheet.name, key_column: keyColumn, columns: [] }).select("id").single();
     if (ins.error) throw ins.error;
     m = ins.data;
   } else {
@@ -117,7 +167,7 @@ export async function uploadSheet(sheet: ParsedSheet, keyColumn: string, onProgr
   return rows.length;
 }
 
-export async function downloadMasterExcel(name: string, columns: string[], rows: Record<string, string>[]) {
+export async function downloadMasterExcel(name: string, columns: string[], rows: Record<string, string>[], screen = "SAP MASTER") {
   const { Workbook } = await import("exceljs");
   const wb = new Workbook();
   const ws = wb.addWorksheet(name.slice(0, 31) || "Master");
@@ -125,7 +175,7 @@ export async function downloadMasterExcel(name: string, columns: string[], rows:
   rows.forEach((r) => ws.addRow(columns.map((c) => r[c] ?? "")));
   const blob = new Blob([await wb.xlsx.writeBuffer()]);
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = datedFileName("SAP MASTER", "xlsx"); a.click();
+  const a = document.createElement("a"); a.href = url; a.download = datedFileName(screen, "xlsx"); a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -145,7 +195,7 @@ export function buildMasterOptions(rows: Record<string, string>[], column: strin
 export const masterRowsByNameQuery = (masterName: string) => ({
   queryKey: ["sap-master-rows", "by-name", masterName] as const,
   queryFn: async (): Promise<Record<string, string>[]> => {
-    const { data: m } = await supabase.from("sap_masters").select("id").eq("name", masterName).maybeSingle();
+    const { data: m } = await supabase.from("sap_masters").select("id").eq("category", "sap_master").eq("name", masterName).maybeSingle();
     return m ? getMasterRows(m.id) : [];
   },
   staleTime: Infinity,

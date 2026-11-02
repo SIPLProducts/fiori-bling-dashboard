@@ -94,6 +94,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     groupKey: TABLES_MASTER_GROUP_KEY,
     children: [
       { key: "tables.sap-master", label: "SAP MASTER", tileKey: "table_sap_master" },
+      { key: "tables.zrmmat", label: "ZRMMAT", tileKey: "table_zrmmat" },
     ],
   },
 ];
