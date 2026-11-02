@@ -138,7 +138,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
         <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} />Hide periods with no purchase</label>
       </div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
-        <thead className="sticky top-0 z-10 bg-foreground text-background"><tr>
+        <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
           {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Quantity", "Main vendor"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i && i !== 6 ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
         <tbody>{(() => {
           const rev = [...series].reverse();
