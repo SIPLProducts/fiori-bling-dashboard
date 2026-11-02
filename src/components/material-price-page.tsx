@@ -114,12 +114,13 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
 
     <section className="rounded-xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h3 className="text-xs font-semibold">Price by {period}</h3>
+        <div><h3 className="text-xs font-semibold">Price by {period}</h3>
+          <p className="text-[10px] text-muted-foreground">Diff from first = period price − first purchase price</p></div>
         <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} />Hide periods with no purchase</label>
       </div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
         <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
-          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Price diff (₹)"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Diff from first (₹)"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
         <tbody>{(() => {
           const rev = [...series].reverse();
           const bought = rev.filter((x) => x.rate != null);
@@ -136,7 +137,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
               <td className="px-3 py-2 text-right">{pill(d)}</td><td className="px-3 py-2 text-right">{pill(f)}</td>
               <td className="px-3 py-2"><div className="ml-auto w-32"><div className="relative h-1.5 rounded-full bg-muted"><div className="absolute h-full rounded-full" style={{ left: `${((p.low! - lo) / span) * 100}%`, width: `${Math.max(3, ((p.high! - p.low!) / span) * 100)}%`, background: radiantBar(bi) }} /></div>
                 <p className="mt-0.5 text-right text-[9px] tabular-nums text-muted-foreground">{n2(p.low!)} – {n2(p.high!)}</p></div></td>
-              <td className="px-3 py-2 text-right font-bold tabular-nums" style={{ color: p.diff ? toneOf(p.diff) : undefined }}>{p.diff == null ? "–" : `${p.diff > 0 ? "+" : ""}${n2(p.diff)}`}</td></tr>;
+              <td className="px-3 py-2 text-right font-bold tabular-nums" style={{ color: p.diff ? toneOf(p.diff) : undefined }}>{p.diff == null || p.diff === 0 ? "–" : `${p.diff > 0 ? "+" : ""}${n2(p.diff)}`}</td></tr>;
           });
         })()}</tbody></table></div>
     </section>

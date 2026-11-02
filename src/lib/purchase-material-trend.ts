@@ -78,26 +78,26 @@ const nextKey = (key: string, p: Period) => {
 };
 const labelOf = (key: string, p: Period) => p === "year" ? `FY${key.slice(2)}` : p === "quarter" ? `${key.slice(5)} FY${key.slice(2, 4)}` : `${MON[Number(key.slice(5, 7)) - 1]}-${key.slice(2, 4)}`;
 
-/** One point per period (qty-weighted rate) from first to last purchase; empty periods have rate null. */
+/** One point per period (qty-weighted rate); diff = period price − first purchase price; empty periods have rate null. */
 export function periodSeries(rows: PurchaseRow[], p: Period): PeriodPoint[] {
-  const m = new Map<string, { label: string; qty: number; amt: number; low: number; high: number; value: number; vend: Map<string, number>; fd: string; fr: number; ld: string; lr: number }>();
+  const m = new Map<string, { label: string; qty: number; amt: number; low: number; high: number; value: number; vend: Map<string, number> }>();
   for (const r of rows) {
     if (!r.rate || r.rate <= 0 || r.value <= 0 || !r.date) continue;
     const { key, label } = periodOf(r.date, p);
     const q = r.qty && r.qty > 0 ? r.qty : 1;
-    const e = m.get(key) ?? { label, qty: 0, amt: 0, low: Infinity, high: 0, value: 0, vend: new Map(), fd: r.date, fr: r.rate, ld: r.date, lr: r.rate };
-    if (r.date < e.fd) { e.fd = r.date; e.fr = r.rate; }
-    if (r.date >= e.ld) { e.ld = r.date; e.lr = r.rate; }
+    const e = m.get(key) ?? { label, qty: 0, amt: 0, low: Infinity, high: 0, value: 0, vend: new Map() };
     e.qty += q; e.amt += r.rate * q; e.low = Math.min(e.low, r.rate); e.high = Math.max(e.high, r.rate); e.value += r.value;
     e.vend.set(r.vendorName, (e.vend.get(r.vendorName) ?? 0) + r.value); m.set(key, e);
   }
   const keys = [...m.keys()].sort();
   if (!keys.length) return [];
+  const rateOf = (e: { qty: number; amt: number }) => e.amt / e.qty;
+  const firstRate = rateOf(m.get(keys[0]!)!);
   const out: PeriodPoint[] = [];
-  if (p === "day") return keys.map((k) => { const e = m.get(k)!; return { key: k, label: e.label, rate: e.amt / e.qty, low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: e.lr - e.fr }; });
+  if (p === "day") return keys.map((k) => { const e = m.get(k)!; return { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate }; });
   for (let k = keys[0]!, guard = 0; guard < 500; k = nextKey(k, p), guard++) {
     const e = m.get(k);
-    out.push(e ? { key: k, label: e.label, rate: e.amt / e.qty, low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: e.lr - e.fr }
+    out.push(e ? { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate }
       : { key: k, label: labelOf(k, p), rate: null, low: null, high: null, qty: 0, value: 0, vendor: "", diff: null });
     if (k === keys[keys.length - 1]) break;
   }

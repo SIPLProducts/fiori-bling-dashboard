@@ -90,8 +90,17 @@ describe("price mover material series", () => {
   it("excludes other series", () => { for (const c of ["400", "43001", "5100", "690", "9", ""]) expect(isPM(c)).toBe(false); });
 });
 describe("period price diff", () => {
-  it("is latest minus first price in the period", () => {
-    const r = (date: string, rate: number) => ({ date, rate, qty: 1, value: 1, vendorName: "V" }) as never;
-    expect(ps([r("2026-05-20", 130), r("2026-05-02", 100)], "month")[0]!.diff).toBe(30);
+  const r = (date: string, rate: number) => ({ date, rate, qty: 1, value: 1, vendorName: "V" }) as never;
+  it("is the period price minus the very first purchase price", () => {
+    const s = ps([r("2026-05-02", 100), r("2026-06-05", 120), r("2026-07-05", 150)], "month");
+    expect(s.map((p) => p.diff)).toEqual([0, 20, 50]);
+  });
+  it("is not the change vs the previous period", () => {
+    const s = ps([r("2026-05-02", 100), r("2026-06-05", 120), r("2026-07-05", 150)], "month");
+    expect(s[2]!.diff).not.toBe(30);
+  });
+  it("grows from the first purchase price when viewed daily", () => {
+    const s = ps([r("2026-06-02", 100), r("2026-06-08", 120), r("2026-06-10", 150)], "day");
+    expect(s.map((p) => p.diff)).toEqual([0, 20, 50]);
   });
 });
