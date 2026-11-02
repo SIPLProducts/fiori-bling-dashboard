@@ -21,7 +21,6 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportsSalesAnalyticsRouteImport } from './routes/_authenticated/reports/sales-analytics'
 import { Route as AuthenticatedTablesIndexRouteImport } from './routes/_authenticated/tables/index'
 import { Route as AuthenticatedTablesTableKeyRouteImport } from './routes/_authenticated/tables/$tableKey'
-import { Route as AuthenticatedReportsFiAssetRegisterRouteImport } from './routes/_authenticated/reports/fi/asset-register'
 import { Route as AuthenticatedReportsFiCashFlowRouteImport } from './routes/_authenticated/reports/fi/cash-flow'
 import { Route as AuthenticatedReportsFiTbnRouteRouteImport } from './routes/_authenticated/reports/fi/tbn/route'
 import { Route as AuthenticatedReportsInvCurrentStockRouteImport } from './routes/_authenticated/reports/inv/current-stock'
@@ -109,12 +108,6 @@ const AuthenticatedTablesTableKeyRoute =
   AuthenticatedTablesTableKeyRouteImport.update({
     id: '/tables/$tableKey',
     path: '/tables/$tableKey',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedReportsFiAssetRegisterRoute =
-  AuthenticatedReportsFiAssetRegisterRouteImport.update({
-    id: '/reports/fi/asset-register',
-    path: '/reports/fi/asset-register',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportsFiCashFlowRoute =
@@ -269,7 +262,6 @@ export interface FileRoutesByFullPath {
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables/': typeof AuthenticatedTablesIndexRoute
   '/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
-  '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
   '/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
   '/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
@@ -305,7 +297,6 @@ export interface FileRoutesByTo {
   '/reports/sales-analytics': typeof AuthenticatedReportsSalesAnalyticsRoute
   '/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/tables': typeof AuthenticatedTablesIndexRoute
-  '/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
   '/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
   '/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
@@ -344,7 +335,6 @@ export interface FileRoutesById {
   '/_authenticated/tables/$tableKey': typeof AuthenticatedTablesTableKeyRoute
   '/_authenticated/tables/': typeof AuthenticatedTablesIndexRoute
   '/_authenticated/reports/fi/tbn': typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
-  '/_authenticated/reports/fi/asset-register': typeof AuthenticatedReportsFiAssetRegisterRoute
   '/_authenticated/reports/fi/cash-flow': typeof AuthenticatedReportsFiCashFlowRoute
   '/_authenticated/reports/inv/current-stock': typeof AuthenticatedReportsInvCurrentStockRoute
   '/_authenticated/reports/inv/inventory-aging': typeof AuthenticatedReportsInvInventoryAgingRoute
@@ -383,7 +373,6 @@ export interface FileRouteTypes {
     | '/tables/$tableKey'
     | '/tables/'
     | '/reports/fi/tbn'
-    | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
     | '/reports/inv/current-stock'
     | '/reports/inv/inventory-aging'
@@ -419,7 +408,6 @@ export interface FileRouteTypes {
     | '/reports/sales-analytics'
     | '/tables/$tableKey'
     | '/tables'
-    | '/reports/fi/asset-register'
     | '/reports/fi/cash-flow'
     | '/reports/inv/current-stock'
     | '/reports/inv/inventory-aging'
@@ -457,7 +445,6 @@ export interface FileRouteTypes {
     | '/_authenticated/tables/$tableKey'
     | '/_authenticated/tables/'
     | '/_authenticated/reports/fi/tbn'
-    | '/_authenticated/reports/fi/asset-register'
     | '/_authenticated/reports/fi/cash-flow'
     | '/_authenticated/reports/inv/current-stock'
     | '/_authenticated/reports/inv/inventory-aging'
@@ -574,13 +561,6 @@ declare module '@tanstack/react-router' {
       path: '/tables/$tableKey'
       fullPath: '/tables/$tableKey'
       preLoaderRoute: typeof AuthenticatedTablesTableKeyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports/fi/asset-register': {
-      id: '/_authenticated/reports/fi/asset-register'
-      path: '/reports/fi/asset-register'
-      fullPath: '/reports/fi/asset-register'
-      preLoaderRoute: typeof AuthenticatedReportsFiAssetRegisterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/fi/cash-flow': {
@@ -774,7 +754,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTablesTableKeyRoute: typeof AuthenticatedTablesTableKeyRoute
   AuthenticatedTablesIndexRoute: typeof AuthenticatedTablesIndexRoute
   AuthenticatedReportsFiTbnRouteRoute: typeof AuthenticatedReportsFiTbnRouteRouteWithChildren
-  AuthenticatedReportsFiAssetRegisterRoute: typeof AuthenticatedReportsFiAssetRegisterRoute
   AuthenticatedReportsFiCashFlowRoute: typeof AuthenticatedReportsFiCashFlowRoute
   AuthenticatedReportsInvCurrentStockRoute: typeof AuthenticatedReportsInvCurrentStockRoute
   AuthenticatedReportsInvInventoryAgingRoute: typeof AuthenticatedReportsInvInventoryAgingRoute
@@ -808,8 +787,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTablesIndexRoute: AuthenticatedTablesIndexRoute,
   AuthenticatedReportsFiTbnRouteRoute:
     AuthenticatedReportsFiTbnRouteRouteWithChildren,
-  AuthenticatedReportsFiAssetRegisterRoute:
-    AuthenticatedReportsFiAssetRegisterRoute,
   AuthenticatedReportsFiCashFlowRoute: AuthenticatedReportsFiCashFlowRoute,
   AuthenticatedReportsInvCurrentStockRoute:
     AuthenticatedReportsInvCurrentStockRoute,
