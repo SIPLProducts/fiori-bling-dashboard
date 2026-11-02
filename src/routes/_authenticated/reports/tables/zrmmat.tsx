@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
-import { addMasterRow, deleteMaster, deleteMasterRows, downloadMasterExcel, getMasterRowsWithId, mastersQuery, parseWorkbook, updateMasterRow, uploadSheet, type ParsedSheet } from "@/lib/sap-master";
+import { addMasterRow, deleteMaster, deleteMasterRows, downloadMasterExcel, getMasterRowsWithId, mastersQuery, parseWorkbook, ROW_KEY, countUniqueKeys, keyLabel, updateMasterRow, uploadSheet, type ParsedSheet } from "@/lib/sap-master";
 
 export const Route = createFileRoute("/_authenticated/reports/tables/zrmmat")({
   head: () => ({ meta: [
@@ -67,12 +67,14 @@ function View({ isAdmin }: { isAdmin: boolean }) {
       const s = await parseWorkbook(f);
       if (!s.length) { toast.error("No sheets with a header row found"); return; }
       const known = new Map((list.data ?? []).map((m) => [m.name, m.key_column]));
-      setKeys(Object.fromEntries(s.map((x) => [x.name, known.get(x.name) && x.columns.includes(known.get(x.name)!) ? known.get(x.name)! : x.columns[0]!])));
+      setKeys(Object.fromEntries(s.map((x) => { const k = known.get(x.name); return [x.name, k && k !== ROW_KEY && k.split("+").every((c) => x.columns.includes(c)) ? k : ROW_KEY]; })));
       setSheets(s);
     } catch { toast.error("Could not read this Excel file"); }
   };
   const save = async () => {
     if (!sheets) return;
+    const lost = sheets.filter((s) => countUniqueKeys(s.rows, keys[s.name]!) < s.rows.length);
+    if (lost.length && !confirm(lost.map((s) => `${s.name}: ${s.rows.length} rows in file → only ${countUniqueKeys(s.rows, keys[s.name]!)} unique keys`).join("\n") + "\n\nRows with the same key will be merged. Continue?")) return;
     try {
       for (const s of sheets) {
         setBusy(`${s.name}: starting…`);
@@ -106,7 +108,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
         </Select>
       </div>
       <Input className="max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-      {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {current.key_column} · Last upload {new Date(current.last_uploaded_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>}
+      {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)} · Last upload {new Date(current.last_uploaded_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>}
       <div className="ml-auto flex flex-wrap gap-2">
         {current && <Button variant="outline" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), "ZRMMAT")}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
@@ -150,7 +152,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
         <DialogHeader><DialogTitle>{edit?.id ? "Edit row" : "Add row"}</DialogTitle></DialogHeader>
         <div className="grid max-h-[60vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
           {cols.map((c) => <label key={c} className="text-xs">
-            <span className="mb-1 block text-muted-foreground">{c}{c === current?.key_column ? " (key) *" : ""}</span>
+            <span className="mb-1 block text-muted-foreground">{c}{current?.key_column.split("+").includes(c) ? " (key) *" : ""}</span>
             <Input value={edit?.data[c] ?? ""} onChange={(e) => setEdit((x) => x && { ...x, data: { ...x.data, [c]: e.target.value } })} />
           </label>)}
         </div>
@@ -161,15 +163,20 @@ function View({ isAdmin }: { isAdmin: boolean }) {
     <Dialog open={!!sheets} onOpenChange={(o) => { if (!o && !busy) setSheets(null); }}>
       <DialogContent>
         <DialogHeader><DialogTitle>Upload ZRMMAT</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Each sheet is stored separately. New rows are added; rows with a matching key are updated.</p>
+        <p className="text-sm text-muted-foreground">Each sheet is stored separately. With no key, every Excel row is kept and the sheet is fully replaced. With key columns, rows with a matching key are updated.</p>
         <div className="max-h-80 space-y-3 overflow-y-auto">
           {sheets?.map((s) => <div key={s.name} className="rounded border p-3">
             <div className="font-medium">{s.name} <span className="text-xs text-muted-foreground">· {s.rows.length} rows · {s.columns.length} columns</span></div>
-            <div className="mt-2 flex items-center gap-2 text-sm">Key column
-              <Select value={keys[s.name] ?? ""} onValueChange={(v) => setKeys({ ...keys, [s.name]: v })}>
-                <SelectTrigger className="h-8 w-48"><SelectValue /></SelectTrigger>
-                <SelectContent>{s.columns.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="mt-2 text-sm">
+              {(() => { const k = keys[s.name] ?? ROW_KEY; const sel = k === ROW_KEY ? [] : k.split("+");
+                const toggle = (c: string) => { const n = sel.includes(c) ? sel.filter((x) => x !== c) : [...sel, c]; setKeys({ ...keys, [s.name]: n.length ? n.join("+") : ROW_KEY }); };
+                const u = countUniqueKeys(s.rows, k);
+                return <>
+                  <label className="flex items-center gap-2 font-medium"><input type="checkbox" checked={k === ROW_KEY} onChange={() => setKeys({ ...keys, [s.name]: ROW_KEY })} /> No key – keep every row</label>
+                  <div className="mt-1 text-xs text-muted-foreground">Or pick key column(s):</div>
+                  <div className="mt-1 flex max-h-28 flex-wrap gap-x-3 gap-y-1 overflow-y-auto">{s.columns.map((c) => <label key={c} className="flex items-center gap-1 text-xs"><input type="checkbox" checked={sel.includes(c)} onChange={() => toggle(c)} />{c}</label>)}</div>
+                  <div className={`mt-2 text-xs ${u < s.rows.length ? "text-destructive font-medium" : "text-muted-foreground"}`}>{s.rows.length} rows in file → {u} will be stored (key: {keyLabel(k)})</div>
+                </>; })()}
             </div>
           </div>)}
         </div>

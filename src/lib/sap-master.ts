@@ -32,10 +32,22 @@ export function gridToSheet(name: string, grid: unknown[][]): ParsedSheet {
 }
 
 /** Pure: rows keyed by key column; rows without key dropped; later duplicates win (merged). */
+export const ROW_KEY = "__row__";
+/** Pure: key value for a row; keyColumn may join several columns with "+", or be ROW_KEY (row position). */
+export function buildKey(row: Record<string, string>, keyColumn: string, index = 0): string {
+  if (keyColumn === ROW_KEY) return String(index + 1).padStart(7, "0");
+  const parts = keyColumn.split("+").map((c) => (row[c] ?? "").trim());
+  return parts.every((p) => !p) ? "" : parts.join(" | ");
+}
+export function countUniqueKeys(rows: Record<string, string>[], keyColumn: string): number {
+  return new Set(rows.map((r, i) => buildKey(r, keyColumn, i)).filter(Boolean)).size;
+}
+export function keyLabel(keyColumn: string) { return keyColumn === ROW_KEY ? "None (every row kept)" : keyColumn.split("+").join(" + "); }
+
 export function keyRows(rows: Record<string, string>[], keyColumn: string): MasterRow[] {
   const map = new Map<string, Record<string, string>>();
-  for (const r of rows) {
-    const k = (r[keyColumn] ?? "").trim();
+  for (const [i, r] of rows.entries()) {
+    const k = buildKey(r, keyColumn, i);
     if (!k) continue;
     map.set(k, { ...(map.get(k) ?? {}), ...r });
   }
@@ -97,15 +109,20 @@ async function refreshCount(masterId: string) {
 
 /** Save one edited row; key_value follows the master's key column. */
 export async function updateMasterRow(masterId: string, keyColumn: string, id: string, data: Record<string, string>) {
-  const key = (data[keyColumn] ?? "").trim();
-  if (!key) throw new Error(`${keyColumn} is required`);
+  if (keyColumn === ROW_KEY) {
+    const { error } = await supabase.from("sap_master_rows").update({ data }).eq("id", id);
+    if (error) throw error;
+    return;
+  }
+  const key = buildKey(data, keyColumn);
+  if (!key) throw new Error(`${keyLabel(keyColumn)} is required`);
   const { error } = await supabase.from("sap_master_rows").update({ data, key_value: key }).eq("id", id);
   if (error) throw error;
 }
 
 export async function addMasterRow(masterId: string, keyColumn: string, data: Record<string, string>) {
-  const key = (data[keyColumn] ?? "").trim();
-  if (!key) throw new Error(`${keyColumn} is required`);
+  const key = keyColumn === ROW_KEY ? `9${Date.now()}` : buildKey(data, keyColumn);
+  if (!key) throw new Error(`${keyLabel(keyColumn)} is required`);
   const { error } = await supabase.from("sap_master_rows").insert({ master_id: masterId, key_value: key, data });
   if (error) throw error;
   await refreshCount(masterId);
@@ -153,6 +170,10 @@ export async function uploadSheet(sheet: ParsedSheet, keyColumn: string, onProgr
     m = ins.data;
   } else {
     await supabase.from("sap_masters").update({ key_column: keyColumn }).eq("id", m.id);
+  }
+  if (keyColumn === ROW_KEY) {
+    const d = await supabase.from("sap_master_rows").delete().eq("master_id", m.id);
+    if (d.error) throw d.error;
   }
   const rows = keyRows(sheet.rows, keyColumn);
   if (!rows.length) {
