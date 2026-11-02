@@ -89,7 +89,6 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
       {pages > 1 ? <div className="mt-2 flex items-center gap-2 text-[10px]"><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg === 0} onClick={() => setPage(pg - 1)}>Prev</Button><span>{pg + 1} / {pages}</span><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg >= pages - 1} onClick={() => setPage(pg + 1)}>Next</Button></div> : null}
       <p className="mt-2 text-[9px] text-muted-foreground">Only materials bought {TREND_RULES.minPurchases}+ times on {TREND_RULES.minDates}+ dates, moving the same way in {TREND_RULES.minConsistency * 100}%+ of purchases{res.outliers ? `; ${res.outliers} unusual changes (over +1,000% or under −95%) left out` : ""}.</p>
     </section>
-    </div>
     <Dialog open={!!peek} onOpenChange={(o) => !o && setPeek(null)}>
       <DialogContent className="max-w-2xl">{peek ? <QuickView t={peek} rows={rows.filter((r) => r.material === peek.material)} onOpen={() => { onOpen(peek); setPeek(null); }} /> : null}</DialogContent>
     </Dialog>
