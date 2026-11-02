@@ -40,6 +40,7 @@ import { Route as AuthenticatedReportsSdOrderBookRouteImport } from './routes/_a
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
 import { Route as AuthenticatedReportsSdSitRouteImport } from './routes/_authenticated/reports/sd/sit'
 import { Route as AuthenticatedReportsTablesSapMasterRouteImport } from './routes/_authenticated/reports/tables/sap-master'
+import { Route as AuthenticatedReportsTablesZrmmatRouteImport } from './routes/_authenticated/reports/tables/zrmmat'
 import { Route as AuthenticatedReportsFiTbnIndexRouteImport } from './routes/_authenticated/reports/fi/tbn/index'
 import { Route as AuthenticatedReportsFiTbnTableRouteImport } from './routes/_authenticated/reports/fi/tbn/table'
 import { Route as ApiPublicSapPullZfisalesRouteImport } from './routes/api/public/sap/pull/zfisales'
@@ -224,6 +225,12 @@ const AuthenticatedReportsTablesSapMasterRoute =
     path: '/reports/tables/sap-master',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsTablesZrmmatRoute =
+  AuthenticatedReportsTablesZrmmatRouteImport.update({
+    id: '/reports/tables/zrmmat',
+    path: '/reports/tables/zrmmat',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsFiTbnIndexRoute =
   AuthenticatedReportsFiTbnIndexRouteImport.update({
     id: '/',
@@ -280,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -315,6 +323,7 @@ export interface FileRoutesByTo {
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -353,6 +362,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/_authenticated/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/_authenticated/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/_authenticated/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/_authenticated/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
   '/api/public/sap/sync/zfisales': typeof ApiPublicSapSyncZfisalesRoute
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/reports/sd/register'
     | '/reports/sd/sit'
     | '/reports/tables/sap-master'
+    | '/reports/tables/zrmmat'
     | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -426,6 +437,7 @@ export interface FileRouteTypes {
     | '/reports/sd/register'
     | '/reports/sd/sit'
     | '/reports/tables/sap-master'
+    | '/reports/tables/zrmmat'
     | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -463,6 +475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/register'
     | '/_authenticated/reports/sd/sit'
     | '/_authenticated/reports/tables/sap-master'
+    | '/_authenticated/reports/tables/zrmmat'
     | '/_authenticated/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
     | '/api/public/sap/sync/zfisales'
@@ -696,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsTablesSapMasterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/tables/zrmmat': {
+      id: '/_authenticated/reports/tables/zrmmat'
+      path: '/reports/tables/zrmmat'
+      fullPath: '/reports/tables/zrmmat'
+      preLoaderRoute: typeof AuthenticatedReportsTablesZrmmatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/fi/tbn/': {
       id: '/_authenticated/reports/fi/tbn/'
       path: '/'
@@ -772,6 +792,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
   AuthenticatedReportsSdSitRoute: typeof AuthenticatedReportsSdSitRoute
   AuthenticatedReportsTablesSapMasterRoute: typeof AuthenticatedReportsTablesSapMasterRoute
+  AuthenticatedReportsTablesZrmmatRoute: typeof AuthenticatedReportsTablesZrmmatRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -814,6 +835,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsSdSitRoute: AuthenticatedReportsSdSitRoute,
   AuthenticatedReportsTablesSapMasterRoute:
     AuthenticatedReportsTablesSapMasterRoute,
+  AuthenticatedReportsTablesZrmmatRoute: AuthenticatedReportsTablesZrmmatRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

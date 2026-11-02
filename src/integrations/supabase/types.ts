@@ -2207,6 +2207,7 @@ export type Database = {
       }
       sap_masters: {
         Row: {
+          category: string
           columns: string[]
           created_at: string
           id: string
@@ -2216,6 +2217,7 @@ export type Database = {
           row_count: number
         }
         Insert: {
+          category?: string
           columns?: string[]
           created_at?: string
           id?: string
@@ -2225,6 +2227,7 @@ export type Database = {
           row_count?: number
         }
         Update: {
+          category?: string
           columns?: string[]
           created_at?: string
           id?: string
