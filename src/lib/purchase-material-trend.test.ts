@@ -83,3 +83,15 @@ describe("periodSeries daily", () => {
     expect(s[1]!.rate).toBe(13);
   });
 });
+
+import { isPriceMoverMaterial as isPM, periodSeries as ps } from "./purchase-material-trend";
+describe("price mover material series", () => {
+  it("includes 1,2,3,41,42,68 series", () => { for (const c of ["100123", "200", "3001", "41005", "42", "680001", "000041"]) expect(isPM(c)).toBe(true); });
+  it("excludes other series", () => { for (const c of ["400", "43001", "5100", "690", "9", ""]) expect(isPM(c)).toBe(false); });
+});
+describe("period price diff", () => {
+  it("is latest minus first price in the period", () => {
+    const r = (date: string, rate: number) => ({ date, rate, qty: 1, value: 1, vendorName: "V" }) as never;
+    expect(ps([r("2026-05-20", 130), r("2026-05-02", 100)], "month")[0]!.diff).toBe(30);
+  });
+});
