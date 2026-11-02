@@ -43,12 +43,12 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
 
   const stats: [string, string, (string | undefined)?, (string | undefined)?][] = [
     ["First price", `₹ ${n2(first?.rate ?? 0)}`, first?.label],
+    ["Latest price", `₹ ${n2(last?.rate ?? 0)}`, last?.label],
     ["Since first", `${sinceFirst >= 0 ? "+" : ""}${sinceFirst.toFixed(1)}%`, undefined, toneOf(sinceFirst)],
+    ["Quantity bought", n0(totalQty), unit],
     ["Lowest paid", `₹ ${n2(rates.length ? Math.min(...rates) : 0)}`],
     ["Highest paid", `₹ ${n2(rates.length ? Math.max(...rates) : 0)}`],
-    ["Quantity bought", n0(totalQty), unit],
     ["Purchases", n0(lines.length)],
-    ["Latest price", `₹ ${n2(last?.rate ?? 0)}`, last?.label],
     ["Total spend", `₹ ${spend.toFixed(3)} Cr`],
   ];
 
