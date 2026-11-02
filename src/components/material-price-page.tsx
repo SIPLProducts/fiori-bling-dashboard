@@ -17,6 +17,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
   const [period, setPeriod] = useState<Period>(() => new Set(rows.filter((r) => r.material === trend.material).map((r) => r.date.slice(0, 7))).size <= 1 ? "day" : "month");
   const [hideEmpty, setHideEmpty] = useState(true);
   const lines = useMemo(() => rows.filter((r) => r.material === trend.material).sort((a, b) => a.date.localeCompare(b.date)), [rows, trend.material]);
+  const vendorIdx = useMemo(() => { const m = new Map<string, number>(); lines.forEach((r) => { if (!m.has(r.vendorName)) m.set(r.vendorName, m.size); }); return m; }, [lines]);
   const series = useMemo(() => periodSeries(lines, period), [lines, period]);
   const bought = series.filter((p) => p.rate != null);
   const passKeys = new Set(bought.map((p) => p.key));
@@ -118,7 +119,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
       </div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
         <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
-          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Quantity", "Main vendor"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i && i !== 6 ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Quantity"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
         <tbody>{(() => {
           const rev = [...series].reverse();
           const bought = rev.filter((x) => x.rate != null);
@@ -126,7 +127,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           const pill = (v: number | null) => v == null ? <span className="text-muted-foreground">–</span> :
             <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: toneOf(v), background: `color-mix(in oklab, ${toneOf(v)} 14%, transparent)` }}>{sp(v)}</span>;
           return collapseEmptyPeriods(rev).filter((r) => r.kind === "gap" ? !hideEmpty : passKeys.has(r.point.key)).map((r) => {
-            if (r.kind === "gap") return <tr key={`g-${r.from}`} className="border-t border-border/60 text-muted-foreground/70 italic"><td colSpan={7} className="px-3 py-1.5 text-center">No purchase · {r.count > 1 ? `${r.to} to ${r.from}` : r.from}</td></tr>;
+            if (r.kind === "gap") return <tr key={`g-${r.from}`} className="border-t border-border/60 text-muted-foreground/70 italic"><td colSpan={6} className="px-3 py-1.5 text-center">No purchase · {r.count > 1 ? `${r.to} to ${r.from}` : r.from}</td></tr>;
             const p = r.point, bi = bought.indexOf(p), before = bought[bi + 1];
             const d = before ? ((p.rate! - before.rate!) / before.rate!) * 100 : null;
             const f = first && p.key !== first.key ? ((p.rate! - first.rate!) / first.rate!) * 100 : null;
@@ -135,8 +136,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
               <td className="px-3 py-2 text-right">{pill(d)}</td><td className="px-3 py-2 text-right">{pill(f)}</td>
               <td className="px-3 py-2"><div className="ml-auto w-32"><div className="relative h-1.5 rounded-full bg-muted"><div className="absolute h-full rounded-full" style={{ left: `${((p.low! - lo) / span) * 100}%`, width: `${Math.max(3, ((p.high! - p.low!) / span) * 100)}%`, background: radiantBar(bi) }} /></div>
                 <p className="mt-0.5 text-right text-[9px] tabular-nums text-muted-foreground">{n2(p.low!)} – {n2(p.high!)}</p></div></td>
-              <td className="px-3 py-2 text-right tabular-nums">{n0(p.qty)}</td>
-              <td className="max-w-[200px] truncate px-3 py-2">{p.vendor}</td></tr>;
+              <td className="px-3 py-2 text-right tabular-nums">{n0(p.qty)}</td></tr>;
           });
         })()}</tbody></table></div>
     </section>
@@ -152,7 +152,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           return { r, d, i };
         }).reverse().map(({ r, d, i }) => <tr key={i} className="border-t border-border/60 odd:bg-muted/30 hover:bg-accent/40">
           <td className="px-3 py-2 font-semibold">{r.date.length >= 10 ? `${r.date.slice(8, 10)}-${r.date.slice(5, 7)}-${r.date.slice(0, 4)}` : r.date}</td><td className="px-3 py-2">{r.docNo ?? ""}</td>
-          <td className="max-w-[220px] truncate px-3 py-2">{r.vendorName}</td><td className="px-3 py-2">{r.plantSh || r.plant}</td>
+          <td className="px-3 py-2"><span className="inline-block max-w-[220px] truncate rounded-md px-2 py-0.5 font-semibold text-on-radiant" style={{ background: radiantBar(vendorIdx.get(r.vendorName) ?? 0) }}>{r.vendorName}</span></td><td className="px-3 py-2">{r.plantSh || r.plant}</td>
           <td className="px-3 py-2 text-right tabular-nums">{n0(r.qty ?? 0)}</td><td className="px-3 py-2">{r.unit ?? ""}</td>
           <td className="px-3 py-2 text-right font-bold tabular-nums">{n2(r.rate ?? 0)}</td>
           <td className="px-3 py-2 text-right">{d == null ? <span className="text-muted-foreground">–</span> : <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: toneOf(d), background: `color-mix(in oklab, ${toneOf(d)} 14%, transparent)` }}>{sp(d)}</span>}</td>
