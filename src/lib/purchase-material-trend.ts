@@ -62,7 +62,7 @@ export function materialTrends(rows: PurchaseRow[], rules: { [K in keyof typeof 
 }
 
 export type Period = "day" | "month" | "quarter" | "year";
-export type PeriodPoint = { key: string; label: string; rate: number | null; low: number | null; high: number | null; qty: number; value: number; vendor: string; diff: number | null };
+export type PeriodPoint = { key: string; label: string; rate: number | null; low: number | null; high: number | null; qty: number; value: number; vendor: string; diff: number | null; rates?: { rate: number; qty: number }[] };
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const periodOf = (date: string, p: Period) => {
   const y = Number(date.slice(0, 4)), m = Number(date.slice(5, 7)) - 1;
@@ -80,13 +80,13 @@ const labelOf = (key: string, p: Period) => p === "year" ? `FY${key.slice(2)}` :
 
 /** One point per period (qty-weighted rate); diff = period price − first purchase price; empty periods have rate null. */
 export function periodSeries(rows: PurchaseRow[], p: Period): PeriodPoint[] {
-  const m = new Map<string, { label: string; qty: number; amt: number; low: number; high: number; value: number; vend: Map<string, number> }>();
+  const m = new Map<string, { label: string; qty: number; amt: number; low: number; high: number; value: number; vend: Map<string, number>; rs: Map<number, number> }>();
   for (const r of rows) {
     if (!r.rate || r.rate <= 0 || r.value <= 0 || !r.date) continue;
     const { key, label } = periodOf(r.date, p);
     const q = r.qty && r.qty > 0 ? r.qty : 1;
-    const e = m.get(key) ?? { label, qty: 0, amt: 0, low: Infinity, high: 0, value: 0, vend: new Map() };
-    e.qty += q; e.amt += r.rate * q; e.low = Math.min(e.low, r.rate); e.high = Math.max(e.high, r.rate); e.value += r.value;
+    const e = m.get(key) ?? { label, qty: 0, amt: 0, low: Infinity, high: 0, value: 0, vend: new Map(), rs: new Map() };
+    e.qty += q; e.amt += r.rate * q; e.low = Math.min(e.low, r.rate); e.high = Math.max(e.high, r.rate); e.value += r.value; e.rs.set(r.rate, (e.rs.get(r.rate) ?? 0) + q);
     e.vend.set(r.vendorName, (e.vend.get(r.vendorName) ?? 0) + r.value); m.set(key, e);
   }
   const keys = [...m.keys()].sort();
@@ -94,10 +94,10 @@ export function periodSeries(rows: PurchaseRow[], p: Period): PeriodPoint[] {
   const rateOf = (e: { qty: number; amt: number }) => e.amt / e.qty;
   const firstRate = rateOf(m.get(keys[0]!)!);
   const out: PeriodPoint[] = [];
-  if (p === "day") return keys.map((k) => { const e = m.get(k)!; return { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate }; });
+  if (p === "day") return keys.map((k) => { const e = m.get(k)!; return { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate, rates: [...e.rs].map(([rate, qty]) => ({ rate, qty })).sort((a, b) => a.rate - b.rate) }; });
   for (let k = keys[0]!, guard = 0; guard < 500; k = nextKey(k, p), guard++) {
     const e = m.get(k);
-    out.push(e ? { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate }
+    out.push(e ? { key: k, label: e.label, rate: rateOf(e), low: e.low, high: e.high, qty: e.qty, value: e.value, vendor: [...e.vend].sort((a, b) => b[1] - a[1])[0]![0], diff: rateOf(e) - firstRate, rates: [...e.rs].map(([rate, qty]) => ({ rate, qty })).sort((a, b) => a.rate - b.rate) }
       : { key: k, label: labelOf(k, p), rate: null, low: null, high: null, qty: 0, value: 0, vendor: "", diff: null });
     if (k === keys[keys.length - 1]) break;
   }

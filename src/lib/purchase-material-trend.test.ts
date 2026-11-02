@@ -104,3 +104,13 @@ describe("period price diff", () => {
     expect(s.map((p) => p.diff)).toEqual([0, 20, 50]);
   });
 });
+
+describe("periodSeries low/high", () => {
+  it("08-Jun: low 82, high 135, weighted avg", () => {
+    const mk = (rate: number, qty: number) => ({ material: "M", date: "2026-06-08", rate, qty, value: rate * qty, vendorName: "V" }) as never;
+    const [p] = periodSeries([mk(135, 40), mk(82, 25)], "day");
+    expect(p!.low).toBe(82); expect(p!.high).toBe(135);
+    expect(p!.rate).toBeCloseTo((135 * 40 + 82 * 25) / 65, 2);
+    expect(p!.rates).toEqual([{ rate: 82, qty: 25 }, { rate: 135, qty: 40 }]);
+  });
+});
