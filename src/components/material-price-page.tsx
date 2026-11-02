@@ -119,7 +119,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
       </div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
         <thead className="sticky top-0 z-10 text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>
-          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Quantity"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
+          {["Period", "Price (₹)", "vs previous", "Since first", "Low – High", "Price diff (₹)"].map((h, i) => <th key={h} className={`px-3 py-2 font-semibold ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
         <tbody>{(() => {
           const rev = [...series].reverse();
           const bought = rev.filter((x) => x.rate != null);
@@ -136,7 +136,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
               <td className="px-3 py-2 text-right">{pill(d)}</td><td className="px-3 py-2 text-right">{pill(f)}</td>
               <td className="px-3 py-2"><div className="ml-auto w-32"><div className="relative h-1.5 rounded-full bg-muted"><div className="absolute h-full rounded-full" style={{ left: `${((p.low! - lo) / span) * 100}%`, width: `${Math.max(3, ((p.high! - p.low!) / span) * 100)}%`, background: radiantBar(bi) }} /></div>
                 <p className="mt-0.5 text-right text-[9px] tabular-nums text-muted-foreground">{n2(p.low!)} – {n2(p.high!)}</p></div></td>
-              <td className="px-3 py-2 text-right tabular-nums">{n0(p.qty)}</td></tr>;
+              <td className="px-3 py-2 text-right font-bold tabular-nums" style={{ color: p.diff ? toneOf(p.diff) : undefined }}>{p.diff == null ? "–" : `${p.diff > 0 ? "+" : ""}${n2(p.diff)}`}</td></tr>;
           });
         })()}</tbody></table></div>
     </section>

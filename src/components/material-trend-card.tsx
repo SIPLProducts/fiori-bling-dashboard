@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { radiantColor } from "@/lib/radiant";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
-import { materialPoints, materialTrends, TREND_RULES, type MaterialTrend } from "@/lib/purchase-material-trend";
+import { isPriceMoverMaterial, materialPoints, materialTrends, TREND_RULES, type MaterialTrend } from "@/lib/purchase-material-trend";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 
 const n2 = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,7 +22,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [peek, setPeek] = useState<MaterialTrend | null>(null);
-  const res = useMemo(() => materialTrends(rows), [rows]);
+  const res = useMemo(() => materialTrends(rows.filter((r) => isPriceMoverMaterial(r.material))), [rows]);
   const sparks = useMemo(() => {
     const by = new Map<string, PurchaseRow[]>();
     for (const r of rows) { const a = by.get(r.material); if (a) a.push(r); else by.set(r.material, [r]); }
