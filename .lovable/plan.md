@@ -7,7 +7,7 @@ For the material in the screenshot, all 5 purchases fall in June 2026. Monthly, 
 
 1. **Material Price Movers card (main screen)**
    - Remove the four tiles (Materials tracked, Rising, Falling, Average change).
-   - Card inside background becomes a soft, light radiant wash (pale blue → teal → purple → orange) while keeping the coloured border. Text stays readable in Light, Dark and Glassy.
+   - Card inside background becomes a soft, light radiant wash (pale blue → teal → purple → orange) while keeping the coloured border. The same light background shows in Light, Dark and Glassy, and text stays readable in all three.
 
 2. **Material screen header**
    - Remove the material name and code text beside the Back button (it is already shown in the coloured banner).
