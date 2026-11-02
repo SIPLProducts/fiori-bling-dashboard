@@ -75,3 +75,11 @@ describe("material screen period filter", () => {
   });
   it("first purchase always passes", () => { expect(periodPasses(null, 5, 1, 50, null)).toBe(true); });
 });
+
+describe("periodSeries daily", () => {
+  it("gives one point per purchase date in the same month", () => {
+    const s = periodSeries([row("A", "2026-06-02", 10), row("A", "2026-06-10", 12), row("A", "2026-06-10", 14)], "day");
+    expect(s.map((p) => p.key)).toEqual(["2026-06-02", "2026-06-10"]);
+    expect(s[1]!.rate).toBe(13);
+  });
+});
