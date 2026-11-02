@@ -3,7 +3,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Dot, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
-import { collapseEmptyPeriods, periodPasses, periodSeries, type MaterialTrend, type Period } from "@/lib/purchase-material-trend";
+import { collapseEmptyPeriods, periodSeries, type MaterialTrend, type Period } from "@/lib/purchase-material-trend";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 import { radiantBar, radiantColor } from "@/lib/radiant";
 
@@ -16,12 +16,10 @@ const toneOf = (v: number) => (v > 0 ? UP : v < 0 ? DOWN : "var(--muted-foregrou
 export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTrend; rows: PurchaseRow[]; onBack: () => void }) {
   const [period, setPeriod] = useState<Period>(() => new Set(rows.filter((r) => r.material === trend.material).map((r) => r.date.slice(0, 7))).size <= 1 ? "day" : "month");
   const [hideEmpty, setHideEmpty] = useState(true);
-  const [minPct, setMinPct] = useState(2);
-  const [minEff, setMinEff] = useState<number | null>(500000);
   const lines = useMemo(() => rows.filter((r) => r.material === trend.material).sort((a, b) => a.date.localeCompare(b.date)), [rows, trend.material]);
   const series = useMemo(() => periodSeries(lines, period), [lines, period]);
   const bought = series.filter((p) => p.rate != null);
-  const passKeys = useMemo(() => { const k = new Set<string>(); bought.forEach((p, i) => { if (periodPasses(bought[i - 1]?.rate, p.rate!, p.qty, minPct, minEff)) k.add(p.key); }); return k; }, [bought, minPct, minEff]);
+  const passKeys = new Set(bought.map((p) => p.key));
   const first = bought[0], last = bought[bought.length - 1], prev = bought[bought.length - 2];
   const vsPrev = prev && last ? ((last.rate! - prev.rate!) / prev.rate!) * 100 : 0;
   const sinceFirst = first && last ? ((last.rate! - first.rate!) / first.rate!) * 100 : 0;
@@ -65,16 +63,6 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
       </div>
     </div>
 
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-[11px] shadow-sm">
-      <span>Show price changes of at least</span>
-      <select aria-label="Minimum change" value={minPct} onChange={(e) => setMinPct(Number(e.target.value))} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
-        {[2, 5, 10, 20, 50].map((v) => <option key={v} value={v}>{v}%</option>)}</select>
-      <span className="text-muted-foreground">(up or down) and smaller changes with a value effect of</span>
-      <select aria-label="Minimum value effect" value={minEff ?? "none"} onChange={(e) => setMinEff(e.target.value === "none" ? null : Number(e.target.value))} className="h-7 rounded-md border border-border bg-background px-2 font-semibold">
-        {([[100000, "at least ₹ 1 lakh"], [500000, "at least ₹ 5 lakh"], [1000000, "at least ₹ 10 lakh"], [5000000, "at least ₹ 50 lakh"]] as const).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        <option value="none">don't include</option></select>
-      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">{passKeys.size} of {bought.length} periods shown</span>
-    </div>
 
     <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="-m-4 mb-3 rounded-t-xl p-4 text-on-radiant" style={{ background: `linear-gradient(120deg, #1f6fd1, ${sinceFirst >= 0 ? "#d64550" : "#2e8b57"})` }}>
@@ -112,6 +100,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
         </ComposedChart></ResponsiveContainer></div>
     </section>
 
+    <div className="grid gap-3 lg:grid-cols-2">
     <section className="rounded-xl border border-border bg-card p-3 shadow-sm">
         <h3 className="text-xs font-semibold">Quantity bought</h3><p className="text-[10px] text-muted-foreground">{unit} per {period}</p>
         <ResponsiveContainer width="100%" height={200}><BarChart data={series} margin={{ top: 16, left: -8, right: 4, bottom: 0 }}>
@@ -151,6 +140,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           });
         })()}</tbody></table></div>
     </section>
+    </div>
     <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2"><h3 className="text-xs font-semibold">Purchases by date</h3><span className="text-[10px] text-muted-foreground">{n0(lines.length)} purchases</span></div>
       <div className="max-h-[480px] overflow-auto"><table className="w-full text-[11px]">
@@ -161,8 +151,8 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
           const d = pr && r.rate ? ((r.rate - pr.rate!) / pr.rate!) * 100 : null;
           return { r, d, i };
         }).reverse().map(({ r, d, i }) => <tr key={i} className="border-t border-border/60 odd:bg-muted/30 hover:bg-accent/40">
-          <td className="px-3 py-2 font-semibold">{r.date}</td><td className="px-3 py-2">{r.docNo ?? ""}</td>
-          <td className="max-w-[220px] truncate px-3 py-2">{r.vendorName}</td><td className="px-3 py-2">{r.plantName}</td>
+          <td className="px-3 py-2 font-semibold">{r.date.length >= 10 ? `${r.date.slice(8, 10)}-${r.date.slice(5, 7)}-${r.date.slice(0, 4)}` : r.date}</td><td className="px-3 py-2">{r.docNo ?? ""}</td>
+          <td className="max-w-[220px] truncate px-3 py-2">{r.vendorName}</td><td className="px-3 py-2">{r.plantSh || r.plant}</td>
           <td className="px-3 py-2 text-right tabular-nums">{n0(r.qty ?? 0)}</td><td className="px-3 py-2">{r.unit ?? ""}</td>
           <td className="px-3 py-2 text-right font-bold tabular-nums">{n2(r.rate ?? 0)}</td>
           <td className="px-3 py-2 text-right">{d == null ? <span className="text-muted-foreground">–</span> : <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: toneOf(d), background: `color-mix(in oklab, ${toneOf(d)} 14%, transparent)` }}>{sp(d)}</span>}</td>
