@@ -19,3 +19,12 @@ describe("SAP MASTER merge", () => {
     expect(keyRows(s.rows, "Code")).toEqual([{ k: "1000", d: { Code: "1000", Name: "Pune" } }]);
   });
 });
+
+import { buildKey as bk, countUniqueKeys as cu, keyRows as kr, ROW_KEY as RK } from "./sap-master";
+describe("ZRMMAT keys", () => {
+  const rows = Array.from({ length: 200 }, (_, i) => ({ Plant: `P${i % 5}`, Material: `M${i}` }));
+  it("single Plant key collapses 200 rows to 5", () => expect(cu(rows, "Plant")).toBe(5));
+  it("Plant+Material key keeps 200", () => expect(cu(rows, "Plant+Material")).toBe(200));
+  it("no key keeps every row", () => expect(kr(rows, RK)).toHaveLength(200));
+  it("joins key parts", () => expect(bk({ A: "1", B: "2" }, "A+B")).toBe("1 | 2"));
+});
