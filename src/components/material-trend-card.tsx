@@ -104,3 +104,23 @@ function QuickView({ t, rows, onOpen }: { t: MaterialTrend; rows: PurchaseRow[];
     <Button size="sm" onClick={onOpen}>Open full price history</Button>
   </>;
 }
+
+function Pager({ pg, pages, set }: { pg: number; pages: number; set: (n: number) => void }) {
+  return <div className="mt-2 flex items-center gap-2 text-[10px]"><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg === 0} onClick={() => set(pg - 1)}>Prev</Button><span>{pg + 1} / {pages}</span><Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={pg >= pages - 1} onClick={() => set(pg + 1)}>Next</Button></div>;
+}
+
+function MoverPanel({ title, tone, items, empty, renderTile }: { title: string; tone: string; items: MaterialTrend[]; empty: string; renderTile: (t: MaterialTrend, i: number) => React.ReactNode }) {
+  const [page, setPage] = useState(0);
+  const SIDE = 5;
+  const pages = Math.max(1, Math.ceil(items.length / SIDE));
+  const pg = Math.min(page, pages - 1);
+  return <div className="overflow-hidden rounded-xl border-2" style={{ borderColor: tone, background: `color-mix(in oklab, ${tone} 5%, transparent)` }}>
+    <div className="flex items-center justify-between px-3 py-1.5 text-xs font-bold text-on-radiant" style={{ background: `linear-gradient(90deg, ${tone}, color-mix(in oklab, ${tone} 60%, transparent))` }}>
+      <span>{title}</span><span className="rounded-full bg-background/25 px-2 text-[10px]">{items.length}</span></div>
+    <div className="p-2">
+      {items.length ? <ul className="grid grid-cols-1 gap-2">{items.slice(pg * SIDE, pg * SIDE + SIDE).map((t, i) => renderTile(t, pg * SIDE + i))}</ul>
+        : <p className="py-8 text-center text-xs text-muted-foreground">{empty}</p>}
+      {pages > 1 ? <Pager pg={pg} pages={pages} set={setPage} /> : null}
+    </div>
+  </div>;
+}
