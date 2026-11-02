@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Boxes, Eye, Percent, Search, TrendingDown, TrendingUp } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { radiantColor } from "@/lib/radiant";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -15,12 +15,6 @@ const PAGE = 10;
 type Filter = "all" | "rising" | "falling";
 type Sort = "spend" | "rise" | "fall";
 
-function Kpi({ icon, value, label, tone }: { icon: React.ReactNode; value: string; label: string; tone: string }) {
-  return <div className="flex min-w-0 items-center gap-2 rounded-xl p-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
-    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</span>
-    <div className="min-w-0"><p className="text-lg font-bold leading-tight">{value}</p><p className="truncate text-[10px] opacity-90">{label}</p></div>
-  </div>;
-}
 
 export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; onOpen: (t: MaterialTrend) => void }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -37,7 +31,6 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     return m;
   }, [rows, res]);
   const all = [...res.rising, ...res.falling];
-  const avg = all.length ? all.reduce((s, t) => s + t.changePct, 0) / all.length : 0;
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     const base = (filter === "rising" ? res.rising : filter === "falling" ? res.falling : [...res.rising, ...res.falling])
@@ -51,7 +44,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
     style={filter === f && tone ? { color: tone, borderColor: tone, background: `color-mix(in oklab, ${tone} 10%, transparent)` } : undefined}>{label} {n}</button>;
 
   return <div className="rounded-2xl p-[2px] shadow-lg" style={{ background: "linear-gradient(120deg, #1f6fd1, #0f9d8a, #8e44ad, #e08a1e)", boxShadow: "0 8px 24px -10px color-mix(in oklab, #8e44ad 45%, transparent)" }}>
-    <section className="rounded-[14px] bg-card p-3">
+    <section className="material-movers-bg rounded-[14px] p-3" style={{ background: "linear-gradient(120deg, color-mix(in oklab, #1f6fd1 12%, var(--card)), color-mix(in oklab, #0f9d8a 10%, var(--card)) 35%, color-mix(in oklab, #8e44ad 10%, var(--card)) 70%, color-mix(in oklab, #e08a1e 12%, var(--card)))" }}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div><h2 className="text-xs font-semibold text-card-foreground">Material Price Movers</h2>
           <p className="text-[10px] text-muted-foreground">{n0(list.length)} materials · click one to see its full price history</p></div>
@@ -61,12 +54,6 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
           <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-7 rounded-md border border-border bg-background px-2 text-[11px]">
             <option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
         </div>
-      </div>
-      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
-      <Kpi icon={<Boxes className="size-5" />} value={n0(all.length)} label={`Materials with a steady price change (of ${n0(res.scanned)} checked)`} tone="#1f6fd1" />
-      <Kpi icon={<TrendingUp className="size-5" />} value={n0(res.rising.length)} label="Price rising first → latest" tone="#d64550" />
-      <Kpi icon={<TrendingDown className="size-5" />} value={n0(res.falling.length)} label="Price falling first → latest" tone="#2e8b57" />
-      <Kpi icon={<Percent className="size-5" />} value={`${avg >= 0 ? "+" : ""}${avg.toFixed(1)}%`} label="Average price change" tone="#8e44ad" />
       </div>
       <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "All", all.length)}{chip("rising", "▲ Rising", res.rising.length, UP)}{chip("falling", "▼ Falling", res.falling.length, DOWN)}</div>
       {list.length ? <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">{list.slice(pg * PAGE, pg * PAGE + PAGE).map((t, i) => {
