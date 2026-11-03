@@ -8,13 +8,13 @@ export type ZrmmatMaterial = { material: string; plants: string[] };
 /** Pure: pick Material / Plant columns by header name and group plants per material. */
 export function zrmmatMaterials(rows: Record<string, string>[]): ZrmmatMaterial[] {
   if (!rows.length) return [];
-  const cols = Object.keys(rows[0]);
+  const cols = Object.keys(rows[0] ?? {});
   const mc = cols.find((c) => /^material$/i.test(c.trim())) ?? cols.find((c) => /mat/i.test(c) && !/desc/i.test(c));
   const pc = cols.find((c) => /^(plant|plnt|werks)$/i.test(c.trim()));
   if (!mc) return [];
   const map = new Map<string, Set<string>>();
   for (const r of rows) {
-    const m = normMat(r[mc]);
+    const m = normMat(r[mc] ?? "");
     if (!m) continue;
     const s = map.get(m) ?? new Set<string>();
     const p = pc ? String(r[pc] ?? "").trim() : "";
