@@ -44,9 +44,9 @@ export function mapOpenPoPayload(payload: unknown, endpointName: string, now = n
     const row: Record<string, unknown> = { ebeln, ebelp, raw, source_endpoint: endpointName, synced_at: syncedAt };
     for (const k of OPEN_PO_TEXT_FIELDS) row[k.toLowerCase()] = text(pick(raw, k));
     for (const k of OPEN_PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick(raw, k));
-    row.bedat = orderBookDate(pick(raw, "BEDAT"));
-    row.eindt = orderBookDate(pick(raw, "EINDT_DT")) ?? orderBookDate(pick(raw, "EINDT"));
-    row.datum = orderBookDate(pick(raw, "DATUM"));
+    row["bedat"] = orderBookDate(pick(raw, "BEDAT"));
+    row["eindt"] = orderBookDate(pick(raw, "EINDT_DT")) ?? orderBookDate(pick(raw, "EINDT"));
+    row["datum"] = orderBookDate(pick(raw, "DATUM"));
     Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${ebeln}|${ebelp}`, row);
   }

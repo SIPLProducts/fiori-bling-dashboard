@@ -877,9 +877,9 @@ function mapOpenPoPayload(payload, endpointName, now = /* @__PURE__ */ new Date(
     const row = { ebeln, ebelp, raw, source_endpoint: endpointName, synced_at: syncedAt };
     for (const k of OPEN_PO_TEXT_FIELDS) row[k.toLowerCase()] = text6(pick8(raw, k));
     for (const k of OPEN_PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick8(raw, k));
-    row.bedat = orderBookDate(pick8(raw, "BEDAT"));
-    row.eindt = orderBookDate(pick8(raw, "EINDT_DT")) ?? orderBookDate(pick8(raw, "EINDT"));
-    row.datum = orderBookDate(pick8(raw, "DATUM"));
+    row["bedat"] = orderBookDate(pick8(raw, "BEDAT"));
+    row["eindt"] = orderBookDate(pick8(raw, "EINDT_DT")) ?? orderBookDate(pick8(raw, "EINDT"));
+    row["datum"] = orderBookDate(pick8(raw, "DATUM"));
     Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${ebeln}|${ebelp}`, row);
   }
