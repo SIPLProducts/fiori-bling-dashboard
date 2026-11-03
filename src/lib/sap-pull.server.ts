@@ -422,9 +422,9 @@ export async function storeOpenPoPayload(
     }
     // Lines inside the returned document-date window that SAP no longer lists are closed — remove them.
     let removed = 0;
-    const dates = rows.map((r) => r.bedat as string | null).filter((d): d is string => !!d).sort();
+    const dates = rows.map((r) => r["bedat"] as string | null).filter((d): d is string => !!d).sort();
     if (rows.length && dates.length) {
-      const syncedAt = rows[0].synced_at as string;
+      const syncedAt = rows[0]!["synced_at"] as string;
       const { count, error } = await db.from("open_purchase_order").delete({ count: "exact" })
         .gte("bedat", dates[0]).lte("bedat", dates[dates.length - 1]).lt("synced_at", syncedAt);
       if (error) throw error;

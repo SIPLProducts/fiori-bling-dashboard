@@ -31,6 +31,8 @@ import {
   isSalesRegisterEndpoint,
   mapPurchaseRegisterPayload,
   isPurchaseRegisterEndpoint,
+  mapOpenPoPayload,
+  isOpenPoEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -188,6 +190,22 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isOpenPoEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapOpenPoPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("open_purchase_order").upsert(rows.slice(i, i + BATCH), { onConflict: "ebeln,ebelp" });
+        if (error) throw new Error(error.message);
+      }
+      let removed = 0;
+      const dates = rows.map((r) => r.bedat).filter(Boolean).sort();
+      if (rows.length && dates.length) {
+        const { count, error } = await db.from("open_purchase_order").delete({ count: "exact" })
+          .gte("bedat", dates[0]).lte("bedat", dates[dates.length - 1]).lt("synced_at", rows[0].synced_at);
+        if (error) throw new Error(error.message);
+        removed = count ?? 0;
+      }
+      return { received, stored: rows.length, replaced: removed, skipped: 0, invalid, duplicates, syncScopeKey: "open_purchase_order", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isPurchaseRegisterEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapPurchaseRegisterPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {
