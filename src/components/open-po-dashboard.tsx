@@ -161,6 +161,7 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
+  const typeKeys = useMemo(() => [...new Set(rows.map((r) => r.poType))].sort(), [rows]);
   const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
