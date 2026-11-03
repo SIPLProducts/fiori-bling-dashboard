@@ -9,7 +9,7 @@ export type OpenPoRow = {
   mainGroup: string; subGroup: string; subGroup2: string; subGroup3: string;
 };
 export type OpenPoStatus = "Open" | "Partially received" | "Overdue" | "Delivery complete";
-export const AGING_BUCKETS = ["Not due", "0–30 days late", "31–60 days late", "61–90 days late", "> 90 days late"] as const;
+export const AGING_BUCKETS = ["1 – 180", "181 – 365", "365 – 730", "> 730"] as const;
 export type AgingBucket = (typeof AGING_BUCKETS)[number];
 
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -42,13 +42,13 @@ export function poStatus(r: OpenPoRow, today: string): OpenPoStatus {
   return "Open";
 }
 
-export function agingBucket(r: OpenPoRow, today: string): AgingBucket {
-  const d = daysLate(r.deliveryDate, today);
-  if (!r.deliveryDate || d <= 0) return "Not due";
-  if (d <= 30) return "0–30 days late";
-  if (d <= 60) return "31–60 days late";
-  if (d <= 90) return "61–90 days late";
-  return "> 90 days late";
+/** Aging from SAP's DAYS field (same buckets as other screens). */
+export function agingBucket(r: Pick<OpenPoRow, "days">): AgingBucket {
+  const d = r.days;
+  if (d <= 180) return "1 – 180";
+  if (d <= 365) return "181 – 365";
+  if (d <= 730) return "365 – 730";
+  return "> 730";
 }
 
 export function openPoTotals(rows: OpenPoRow[]) {

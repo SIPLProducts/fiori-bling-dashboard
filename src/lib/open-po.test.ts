@@ -16,11 +16,13 @@ describe("open purchase orders", () => {
     expect(r.openValue).toBe(1000000);
     expect(openPoTotals([r])).toMatchObject({ poValue: 1246000, migoValue: 246000, openValue: 1000000, poCount: 1 });
   });
-  it("ages by days past delivery date", () => {
+  it("ages by SAP DAYS into 1–180 / 181–365 / 365–730 / > 730", () => {
     const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0] as never);
-    expect(agingBucket(r, "2026-06-30")).toBe("Not due");
-    expect(agingBucket(r, "2026-07-20")).toBe("0–30 days late");
-    expect(agingBucket(r, "2026-11-03")).toBe("> 90 days late");
+    expect(agingBucket({ ...r, days: 49 })).toBe("1 – 180");
+    expect(agingBucket({ ...r, days: 180 })).toBe("1 – 180");
+    expect(agingBucket({ ...r, days: 181 })).toBe("181 – 365");
+    expect(agingBucket({ ...r, days: 730 })).toBe("365 – 730");
+    expect(agingBucket({ ...r, days: 731 })).toBe("> 730");
     expect(poStatus(r, "2026-06-01")).toBe("Partially received");
     expect(poStatus(r, "2026-07-01")).toBe("Overdue");
   });
