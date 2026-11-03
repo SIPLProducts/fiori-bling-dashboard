@@ -225,6 +225,13 @@
       "when": 1793677681644,
       "tag": "0031_open_purchase_order",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793682323763,
+      "tag": "0032_tables_master_permissions",
+      "breakpoints": true
     }
   ]
 }
