@@ -19,3 +19,16 @@ GRANT ALL ON public.open_purchase_order TO service_role;
 ALTER TABLE public.open_purchase_order ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Open purchase orders visible by access" ON public.open_purchase_order FOR SELECT TO authenticated
   USING ((SELECT public.has_screen(auth.uid(), 'mm.open-purchase-orders')) AND public.user_can_see(werks, NULL));
+INSERT INTO public.sap_endpoints (name, module_key, description, endpoint_path, system_key, http_method, auth_type, body_template, posting_range, is_active)
+SELECT 'Open_Purchase_Order','common','ZOPENPO open purchase orders','/openpo/openpo?sap-client=234','dev','POST','proxy',
+'{
+  "PLANT": "",
+  "PURCHASING_DOCUMENT": "",
+  "DOCUMENT_TYPE": "",
+  "VENDOR": "",
+  "MATERIAL": "",
+  "DOCUMENT_DATE": { "FROM_DATE": "20260401", "TO_DATE": "20260415" },
+  "DELIVERY_DATE": { "FROM_DATE": "", "TO_DATE": "" }
+}','fytd',true
+WHERE NOT EXISTS (SELECT 1 FROM public.sap_endpoints WHERE name='Open_Purchase_Order');
+NOTIFY pgrst, 'reload schema';
