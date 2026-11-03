@@ -33,7 +33,7 @@ export function setPayloadPaths(text: string, values: Record<string, string>): s
       cur[part] = nxt && typeof nxt === "object" && !Array.isArray(nxt) ? { ...(nxt as Record<string, unknown>) } : {};
       cur = cur[part] as Record<string, unknown>;
     }
-    cur[parts[parts.length - 1]] = value;
+    cur[parts[parts.length - 1] ?? path] = value;
   }
   return JSON.stringify(obj, null, 2);
 }
