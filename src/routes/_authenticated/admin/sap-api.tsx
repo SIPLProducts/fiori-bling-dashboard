@@ -800,6 +800,13 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   if (isZcashFlowName(input.name) || isZcashFlowName(input.endpoint_path)) return input;
   if (isOrderBookName(input.name) || isOrderBookName(input.endpoint_path)) return input;
   if (isSitEndpoint(input.name) || isSitEndpoint(input.endpoint_path)) return input;
+  if (isOpenPoEndpoint(input.name) || isOpenPoEndpoint(input.endpoint_path)) {
+    // Preset windows show today's document dates in the pickers and payload.
+    const w = postingWindow(input.posting_range);
+    if (!w) return input;
+    const next = setPayloadPaths(input.body_template, { "DOCUMENT_DATE.FROM_DATE": w.from, "DOCUMENT_DATE.TO_DATE": w.to });
+    return next === null ? input : { ...input, body_template: next };
+  }
   const payload = parsePayload(input.body_template) ?? {};
   if (isOpenSalesOrdersEndpoint(input.name)) {
     const fkdat = payload["fkdat"] ?? "";
@@ -1425,6 +1432,15 @@ function EndpointDetail({
                   }}
                 />
               </Field>
+              {isOpenPo ? (
+                <Field label="Plant" hint="Sent as PLANT.">
+                  <Input
+                    value={dateValue("PLANT")}
+                    placeholder="e.g. 1100"
+                    onChange={(e) => applyPayloadValues({ PLANT: e.target.value })}
+                  />
+                </Field>
+              ) : null}
                 </>
               )}
             </div>
@@ -1441,6 +1457,8 @@ function EndpointDetail({
                   ? "Sent as the request body exactly as saved. Stays in sync with the fields above."
                   : isOpenSalesOrders
                   ? "Sent as the request body. fkdat stays in sync with the Request Date above."
+                  : isOpenPo
+                  ? "Sent as the request body. PLANT and DOCUMENT_DATE stay in sync with the fields above."
                   : usesPostingDates
                   ? "Sent as the request body. BUDAT_F / BUDAT_T stay in sync with the date pickers above."
                   : "Sent as the request body exactly as saved."
