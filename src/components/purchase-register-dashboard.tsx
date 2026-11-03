@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, R
 import { Button } from "@/components/ui/button";
 import { MaterialTrendSection } from "@/components/material-trend-card";
 import { MaterialPricePage } from "@/components/material-price-page";
+import { ZrmmatCompareCard } from "@/components/zrmmat-compare-card";
 import type { MaterialTrend } from "@/lib/purchase-material-trend";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
@@ -139,6 +140,8 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <MaterialTrendSection rows={filtered} onOpen={(t) => { setOpenMat(t); window.scrollTo({ top: 0 }); }} />
+
+    <ZrmmatCompareCard rows={filtered} />
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Material Group" sub={<span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">Click to filter</span>}>
