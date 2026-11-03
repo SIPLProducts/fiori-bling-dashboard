@@ -90,4 +90,4 @@ export async function getOpenPoRows(): Promise<OpenPoRow[]> {
   return pages.flat().map(toOpenPoRow).filter((r) => !r.deleted);
 }
 
-export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v1"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v2-plt-short"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
