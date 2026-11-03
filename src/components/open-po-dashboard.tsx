@@ -38,11 +38,11 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
     <span className="tabular-nums font-semibold">{cr(d.value)}</span>
   </li>)}</ul>;
 }
-function Donut({ data, colors = COLORS }: { data: { name: string; value: number }[]; colors?: string[] }) {
+function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
     <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
-    <ul className="space-y-1 text-[11px]">{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{cr(d.value)}</span><span className="w-8 text-right text-muted-foreground tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
+    <ul className="space-y-1 text-[11px]">{heads ? <li className="flex items-center gap-1.5 border-b border-border pb-1 text-[10px] font-semibold text-muted-foreground"><span className="size-2.5" /><span>{heads[0]}</span><span className="ml-auto pl-2">{heads[1]}</span><span className="w-12 text-right">{heads[2]}</span></li> : null}{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{cr(d.value)}</span><span className="w-12 text-right text-muted-foreground tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
   </div>;
 }
 
@@ -119,8 +119,8 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-      <Card title="PO Value by PO Type"><Donut data={types} /></Card>
-      <Card title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} /></Card>
+      <Card title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
+      <Card title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
       <Card title="Daily PO Value Trend" sub="By PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
         <defs><linearGradient id="opoPo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1f6fd1" stopOpacity={0.5} /><stop offset="100%" stopColor="#1f6fd1" stopOpacity={0.05} /></linearGradient></defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} />
