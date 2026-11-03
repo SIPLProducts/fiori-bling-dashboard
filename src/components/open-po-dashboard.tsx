@@ -16,9 +16,6 @@ const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 
 const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}` : "");
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Delivery complete"];
-const STATUS_CLS: Record<OpenPoStatus, string> = {
-  Open: "bg-primary/15 text-primary", "Partially received": "bg-amber-500/15 text-amber-600", Overdue: "bg-destructive/15 text-destructive", "Delivery complete": "bg-emerald-500/15 text-emerald-600",
-};
 
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
   return <section className={`flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 shadow-sm ${className}`}>
@@ -45,7 +42,7 @@ function Donut({ data, colors = COLORS }: { data: { name: string; value: number 
   const total = data.reduce((a, d) => a + d.value, 0);
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
     <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
-    <ul className="space-y-1 text-[11px]">{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
+    <ul className="space-y-1 text-[11px]">{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{cr(d.value)}</span><span className="w-8 text-right text-muted-foreground tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
   </div>;
 }
 
@@ -86,9 +83,8 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to, today]);
   const tot = openPoTotals(filtered);
   const vendors = sumBy(filtered, (r) => r.vendorName, (r) => r.openValue).slice(0, 10);
-  const groups = sumBy(filtered, (r) => `${r.mainGroup} / ${r.subGroup}`, (r) => r.openValue).slice(0, 10);
   const types = sumBy(filtered, (r) => r.poType, (r) => r.poValue);
-  const aging = AGING_BUCKETS.map((b) => ({ name: b, value: filtered.filter((r) => agingBucket(r, today) === b).reduce((a, r) => a + r.openValue, 0) }));
+  const aging = AGING_BUCKETS.map((b) => ({ name: b, value: filtered.filter((r) => agingBucket(r) === b).reduce((a, r) => a + r.openValue, 0) }));
   const daily = useMemo(() => {
     const m = new Map<string, { po: number; migo: number }>();
     for (const r of filtered) { if (!r.poDate) continue; const e = m.get(r.poDate) ?? { po: 0, migo: 0 }; e.po += r.poValue; e.migo += r.migoValue; m.set(r.poDate, e); }
@@ -122,27 +118,27 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <Card title="PO Value by PO Type"><Donut data={types} /></Card>
-      <Card title="Delivery Aging Status" sub="Open value"><Donut data={aging} colors={AGING_COLORS} /></Card>
-      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
-      <Card title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
-    </div>
-
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
+      <Card title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} /></Card>
       <Card title="Daily PO Value Trend" sub="By PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
         <defs><linearGradient id="opoPo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1f6fd1" stopOpacity={0.5} /><stop offset="100%" stopColor="#1f6fd1" stopOpacity={0.05} /></linearGradient></defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} />
         <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 11 }} />
         <Area dataKey="po" name="PO Value" stroke="#1f6fd1" fill="url(#opoPo)" /><Line dataKey="migo" name="MIGO Value" stroke="#0f9d8a" dot={false} strokeWidth={2} />
       </ComposedChart></ResponsiveContainer></div></Card>
-      <Card title="Material Group Summary" sub="Open value"><BarList data={groups} /></Card>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
+      <Card title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
+      <Card title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
       <Card title="Storage Location Distribution" sub="Open value"><BarList data={slocs} /></Card>
     </div>
 
+    <Card title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <div className="min-w-0 lg:col-span-2"><Card title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card></div>
       {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
       <div className="min-w-0 lg:col-span-2">
         <Card title="Purchase Group Overview" sub="Open value"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
@@ -166,19 +162,22 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days", "Status"];
-  const num = new Set(["PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Days"]);
+  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (Cr)", "MIGO Qty", "MIGO Value (Cr)", "Open Value (Cr)", "Delivery Date", "Days"];
+  const num = new Set(["PO Qty", "PO Value (Cr)", "MIGO Qty", "MIGO Value (Cr)", "Open Value (Cr)", "Days"]);
+  const t = openPoTotals(list);
+  const sumQ = list.reduce((a, r) => ({ po: a.po + r.poQty, migo: a.migo + r.migoQty }), { po: 0, migo: 0 });
+  const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Open Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, r.poValue, r.migoQty, r.migoValue, r.openValue, dmy(r.deliveryDate), r.days, poStatus(r, today)]));
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, c2(r.poValue), r.migoQty, c2(r.migoValue), c2(r.openValue), dmy(r.deliveryDate), r.days]));
+    const ft = sh.addRow(["Total", "", "", "", "", "", "", "", "", "", "", "", "", sumQ.po, c2(t.poValue), sumQ.migo, c2(t.migoValue), c2(t.openValue), "", ""]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Open Purchase Orders", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const t = openPoTotals(list);
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Open Purchase Order Details</h2>
@@ -189,18 +188,17 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
     </div>
     <div className="overflow-x-auto"><table className="w-full text-[11px]">
       <thead className="text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${num.has(h) ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
-      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => { const st = poStatus(r, today); return <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
+      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td><td className="whitespace-nowrap px-2 py-1"><span className="mr-1.5 inline-block size-2.5 rounded-sm align-middle" style={{ background: COLORS[Math.max(0, typeKeys.indexOf(r.poType)) % COLORS.length] }} />{r.poType}</td>
         <td className="whitespace-nowrap px-2 py-1">{r.plantName}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup2}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup3}</td>
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.sloc}</td><td className="px-2 py-1">{r.uom}</td>
-        <td className="px-2 py-1 text-right tabular-nums">{inr(r.poQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.poValue)}</td>
-        <td className="px-2 py-1 text-right tabular-nums">{inr(r.migoQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.migoValue)}</td>
-        <td className="px-2 py-1 text-right font-semibold tabular-nums">{inr(r.openValue)}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td>
-        <td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
-        <td className="px-2 py-1"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_CLS[st]}`}>{st}</span></td></tr>; })
+        <td className="px-2 py-1 text-right tabular-nums">{inr(r.poQty)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.poValue)}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{inr(r.migoQty)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.migoValue)}</td>
+        <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.openValue)}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{r.days}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No open purchase orders for these filters.</td></tr>}</tbody>
-      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={11} className="px-2 py-1.5">Total ({list.length} lines)</td>
-        <td className="px-2 py-1.5 text-right tabular-nums">{inr(t.poValue)}</td><td /><td className="px-2 py-1.5 text-right tabular-nums">{inr(t.migoValue)}</td><td className="px-2 py-1.5 text-right tabular-nums">{inr(t.openValue)}</td><td colSpan={4} /></tr></tfoot>}
+      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={13} className="px-2 py-1.5">Total ({list.length} lines)</td>
+        <td className="px-2 py-1.5 text-right tabular-nums">{inr(sumQ.po)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.poValue)}</td><td className="px-2 py-1.5 text-right tabular-nums">{inr(sumQ.migo)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.migoValue)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.openValue)}</td><td colSpan={2} /></tr></tfoot>}
     </table></div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
       <span>Rows</span><select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select>
