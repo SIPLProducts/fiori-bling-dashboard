@@ -10,12 +10,14 @@ export { mapOrderBookPayload, isOrderBookEndpoint } from "../../src/lib/order-bo
 export { mapSitPayload, isSitEndpoint } from "../../src/lib/sit-map";
 export { mapSalesRegisterPayload, isSalesRegisterEndpoint } from "../../src/lib/sales-register-map";
 export { mapPurchaseRegisterPayload, isPurchaseRegisterEndpoint } from "../../src/lib/purchase-register-map";
+export { mapOpenPoPayload, isOpenPoEndpoint } from "../../src/lib/open-po-map";
 export { mapUserDropdownPayload, isUserDropdownEndpoint } from "../../src/lib/user-dropdown-map";
 export {
   extractEmbeddedBody,
   salvageTruncatedArray,
   withPostingDates,
   withEndpointDates,
+  withOpenPoDates,
   isOpenSalesOrdersEndpoint,
   keyValueObject,
   formatBytes,

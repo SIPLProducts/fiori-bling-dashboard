@@ -236,6 +236,27 @@ export function withSalesRegisterMode(raw: string | null | undefined, scheduled 
   } catch { return raw ?? undefined; }
 }
 
+/** Open PO (ZOPENPO): DOCUMENT_DATE.FROM_DATE / TO_DATE follow the window preset; custom keeps saved dates (empty → last 7 days). */
+export function withOpenPoDates(raw: string | null | undefined, range?: string | null, now: Date = new Date()): string | undefined {
+  if (!raw || !raw.trim()) return raw ?? undefined;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...(parsed as Record<string, unknown>) };
+    const doc = obj["DOCUMENT_DATE"] && typeof obj["DOCUMENT_DATE"] === "object" ? { ...(obj["DOCUMENT_DATE"] as Record<string, unknown>) } : {};
+    const window = postingWindow(range, now);
+    const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
+    if (window) { doc["FROM_DATE"] = window.from; doc["TO_DATE"] = window.to; }
+    else {
+      const from = new Date(now); from.setDate(from.getDate() - 7);
+      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = sapDateOf(from);
+      if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
+    }
+    obj["DOCUMENT_DATE"] = doc;
+    return JSON.stringify(obj);
+  } catch { return raw; }
+}
+
 export function withEndpointDates(
   endpointName: string,
   raw: string | null | undefined,
@@ -245,6 +266,7 @@ export function withEndpointDates(
 ) {
   // `//` lines in a saved payload mark optional keys that are not sent.
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
+  if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).

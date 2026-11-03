@@ -29,6 +29,123 @@ export type Database = {
         }
         Relationships: []
       }
+      open_purchase_order: {
+        Row: {
+          bedat: string | null
+          bsart: string | null
+          buyer: string | null
+          creat: string | null
+          datum: string | null
+          days: number | null
+          dmbtr1: number | null
+          ebeln: string
+          ebelp: string
+          eindt: string | null
+          ekgrp: string | null
+          eknam: string | null
+          elikz: string | null
+          id: string
+          lgort: string | null
+          lifnr: string | null
+          loekz: string | null
+          lv_menge_sum: number | null
+          matnr: string | null
+          meins: string | null
+          meins1: string | null
+          menge: number | null
+          menge1: number | null
+          mngrp1: string | null
+          name1: string | null
+          netwr: number | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
+          plt_name: string | null
+          raw: Json
+          source_endpoint: string | null
+          synced_at: string
+          txz01: string | null
+          werks: string | null
+          wrbtr: number | null
+        }
+        Insert: {
+          bedat?: string | null
+          bsart?: string | null
+          buyer?: string | null
+          creat?: string | null
+          datum?: string | null
+          days?: number | null
+          dmbtr1?: number | null
+          ebeln: string
+          ebelp?: string
+          eindt?: string | null
+          ekgrp?: string | null
+          eknam?: string | null
+          elikz?: string | null
+          id?: string
+          lgort?: string | null
+          lifnr?: string | null
+          loekz?: string | null
+          lv_menge_sum?: number | null
+          matnr?: string | null
+          meins?: string | null
+          meins1?: string | null
+          menge?: number | null
+          menge1?: number | null
+          mngrp1?: string | null
+          name1?: string | null
+          netwr?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
+          plt_name?: string | null
+          raw?: Json
+          source_endpoint?: string | null
+          synced_at?: string
+          txz01?: string | null
+          werks?: string | null
+          wrbtr?: number | null
+        }
+        Update: {
+          bedat?: string | null
+          bsart?: string | null
+          buyer?: string | null
+          creat?: string | null
+          datum?: string | null
+          days?: number | null
+          dmbtr1?: number | null
+          ebeln?: string
+          ebelp?: string
+          eindt?: string | null
+          ekgrp?: string | null
+          eknam?: string | null
+          elikz?: string | null
+          id?: string
+          lgort?: string | null
+          lifnr?: string | null
+          loekz?: string | null
+          lv_menge_sum?: number | null
+          matnr?: string | null
+          meins?: string | null
+          meins1?: string | null
+          menge?: number | null
+          menge1?: number | null
+          mngrp1?: string | null
+          name1?: string | null
+          netwr?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
+          plt_name?: string | null
+          raw?: Json
+          source_endpoint?: string | null
+          synced_at?: string
+          txz01?: string | null
+          werks?: string | null
+          wrbtr?: number | null
+        }
+        Relationships: []
+      }
       open_sales_orders: {
         Row: {
           ah: number
