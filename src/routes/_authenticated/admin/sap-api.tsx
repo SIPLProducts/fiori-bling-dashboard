@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { applyDateWindow, buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
+import { getPayloadPath, setPayloadPaths } from "@/lib/payload-paths";
+import { isOpenPoEndpoint } from "@/lib/open-po-map";
 import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1146,14 +1148,19 @@ function EndpointDetail({
   /** Write values into both the payload body and the matching header rows. */
   function applyPayloadValues(values: Record<string, string>) {
     setForm((prev) => {
-      const base = parsePayload(prev.body_template) ?? {};
-      const next = { ...base, ...values };
-      return {
-        ...prev,
-        body_template: JSON.stringify(next, null, 2),
-        headers: prev.headers,
-      };
+      // Preserve nested objects (e.g. DOCUMENT_DATE) instead of flattening them to strings.
+      const nextText = setPayloadPaths(prev.body_template, values);
+      if (nextText === null) return prev;
+      return { ...prev, body_template: nextText, headers: prev.headers };
     });
+  }
+
+  const isOpenPo = isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path);
+  const dateFromKey = isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
+  const dateToKey = isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
+  const dateWord = isOpenPo ? "Document" : "Posting";
+  function dateValue(path: string): string {
+    return path.includes(".") ? getPayloadPath(form.body_template, path) : payloadValue(path);
   }
 
   function set<K extends keyof EndpointInput>(key: K, value: EndpointInput[K]) {
