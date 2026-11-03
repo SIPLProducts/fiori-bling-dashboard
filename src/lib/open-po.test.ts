@@ -12,12 +12,12 @@ describe("open purchase orders", () => {
     expect(rows[0]).toMatchObject({ ebeln: "4100013343", ebelp: "1", bedat: "2026-04-02", eindt: "2026-06-30", netwr: 1246000, mngrp1: "INDL.BTY", pcgrp1: "BATTERY" });
   });
   it("open value = PO value − MIGO value", () => {
-    const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0]!);
+    const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0] as never);
     expect(r.openValue).toBe(1000000);
     expect(openPoTotals([r])).toMatchObject({ poValue: 1246000, migoValue: 246000, openValue: 1000000, poCount: 1 });
   });
   it("ages by days past delivery date", () => {
-    const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0]!);
+    const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0] as never);
     expect(agingBucket(r, "2026-06-30")).toBe("Not due");
     expect(agingBucket(r, "2026-07-20")).toBe("0–30 days late");
     expect(agingBucket(r, "2026-11-03")).toBe("> 90 days late");

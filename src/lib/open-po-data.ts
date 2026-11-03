@@ -15,7 +15,8 @@ export type AgingBucket = (typeof AGING_BUCKETS)[number];
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
-export function toOpenPoRow(r: Record<string, unknown>): OpenPoRow {
+type Rec = Partial<Record<"ebeln" | "ebelp" | "bedat" | "werks" | "plt_name" | "bsart" | "lgort" | "ekgrp" | "eknam" | "lifnr" | "name1" | "matnr" | "txz01" | "meins" | "menge" | "netwr" | "menge1" | "dmbtr1" | "eindt" | "days" | "buyer" | "creat" | "elikz" | "loekz" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3", unknown>>;
+export function toOpenPoRow(r: Rec): OpenPoRow {
   const poValue = n(r.netwr), migoValue = n(r.dmbtr1);
   return {
     poNo: t(r.ebeln), item: t(r.ebelp), poDate: t(r.bedat), plant: t(r.werks), plantName: t(r.plt_name) || t(r.werks),
@@ -75,14 +76,14 @@ export async function getOpenPoRows(): Promise<OpenPoRow[]> {
   if (head.error) throw new Error(`Unable to load Open Purchase Orders: ${head.error.message}`);
   const offsets: number[] = [];
   for (let o = 0; o < (head.count ?? 0); o += PAGE) offsets.push(o);
-  const pages: Record<string, unknown>[][] = new Array(offsets.length);
+  const pages: Rec[][] = new Array(offsets.length);
   let next = 0;
   const worker = async () => {
     while (next < offsets.length) {
       const i = next++, o = offsets[i]!;
       const { data, error } = await supabase.from("open_purchase_order").select(COLS).order("id").range(o, o + PAGE - 1);
       if (error) throw new Error(`Unable to load Open Purchase Orders: ${error.message}`);
-      pages[i] = (data ?? []) as unknown as Record<string, unknown>[];
+      pages[i] = (data ?? []) as unknown as Rec[];
     }
   };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, offsets.length) }, worker));
