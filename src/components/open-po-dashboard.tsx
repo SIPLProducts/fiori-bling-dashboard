@@ -161,17 +161,17 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
-  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.buyer, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))
+  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days", "Buyer", "Status"];
+  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days", "Status"];
   const num = new Set(["PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Days"]);
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Open Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, r.poValue, r.migoQty, r.migoValue, r.openValue, dmy(r.deliveryDate), r.days, r.buyer, poStatus(r, today)]));
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, r.poValue, r.migoQty, r.migoValue, r.openValue, dmy(r.deliveryDate), r.days, poStatus(r, today)]));
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Open Purchase Orders", "xlsx"); a.click();
@@ -188,14 +188,14 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
     </div>
     <div className="overflow-x-auto"><table className="w-full text-[11px]">
       <thead className="text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${num.has(h) ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
-      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => { const st = poStatus(r, today); return <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60">
-        <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td><td className="px-2 py-1">{r.poType}</td>
+      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => { const st = poStatus(r, today); return <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
+        <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td><td className="whitespace-nowrap px-2 py-1"><span className="mr-1.5 inline-block size-2.5 rounded-sm align-middle" style={{ background: COLORS[Math.max(0, typeKeys.indexOf(r.poType)) % COLORS.length] }} />{r.poType}</td>
         <td className="whitespace-nowrap px-2 py-1">{r.plantName}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup2}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup3}</td>
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.sloc}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{inr(r.poQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.poValue)}</td>
         <td className="px-2 py-1 text-right tabular-nums">{inr(r.migoQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.migoValue)}</td>
         <td className="px-2 py-1 text-right font-semibold tabular-nums">{inr(r.openValue)}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td>
-        <td className="px-2 py-1 text-right tabular-nums">{r.days}</td><td className="px-2 py-1">{r.buyer}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
         <td className="px-2 py-1"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_CLS[st]}`}>{st}</span></td></tr>; })
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No open purchase orders for these filters.</td></tr>}</tbody>
       {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={11} className="px-2 py-1.5">Total ({list.length} lines)</td>
