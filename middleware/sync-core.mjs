@@ -1139,12 +1139,10 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
     const window = postingWindow(range, now);
     const valid = (v) => /^\d{8}$/.test(String(v ?? "").trim());
     if (window) {
-      doc["FROM_DATE"] = window.from;
+      doc["FROM_DATE"] = range === "today" ? "" : window.from;
       doc["TO_DATE"] = window.to;
     } else {
-      const from = new Date(now);
-      from.setDate(from.getDate() - 7);
-      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = sapDateOf(from);
+      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = "";
       if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
     }
     obj["DOCUMENT_DATE"] = doc;

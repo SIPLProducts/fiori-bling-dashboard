@@ -246,10 +246,10 @@ export function withOpenPoDates(raw: string | null | undefined, range?: string |
     const doc = obj["DOCUMENT_DATE"] && typeof obj["DOCUMENT_DATE"] === "object" ? { ...(obj["DOCUMENT_DATE"] as Record<string, unknown>) } : {};
     const window = postingWindow(range, now);
     const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
-    if (window) { doc["FROM_DATE"] = window.from; doc["TO_DATE"] = window.to; }
+    // Today sends an empty FROM_DATE (SAP: everything up to today); custom keeps an empty FROM_DATE.
+    if (window) { doc["FROM_DATE"] = range === "today" ? "" : window.from; doc["TO_DATE"] = window.to; }
     else {
-      const from = new Date(now); from.setDate(from.getDate() - 7);
-      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = sapDateOf(from);
+      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = "";
       if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
     }
     obj["DOCUMENT_DATE"] = doc;
