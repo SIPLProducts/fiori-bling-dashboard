@@ -17,7 +17,7 @@ SAP does not send a status key. Status is calculated from these keys, in this or
    - Row 4: PO Value by Sub Group 1, Sub Group 2, Sub Group 3
 4. **All values in Cr.** Everywhere on this screen, the table and Excel included, values show in ₹ Cr with 2 decimals. Table headers become "PO Value (Cr)", "MIGO Value (Cr)" and "Open Value (Cr)".
 5. **Totals row** at the bottom of the table, covering all filtered rows. It shows PO Qty, PO Value, MIGO Qty, MIGO Value and Open Value. Excel gets the same totals row.
-6. **Delivery aging uses SAP `DAYS`**, the same way other screens do, instead of a date calculation. The "Not due" bucket is removed. The buckets become 0–30, 31–60, 61–90 and > 90 days.
+6. **Delivery aging uses SAP `DAYS`**, the same way other screens do, instead of a date calculation. The "Not due" bucket is removed. The buckets match your screenshot: 1–180, 181–365, 365–730 and > 730 days.
 7. **Values beside each slice** in PO Value by PO Type and Delivery Aging Status: a legend shows the name, the Cr value and the share.
 
 ## Technical
