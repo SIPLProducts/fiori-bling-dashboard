@@ -1,7 +1,8 @@
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { ClipboardList, IndianRupee, PackageCheck, Users } from "lucide-react";
+import { ClipboardList, IndianRupee, Maximize2, PackageCheck, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
@@ -18,9 +19,16 @@ const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-
 const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Delivery complete"];
 
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
   return <section className={`flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 shadow-sm ${className}`}>
-    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2>{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}</div>
+    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
     <div className="min-h-0 flex-1">{children}</div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="flex h-[92vh] max-w-[96vw] flex-col sm:max-w-[96vw]">
+        <DialogHeader><DialogTitle>{title}{sub ? <span className="ml-2 text-xs font-normal text-muted-foreground">{sub}</span> : null}</DialogTitle></DialogHeader>
+        <div className="min-h-0 flex-1 overflow-auto text-sm [&_.h-56]:h-[75vh] [&_.recharts-responsive-container]:min-h-[60vh]">{children}</div>
+      </DialogContent>
+    </Dialog>
   </section>;
 }
 function Tile({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: string; note?: string; tone: string }) {
