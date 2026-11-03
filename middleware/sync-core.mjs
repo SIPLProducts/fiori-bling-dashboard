@@ -838,7 +838,7 @@ function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */
 }
 
 // ../src/lib/open-po-map.ts
-var OPEN_PO_TEXT_FIELDS = ["WERKS", "PLT_NAME", "BSART", "LGORT", "EKGRP", "ELIKZ", "LIFNR", "NAME1", "LOEKZ", "MATNR", "TXZ01", "MEINS", "MEINS1", "EKNAM", "BUYER", "CREAT"];
+var OPEN_PO_TEXT_FIELDS = ["WERKS", "PLT_NAME", "PLT_SHORT", "BSART", "LGORT", "EKGRP", "ELIKZ", "LIFNR", "NAME1", "LOEKZ", "MATNR", "TXZ01", "MEINS", "MEINS1", "EKNAM", "BUYER", "CREAT"];
 var OPEN_PO_NUMERIC_FIELDS = ["MENGE", "NETWR", "MENGE1", "DMBTR1", "WRBTR", "LV_MENGE_SUM", "DAYS"];
 function isOpenPoEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
