@@ -1127,6 +1127,7 @@ function EndpointDetail({
   const isZcash = !isOrderBook && (isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path));
   const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const usesPostingDates =
+    isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path) ||
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
   const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || /salesregister/i.test(`${form.name}${form.endpoint_path}`.replace(/[^a-z0-9]/gi, "")) || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
@@ -1380,7 +1381,7 @@ function EndpointDetail({
               ) : (
                 <>
               <Field
-                label="Posting date range"
+                label={`${dateWord} date range`}
                 hint="Preset windows follow today on every sync; custom dates stay fixed."
               >
                 <Select
@@ -1389,7 +1390,7 @@ function EndpointDetail({
                     const range = value as EndpointInput["posting_range"];
                     set("posting_range", range);
                     const rolling = postingWindow(range);
-                    if (rolling) applyPayloadValues({ BUDAT_F: rolling.from, BUDAT_T: rolling.to });
+                    if (rolling) applyPayloadValues({ [dateFromKey]: rolling.from, [dateToKey]: rolling.to });
                   }}
                 >
                   <SelectTrigger>
@@ -1404,23 +1405,23 @@ function EndpointDetail({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Posting From Date" hint="Sent as BUDAT_F (YYYYMMDD).">
+              <Field label={`${dateWord} From Date`} hint={`Sent as ${dateFromKey} (YYYYMMDD).`}>
                 <Input
                   type="date"
-                  value={fromSapDate(payloadValue("BUDAT_F"))}
+                  value={fromSapDate(dateValue(dateFromKey))}
                   onChange={(e) => {
                     set("posting_range", "custom");
-                    applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) });
+                    applyPayloadValues({ [dateFromKey]: toSapDate(e.target.value) });
                   }}
                 />
               </Field>
-              <Field label="Posting To Date" hint="Sent as BUDAT_T (YYYYMMDD).">
+              <Field label={`${dateWord} To Date`} hint={`Sent as ${dateToKey} (YYYYMMDD).`}>
                 <Input
                   type="date"
-                  value={fromSapDate(payloadValue("BUDAT_T"))}
+                  value={fromSapDate(dateValue(dateToKey))}
                   onChange={(e) => {
                     set("posting_range", "custom");
-                    applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) });
+                    applyPayloadValues({ [dateToKey]: toSapDate(e.target.value) });
                   }}
                 />
               </Field>
