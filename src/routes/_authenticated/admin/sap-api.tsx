@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { applyDateWindow, buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
+import { getPayloadPath, setPayloadPaths } from "@/lib/payload-paths";
+import { isOpenPoEndpoint } from "@/lib/open-po-map";
 import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1125,6 +1127,7 @@ function EndpointDetail({
   const isZcash = !isOrderBook && (isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path));
   const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const usesPostingDates =
+    isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path) ||
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
   const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || /salesregister/i.test(`${form.name}${form.endpoint_path}`.replace(/[^a-z0-9]/gi, "")) || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
@@ -1146,14 +1149,19 @@ function EndpointDetail({
   /** Write values into both the payload body and the matching header rows. */
   function applyPayloadValues(values: Record<string, string>) {
     setForm((prev) => {
-      const base = parsePayload(prev.body_template) ?? {};
-      const next = { ...base, ...values };
-      return {
-        ...prev,
-        body_template: JSON.stringify(next, null, 2),
-        headers: prev.headers,
-      };
+      // Preserve nested objects (e.g. DOCUMENT_DATE) instead of flattening them to strings.
+      const nextText = setPayloadPaths(prev.body_template, values);
+      if (nextText === null) return prev;
+      return { ...prev, body_template: nextText, headers: prev.headers };
     });
+  }
+
+  const isOpenPo = isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path);
+  const dateFromKey = isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
+  const dateToKey = isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
+  const dateWord = isOpenPo ? "Document" : "Posting";
+  function dateValue(path: string): string {
+    return path.includes(".") ? getPayloadPath(form.body_template, path) : payloadValue(path);
   }
 
   function set<K extends keyof EndpointInput>(key: K, value: EndpointInput[K]) {
@@ -1373,7 +1381,7 @@ function EndpointDetail({
               ) : (
                 <>
               <Field
-                label="Posting date range"
+                label={`${dateWord} date range`}
                 hint="Preset windows follow today on every sync; custom dates stay fixed."
               >
                 <Select
@@ -1382,7 +1390,7 @@ function EndpointDetail({
                     const range = value as EndpointInput["posting_range"];
                     set("posting_range", range);
                     const rolling = postingWindow(range);
-                    if (rolling) applyPayloadValues({ BUDAT_F: rolling.from, BUDAT_T: rolling.to });
+                    if (rolling) applyPayloadValues({ [dateFromKey]: rolling.from, [dateToKey]: rolling.to });
                   }}
                 >
                   <SelectTrigger>
@@ -1397,23 +1405,23 @@ function EndpointDetail({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Posting From Date" hint="Sent as BUDAT_F (YYYYMMDD).">
+              <Field label={`${dateWord} From Date`} hint={`Sent as ${dateFromKey} (YYYYMMDD).`}>
                 <Input
                   type="date"
-                  value={fromSapDate(payloadValue("BUDAT_F"))}
+                  value={fromSapDate(dateValue(dateFromKey))}
                   onChange={(e) => {
                     set("posting_range", "custom");
-                    applyPayloadValues({ BUDAT_F: toSapDate(e.target.value) });
+                    applyPayloadValues({ [dateFromKey]: toSapDate(e.target.value) });
                   }}
                 />
               </Field>
-              <Field label="Posting To Date" hint="Sent as BUDAT_T (YYYYMMDD).">
+              <Field label={`${dateWord} To Date`} hint={`Sent as ${dateToKey} (YYYYMMDD).`}>
                 <Input
                   type="date"
-                  value={fromSapDate(payloadValue("BUDAT_T"))}
+                  value={fromSapDate(dateValue(dateToKey))}
                   onChange={(e) => {
                     set("posting_range", "custom");
-                    applyPayloadValues({ BUDAT_T: toSapDate(e.target.value) });
+                    applyPayloadValues({ [dateToKey]: toSapDate(e.target.value) });
                   }}
                 />
               </Field>

@@ -1,6 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { ClipboardList, IndianRupee, PackageCheck, Users } from "lucide-react";
-import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
@@ -36,15 +36,26 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
   return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-2 text-[11px]">
     <span className="truncate" title={d.name}>{d.name}</span>
     <span className="h-3 rounded-full bg-muted"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 2)}%`, background: radiantBar(i) }} /></span>
-    <span className="tabular-nums font-semibold">₹ {cr(d.value)}</span>
+    <span className="tabular-nums font-semibold">{cr(d.value)}</span>
   </li>)}</ul>;
 }
 function Donut({ data, colors = COLORS }: { data: { name: string; value: number }[]; colors?: string[] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-    <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => `₹ ${cr(v)} Cr`} /></PieChart></ResponsiveContainer></div>
+    <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
     <ul className="space-y-1 text-[11px]">{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
   </div>;
+}
+
+function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
+  return <div className="h-56"><ResponsiveContainer><BarChart data={data} margin={{ top: 16, left: -16, right: 4 }}>
+    <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.55} /><stop offset="100%" stopColor={c} stopOpacity={1} /></linearGradient>)}</defs>
+    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} />
+    <Tooltip formatter={(v: number) => v.toFixed(2)} />
+    <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={36}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
+      <LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
+  </BarChart></ResponsiveContainer></div>;
 }
 
 type Filters = Record<"plant" | "poType" | "createdBy" | "mainGroup" | "subGroup" | "vendor" | "material" | "status", string>;
@@ -82,6 +93,8 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     return [...m.entries()].sort().map(([d, v]) => ({ name: dmy(d).slice(0, 5), po: v.po / CR, migo: v.migo / CR }));
   }, [filtered]);
   const purGroups = sumBy(filtered, (r) => r.purGroup, (r) => r.openValue).slice(0, 8).map((d) => ({ name: d.name, value: d.value / CR }));
+  const plants = sumBy(filtered, (r) => r.plantName || r.plant, (r) => r.poValue).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
+  const materials = sumBy(filtered, (r) => r.materialName, (r) => r.poValue).slice(0, 10);
   const slocs = sumBy(filtered, (r) => r.sloc, (r) => r.openValue).slice(0, 10);
   const field = (k: keyof Filters, label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
@@ -96,31 +109,33 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total PO Value" value={`₹ ${cr(tot.poValue)} Cr`} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="MIGO Received Value" value={`₹ ${cr(tot.migoValue)} Cr`} tone="#0f9d8a" />
-      <Tile icon={<ClipboardList className="size-5" />} label="Open / Pending Value" value={`₹ ${cr(tot.openValue)} Cr`} note="Remaining commitment" tone="#e08a1e" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total PO Value" value={cr(tot.poValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
+      <Tile icon={<PackageCheck className="size-5" />} label="MIGO Received Value" value={cr(tot.migoValue)} tone="#0f9d8a" />
+      <Tile icon={<ClipboardList className="size-5" />} label="Open / Pending Value" value={cr(tot.openValue)} note="Remaining commitment" tone="#e08a1e" />
       <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card title="Top 10 Vendors by Open Value" sub="₹ Cr"><BarList data={vendors} /></Card>
-      <Card title="Open Value by Main / Sub Group" sub="₹ Cr"><BarList data={groups} /></Card>
+      <Card title="Plant Analytics" sub="PO value" className="md:col-span-2"><PlantColumns data={plants} /></Card>
+      <Card title="Top 10 Materials" sub="PO value" className="md:col-span-2"><BarList data={materials} /></Card>
+      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
+      <Card title="Material Group Summary" sub="Open value"><BarList data={groups} /></Card>
       <Card title="PO Value by PO Type"><Donut data={types} /></Card>
       <Card title="Delivery Aging Status" sub="Open value"><Donut data={aging} colors={AGING_COLORS} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <Card title="Daily PO Value Trend" sub="₹ Cr by PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
+      <Card title="Daily PO Value Trend" sub="By PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
         <defs><linearGradient id="opoPo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1f6fd1" stopOpacity={0.5} /><stop offset="100%" stopColor="#1f6fd1" stopOpacity={0.05} /></linearGradient></defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} />
-        <Tooltip formatter={(v: number) => `₹ ${v.toFixed(2)} Cr`} /><Legend wrapperStyle={{ fontSize: 11 }} />
+        <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 11 }} />
         <Area dataKey="po" name="PO Value" stroke="#1f6fd1" fill="url(#opoPo)" /><Line dataKey="migo" name="MIGO Value" stroke="#0f9d8a" dot={false} strokeWidth={2} />
       </ComposedChart></ResponsiveContainer></div></Card>
-      <Card title="Purchase Group Overview" sub="Open ₹ Cr"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
+      <Card title="Purchase Group Overview" sub="Open value"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-20} textAnchor="end" height={45} /><YAxis tick={{ fontSize: 10 }} />
-        <Tooltip formatter={(v: number) => `₹ ${v.toFixed(2)} Cr`} /><Bar dataKey="value" name="Open Value" radius={[4, 4, 0, 0]}>{purGroups.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar>
+        <Tooltip formatter={(v: number) => v.toFixed(2)} /><Bar dataKey="value" name="Open Value" radius={[4, 4, 0, 0]}>{purGroups.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar>
       </BarChart></ResponsiveContainer></div></Card>
-      <Card title="Storage Location Distribution" sub="Open ₹ Cr"><BarList data={slocs} /></Card>
+      <Card title="Storage Location Distribution" sub="Open value"><BarList data={slocs} /></Card>
     </div>
 
     <DetailsTable rows={filtered} today={today} />
