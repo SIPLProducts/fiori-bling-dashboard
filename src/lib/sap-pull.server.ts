@@ -10,6 +10,7 @@ import { isUserDropdownEndpoint, mapUserDropdownPayload } from "./user-dropdown-
 import { isOrderBookEndpoint, mapOrderBookPayload } from "./order-book-map";
 import { isSitEndpoint, mapSitPayload, staleSitKeys } from "./sit-map";
 import { isSalesRegisterEndpoint, mapSalesRegisterPayload } from "./sales-register-map";
+import { isOpenPoEndpoint, mapOpenPoPayload } from "./open-po-map";
 import { isPurchaseRegisterEndpoint, mapPurchaseRegisterPayload } from "./purchase-register-map";
 import {
   extractEmbeddedBody,
@@ -395,6 +396,48 @@ export async function storePurchaseRegisterPayload(
   }
 }
 
+export async function storeOpenPoPayload(
+  payload: unknown,
+  endpointName: string,
+  requestSnapshot?: unknown,
+  metrics: RunMetrics = {},
+): Promise<SyncCounts> {
+  const db = await admin();
+  const { received, rows, invalid, duplicates } = mapOpenPoPayload(payload, endpointName);
+  const { data: run } = await db.from("sap_sync_runs").insert({
+    endpoint: endpointName, status: "running", started_at: new Date().toISOString(), records_received: received,
+    records_invalid: invalid, response_bytes: metrics.responseBytes ?? 0, duration_ms: metrics.durationMs ?? 0,
+    ...(metrics.httpStatus === undefined ? {} : { http_status: metrics.httpStatus }),
+    ...(requestSnapshot === undefined ? {} : { request_snapshot: requestSnapshot as never }),
+  }).select("id").single();
+  const finish = async (patch: Record<string, unknown>) => {
+    if (run?.id) await db.from("sap_sync_runs").update({ finished_at: new Date().toISOString(), ...patch }).eq("id", run.id);
+    await pruneRuns(endpointName);
+  };
+  const base = { received, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "open_purchase_order", snapshotId: "", postingFrom: null, postingTo: null };
+  try {
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const { error } = await db.from("open_purchase_order").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "ebeln,ebelp" });
+      if (error) throw error;
+    }
+    // Lines inside the returned document-date window that SAP no longer lists are closed — remove them.
+    let removed = 0;
+    const dates = rows.map((r) => r.bedat as string | null).filter((d): d is string => !!d).sort();
+    if (rows.length && dates.length) {
+      const syncedAt = rows[0].synced_at as string;
+      const { count, error } = await db.from("open_purchase_order").delete({ count: "exact" })
+        .gte("bedat", dates[0]).lte("bedat", dates[dates.length - 1]).lt("synced_at", syncedAt);
+      if (error) throw error;
+      removed = count ?? 0;
+    }
+    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${removed} closed lines removed; ${invalid} without EBELN` : "SAP returned no rows — existing data left unchanged" });
+    return { ...base, replaced: removed, stored: rows.length };
+  } catch (err) {
+    await finish({ status: "error", error_message: err instanceof Error ? err.message : "Open Purchase Order write failed" });
+    throw err;
+  }
+}
+
 /** True when another run is still in flight (single-flight guard). */
 async function runInProgress(endpointName: string): Promise<boolean> {
   const db = await admin();
@@ -593,7 +636,7 @@ export async function pullSapEndpoint(
 
 
 
-  const counts = await (isPurchaseRegisterEndpoint(endpointName) ? storePurchaseRegisterPayload : isSalesRegisterEndpoint(endpointName) ? storeSalesRegisterPayload : isSitEndpoint(endpointName) ? storeSitPayload : isOrderBookEndpoint(endpointName) ? storeOrderBookPayload : isUserDropdownEndpoint(endpointName) ? storeUserDropdownPayload : isZcashFlowEndpoint(endpointName) ? storeZcashFlowPayload : isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
+  const counts = await (isOpenPoEndpoint(endpointName) ? storeOpenPoPayload : isPurchaseRegisterEndpoint(endpointName) ? storePurchaseRegisterPayload : isSalesRegisterEndpoint(endpointName) ? storeSalesRegisterPayload : isSitEndpoint(endpointName) ? storeSitPayload : isOrderBookEndpoint(endpointName) ? storeOrderBookPayload : isUserDropdownEndpoint(endpointName) ? storeUserDropdownPayload : isZcashFlowEndpoint(endpointName) ? storeZcashFlowPayload : isOpenSalesOrdersEndpoint(endpointName) ? storeOpenSalesOrdersPayload : storeZfisalesPayload)(payload, endpointName, outbound, {
     durationMs,
     responseBytes: bytes,
     httpStatus: response.status,
