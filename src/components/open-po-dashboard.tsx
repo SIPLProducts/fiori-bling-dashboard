@@ -1,3 +1,5 @@
+import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { ClipboardList, IndianRupee, PackageCheck, Users } from "lucide-react";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -95,6 +97,11 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
   const purGroups = sumBy(filtered, (r) => r.purGroup, (r) => r.openValue).slice(0, 8).map((d) => ({ name: d.name, value: d.value / CR }));
   const plants = sumBy(filtered, (r) => r.plantName || r.plant, (r) => r.poValue).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const materials = sumBy(filtered, (r) => r.materialName, (r) => r.poValue).slice(0, 10);
+  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.map((r) => ({ name: r[k] ?? "", value: r.poValue / CR, order: r.poNo, division: r.plantName || r.plant }));
+  const mainG = summarizeGroupsByDivision(grpRows("mainGroup"), (r) => r.name);
+  const subG1 = summarizeGroupsByDivision(grpRows("subGroup"), (r) => r.name);
+  const subG2 = summarizeGroupsByDivision(grpRows("subGroup2"), (r) => r.name);
+  const subG3 = summarizeGroupsByDivision(grpRows("subGroup3"), (r) => r.name);
   const slocs = sumBy(filtered, (r) => r.sloc, (r) => r.openValue).slice(0, 10);
   const field = (k: keyof Filters, label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
@@ -116,26 +123,33 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card title="Plant Analytics" sub="PO value" className="md:col-span-2"><PlantColumns data={plants} /></Card>
-      <Card title="Top 10 Materials" sub="PO value" className="md:col-span-2"><BarList data={materials} /></Card>
-      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
-      <Card title="Material Group Summary" sub="Open value"><BarList data={groups} /></Card>
       <Card title="PO Value by PO Type"><Donut data={types} /></Card>
       <Card title="Delivery Aging Status" sub="Open value"><Donut data={aging} colors={AGING_COLORS} /></Card>
+      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
+      <Card title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Card title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
       <Card title="Daily PO Value Trend" sub="By PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
         <defs><linearGradient id="opoPo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1f6fd1" stopOpacity={0.5} /><stop offset="100%" stopColor="#1f6fd1" stopOpacity={0.05} /></linearGradient></defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} />
         <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 11 }} />
         <Area dataKey="po" name="PO Value" stroke="#1f6fd1" fill="url(#opoPo)" /><Line dataKey="migo" name="MIGO Value" stroke="#0f9d8a" dot={false} strokeWidth={2} />
       </ComposedChart></ResponsiveContainer></div></Card>
-      <Card title="Purchase Group Overview" sub="Open value"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
+      <Card title="Material Group Summary" sub="Open value"><BarList data={groups} /></Card>
+      <Card title="Storage Location Distribution" sub="Open value"><BarList data={slocs} /></Card>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="min-w-0 lg:col-span-2"><Card title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card></div>
+      {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
+      <div className="min-w-0 lg:col-span-2">
+        <Card title="Purchase Group Overview" sub="Open value"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-20} textAnchor="end" height={45} /><YAxis tick={{ fontSize: 10 }} />
         <Tooltip formatter={(v: number) => v.toFixed(2)} /><Bar dataKey="value" name="Open Value" radius={[4, 4, 0, 0]}>{purGroups.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar>
       </BarChart></ResponsiveContainer></div></Card>
-      <Card title="Storage Location Distribution" sub="Open value"><BarList data={slocs} /></Card>
+      </div>
     </div>
 
     <DetailsTable rows={filtered} today={today} />
@@ -147,17 +161,17 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
-  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.buyer, r.mainGroup, r.subGroup].some((v) => v.toLowerCase().includes(s)))
+  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.buyer, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main / Sub Group", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days", "Buyer", "Status"];
+  const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days", "Buyer", "Status"];
   const num = new Set(["PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Days"]);
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Open Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, `${r.mainGroup} / ${r.subGroup}`, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, r.poValue, r.migoQty, r.migoValue, r.openValue, dmy(r.deliveryDate), r.days, r.buyer, poStatus(r, today)]));
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, r.poType, `${r.plant} ${r.plantName}`, r.vendorName, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, [r.material, r.materialName].filter(Boolean).join(" "), r.sloc, r.uom, r.poQty, r.poValue, r.migoQty, r.migoValue, r.openValue, dmy(r.deliveryDate), r.days, r.buyer, poStatus(r, today)]));
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Open Purchase Orders", "xlsx"); a.click();
@@ -176,7 +190,7 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
       <thead className="text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${num.has(h) ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
       <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => { const st = poStatus(r, today); return <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60">
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td><td className="px-2 py-1">{r.poType}</td>
-        <td className="whitespace-nowrap px-2 py-1">{r.plantName}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup} / {r.subGroup}</td>
+        <td className="whitespace-nowrap px-2 py-1">{r.plantName}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup2}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup3}</td>
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.sloc}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{inr(r.poQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.poValue)}</td>
         <td className="px-2 py-1 text-right tabular-nums">{inr(r.migoQty)}</td><td className="px-2 py-1 text-right tabular-nums">{inr(r.migoValue)}</td>
