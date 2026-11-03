@@ -28,4 +28,9 @@ describe("open purchase orders", () => {
     const out = JSON.parse(withEndpointDates("Open_Purchase_Order", JSON.stringify({ PLANT: "", DOCUMENT_DATE: { FROM_DATE: "", TO_DATE: "" } }), "yesterday", new Date(2026, 10, 3))!);
     expect(out.DOCUMENT_DATE).toEqual({ FROM_DATE: "20261102", TO_DATE: "20261102" });
   });
+  it("today sends empty FROM_DATE and today's TO_DATE", () => {
+    const out = JSON.parse(withEndpointDates("Open_Purchase_Order", JSON.stringify({ PLANT: "", DOCUMENT_DATE: { FROM_DATE: "20260401", TO_DATE: "" } }), "today", new Date(2026, 10, 3))!);
+    expect(out.DOCUMENT_DATE).toEqual({ FROM_DATE: "", TO_DATE: "20261103" });
+    expect(out.PLANT).toBe("");
+  });
 });
