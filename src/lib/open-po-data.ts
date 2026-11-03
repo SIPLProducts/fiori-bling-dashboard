@@ -68,7 +68,7 @@ export function sumBy(rows: OpenPoRow[], key: (r: OpenPoRow) => string, val: (r:
 /** IST today as YYYY-MM-DD. */
 export const istToday = (now = new Date()) => new Date(now.getTime() + 330 * 60000).toISOString().slice(0, 10);
 
-const COLS = "id,ebeln,ebelp,bedat,werks,plt_name,bsart,lgort,ekgrp,eknam,lifnr,name1,matnr,txz01,meins,menge,netwr,menge1,dmbtr1,eindt,days,buyer,creat,elikz,loekz,mngrp1,pcgrp1,pcgrp2,pcgrp3";
+const COLS = "id,ebeln,ebelp,bedat,werks,plt_name,plt_short,bsart,lgort,ekgrp,eknam,lifnr,name1,matnr,txz01,meins,menge,netwr,menge1,dmbtr1,eindt,days,buyer,creat,elikz,loekz,mngrp1,pcgrp1,pcgrp2,pcgrp3";
 const PAGE = 1000, CONCURRENCY = 6;
 
 export async function getOpenPoRows(): Promise<OpenPoRow[]> {
