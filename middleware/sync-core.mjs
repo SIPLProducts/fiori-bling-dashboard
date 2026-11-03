@@ -837,11 +837,61 @@ function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/open-po-map.ts
+var OPEN_PO_TEXT_FIELDS = ["WERKS", "PLT_NAME", "BSART", "LGORT", "EKGRP", "ELIKZ", "LIFNR", "NAME1", "LOEKZ", "MATNR", "TXZ01", "MEINS", "MEINS1", "EKNAM", "BUYER", "CREAT"];
+var OPEN_PO_NUMERIC_FIELDS = ["MENGE", "NETWR", "MENGE1", "DMBTR1", "WRBTR", "LV_MENGE_SUM", "DAYS"];
+function isOpenPoEndpoint(name) {
+  const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n.includes("openpurchaseorder") || n === "zopenpo" || n === "openpo";
+}
+function pick8(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text6(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows6(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows6(obj[key]);
+  }
+  return [];
+}
+function mapOpenPoPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows6(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const ebeln = text6(pick8(raw, "EBELN"));
+    if (!ebeln) {
+      invalid++;
+      continue;
+    }
+    const ebelp = text6(pick8(raw, "EBELP")) ?? "";
+    const row = { ebeln, ebelp, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of OPEN_PO_TEXT_FIELDS) row[k.toLowerCase()] = text6(pick8(raw, k));
+    for (const k of OPEN_PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick8(raw, k));
+    row.bedat = orderBookDate(pick8(raw, "BEDAT"));
+    row.eindt = orderBookDate(pick8(raw, "EINDT_DT")) ?? orderBookDate(pick8(raw, "EINDT"));
+    row.datum = orderBookDate(pick8(raw, "DATUM"));
+    Object.assign(row, sapGroupColumns(raw));
+    byKey.set(`${ebeln}|${ebelp}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text6(v) {
+function text7(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -869,7 +919,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text6(field(raw, codeKey));
+      const code = text7(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -877,7 +927,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text6(field(raw, nameKey)),
+        name: text7(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -896,8 +946,8 @@ function stripJsonComments(raw) {
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text7) {
-  const trimmed = text7.trimStart();
+function salvageTruncatedArray(text8) {
+  const trimmed = text8.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -932,11 +982,11 @@ function salvageTruncatedArray(text7) {
     return null;
   }
 }
-function extractEmbeddedBody(text7) {
+function extractEmbeddedBody(text8) {
   const marker = '"body":"';
-  const start = text7.indexOf(marker);
+  const start = text8.indexOf(marker);
   if (start < 0) return null;
-  const raw = text7.slice(start + marker.length);
+  const raw = text8.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -1079,8 +1129,33 @@ function withSalesRegisterMode(raw, scheduled = false, range, now = /* @__PURE__
     return raw ?? void 0;
   }
 }
+function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
+  if (!raw || !raw.trim()) return raw ?? void 0;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...parsed };
+    const doc = obj["DOCUMENT_DATE"] && typeof obj["DOCUMENT_DATE"] === "object" ? { ...obj["DOCUMENT_DATE"] } : {};
+    const window = postingWindow(range, now);
+    const valid = (v) => /^\d{8}$/.test(String(v ?? "").trim());
+    if (window) {
+      doc["FROM_DATE"] = window.from;
+      doc["TO_DATE"] = window.to;
+    } else {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = sapDateOf(from);
+      if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
+    }
+    obj["DOCUMENT_DATE"] = doc;
+    return JSON.stringify(obj);
+  } catch {
+    return raw;
+  }
+}
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
+  if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
@@ -1102,6 +1177,7 @@ export {
   extractEmbeddedBody,
   extractRows,
   formatBytes,
+  isOpenPoEndpoint,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
   isPurchaseRegisterEndpoint,
@@ -1110,6 +1186,7 @@ export {
   isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
+  mapOpenPoPayload,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,
   mapOrderBookPayload,
@@ -1125,5 +1202,6 @@ export {
   sha256,
   toIsoDate,
   withEndpointDates,
+  withOpenPoDates,
   withPostingDates
 };
