@@ -232,6 +232,13 @@
       "when": 1793682323763,
       "tag": "0032_tables_master_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793693165532,
+      "tag": "0033_open_po_plt_short",
+      "breakpoints": true
     }
   ]
 }

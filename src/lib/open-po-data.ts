@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type OpenPoRow = {
-  poNo: string; item: string; poDate: string; plant: string; plantName: string; poType: string; sloc: string;
+  poNo: string; item: string; poDate: string; plant: string; plantName: string; plantFull: string; poType: string; sloc: string;
   purGroup: string; vendor: string; vendorName: string; material: string; materialName: string;
   uom: string; poQty: number; poValue: number; migoQty: number; migoValue: number; openValue: number;
   deliveryDate: string; days: number; buyer: string; createdBy: string; delivComplete: boolean; deleted: boolean;
@@ -15,11 +15,11 @@ export type AgingBucket = (typeof AGING_BUCKETS)[number];
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
-type Rec = Partial<Record<"ebeln" | "ebelp" | "bedat" | "werks" | "plt_name" | "bsart" | "lgort" | "ekgrp" | "eknam" | "lifnr" | "name1" | "matnr" | "txz01" | "meins" | "menge" | "netwr" | "menge1" | "dmbtr1" | "eindt" | "days" | "buyer" | "creat" | "elikz" | "loekz" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3", unknown>>;
+type Rec = Partial<Record<"ebeln" | "ebelp" | "bedat" | "werks" | "plt_name" | "plt_short" | "bsart" | "lgort" | "ekgrp" | "eknam" | "lifnr" | "name1" | "matnr" | "txz01" | "meins" | "menge" | "netwr" | "menge1" | "dmbtr1" | "eindt" | "days" | "buyer" | "creat" | "elikz" | "loekz" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3", unknown>>;
 export function toOpenPoRow(r: Rec): OpenPoRow {
   const poValue = n(r.netwr), migoValue = n(r.dmbtr1);
   return {
-    poNo: t(r.ebeln), item: t(r.ebelp), poDate: t(r.bedat), plant: t(r.werks), plantName: t(r.plt_name) || t(r.werks),
+    poNo: t(r.ebeln), item: t(r.ebelp), poDate: t(r.bedat), plant: t(r.werks), plantName: t(r.plt_short) || t(r.plt_name) || t(r.werks), plantFull: t(r.plt_name),
     poType: t(r.bsart) || "Other", sloc: t(r.lgort) || "—", purGroup: t(r.eknam) || t(r.ekgrp) || "—",
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr) || "—", material: t(r.matnr), materialName: t(r.txz01) || t(r.matnr) || "—",
     uom: t(r.meins), poQty: n(r.menge), poValue, migoQty: n(r.menge1), migoValue, openValue: Math.max(poValue - migoValue, 0),
@@ -68,7 +68,7 @@ export function sumBy(rows: OpenPoRow[], key: (r: OpenPoRow) => string, val: (r:
 /** IST today as YYYY-MM-DD. */
 export const istToday = (now = new Date()) => new Date(now.getTime() + 330 * 60000).toISOString().slice(0, 10);
 
-const COLS = "id,ebeln,ebelp,bedat,werks,plt_name,bsart,lgort,ekgrp,eknam,lifnr,name1,matnr,txz01,meins,menge,netwr,menge1,dmbtr1,eindt,days,buyer,creat,elikz,loekz,mngrp1,pcgrp1,pcgrp2,pcgrp3";
+const COLS = "id,ebeln,ebelp,bedat,werks,plt_name,plt_short,bsart,lgort,ekgrp,eknam,lifnr,name1,matnr,txz01,meins,menge,netwr,menge1,dmbtr1,eindt,days,buyer,creat,elikz,loekz,mngrp1,pcgrp1,pcgrp2,pcgrp3";
 const PAGE = 1000, CONCURRENCY = 6;
 
 export async function getOpenPoRows(): Promise<OpenPoRow[]> {
@@ -90,4 +90,4 @@ export async function getOpenPoRows(): Promise<OpenPoRow[]> {
   return pages.flat().map(toOpenPoRow).filter((r) => !r.deleted);
 }
 
-export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v1"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v2-plt-short"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
