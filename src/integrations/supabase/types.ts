@@ -61,6 +61,7 @@ export type Database = {
           pcgrp2: string | null
           pcgrp3: string | null
           plt_name: string | null
+          plt_short: string | null
           raw: Json
           source_endpoint: string | null
           synced_at: string
@@ -99,6 +100,7 @@ export type Database = {
           pcgrp2?: string | null
           pcgrp3?: string | null
           plt_name?: string | null
+          plt_short?: string | null
           raw?: Json
           source_endpoint?: string | null
           synced_at?: string
@@ -137,6 +139,7 @@ export type Database = {
           pcgrp2?: string | null
           pcgrp3?: string | null
           plt_name?: string | null
+          plt_short?: string | null
           raw?: Json
           source_endpoint?: string | null
           synced_at?: string

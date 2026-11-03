@@ -5,7 +5,7 @@
 import { orderBookDate, orderBookNum } from "./order-book-map";
 import { sapGroupColumns } from "./sap-group-fields";
 
-export const OPEN_PO_TEXT_FIELDS = ["WERKS", "PLT_NAME", "BSART", "LGORT", "EKGRP", "ELIKZ", "LIFNR", "NAME1", "LOEKZ", "MATNR", "TXZ01", "MEINS", "MEINS1", "EKNAM", "BUYER", "CREAT"] as const;
+export const OPEN_PO_TEXT_FIELDS = ["WERKS", "PLT_NAME", "PLT_SHORT", "BSART", "LGORT", "EKGRP", "ELIKZ", "LIFNR", "NAME1", "LOEKZ", "MATNR", "TXZ01", "MEINS", "MEINS1", "EKNAM", "BUYER", "CREAT"] as const;
 export const OPEN_PO_NUMERIC_FIELDS = ["MENGE", "NETWR", "MENGE1", "DMBTR1", "WRBTR", "LV_MENGE_SUM", "DAYS"] as const;
 
 export function isOpenPoEndpoint(name: string): boolean {
