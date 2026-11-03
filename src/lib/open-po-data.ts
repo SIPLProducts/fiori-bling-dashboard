@@ -91,3 +91,16 @@ export async function getOpenPoRows(): Promise<OpenPoRow[]> {
 }
 
 export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v2-plt-short"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+
+/** Launchpad summary: total PO value plus per-PO-Type value and line count, sorted by value. */
+export function openPoTypeSummary(rows: OpenPoRow[]) {
+  const m = new Map<string, { name: string; value: number; count: number }>();
+  const pos = new Set<string>();
+  let poValue = 0;
+  for (const r of rows) {
+    const g = m.get(r.poType) ?? { name: r.poType, value: 0, count: 0 };
+    g.value += r.poValue; g.count += 1; m.set(r.poType, g);
+    poValue += r.poValue; pos.add(r.poNo);
+  }
+  return { poValue, poCount: pos.size, lines: rows.length, types: [...m.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name)) };
+}
