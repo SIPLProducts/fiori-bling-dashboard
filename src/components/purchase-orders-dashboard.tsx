@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
+import { poAgingData, poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const CR = 1e7;
