@@ -12,6 +12,7 @@ import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, poStatus, sumBy, ty
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const AGING_COLORS = ["#0f9d8a", "#1f6fd1", "#e08a1e", "#d64550", "#6b7280"];
 const CR = 1e7;
+const cardBg = { background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)) 0%, color-mix(in oklab, var(--primary) 6%, var(--card)) 50%, color-mix(in oklab, var(--accent) 30%, var(--card)) 100%)" };
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}` : "");
@@ -20,7 +21,7 @@ const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Deli
 
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false);
-  return <section className={`flex min-w-0 flex-col rounded-xl border border-border p-2 shadow-sm ${className}`} style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 9%, var(--card)) 0%, var(--card) 55%, color-mix(in oklab, var(--accent) 22%, var(--card)) 100%)" }}>
+  return <section className={`flex min-w-0 flex-col rounded-xl border border-border p-2 shadow-sm ${className}`} style={cardBg}>
     <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
     <div className="min-h-0 flex-1">{children}</div>
     <Dialog open={open} onOpenChange={setOpen}>
@@ -112,7 +113,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <div className="rounded-xl border border-border bg-card shadow-sm">
+    <div className="rounded-xl border border-border shadow-sm" style={cardBg}>
       <button type="button" data-pdf-exclude aria-expanded={!filtersCollapsed} onClick={() => setFiltersCollapsed((c) => !c)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground">
         <span>Filters</span><ChevronDown className={`size-4 transition-transform ${filtersCollapsed ? "-rotate-90" : ""}`} />
       </button>
@@ -179,7 +180,7 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Open Purchase Orders", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  return <section className="rounded-xl border border-border bg-card shadow-sm">
+  return <section className="rounded-xl border border-border shadow-sm" style={cardBg}>
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Open Purchase Order Details</h2>
       <div className="flex items-center gap-2">
