@@ -55,10 +55,10 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
 }
 function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
-  return <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)]">
+  return <div className="@container"><div className="grid grid-cols-1 items-center gap-2 @[17rem]:grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)]">
     <div className="relative h-36"><div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="text-center leading-tight"><p className="text-[9px] font-semibold text-foreground/70">Total</p><p className="text-sm font-bold tabular-nums text-foreground">{cr(total)}</p></div></div><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
     <ul className="min-w-0 space-y-1 text-[10px]">{heads ? <li className="flex items-center gap-1.5 border-b border-border pb-1 text-[10px] font-bold text-foreground/75"><span className="size-2.5" /><span>{heads[0]}</span><span className="ml-auto pl-2">{heads[1]}</span><span className="w-12 text-right">{heads[2]}</span></li> : null}{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate font-semibold text-foreground">{d.name}</span><span className="ml-auto pl-2 font-bold text-foreground tabular-nums">{cr(d.value)}</span><span className="w-12 text-right font-semibold text-foreground/75 tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
-  </div>;
+  </div></div>;
 }
 
 function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
@@ -139,7 +139,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
       <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
       <Card tint="rose" title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
