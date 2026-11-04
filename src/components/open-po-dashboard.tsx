@@ -12,18 +12,23 @@ import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, poStatus, sumBy, ty
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const AGING_COLORS = ["#0f9d8a", "#1f6fd1", "#e08a1e", "#d64550", "#6b7280"];
 const CR = 1e7;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _cardBg = { background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)) 0%, color-mix(in oklab, var(--primary) 6%, var(--card)) 50%, color-mix(in oklab, var(--accent) 30%, var(--card)) 100%)" };
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}` : "");
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
+const tintBg = (a: string, b: string) => ({
+  background: `linear-gradient(180deg, color-mix(in oklab, white 14%, transparent) 0%, transparent 38%), linear-gradient(135deg, color-mix(in oklab, ${a} 30%, var(--card)) 0%, color-mix(in oklab, ${b} 24%, var(--card)) 100%)`,
+  borderColor: `color-mix(in oklab, ${a} 40%, var(--border))`,
+  boxShadow: `0 6px 18px -10px color-mix(in oklab, ${a} 60%, transparent), inset 0 1px 0 color-mix(in oklab, white 35%, transparent)`,
+});
+const TINTS = { sky: tintBg("#38bdf8", "#2dd4bf"), peach: tintBg("#fb923c", "#a78bfa"), rose: tintBg("#f472b6", "#fda4af"), steel: tintBg("#3b82f6", "#64748b"), copper: tintBg("#c2703d", "#92400e"), teal: tintBg("#14b8a6", "#0ea5e9"), violet: tintBg("#8b5cf6", "#ec4899"), amber: tintBg("#f59e0b", "#f97316"), mint: tintBg("#10b981", "#84cc16"), neutral: tintBg("#60a5fa", "#94a3b8") };
+type Tint = keyof typeof TINTS;
 const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Delivery complete"];
 
-function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
+function Card({ title, sub, children, className = "", tint = "neutral" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string; tint?: Tint }) {
   const [open, setOpen] = useState(false);
   return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={TINTS[tint]}>
-    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
+    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-bold text-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] font-medium text-foreground/70">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
     <div className="min-h-0 flex-1">{children}</div>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="flex h-[92vh] max-w-[96vw] flex-col sm:max-w-[96vw]">
@@ -43,27 +48,27 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">{empty}</p>;
   return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-2 text-[11px]">
-    <span className="truncate" title={d.name}>{d.name}</span>
-    <span className="h-3 rounded-full bg-muted"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 2)}%`, background: radiantBar(i) }} /></span>
-    <span className="tabular-nums font-semibold">{cr(d.value)}</span>
+    <span className="truncate font-semibold text-foreground" title={d.name}>{d.name}</span>
+    <span className="h-3.5 rounded-full bg-background/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)]"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%`, background: `linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 55%), ${radiantBar(i)}`, boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} /></span>
+    <span className="tabular-nums font-bold text-foreground">{cr(d.value)}</span>
   </li>)}</ul>;
 }
 function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
     <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
-    <ul className="space-y-1 text-[11px]">{heads ? <li className="flex items-center gap-1.5 border-b border-border pb-1 text-[10px] font-semibold text-muted-foreground"><span className="size-2.5" /><span>{heads[0]}</span><span className="ml-auto pl-2">{heads[1]}</span><span className="w-12 text-right">{heads[2]}</span></li> : null}{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate">{d.name}</span><span className="ml-auto pl-2 font-semibold tabular-nums">{cr(d.value)}</span><span className="w-12 text-right text-muted-foreground tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
+    <ul className="space-y-1 text-[11px]">{heads ? <li className="flex items-center gap-1.5 border-b border-border pb-1 text-[10px] font-bold text-foreground/75"><span className="size-2.5" /><span>{heads[0]}</span><span className="ml-auto pl-2">{heads[1]}</span><span className="w-12 text-right">{heads[2]}</span></li> : null}{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate font-semibold text-foreground">{d.name}</span><span className="ml-auto pl-2 font-bold text-foreground tabular-nums">{cr(d.value)}</span><span className="w-12 text-right font-semibold text-foreground/75 tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
   </div>;
 }
 
 function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <div className="h-56"><ResponsiveContainer><BarChart data={data} margin={{ top: 16, left: -16, right: 4 }}>
-    <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.55} /><stop offset="100%" stopColor={c} stopOpacity={1} /></linearGradient>)}</defs>
-    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} />
+    <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.6} /><stop offset="35%" stopColor={c} stopOpacity={0.9} /><stop offset="100%" stopColor={c} stopOpacity={1} /></linearGradient>)}</defs>
+    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />
     <Tooltip formatter={(v: number) => v.toFixed(2)} />
-    <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={36}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
-      <LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 9, fill: "var(--primary)" }} /></Bar>
+    <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40} stroke="rgba(255,255,255,0.5)" strokeWidth={1}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
+      <LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 10, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
   </BarChart></ResponsiveContainer></div>;
 }
 
@@ -135,20 +140,20 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <Card title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
-      <Card title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
+      <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
+      <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-      <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
-      <Card title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
-      <Card title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
+      <Card tint="rose" title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
+      <Card tint="steel" title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
+      <Card tint="copper" title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
     </div>
 
-    <Card title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+    <Card tint="teal" title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
+      {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} tint={(["violet", "amber", "mint"] as const)[label.endsWith("1") ? 0 : label.endsWith("2") ? 1 : 2]} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
     </div>
 
     <DetailsTable rows={filtered} today={today} />
