@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ClipboardList, FileText, IndianRupee, Truck } from "lucide-react";
-import { Bar, CartesianGrid, ComposedChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ComposedChart, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { poAgingData, poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
+import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poAgingData, poGroup, poTotals, quarterlyCompare, sumInr, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const CR = 1e7;
@@ -38,12 +38,16 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     && (!f.purGroup || r.purGroup === f.purGroup) && (!f.materialGroup || r.materialGroup === f.materialGroup)
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
-  const types = sumInr(filtered, (r) => r.poType);
+  const types = sumInr(filtered, poGroup);
+  const matGroups = sumInr(filtered, (r) => r.materialGroup);
+  const stacked = monthlyByGroup(filtered).map((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? v / CR : v])));
+  const qc = quarterlyCompare(filtered);
+  const qData = qc.data.map((d) => ({ name: d.name, current: d.current / CR, previous: d.previous / CR }));
+  const plantRows = (() => { const m = new Map<string, { code: string; name: string; value: number }>(); for (const r of filtered) if (r.inr) { const o = m.get(r.plant) ?? { code: r.plant, name: r.plantName, value: 0 }; o.value += r.netValue; m.set(r.plant, o); } return [...m.values()].sort((a, b) => b.value - a.value).slice(0, 12); })();
   const vendors = sumInr(filtered, (r) => r.vendorName).slice(0, 10);
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
   const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
-  const users = sumInr(filtered, (r) => r.userName || "—").slice(0, 10);
   const monthly = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of filtered) if (r.inr && r.poDate) m.set(r.poDate.slice(0, 7), (m.get(r.poDate.slice(0, 7)) ?? 0) + r.netValue);
@@ -73,25 +77,54 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Card tint="sky" title="PO Value by Document Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
-      <Card tint="rose" title="Top 10 Vendors"><BarList data={vendors} /></Card>
-      <Card tint="steel" title="Top 10 Materials"><BarList data={materials} /></Card>
-    </div>
-
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <Card tint="peach" title="Delivery Aging Status" sub="PO value · SAP NO_OF_DAYS"><Donut data={poAgingData(filtered)} heads={["Days", "Val", "%"]} /></Card>
-      <Card tint="copper" title="Plant Analytics"><PlantColumns data={plants} /></Card>
-      <Card tint="teal" title="Monthly PO Value Trend"><div className="h-56"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 16, left: -16, right: 4 }}>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
+      <Card tint="teal" title="Purchase Trend" sub="Monthly"><div className="h-56"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 16, left: -16, right: 4 }}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />
         <Tooltip formatter={(v: number) => v.toFixed(2)} />
         <Bar dataKey="value" name="PO Val" fill="#1f6fd1" radius={[6, 6, 0, 0]} maxBarSize={40}><LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 10, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
+      <Card tint="sky" title="PO Value by Document Type"><Donut data={types} colors={types.map((d) => PO_GROUP_COLORS[d.name] ?? "#64748b")} heads={["Type", "Val", "%"]} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="steel" title="Top Materials"><BarList data={materials} /></Card>
+      <Card tint="rose" title="Top Vendors"><BarList data={vendors} /></Card>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="violet" title="Material Group"><Donut data={matGroups} heads={["Group", "Val", "%"]} /></Card>
+      <Card tint="amber" title="Material Group Summary">
+        <table className="w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Material Group</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
+          <tbody>{matGroups.map((g, i) => <tr key={g.name} className="cursor-pointer border-t border-border/60 hover:bg-primary/10" onClick={() => setF({ ...f, materialGroup: f.materialGroup === g.name ? "" : g.name })}><td className="px-1.5 py-1"><span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{g.name}</td><td className="px-1.5 py-1 text-right font-semibold tabular-nums">{cr(g.value)}</td></tr>)}</tbody>
+          <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1">Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(matGroups.reduce((s, g) => s + g.value, 0))}</td></tr></tfoot></table>
+      </Card>
+    </div>
+
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="mint" title="Monthly Expenditure" sub="By document type"><div className="h-56"><ResponsiveContainer><BarChart data={stacked} margin={{ top: 8, left: -16, right: 4 }}>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="month" tick={{ fontSize: 10, fill: "var(--foreground)" }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />
+        <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 10 }} />
+        {PO_GROUPS.filter((g) => stacked.some((m) => (m as Record<string, unknown>)[g])).map((g) => <Bar key={g} dataKey={g} stackId="m" fill={PO_GROUP_COLORS[g]} />)}
+      </BarChart></ResponsiveContainer></div></Card>
+      <Card tint="peach" title="Quarterly Comparison" sub={<span>FY{String(qc.fy).slice(2)} vs FY{String(qc.fy - 1).slice(2)} · <b className={qc.yoy < 0 ? "text-destructive" : "text-success"}>{qc.yoy < 0 ? "▼" : "▲"} {Math.abs(qc.yoy)}% YoY</b></span>}>
+        <div className="h-56"><ResponsiveContainer><BarChart data={qData} margin={{ top: 16, left: -16, right: 4 }}>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />
+          <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 10 }} />
+          <Bar dataKey="current" name={`FY${String(qc.fy).slice(2)}`} fill="#1f6fd1" radius={[4, 4, 0, 0]} maxBarSize={26}><LabelList dataKey="current" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 9, fill: "var(--foreground)" }} /></Bar>
+          <Bar dataKey="previous" name={`FY${String(qc.fy - 1).slice(2)}`} fill="#8e44ad" radius={[4, 4, 0, 0]} maxBarSize={26}><LabelList dataKey="previous" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 9, fill: "var(--foreground)" }} /></Bar>
+        </BarChart></ResponsiveContainer></div></Card>
+    </div>
+
+    <Card tint="copper" title="Plant Analytics" sub="Top 12">
+      <PlantColumns data={plants} />
+      <table className="mt-2 w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Short Name</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
+        <tbody>{plantRows.map((p, i) => <tr key={p.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{p.code}</td><td className="px-1.5 py-0.5">{p.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{cr(p.value)}</td></tr>)}</tbody>
+        <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(plantRows.reduce((s, p) => s + p.value, 0))}</td></tr></tfoot></table>
+    </Card>
+
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="peach" title="Delivery Aging Status" sub="PO value · SAP NO_OF_DAYS"><Donut data={poAgingData(filtered)} heads={["Days", "Val", "%"]} /></Card>
       <Card tint="violet" title="PO Value by Purchasing Group"><BarList data={purGroups} /></Card>
-      <Card tint="mint" title="PO Value by Created User"><BarList data={users} /></Card>
     </div>
 
     <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
@@ -111,7 +144,7 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
   const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"]);
   const t = poTotals(list);
   const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
-  const typeLabel = (r: PoRow) => r.poType;
+  const typeLabel = (r: PoRow) => `${r.poTypeCode || "—"} – ${poGroup(r)}`;
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
@@ -136,7 +169,7 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
       <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td>
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td><td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
-        <td className="whitespace-nowrap px-2 py-1">{typeLabel(r)}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plantName}</td>
+        <td className="whitespace-nowrap px-2 py-1"><span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: PO_GROUP_COLORS[poGroup(r)], color: PO_GROUP_COLORS[poGroup(r)], background: `${PO_GROUP_COLORS[poGroup(r)]}1a` }}><span className="size-1.5 rounded-full" style={{ background: PO_GROUP_COLORS[poGroup(r)] }} />{typeLabel(r)}</span></td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plantName}</td>
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1 text-right tabular-nums">{num(r.qty)}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{num(r.netPrice)}</td><td className="px-2 py-1">{r.currency}</td>
         <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendDelValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendInvValue)}</td></tr>)
