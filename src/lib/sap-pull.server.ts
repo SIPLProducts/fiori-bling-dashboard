@@ -419,7 +419,7 @@ export async function storePurchaseOrdersPayload(
   const base = { received, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_orders", snapshotId: "", postingFrom: null, postingTo: null };
   try {
     for (let i = 0; i < rows.length; i += BATCH) {
-      const { error } = await (db.from as (t: string) => ReturnType<typeof db.from>)("purchase_orders").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "po,po_item" });
+      const { error } = await db.from("purchase_orders").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "po,po_item" });
       if (error) throw error;
     }
     await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${invalid} without PO` : "SAP returned no rows — existing data left unchanged" });
