@@ -20,7 +20,7 @@ const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-
 
 const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Delivery complete"];
 
-function Card({ title, sub, children, className = "", tint = "neutral" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string; tint?: Tint }) {
+export function Card({ title, sub, children, className = "", tint = "neutral" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string; tint?: Tint }) {
   const [open, setOpen] = useState(false);
   return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={TINTS[tint]}>
     <div className="mb-2 flex items-center justify-between gap-2"><h2 className="border-b-2 pb-0.5 text-xs font-bold text-foreground" style={{ borderColor: TINTS[tint].borderColor }}>{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] font-medium text-foreground/70">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
@@ -33,13 +33,13 @@ function Card({ title, sub, children, className = "", tint = "neutral" }: { titl
     </Dialog>
   </section>;
 }
-function Tile({ icon, label, value, note, tone, unit }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
+export function Tile({ icon, label, value, note, tone, unit }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
   return <div className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
     <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</div>
     <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p><p className="truncate text-lg font-bold">{value}</p>{unit ? <p className="truncate text-[10px] font-medium opacity-85">{unit}</p> : null}{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
   </div>;
 }
-function BarList({ data, empty = "No data" }: { data: { name: string; value: number }[]; empty?: string }) {
+export function BarList({ data, empty = "No data" }: { data: { name: string; value: number }[]; empty?: string }) {
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">{empty}</p>;
   return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-2 text-[11px]">
@@ -48,7 +48,7 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
     <span className="tabular-nums font-bold text-foreground">{cr(d.value)}</span>
   </li>)}</ul>;
 }
-function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
+export function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
   return <div className="@container"><div className="grid grid-cols-1 items-center gap-2 @[17rem]:grid-cols-[minmax(0,6rem)_minmax(0,1fr)]">
     <div className="relative h-36"><div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="text-center leading-tight"><p className="text-[8px] font-semibold text-foreground/70">Total</p><p className="text-[10px] font-bold tabular-nums text-foreground">{cr(total)}</p></div></div><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
@@ -56,7 +56,7 @@ function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: 
   </div></div>;
 }
 
-function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
+export function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <div className="h-56"><ResponsiveContainer><BarChart data={data} margin={{ top: 16, left: -16, right: 4 }}>
     <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.6} /><stop offset="35%" stopColor={c} stopOpacity={0.9} /><stop offset="100%" stopColor={c} stopOpacity={1} /></linearGradient>)}</defs>
