@@ -45,7 +45,7 @@ function Page() {
     <SyncNowButton endpointName="Open_Purchase_Order" label="Open Purchase Orders" />
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
-  return <ReportShell title="Open Purchase Orders" compact actions={allowed ? actions : undefined}>
-    {!isLoading && !allowed ? <AccessDenied area="Open Purchase Orders" /> : <div ref={ref}>{busy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3"><div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div><h1 className="text-lg font-bold text-card-foreground">Open Purchase Orders</h1></div> : null}{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <OpenPoDashboard rows={q.data ?? []} />}</div>}
+  return <ReportShell title="Open Purchase Orders" unitLabel="Val in Cr" compact actions={allowed ? actions : undefined}>
+    {!isLoading && !allowed ? <AccessDenied area="Open Purchase Orders" /> : <div ref={ref}>{busy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3"><div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div><div className="text-right"><h1 className="text-lg font-bold text-card-foreground">Open Purchase Orders</h1><p className="text-[11px] font-medium text-muted-foreground">Val in Cr</p></div></div> : null}{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <OpenPoDashboard rows={q.data ?? []} />}</div>}
   </ReportShell>;
 }
