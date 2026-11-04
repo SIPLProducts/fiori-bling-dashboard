@@ -8,8 +8,9 @@ Replace the "coming soon" Purchase Orders page with a working dashboard built fr
 - Load the 16 sample rows from your Excel into the preview only (no seed migration for Quality/Production).
 
 ## SAP API Settings
-- New endpoint "Purchase Orders (ZME2N)" using your payload: list-style PLANT / PURCHASING_DOCUMENT / PURCHASING_GROUP / DOCUMENT_TYPE / MATERIAL / VENDOR, DOCUMENT_DATE FROM/TO from the date range selector, STATUS (default R6), MAIL.
-- Daily scheduled sync uses yesterday's document date range.
+- New endpoint "Purchase Orders (ZME2N)" with your payload (lowercase keys, empty lists = all):
+  `purchasing_document: [], plant: [], purchasing_group: [], document_type: [], material: [], vendor: [], document_date: { from_date: "", to_date: "YYYYMMDD" }, status: "R6", mail: ""`
+- Works like Open Purchase Orders: Document date range selector, no Plant field; "Today" sends empty from_date and today's to_date (manual and scheduled sync).
 
 ## Screen layout
 ```text
