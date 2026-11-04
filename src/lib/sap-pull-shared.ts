@@ -243,16 +243,21 @@ export function withOpenPoDates(raw: string | null | undefined, range?: string |
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
     const obj = { ...(parsed as Record<string, unknown>) };
-    const doc = obj["DOCUMENT_DATE"] && typeof obj["DOCUMENT_DATE"] === "object" ? { ...(obj["DOCUMENT_DATE"] as Record<string, unknown>) } : {};
+    // Key case follows the saved payload (ZOPENPO uses DOCUMENT_DATE/FROM_DATE, ZME2N document_date/from_date).
+    const docKey = Object.keys(obj).find((k) => k.toLowerCase() === "document_date") ?? "DOCUMENT_DATE";
+    const doc = obj[docKey] && typeof obj[docKey] === "object" ? { ...(obj[docKey] as Record<string, unknown>) } : {};
+    const lower = docKey === docKey.toLowerCase();
+    const fromKey = Object.keys(doc).find((k) => k.toLowerCase() === "from_date") ?? (lower ? "from_date" : "FROM_DATE");
+    const toKey = Object.keys(doc).find((k) => k.toLowerCase() === "to_date") ?? (lower ? "to_date" : "TO_DATE");
     const window = postingWindow(range, now);
     const valid = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
     // Today sends an empty FROM_DATE (SAP: everything up to today); custom keeps an empty FROM_DATE.
-    if (window) { doc["FROM_DATE"] = range === "today" ? "" : window.from; doc["TO_DATE"] = window.to; }
+    if (window) { doc[fromKey] = range === "today" ? "" : window.from; doc[toKey] = window.to; }
     else {
-      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = "";
-      if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
+      if (!valid(doc[fromKey])) doc[fromKey] = "";
+      if (!valid(doc[toKey])) doc[toKey] = sapDateOf(now);
     }
-    obj["DOCUMENT_DATE"] = doc;
+    obj[docKey] = doc;
     return JSON.stringify(obj);
   } catch { return raw; }
 }
@@ -267,6 +272,8 @@ export function withEndpointDates(
   // `//` lines in a saved payload mark optional keys that are not sent.
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
+  // ZME2N Purchase Orders: same document-date window as Open PO (lowercase keys).
+  if (/zme2n|^me2n|^purchaseorders?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).
