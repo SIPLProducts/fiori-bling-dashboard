@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { applyDateWindow, buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
 import { getPayloadPath, setPayloadPaths } from "@/lib/payload-paths";
 import { isOpenPoEndpoint } from "@/lib/open-po-map";
+import { isPurchaseOrdersEndpoint } from "@/lib/purchase-orders-map";
 import { isSitEndpoint } from "@/lib/sit-map";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -800,11 +801,13 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   if (isZcashFlowName(input.name) || isZcashFlowName(input.endpoint_path)) return input;
   if (isOrderBookName(input.name) || isOrderBookName(input.endpoint_path)) return input;
   if (isSitEndpoint(input.name) || isSitEndpoint(input.endpoint_path)) return input;
-  if (isOpenPoEndpoint(input.name) || isOpenPoEndpoint(input.endpoint_path)) {
+  const zme2n = isPurchaseOrdersEndpoint(input.name) || isPurchaseOrdersEndpoint(input.endpoint_path);
+  if (zme2n || isOpenPoEndpoint(input.name) || isOpenPoEndpoint(input.endpoint_path)) {
     // Preset windows show today's document dates in the pickers and payload.
     const w = postingWindow(input.posting_range);
     if (!w) return input;
-    const next = setPayloadPaths(input.body_template, { "DOCUMENT_DATE.FROM_DATE": input.posting_range === "today" ? "" : w.from, "DOCUMENT_DATE.TO_DATE": w.to });
+    const [fk, tk] = zme2n ? ["document_date.from_date", "document_date.to_date"] : ["DOCUMENT_DATE.FROM_DATE", "DOCUMENT_DATE.TO_DATE"];
+    const next = setPayloadPaths(input.body_template, { [fk]: input.posting_range === "today" ? "" : w.from, [tk]: w.to });
     return next === null ? input : { ...input, body_template: next };
   }
   const payload = parsePayload(input.body_template) ?? {};
@@ -1135,6 +1138,7 @@ function EndpointDetail({
   const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const usesPostingDates =
     isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path) ||
+    isPurchaseOrdersEndpoint(form.name) || isPurchaseOrdersEndpoint(form.endpoint_path) ||
     form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
   const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || /salesregister/i.test(`${form.name}${form.endpoint_path}`.replace(/[^a-z0-9]/gi, "")) || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
@@ -1163,9 +1167,10 @@ function EndpointDetail({
     });
   }
 
-  const isOpenPo = isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path);
-  const dateFromKey = isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
-  const dateToKey = isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
+  const isZme2n = isPurchaseOrdersEndpoint(form.name) || isPurchaseOrdersEndpoint(form.endpoint_path);
+  const isOpenPo = isZme2n || isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path);
+  const dateFromKey = isZme2n ? "document_date.from_date" : isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
+  const dateToKey = isZme2n ? "document_date.to_date" : isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
   const dateWord = isOpenPo ? "Document" : "Posting";
   function dateValue(path: string): string {
     return path.includes(".") ? getPayloadPath(form.body_template, path) : payloadValue(path);

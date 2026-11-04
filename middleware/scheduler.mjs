@@ -33,6 +33,8 @@ import {
   isPurchaseRegisterEndpoint,
   mapOpenPoPayload,
   isOpenPoEndpoint,
+  mapPurchaseOrdersPayload,
+  isPurchaseOrdersEndpoint,
   keyValueObject,
   formatBytes,
 } from "./sync-core.mjs";
@@ -190,6 +192,14 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
 
   /** Maps the SAP payload and writes it to zfisales_detail. */
   async function storeRows(payload, endpoint, requestSnapshot) {
+    if (isPurchaseOrdersEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapPurchaseOrdersPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("purchase_orders").upsert(rows.slice(i, i + BATCH), { onConflict: "po,po_item" });
+        if (error) throw new Error(error.message);
+      }
+      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_orders", snapshotId: null, postingFrom: null, postingTo: null };
+    }
     if (isOpenPoEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapOpenPoPayload(payload, endpoint);
       for (let i = 0; i < rows.length; i += BATCH) {

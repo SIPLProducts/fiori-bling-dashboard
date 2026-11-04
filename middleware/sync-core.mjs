@@ -887,11 +887,114 @@ function mapOpenPoPayload(payload, endpointName, now = /* @__PURE__ */ new Date(
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/purchase-orders-map.ts
+var PO_TEXT_FIELDS = [
+  "PO_DOC_TYPE",
+  "PO_DOC_CATEGORY",
+  "VENDOR_SUPPLYING_PLANT",
+  "PURCHASE_ORG",
+  "PURCHASING_GROUP",
+  "MATERIAL",
+  "SHORT_TEXT",
+  "MATERIAL_GROUP",
+  "PO_HISTORY_RELEASE_DOC",
+  "DELETION_IND",
+  "ITEM_CATEGORY",
+  "ITEM_CATEGORY_EPSTP",
+  "ACCOUNT_ASSIGNMENT_CAT",
+  "TRACKING_NUMBER",
+  "PLANT",
+  "PLT_NAME",
+  "PLT_SHORT",
+  "STORAGE_LOCATION",
+  "ORDER_UNIT",
+  "CURRENCY_KEY",
+  "AGREEMENT",
+  "RFQ_STATUS",
+  "COLLECTIVE_NO",
+  "PURCHASING_INFO_REC",
+  "RELEASE_GROUP",
+  "RELEASE_STRATEGY",
+  "RELEASE_STATUS",
+  "RELEASE_INDICATOR",
+  "NAME_OF_VENDOR",
+  "ORDER_PRICE_UNIT",
+  "TAX_CODE",
+  "ASSET_CODE",
+  "WBS_ELEMENT",
+  "ZZBANFN",
+  "ZZITEXT",
+  "ZZINTER",
+  "ZZSTEUC",
+  "USER_ID",
+  "USER_NAME",
+  "BUYER"
+];
+var PO_NUMERIC_FIELDS = [
+  "NO_OF_DAYS",
+  "ORDER_QUANTITY",
+  "NET_PRICE",
+  "PRICE_UNIT",
+  "AGREEMENT_ITEM",
+  "STILL_TO_BE_DELIVERED_QTY",
+  "STILL_TO_BE_DELIVERED_VAL",
+  "STILL_TO_BE_INVOICED_QTY",
+  "STILL_TO_BE_INVOICED_VAL",
+  "NO_OF_POSITIONS",
+  "PACKAGE_NO",
+  "NET_ORDER_VALUE"
+];
+function isPurchaseOrdersEndpoint(name) {
+  const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n.includes("zme2n") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
+}
+function pick9(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text7(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows7(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows7(obj[key]);
+  }
+  return [];
+}
+function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows7(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const po = text7(pick9(raw, "PO"));
+    if (!po) {
+      invalid++;
+      continue;
+    }
+    const poItem = text7(pick9(raw, "PO_ITEM")) ?? "";
+    const row = { po, po_item: poItem, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of PO_TEXT_FIELDS) row[k.toLowerCase()] = text7(pick9(raw, k));
+    for (const k of PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick9(raw, k));
+    row["po_date"] = orderBookDate(pick9(raw, "PO_DATE"));
+    row["delivery_date"] = orderBookDate(pick9(raw, "DELIVERY_DATE"));
+    row["doc_date"] = orderBookDate(pick9(raw, "DOC_DATE"));
+    byKey.set(`${po}|${poItem}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/user-dropdown-map.ts
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text7(v) {
+function text8(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -919,7 +1022,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text7(field(raw, codeKey));
+      const code = text8(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -927,7 +1030,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text7(field(raw, nameKey)),
+        name: text8(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -946,8 +1049,8 @@ function stripJsonComments(raw) {
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text8) {
-  const trimmed = text8.trimStart();
+function salvageTruncatedArray(text9) {
+  const trimmed = text9.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -982,11 +1085,11 @@ function salvageTruncatedArray(text8) {
     return null;
   }
 }
-function extractEmbeddedBody(text8) {
+function extractEmbeddedBody(text9) {
   const marker = '"body":"';
-  const start = text8.indexOf(marker);
+  const start = text9.indexOf(marker);
   if (start < 0) return null;
-  const raw = text8.slice(start + marker.length);
+  const raw = text9.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -1135,17 +1238,21 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
     const obj = { ...parsed };
-    const doc = obj["DOCUMENT_DATE"] && typeof obj["DOCUMENT_DATE"] === "object" ? { ...obj["DOCUMENT_DATE"] } : {};
+    const docKey = Object.keys(obj).find((k) => k.toLowerCase() === "document_date") ?? "DOCUMENT_DATE";
+    const doc = obj[docKey] && typeof obj[docKey] === "object" ? { ...obj[docKey] } : {};
+    const lower = docKey === docKey.toLowerCase();
+    const fromKey = Object.keys(doc).find((k) => k.toLowerCase() === "from_date") ?? (lower ? "from_date" : "FROM_DATE");
+    const toKey = Object.keys(doc).find((k) => k.toLowerCase() === "to_date") ?? (lower ? "to_date" : "TO_DATE");
     const window = postingWindow(range, now);
     const valid = (v) => /^\d{8}$/.test(String(v ?? "").trim());
     if (window) {
-      doc["FROM_DATE"] = range === "today" ? "" : window.from;
-      doc["TO_DATE"] = window.to;
+      doc[fromKey] = range === "today" ? "" : window.from;
+      doc[toKey] = window.to;
     } else {
-      if (!valid(doc["FROM_DATE"])) doc["FROM_DATE"] = "";
-      if (!valid(doc["TO_DATE"])) doc["TO_DATE"] = sapDateOf(now);
+      if (!valid(doc[fromKey])) doc[fromKey] = "";
+      if (!valid(doc[toKey])) doc[toKey] = sapDateOf(now);
     }
-    obj["DOCUMENT_DATE"] = doc;
+    obj[docKey] = doc;
     return JSON.stringify(obj);
   } catch {
     return raw;
@@ -1154,6 +1261,7 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
+  if (/zme2n|^me2n|^purchaseorders?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
@@ -1178,6 +1286,7 @@ export {
   isOpenPoEndpoint,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
+  isPurchaseOrdersEndpoint,
   isPurchaseRegisterEndpoint,
   isSalesRegisterEndpoint,
   isSitEndpoint,
@@ -1189,6 +1298,7 @@ export {
   mapOpenSalesOrdersPayload,
   mapOrderBookPayload,
   mapPayload,
+  mapPurchaseOrdersPayload,
   mapPurchaseRegisterPayload,
   mapRow,
   mapSalesRegisterPayload,
