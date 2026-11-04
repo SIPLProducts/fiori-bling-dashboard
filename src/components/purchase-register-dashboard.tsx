@@ -9,14 +9,17 @@ import type { MaterialTrend } from "@/lib/purchase-material-trend";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { currentFy, fyLabel, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
+import { TINTS, type Tint } from "@/lib/card-tints";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const TYPE_COLOR: Record<PurchaseType, number> = { Domestic: 0, Imported: 3, Service: 4 };
 const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const CARD_TINT: Record<string, Tint> = { "Purchase Trend": "sky", "Purchase by Type": "peach", "Top Materials": "steel", "Top Vendors": "rose", "Material Group": "teal", "Material Group Summary": "violet", "Monthly Expenditure": "amber", "Quarterly Comparison": "mint", "Plant Analytics": "copper" };
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
-  return <section className={`flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 shadow-sm ${className}`}>
-    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2>{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}</div>
+  const tint = TINTS[CARD_TINT[title] ?? "neutral"];
+  return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={tint}>
+    <div className="mb-2 flex items-center justify-between gap-2"><h2 className="border-b-2 pb-0.5 text-xs font-bold text-foreground" style={{ borderColor: tint.borderColor }}>{title}</h2>{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}</div>
     <div className="min-h-0 flex-1">{children}</div>
   </section>;
 }
@@ -100,7 +103,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
 
   if (openMat) return <MaterialPricePage trend={openMat} rows={filtered} onBack={() => setOpenMat(null)} />;
   return <div className="space-y-3">
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2" style={TINTS.neutral}>
       <span className="text-[10px] font-bold tracking-wide text-primary uppercase">Filters</span>
       <select className={sel} value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} aria-label="Year">{years.length ? years.map((y) => <option key={y} value={y}>{fyLabel(y)}</option>) : <option value="">No data</option>}</select>
       <select className={sel} value={plant} onChange={(e) => setPlant(e.target.value)} aria-label="Plant"><option value="">All Plants</option>{PLANTS.map((p) => <option key={p.code} value={p.code}>{p.code} — {p.name}</option>)}</select>

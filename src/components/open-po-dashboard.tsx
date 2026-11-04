@@ -7,6 +7,7 @@ import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Leg
 import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
+import { TINTS, type Tint } from "@/lib/card-tints";
 import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, poStatus, sumBy, type OpenPoRow, type OpenPoStatus } from "@/lib/open-po-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
@@ -16,13 +17,7 @@ const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigi
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}` : "");
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
-const tintBg = (a: string, b: string) => ({
-  background: `linear-gradient(180deg, color-mix(in oklab, white 14%, transparent) 0%, transparent 38%), linear-gradient(135deg, color-mix(in oklab, ${a} 30%, var(--card)) 0%, color-mix(in oklab, ${b} 24%, var(--card)) 100%)`,
-  borderColor: `color-mix(in oklab, ${a} 40%, var(--border))`,
-  boxShadow: `0 6px 18px -10px color-mix(in oklab, ${a} 60%, transparent), inset 0 1px 0 color-mix(in oklab, white 35%, transparent)`,
-});
-const TINTS = { sky: tintBg("#38bdf8", "#2dd4bf"), peach: tintBg("#fb923c", "#a78bfa"), rose: tintBg("#f472b6", "#fda4af"), steel: tintBg("#3b82f6", "#64748b"), copper: tintBg("#c2703d", "#92400e"), teal: tintBg("#14b8a6", "#0ea5e9"), violet: tintBg("#8b5cf6", "#ec4899"), amber: tintBg("#f59e0b", "#f97316"), mint: tintBg("#10b981", "#84cc16"), neutral: tintBg("#60a5fa", "#94a3b8") };
-type Tint = keyof typeof TINTS;
+
 const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Delivery complete"];
 
 function Card({ title, sub, children, className = "", tint = "neutral" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string; tint?: Tint }) {
