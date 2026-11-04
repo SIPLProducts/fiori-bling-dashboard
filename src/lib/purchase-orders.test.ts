@@ -45,3 +45,14 @@ describe("poAgingBand (NO_OF_DAYS)", () => {
     expect([0, 60, 61, 180, 181, 365, 366, -5].map(_band)).toEqual(["0 – 60", "0 – 60", "61 – 180", "61 – 180", "181 – 365", "181 – 365", "> 365", "0 – 60"]);
   });
 });
+
+import { quarterlyCompare as qcmp, monthlyByGroup as mbg, poGroup as pg } from "./purchase-orders-data";
+describe("PO register-style helpers", () => {
+  const base = { inr: true, netValue: 100, poTypeCode: "ZPNI" } as never as import("./purchase-orders-data").PoRow;
+  it("groups ZPNI as DOMESTIC", () => { expect(pg({ poTypeCode: "ZPNI" })).toBe("DOMESTIC"); });
+  it("compares Apr–Mar quarters against previous FY", () => {
+    const r = qcmp([{ ...base, poDate: "2026-05-10" }, { ...base, poDate: "2025-05-10", netValue: 50 }, { ...base, poDate: "2027-01-05" }]);
+    expect(r.fy).toBe(2027); expect(r.data[0]).toEqual({ name: "Q1", current: 100, previous: 50 }); expect(r.data[3]!.current).toBe(100); expect(r.yoy).toBe(300);
+  });
+  it("stacks monthly value by group", () => { expect(mbg([{ ...base, poDate: "2026-05-10" }])[0]).toMatchObject({ month: "May-26", DOMESTIC: 100, total: 100 }); });
+});
