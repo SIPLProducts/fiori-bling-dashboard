@@ -43,7 +43,6 @@ export function OrderBookSubGroupChart({ groups, divisions, pdf = false, groupLa
           {used.map((d, i) => <Bar key={d} dataKey={d} name={d} stackId="div" fill={`url(#${id}-${i})`} maxBarSize={32} isAnimationActive={!pdf} {...(i === used.length - 1 ? { radius: [4, 4, 0, 0] as [number, number, number, number] } : {})}>
             {i === used.length - 1 ? <LabelList dataKey="total" position="top" formatter={(v: number) => Number(v).toFixed(2)} fontSize={9} fill="var(--foreground)" /> : null}
           </Bar>)}
-          <Legend verticalAlign="bottom" content={() => <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 pt-2 text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Division</span>{used.map((d) => <span key={d} className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm" style={{ background: colors.get(d) }} />{d}</span>)}</div>} />
         </BarChart>
       </ResponsiveContainer>
     </div>

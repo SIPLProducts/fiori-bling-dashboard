@@ -1,7 +1,7 @@
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { ClipboardList, IndianRupee, Maximize2, PackageCheck, Users } from "lucide-react";
+import { ChevronDown, ClipboardList, IndianRupee, Maximize2, PackageCheck, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Deli
 
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false);
-  return <section className={`flex min-w-0 flex-col rounded-xl border border-border bg-card p-2 shadow-sm ${className}`}>
+  return <section className={`flex min-w-0 flex-col rounded-xl border border-border p-2 shadow-sm ${className}`} style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 9%, var(--card)) 0%, var(--card) 55%, color-mix(in oklab, var(--accent) 22%, var(--card)) 100%)" }}>
     <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-semibold text-card-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] text-muted-foreground">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
     <div className="min-h-0 flex-1">{children}</div>
     <Dialog open={open} onOpenChange={setOpen}>
@@ -71,6 +71,7 @@ const EMPTY: Filters = { plant: "", poType: "", createdBy: "", mainGroup: "", su
 export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
   const today = istToday();
   const [f, setF] = useState<Filters>(EMPTY);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const opts = useMemo(() => {
@@ -111,12 +112,17 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
+    <div className="rounded-xl border border-border bg-card shadow-sm">
+      <button type="button" data-pdf-exclude aria-expanded={!filtersCollapsed} onClick={() => setFiltersCollapsed((c) => !c)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground">
+        <span>Filters</span><ChevronDown className={`size-4 transition-transform ${filtersCollapsed ? "-rotate-90" : ""}`} />
+      </button>
+      {filtersCollapsed ? null : <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
       {field("plant", "Plant")}{field("poType", "PO Type")}{field("createdBy", "Created By")}{field("mainGroup", "Main Group")}{field("subGroup", "Sub Group")}
       {field("vendor", "Vendor")}{field("material", "Material")}{field("status", "Delivery Status")}
       <label className="text-[10px] font-semibold text-muted-foreground">PO Date From<input type="date" className={sel} value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></label>
       <label className="text-[10px] font-semibold text-muted-foreground">PO Date To<input type="date" className={sel} value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></label>
       <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setFrom(""); setTo(""); }}>Reset</Button></div>
+      </div>}
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
