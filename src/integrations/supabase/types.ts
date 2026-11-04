@@ -785,6 +785,198 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_orders: {
+        Row: {
+          account_assignment_cat: string | null
+          agreement: string | null
+          agreement_item: number | null
+          asset_code: string | null
+          buyer: string | null
+          collective_no: string | null
+          currency_key: string | null
+          deletion_ind: string | null
+          delivery_date: string | null
+          doc_date: string | null
+          id: string
+          item_category: string | null
+          item_category_epstp: string | null
+          material: string | null
+          material_group: string | null
+          name_of_vendor: string | null
+          net_order_value: number | null
+          net_price: number | null
+          no_of_days: number | null
+          no_of_positions: number | null
+          order_price_unit: string | null
+          order_quantity: number | null
+          order_unit: string | null
+          package_no: number | null
+          plant: string | null
+          plt_name: string | null
+          plt_short: string | null
+          po: string
+          po_date: string | null
+          po_doc_category: string | null
+          po_doc_type: string | null
+          po_history_release_doc: string | null
+          po_item: string
+          price_unit: number | null
+          purchase_org: string | null
+          purchasing_group: string | null
+          purchasing_info_rec: string | null
+          raw: Json
+          release_group: string | null
+          release_indicator: string | null
+          release_status: string | null
+          release_strategy: string | null
+          rfq_status: string | null
+          short_text: string | null
+          source_endpoint: string | null
+          still_to_be_delivered_qty: number | null
+          still_to_be_delivered_val: number | null
+          still_to_be_invoiced_qty: number | null
+          still_to_be_invoiced_val: number | null
+          storage_location: string | null
+          synced_at: string
+          tax_code: string | null
+          tracking_number: string | null
+          user_id: string | null
+          user_name: string | null
+          vendor_supplying_plant: string | null
+          wbs_element: string | null
+          zzbanfn: string | null
+          zzinter: string | null
+          zzitext: string | null
+          zzsteuc: string | null
+        }
+        Insert: {
+          account_assignment_cat?: string | null
+          agreement?: string | null
+          agreement_item?: number | null
+          asset_code?: string | null
+          buyer?: string | null
+          collective_no?: string | null
+          currency_key?: string | null
+          deletion_ind?: string | null
+          delivery_date?: string | null
+          doc_date?: string | null
+          id?: string
+          item_category?: string | null
+          item_category_epstp?: string | null
+          material?: string | null
+          material_group?: string | null
+          name_of_vendor?: string | null
+          net_order_value?: number | null
+          net_price?: number | null
+          no_of_days?: number | null
+          no_of_positions?: number | null
+          order_price_unit?: string | null
+          order_quantity?: number | null
+          order_unit?: string | null
+          package_no?: number | null
+          plant?: string | null
+          plt_name?: string | null
+          plt_short?: string | null
+          po: string
+          po_date?: string | null
+          po_doc_category?: string | null
+          po_doc_type?: string | null
+          po_history_release_doc?: string | null
+          po_item?: string
+          price_unit?: number | null
+          purchase_org?: string | null
+          purchasing_group?: string | null
+          purchasing_info_rec?: string | null
+          raw?: Json
+          release_group?: string | null
+          release_indicator?: string | null
+          release_status?: string | null
+          release_strategy?: string | null
+          rfq_status?: string | null
+          short_text?: string | null
+          source_endpoint?: string | null
+          still_to_be_delivered_qty?: number | null
+          still_to_be_delivered_val?: number | null
+          still_to_be_invoiced_qty?: number | null
+          still_to_be_invoiced_val?: number | null
+          storage_location?: string | null
+          synced_at?: string
+          tax_code?: string | null
+          tracking_number?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          vendor_supplying_plant?: string | null
+          wbs_element?: string | null
+          zzbanfn?: string | null
+          zzinter?: string | null
+          zzitext?: string | null
+          zzsteuc?: string | null
+        }
+        Update: {
+          account_assignment_cat?: string | null
+          agreement?: string | null
+          agreement_item?: number | null
+          asset_code?: string | null
+          buyer?: string | null
+          collective_no?: string | null
+          currency_key?: string | null
+          deletion_ind?: string | null
+          delivery_date?: string | null
+          doc_date?: string | null
+          id?: string
+          item_category?: string | null
+          item_category_epstp?: string | null
+          material?: string | null
+          material_group?: string | null
+          name_of_vendor?: string | null
+          net_order_value?: number | null
+          net_price?: number | null
+          no_of_days?: number | null
+          no_of_positions?: number | null
+          order_price_unit?: string | null
+          order_quantity?: number | null
+          order_unit?: string | null
+          package_no?: number | null
+          plant?: string | null
+          plt_name?: string | null
+          plt_short?: string | null
+          po?: string
+          po_date?: string | null
+          po_doc_category?: string | null
+          po_doc_type?: string | null
+          po_history_release_doc?: string | null
+          po_item?: string
+          price_unit?: number | null
+          purchase_org?: string | null
+          purchasing_group?: string | null
+          purchasing_info_rec?: string | null
+          raw?: Json
+          release_group?: string | null
+          release_indicator?: string | null
+          release_status?: string | null
+          release_strategy?: string | null
+          rfq_status?: string | null
+          short_text?: string | null
+          source_endpoint?: string | null
+          still_to_be_delivered_qty?: number | null
+          still_to_be_delivered_val?: number | null
+          still_to_be_invoiced_qty?: number | null
+          still_to_be_invoiced_val?: number | null
+          storage_location?: string | null
+          synced_at?: string
+          tax_code?: string | null
+          tracking_number?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          vendor_supplying_plant?: string | null
+          wbs_element?: string | null
+          zzbanfn?: string | null
+          zzinter?: string | null
+          zzitext?: string | null
+          zzsteuc?: string | null
+        }
+        Relationships: []
+      }
       purchase_register: {
         Row: {
           aedat: string | null
