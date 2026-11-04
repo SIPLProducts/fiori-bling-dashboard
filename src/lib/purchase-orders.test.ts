@@ -16,9 +16,9 @@ describe("ZME2N purchase orders", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ po: "4700020419", po_item: "1", po_date: "2025-04-12", plt_short: "TMK", net_order_value: 110 });
   });
-  it("groups PO type and splits vendor code/name", () => {
+  it("uses raw PO_DOC_TYPE and splits vendor code/name", () => {
     const r = toPoRow({ po: "1", po_doc_type: "ZPNI", name_of_vendor: "4000068    FUTURE ELECTRONICS INC.", currency_key: "INR" });
-    expect(r.poType).toBe("DOMESTIC");
+    expect(r.poType).toBe("ZPNI");
     expect(r.vendorName).toBe("FUTURE ELECTRONICS INC.");
   });
   it("delivery status: delivered / overdue / pending", () => {
