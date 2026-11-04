@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
+import { ChevronDown, Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { MaterialTrendSection } from "@/components/material-trend-card";
@@ -73,6 +73,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const [group, setGroup] = useState("");
   const [postFrom, setPostFrom] = useState("");
   const [postTo, setPostTo] = useState("");
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const types = type ? [type] : PURCHASE_TYPES;
   const base = (r: PurchaseRow) => (!plant || r.plant === plant) && (!group || r.group === group) && (!month || monthOf(r.date) === month)
     && (!postFrom || r.date >= postFrom) && (!postTo || r.date <= postTo);
@@ -103,8 +104,15 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
 
   if (openMat) return <MaterialPricePage trend={openMat} rows={filtered} onBack={() => setOpenMat(null)} />;
   return <div className="space-y-3">
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2" style={TINTS.neutral}>
-      <span className="text-[10px] font-bold tracking-wide text-primary uppercase">Filters</span>
+    <div className="rounded-xl border" style={TINTS.neutral}>
+      <button type="button" aria-expanded={!filtersCollapsed} onClick={() => setFiltersCollapsed((c) => !c)} className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-xs font-semibold text-card-foreground">
+        <span className="text-[10px] font-bold tracking-wide text-primary uppercase">Filters</span>
+        <span className="flex items-center gap-2">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{filtered.length.toLocaleString("en-IN")} lines</span>
+          <ChevronDown className={`size-4 transition-transform ${filtersCollapsed ? "-rotate-90" : ""}`} />
+        </span>
+      </button>
+      {filtersCollapsed ? null : <div className="flex flex-wrap items-center gap-2 px-3 pb-2">
       <select className={sel} value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} aria-label="Year">{years.length ? years.map((y) => <option key={y} value={y}>{fyLabel(y)}</option>) : <option value="">No data</option>}</select>
       <select className={sel} value={plant} onChange={(e) => setPlant(e.target.value)} aria-label="Plant"><option value="">All Plants</option>{PLANTS.map((p) => <option key={p.code} value={p.code}>{p.code} — {p.name}</option>)}</select>
       <select className={sel} value={type} onChange={(e) => setType(e.target.value as "" | PurchaseType)} aria-label="Type"><option value="">All Types</option>{PURCHASE_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
@@ -113,7 +121,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date From<input type="date" className={sel} value={postFrom} max={postTo || undefined} onChange={(e) => setPostFrom(e.target.value)} aria-label="Posting Date From" /></label>
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date To<input type="date" className={sel} value={postTo} min={postFrom || undefined} onChange={(e) => setPostTo(e.target.value)} aria-label="Posting Date To" /></label>
       <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setYear(null); setType(""); setMonth(""); setPlant(""); setGroup(""); setPostFrom(""); setPostTo(""); }}>Reset</Button>
-      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{filtered.length.toLocaleString("en-IN")} lines</span>
+      </div>}
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
