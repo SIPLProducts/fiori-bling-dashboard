@@ -16,13 +16,14 @@ describe("open purchase orders", () => {
     expect(r.openValue).toBe(1000000);
     expect(openPoTotals([r])).toMatchObject({ poValue: 1246000, migoValue: 246000, openValue: 1000000, poCount: 1 });
   });
-  it("ages by SAP DAYS into 1–180 / 181–365 / 365–730 / > 730", () => {
+  it("ages by SAP DAYS into 0–60 / 61–180 / 181–365 / > 365", () => {
     const r = toOpenPoRow(mapOpenPoPayload([sap], "x").rows[0] as never);
-    expect(agingBucket({ ...r, days: 49 })).toBe("1 – 180");
-    expect(agingBucket({ ...r, days: 180 })).toBe("1 – 180");
+    expect(agingBucket({ ...r, days: 60 })).toBe("0 – 60");
+    expect(agingBucket({ ...r, days: 61 })).toBe("61 – 180");
+    expect(agingBucket({ ...r, days: 180 })).toBe("61 – 180");
     expect(agingBucket({ ...r, days: 181 })).toBe("181 – 365");
-    expect(agingBucket({ ...r, days: 730 })).toBe("365 – 730");
-    expect(agingBucket({ ...r, days: 731 })).toBe("> 730");
+    expect(agingBucket({ ...r, days: 365 })).toBe("181 – 365");
+    expect(agingBucket({ ...r, days: 366 })).toBe("> 365");
     expect(poStatus(r, "2026-06-01")).toBe("Partially received");
     expect(poStatus(r, "2026-07-01")).toBe("Overdue");
   });
