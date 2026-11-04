@@ -130,7 +130,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.poValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
       <Tile icon={<PackageCheck className="size-5" />} label="Gr Val" value={cr(tot.migoValue)} tone="#0f9d8a" />
-      <Tile icon={<ClipboardList className="size-5" />} label="Open Val" value={cr(tot.openValue)} note="Remaining commitment" tone="#e08a1e" />
+      <Tile icon={<ClipboardList className="size-5" />} label="Open Val" value={cr(tot.openValue)} tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
