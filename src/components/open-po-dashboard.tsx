@@ -33,7 +33,7 @@ function Card({ title, sub, children, className = "", tint = "neutral" }: { titl
     </Dialog>
   </section>;
 }
-function Tile({ icon, label, value, note, tone, unit = "Val in Cr" }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
+function Tile({ icon, label, value, note, tone, unit }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
   return <div className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
     <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</div>
     <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p><p className="truncate text-lg font-bold">{value}</p>{unit ? <p className="truncate text-[10px] font-medium opacity-85">{unit}</p> : null}{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>

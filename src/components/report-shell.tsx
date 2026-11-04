@@ -13,6 +13,7 @@ export function ReportShell({
   providerMode,
   actions,
   compact = false,
+  unitLabel,
   children,
 }: {
   title: string;
@@ -21,6 +22,7 @@ export function ReportShell({
   providerMode?: string | undefined;
   actions?: ReactNode;
   compact?: boolean;
+  unitLabel?: string;
   children: ReactNode;
 }) {
   const { data: launchpad } = useLaunchpad();
@@ -33,6 +35,7 @@ export function ReportShell({
           <div className="min-w-0">
             {/* Home moved to the top navigation bar; this space is used by the screen. */}
             {title ? <h1 className={`${compact ? "text-base font-medium" : "text-2xl font-light"} text-foreground`}>{title}</h1> : null}
+            {unitLabel ? <p className="text-[11px] font-medium text-muted-foreground">{unitLabel}</p> : null}
             {tcode ? (
               <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
                 {tcode}
