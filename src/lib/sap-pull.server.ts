@@ -397,7 +397,7 @@ export async function storePurchaseRegisterPayload(
   }
 }
 
-/** ZME2N Purchase Orders: upsert on PO + PO_ITEM; no deletion (SAP returns all POs, not only open ones). */
+/** ZME2N Purchase Orders: upsert on PO + PO_ITEM; delete lines in the returned PO-date span that SAP no longer lists. */
 export async function storePurchaseOrdersPayload(
   payload: unknown,
   endpointName: string,
