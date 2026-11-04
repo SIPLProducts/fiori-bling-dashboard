@@ -12,7 +12,8 @@ import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, poStatus, sumBy, ty
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const AGING_COLORS = ["#0f9d8a", "#1f6fd1", "#e08a1e", "#d64550", "#6b7280"];
 const CR = 1e7;
-const cardBg = { background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)) 0%, color-mix(in oklab, var(--primary) 6%, var(--card)) 50%, color-mix(in oklab, var(--accent) 30%, var(--card)) 100%)" };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _cardBg = { background: "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)) 0%, color-mix(in oklab, var(--primary) 6%, var(--card)) 50%, color-mix(in oklab, var(--accent) 30%, var(--card)) 100%)" };
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}` : "");
