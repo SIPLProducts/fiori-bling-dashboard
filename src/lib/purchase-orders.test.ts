@@ -38,3 +38,10 @@ describe("ZME2N purchase orders", () => {
     expect(sent.DOCUMENT_DATE).toBeUndefined();
   });
 });
+
+import { poAgingBand as _band } from "./purchase-orders-data";
+describe("poAgingBand (NO_OF_DAYS)", () => {
+  it("bands boundaries", () => {
+    expect([0, 60, 61, 180, 181, 365, 366, -5].map(_band)).toEqual(["0 – 60", "0 – 60", "61 – 180", "61 – 180", "181 – 365", "181 – 365", "> 365", "0 – 60"]);
+  });
+});
