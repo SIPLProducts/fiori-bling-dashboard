@@ -125,7 +125,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`${fmt(total)}`} tone="#1f6fd1" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Value" value={`${fmt(total)}`} tone="#1f6fd1" />
       <Tile icon={<Truck className="size-5" />} label="Domestic" value={`${fmt(TYPE_TOTALS.Domestic)}`} tone="#0f9d8a" />
       <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`${fmt(TYPE_TOTALS.Imported)}`} tone="#8e44ad" />
       <Tile icon={<Wrench className="size-5" />} label="Service" value={`${fmt(TYPE_TOTALS.Service)}`} tone="#e08a1e" />
