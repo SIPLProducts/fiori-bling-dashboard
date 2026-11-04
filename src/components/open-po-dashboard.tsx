@@ -28,7 +28,7 @@ const STATUSES: OpenPoStatus[] = ["Open", "Partially received", "Overdue", "Deli
 function Card({ title, sub, children, className = "", tint = "neutral" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string; tint?: Tint }) {
   const [open, setOpen] = useState(false);
   return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={TINTS[tint]}>
-    <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-xs font-bold text-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] font-medium text-foreground/70">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
+    <div className="mb-2 flex items-center justify-between gap-2 border-b-2 pb-1" style={{ borderColor: TINTS[tint].borderColor }}><h2 className="text-xs font-bold text-foreground">{title}</h2><div className="flex items-center gap-1">{sub ? <span className="text-[10px] font-medium text-foreground/70">{sub}</span> : null}<button type="button" data-pdf-exclude data-html2canvas-ignore aria-label={`Full screen: ${title}`} title="Full screen" onClick={() => setOpen(true)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Maximize2 className="size-3.5" /></button></div></div>
     <div className="min-h-0 flex-1">{children}</div>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="flex h-[92vh] max-w-[96vw] flex-col sm:max-w-[96vw]">
@@ -119,7 +119,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <div className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
+    <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
       <button type="button" data-pdf-exclude aria-expanded={!filtersCollapsed} onClick={() => setFiltersCollapsed((c) => !c)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground">
         <span>Filters</span><ChevronDown className={`size-4 transition-transform ${filtersCollapsed ? "-rotate-90" : ""}`} />
       </button>
@@ -154,7 +154,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} tint={(["violet", "amber", "mint"] as const)[label.endsWith("1") ? 0 : label.endsWith("2") ? 1 : 2]} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
     </div>
 
-    <DetailsTable rows={filtered} today={today} />
+    <div data-pdf-exclude><DetailsTable rows={filtered} today={today} /></div>
   </div>;
 }
 
