@@ -55,8 +55,8 @@ function BarList({ data, empty = "No data" }: { data: { name: string; value: num
 }
 function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
   const total = data.reduce((a, d) => a + d.value, 0);
-  return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-    <div className="h-44"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
+  return <div className="grid grid-cols-1 items-center gap-2">
+    <div className="h-40"><ResponsiveContainer><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="90%" paddingAngle={1}>{data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie><Tooltip formatter={(v: number) => cr(v)} /></PieChart></ResponsiveContainer></div>
     <ul className="space-y-1 text-[11px]">{heads ? <li className="flex items-center gap-1.5 border-b border-border pb-1 text-[10px] font-bold text-foreground/75"><span className="size-2.5" /><span>{heads[0]}</span><span className="ml-auto pl-2">{heads[1]}</span><span className="w-12 text-right">{heads[2]}</span></li> : null}{data.map((d, i) => <li key={d.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: colors[i % colors.length] }} /><span className="truncate font-semibold text-foreground">{d.name}</span><span className="ml-auto pl-2 font-bold text-foreground tabular-nums">{cr(d.value)}</span><span className="w-12 text-right font-semibold text-foreground/75 tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span></li>)}</ul>
   </div>;
 }
@@ -139,18 +139,17 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
       <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
-    </div>
-
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <Card tint="rose" title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
       <Card tint="steel" title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
-      <Card tint="copper" title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
     </div>
 
-    <Card tint="teal" title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="copper" title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
+      <Card tint="teal" title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+    </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} tint={(["violet", "amber", "mint"] as const)[label.endsWith("1") ? 0 : label.endsWith("2") ? 1 : 2]} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
