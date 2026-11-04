@@ -1,3 +1,4 @@
+import hblLogo from "@/assets/hbl-logo.png";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +35,8 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const pdf = async () => {
     setBusy(true);
-    try { await exportDashboardPdf(ref.current, datedFileName("Open Purchase Orders", "pdf")); }
+    await new Promise((r) => setTimeout(r, 300));
+    try { await exportDashboardPdf(ref.current, datedFileName("Open Purchase Orders", "pdf"), "[data-pdf-exclude]", { headerSelector: "[data-pdf-header]", footerText: "HBL Confidential — Internal Use Only", preserveComputedChartColors: true }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "PDF failed"); }
     finally { setBusy(false); }
   };
@@ -44,6 +46,6 @@ function Page() {
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
   return <ReportShell title="Open Purchase Orders" compact actions={allowed ? actions : undefined}>
-    {!isLoading && !allowed ? <AccessDenied area="Open Purchase Orders" /> : <div ref={ref}>{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <OpenPoDashboard rows={q.data ?? []} />}</div>}
+    {!isLoading && !allowed ? <AccessDenied area="Open Purchase Orders" /> : <div ref={ref}>{busy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3"><div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div><h1 className="text-lg font-bold text-card-foreground">Open Purchase Orders</h1></div> : null}{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <OpenPoDashboard rows={q.data ?? []} />}</div>}
   </ReportShell>;
 }
