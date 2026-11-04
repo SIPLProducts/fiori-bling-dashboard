@@ -110,7 +110,7 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
   const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"]);
   const t = poTotals(list);
   const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
-  const typeLabel = (r: PoRow) => (r.poTypeCode ? `${r.poTypeCode} – ${r.poType}` : r.poType);
+  const typeLabel = (r: PoRow) => r.poType;
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
