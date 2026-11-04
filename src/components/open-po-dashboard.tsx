@@ -126,34 +126,21 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <Card title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
       <Card title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
-      <Card title="Daily PO Value Trend" sub="By PO date"><div className="h-56"><ResponsiveContainer><ComposedChart data={daily} margin={{ left: -10, right: 8 }}>
-        <defs><linearGradient id="opoPo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1f6fd1" stopOpacity={0.5} /><stop offset="100%" stopColor="#1f6fd1" stopOpacity={0.05} /></linearGradient></defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} />
-        <Tooltip formatter={(v: number) => v.toFixed(2)} /><Legend wrapperStyle={{ fontSize: 11 }} />
-        <Area dataKey="po" name="PO Value" stroke="#1f6fd1" fill="url(#opoPo)" /><Line dataKey="migo" name="MIGO Value" stroke="#0f9d8a" dot={false} strokeWidth={2} />
-      </ComposedChart></ResponsiveContainer></div></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <Card title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
       <Card title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
       <Card title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
-      <Card title="Storage Location Distribution" sub="Open value"><BarList data={slocs} /></Card>
     </div>
 
     <Card title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
-      <div className="min-w-0 lg:col-span-2">
-        <Card title="Purchase Group Overview" sub="Open value"><div className="h-56"><ResponsiveContainer><BarChart data={purGroups} margin={{ left: -10, right: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-20} textAnchor="end" height={45} /><YAxis tick={{ fontSize: 10 }} />
-        <Tooltip formatter={(v: number) => v.toFixed(2)} /><Bar dataKey="value" name="Open Value" radius={[4, 4, 0, 0]}>{purGroups.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar>
-      </BarChart></ResponsiveContainer></div></Card>
-      </div>
     </div>
 
     <DetailsTable rows={filtered} today={today} />
