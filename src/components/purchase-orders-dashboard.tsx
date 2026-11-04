@@ -6,7 +6,7 @@ import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-d
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
 import { istToday } from "@/lib/open-po-data";
-import { DELIVERY_STATUSES, deliveryStatus, poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
+import { poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const STATUS_COLORS = ["#0f9d8a", "#1f6fd1", "#d64550"];
@@ -33,16 +33,15 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     };
     return {
       plant: u((r) => r.plant, (r) => `${r.plant} — ${r.plantName}`), poType: u((r) => r.poType), vendor: u((r) => r.vendor, (r) => r.vendorName),
-      purGroup: u((r) => r.purGroup), materialGroup: u((r) => r.materialGroup), status: DELIVERY_STATUSES.map((s) => [s, s] as [string, string]),
+      purGroup: u((r) => r.purGroup), materialGroup: u((r) => r.materialGroup),
     };
   }, [rows]);
   const filtered = useMemo(() => rows.filter((r) =>
     (!f.plant || r.plant === f.plant) && (!f.poType || r.poType === f.poType) && (!f.vendor || r.vendor === f.vendor)
     && (!f.purGroup || r.purGroup === f.purGroup) && (!f.materialGroup || r.materialGroup === f.materialGroup)
-    && (!f.status || deliveryStatus(r, today) === f.status) && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to, today]);
+    && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
   const types = sumInr(filtered, (r) => r.poType);
-  const status = DELIVERY_STATUSES.map((s) => ({ name: s, value: filtered.filter((r) => r.inr && deliveryStatus(r, today) === s).reduce((a, r) => a + r.netValue, 0) }));
   const vendors = sumInr(filtered, (r) => r.vendorName).slice(0, 10);
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
   const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
@@ -62,8 +61,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       <button type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((c) => !c)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground">
         <span>Filters</span><ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
       </button>
-      {collapsed ? null : <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-9">
-        {field("plant", "Plant")}{field("poType", "PO Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}{field("status", "Delivery Status")}
+      {collapsed ? null : <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-8">
+        {field("plant", "Plant")}{field("poType", "Document Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date From<input type="date" className={sel} value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date To<input type="date" className={sel} value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></label>
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setFrom(""); setTo(""); }}>Reset</Button></div>
@@ -77,9 +76,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
-      <Card tint="peach" title="Delivery Status"><Donut data={status} colors={STATUS_COLORS} heads={["Status", "Val", "%"]} /></Card>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Card tint="sky" title="PO Value by Document Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
       <Card tint="rose" title="Top 10 Vendors"><BarList data={vendors} /></Card>
       <Card tint="steel" title="Top 10 Materials"><BarList data={materials} /></Card>
     </div>
@@ -98,11 +96,11 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       <Card tint="mint" title="PO Value by Created User"><BarList data={users} /></Card>
     </div>
 
-    <div data-pdf-exclude><DetailsTable rows={filtered} today={today} /></div>
+    <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
   </div>;
 }
 
-function DetailsTable({ rows, today }: { rows: PoRow[]; today: string }) {
+function DetailsTable({ rows }: { rows: PoRow[] }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -111,7 +109,7 @@ function DetailsTable({ rows, today }: { rows: PoRow[]; today: string }) {
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "PO Type", "Vendor", "Plant", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)", "Delivery Status"];
+  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"];
   const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"]);
   const t = poTotals(list);
   const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
@@ -120,8 +118,8 @@ function DetailsTable({ rows, today }: { rows: PoRow[]; today: string }) {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue), c2(r.pendDelValue), c2(r.pendInvValue), deliveryStatus(r, today)]));
-    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value), c2(t.pendDel), c2(t.pendInv), ""]); ft.font = { bold: true };
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue), c2(r.pendDelValue), c2(r.pendInvValue)]));
+    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value), c2(t.pendDel), c2(t.pendInv)]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Orders", "xlsx"); a.click();
@@ -137,17 +135,16 @@ function DetailsTable({ rows, today }: { rows: PoRow[]; today: string }) {
     </div>
     <div className="overflow-x-auto"><table className="w-full text-[11px]">
       <thead className="text-on-radiant" style={{ background: "linear-gradient(90deg, #1f6fd1, #0f9d8a, #8e44ad)" }}><tr>{heads.map((h) => <th key={h} className={`whitespace-nowrap px-2 py-1.5 font-semibold ${numeric.has(h) ? "text-right" : "text-left"}`}>{h}</th>)}</tr></thead>
-      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => { const st = deliveryStatus(r, today); return <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
+      <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td>
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td><td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
         <td className="whitespace-nowrap px-2 py-1">{typeLabel(r)}</td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plantName}</td>
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1 text-right tabular-nums">{num(r.qty)}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{num(r.netPrice)}</td><td className="px-2 py-1">{r.currency}</td>
-        <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendDelValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendInvValue)}</td>
-        <td className="whitespace-nowrap px-2 py-1"><span className="mr-1.5 inline-block size-2.5 rounded-full align-middle" style={{ background: STATUS_COLORS[DELIVERY_STATUSES.indexOf(st)] }} />{st}</td></tr>; })
+        <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendDelValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendInvValue)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No purchase orders for these filters.</td></tr>}</tbody>
       {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={13} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
-        <td className="px-2 py-1.5 text-right tabular-nums">{cr(t.value)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendDel)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendInv)}</td><td /></tr></tfoot>}
+        <td className="px-2 py-1.5 text-right tabular-nums">{cr(t.value)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendDel)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendInv)}</td></tr></tfoot>}
     </table></div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
       <span>Rows</span><select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select>
