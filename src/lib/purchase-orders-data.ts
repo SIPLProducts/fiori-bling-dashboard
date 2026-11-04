@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isExcludedPoType } from "@/lib/open-po-data";
+import { isExcludedPoType, poTypeGroup } from "@/lib/open-po-data";
 
 export type PoRow = {
   poNo: string; item: string; poDate: string; deliveryDate: string; days: number;
@@ -75,6 +75,41 @@ export function sumInr(rows: PoRow[], key: (r: PoRow) => string, val: (r: PoRow)
   const m = new Map<string, number>();
   for (const r of rows) if (r.inr) m.set(key(r), (m.get(key(r)) ?? 0) + val(r));
   return [...m.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+}
+
+export const PO_GROUPS = ["DOMESTIC", "PROJECT", "CAPITAL", "SERVICE", "IMPORTED", "OTHERS"] as const;
+export const PO_GROUP_COLORS: Record<string, string> = { DOMESTIC: "#0f9d8a", PROJECT: "#1f6fd1", CAPITAL: "#8e44ad", SERVICE: "#e08a1e", IMPORTED: "#d64550", OTHERS: "#64748b" };
+export const poGroup = (r: Pick<PoRow, "poTypeCode">) => poTypeGroup(r.poTypeCode);
+
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monLabel = (k: string) => `${MON[Number(k.slice(5, 7)) - 1]}-${k.slice(2, 4)}`;
+
+/** Monthly INR value per PO-type group (raw ₹), sorted by month. */
+export function monthlyByGroup(rows: PoRow[]) {
+  const m = new Map<string, Record<string, number>>();
+  for (const r of rows) {
+    if (!r.inr || !r.poDate) continue;
+    const k = r.poDate.slice(0, 7); const o = m.get(k) ?? {}; const g = poGroup(r);
+    o[g] = (o[g] ?? 0) + r.netValue; m.set(k, o);
+  }
+  return [...m.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, o]) => ({ month: monLabel(k), total: Object.values(o).reduce((s, v) => s + v, 0), ...o }));
+}
+
+/** April–March FY ending year for an ISO date. */
+export const fyOf = (d: string) => Number(d.slice(0, 4)) + (Number(d.slice(5, 7)) >= 4 ? 1 : 0);
+const quarterOf = (d: string) => `Q${Math.floor(((Number(d.slice(5, 7)) + 8) % 12) / 3) + 1}`;
+
+/** Q1–Q4 INR value for the latest FY in the data vs the FY before it. */
+export function quarterlyCompare(rows: PoRow[]) {
+  const dated = rows.filter((r) => r.inr && r.poDate);
+  const cur = dated.reduce((mx, r) => Math.max(mx, fyOf(r.poDate)), 0);
+  const q = ["Q1", "Q2", "Q3", "Q4"].map((name) => ({ name, current: 0, previous: 0 }));
+  for (const r of dated) {
+    const fy = fyOf(r.poDate); const row = q.find((x) => x.name === quarterOf(r.poDate))!;
+    if (fy === cur) row.current += r.netValue; else if (fy === cur - 1) row.previous += r.netValue;
+  }
+  const c = q.reduce((s, x) => s + x.current, 0), p = q.reduce((s, x) => s + x.previous, 0);
+  return { fy: cur, data: q, yoy: p ? Math.round(((c - p) / p) * 1000) / 10 : 0 };
 }
 
 const PAGE = 1000, CONCURRENCY = 6;
