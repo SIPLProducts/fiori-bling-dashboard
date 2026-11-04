@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
+import { ChevronDown, Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { MaterialTrendSection } from "@/components/material-trend-card";
@@ -73,6 +73,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const [group, setGroup] = useState("");
   const [postFrom, setPostFrom] = useState("");
   const [postTo, setPostTo] = useState("");
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const types = type ? [type] : PURCHASE_TYPES;
   const base = (r: PurchaseRow) => (!plant || r.plant === plant) && (!group || r.group === group) && (!month || monthOf(r.date) === month)
     && (!postFrom || r.date >= postFrom) && (!postTo || r.date <= postTo);
