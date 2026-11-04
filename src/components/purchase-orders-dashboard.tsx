@@ -9,7 +9,6 @@ import { istToday } from "@/lib/open-po-data";
 import { poTotals, sumInr, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
-const STATUS_COLORS = ["#0f9d8a", "#1f6fd1", "#d64550"];
 const CR = 1e7;
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const num = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -17,11 +16,10 @@ const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0,
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 
-type Filters = Record<"plant" | "poType" | "vendor" | "purGroup" | "materialGroup" | "status", string>;
-const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materialGroup: "", status: "" };
+type Filters = Record<"plant" | "poType" | "vendor" | "purGroup" | "materialGroup", string>;
+const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materialGroup: "" };
 
 export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
-  const today = istToday();
   const [f, setF] = useState<Filters>(EMPTY);
   const [collapsed, setCollapsed] = useState(false);
   const [from, setFrom] = useState("");
