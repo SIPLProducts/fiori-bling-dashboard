@@ -422,8 +422,18 @@ export async function storePurchaseOrdersPayload(
       const { error } = await db.from("purchase_orders").upsert(rows.slice(i, i + BATCH) as never, { onConflict: "po,po_item" });
       if (error) throw error;
     }
-    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${invalid} without PO` : "SAP returned no rows — existing data left unchanged" });
-    return { ...base, stored: rows.length };
+    // Lines inside the returned PO-date window that SAP no longer lists are removed.
+    let removed = 0;
+    const dates = rows.map((r) => r["po_date"] as string | null).filter((d): d is string => !!d).sort();
+    if (rows.length && dates.length) {
+      const syncedAt = rows[0]!["synced_at"] as string;
+      const { count, error } = await db.from("purchase_orders").delete({ count: "exact" })
+        .gte("po_date", dates[0]).lte("po_date", dates[dates.length - 1]).lt("synced_at", syncedAt);
+      if (error) throw error;
+      removed = count ?? 0;
+    }
+    await finish({ status: "success", records_stored: rows.length, records_inserted: rows.length, error_message: received ? `${rows.length} inserted or updated; ${removed} missing lines removed; ${invalid} without PO` : "SAP returned no rows — existing data left unchanged" });
+    return { ...base, replaced: removed, stored: rows.length };
   } catch (err) {
     await finish({ status: "error", error_message: err instanceof Error ? err.message : "Purchase Orders write failed" });
     throw err;
