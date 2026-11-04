@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isExcludedPoType, poTypeGroup } from "@/lib/open-po-data";
+import { isExcludedPoType } from "@/lib/open-po-data";
 
 export type PoRow = {
   poNo: string; item: string; poDate: string; deliveryDate: string; days: number;
@@ -29,7 +29,7 @@ export function toPoRow(r: Rec): PoRow {
   const cur = t(r["currency_key"]).toUpperCase() || "INR";
   return {
     poNo: t(r["po"]), item: t(r["po_item"]), poDate: t(r["po_date"]), deliveryDate: t(r["delivery_date"]), days: n(r["no_of_days"]),
-    poType: poTypeGroup(t(r["po_doc_type"])), poTypeCode: t(r["po_doc_type"]), vendor: v.code, vendorName: v.name || "—",
+    poType: t(r["po_doc_type"]) || "—", poTypeCode: t(r["po_doc_type"]), vendor: v.code, vendorName: v.name || "—",
     purGroup: t(r["purchasing_group"]) || "—", plant: t(r["plant"]), plantName: t(r["plt_short"]) || t(r["plt_name"]) || t(r["plant"]),
     material: t(r["material"]), materialName: t(r["short_text"]) || t(r["material"]) || "—", materialGroup: t(r["material_group"]) || "—",
     qty: n(r["order_quantity"]), uom: t(r["order_unit"]), netPrice: n(r["net_price"]), currency: cur,
