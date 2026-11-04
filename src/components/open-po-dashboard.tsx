@@ -38,10 +38,10 @@ function Card({ title, sub, children, className = "", tint = "neutral" }: { titl
     </Dialog>
   </section>;
 }
-function Tile({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: string; note?: string; tone: string }) {
+function Tile({ icon, label, value, note, tone, unit = "Val in Cr" }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
   return <div className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
     <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</div>
-    <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p><p className="truncate text-lg font-bold">{value}</p>{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
+    <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p><p className="truncate text-lg font-bold">{value}</p>{unit ? <p className="truncate text-[10px] font-medium opacity-85">{unit}</p> : null}{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
   </div>;
 }
 function BarList({ data, empty = "No data" }: { data: { name: string; value: number }[]; empty?: string }) {
@@ -132,17 +132,16 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
       </div>}
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total PO Value" value={cr(tot.poValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="MIGO Received Value" value={cr(tot.migoValue)} tone="#0f9d8a" />
-      <Tile icon={<ClipboardList className="size-5" />} label="Open / Pending Value" value={cr(tot.openValue)} note="Remaining commitment" tone="#e08a1e" />
-      <Tile icon={<Users className="size-5" />} label="Open POs / Vendors" value={`${tot.poCount} POs / ${tot.vendorCount} Vendors`} tone="#8e44ad" />
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.poValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
+      <Tile icon={<PackageCheck className="size-5" />} label="Gr Val" value={cr(tot.migoValue)} tone="#0f9d8a" />
+      <Tile icon={<ClipboardList className="size-5" />} label="Open Val" value={cr(tot.openValue)} note="Remaining commitment" tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["PO Type", "PO Value (Cr)", "Share %"]} /></Card>
-      <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Open Value (Cr)", "Share %"]} /></Card>
-      <Card tint="rose" title="Top 10 Vendors by Open Value"><BarList data={vendors} /></Card>
+      <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
+      <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Val", "%"]} /></Card>
+      <Card tint="rose" title="Top 10 Vendors"><BarList data={vendors} /></Card>
       <Card tint="steel" title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
     </div>
 

@@ -21,11 +21,11 @@ function Card({ title, sub, children, className = "" }: { title: string; sub?: R
   </section>;
 }
 
-function Tile({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: string; note?: string; tone: string }) {
+function Tile({ icon, label, value, note, tone, unit = "Val in Cr" }: { icon: ReactNode; label: string; value: string; note?: string; tone: string; unit?: string }) {
   return <div className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-on-radiant shadow-md" style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${tone} 65%, white), ${tone})` }}>
     <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/20">{icon}</div>
     <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p>
-      <p className="truncate text-lg font-bold">{value}</p>{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
+      <p className="truncate text-lg font-bold">{value}</p>{unit ? <p className="truncate text-[10px] font-medium opacity-85">{unit}</p> : null}{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
   </div>;
 }
 
@@ -114,10 +114,10 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`₹ ${fmt(total)}`} tone="#1f6fd1" />
-      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`₹ ${fmt(TYPE_TOTALS.Domestic)}`} tone="#0f9d8a" />
-      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`₹ ${fmt(TYPE_TOTALS.Imported)}`} tone="#8e44ad" />
-      <Tile icon={<Wrench className="size-5" />} label="Service" value={`₹ ${fmt(TYPE_TOTALS.Service)}`} tone="#e08a1e" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Purchase Value" value={`${fmt(total)}`} tone="#1f6fd1" />
+      <Tile icon={<Truck className="size-5" />} label="Domestic" value={`${fmt(TYPE_TOTALS.Domestic)}`} tone="#0f9d8a" />
+      <Tile icon={<Globe2 className="size-5" />} label="Imported" value={`${fmt(TYPE_TOTALS.Imported)}`} tone="#8e44ad" />
+      <Tile icon={<Wrench className="size-5" />} label="Service" value={`${fmt(TYPE_TOTALS.Service)}`} tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
