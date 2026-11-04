@@ -198,7 +198,15 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         const { error } = await db.from("purchase_orders").upsert(rows.slice(i, i + BATCH), { onConflict: "po,po_item" });
         if (error) throw new Error(error.message);
       }
-      return { received, stored: rows.length, replaced: 0, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_orders", snapshotId: null, postingFrom: null, postingTo: null };
+      let removed = 0;
+      const dates = rows.map((r) => r.po_date).filter(Boolean).sort();
+      if (rows.length && dates.length) {
+        const { count, error } = await db.from("purchase_orders").delete({ count: "exact" })
+          .gte("po_date", dates[0]).lte("po_date", dates[dates.length - 1]).lt("synced_at", rows[0].synced_at);
+        if (error) throw new Error(error.message);
+        removed = count ?? 0;
+      }
+      return { received, stored: rows.length, replaced: removed, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_orders", snapshotId: null, postingFrom: null, postingTo: null };
     }
     if (isOpenPoEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapOpenPoPayload(payload, endpoint);
