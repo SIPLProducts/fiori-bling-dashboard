@@ -79,7 +79,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       <Card tint="steel" title="Top 10 Materials"><BarList data={materials} /></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <Card tint="peach" title="Delivery Aging Status" sub="PO value · SAP NO_OF_DAYS"><Donut data={poAgingData(filtered)} heads={["Days", "Val", "%"]} /></Card>
       <Card tint="copper" title="Plant Analytics"><PlantColumns data={plants} /></Card>
       <Card tint="teal" title="Monthly PO Value Trend"><div className="h-56"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 16, left: -16, right: 4 }}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />

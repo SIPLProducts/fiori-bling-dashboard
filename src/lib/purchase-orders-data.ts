@@ -45,6 +45,20 @@ export function deliveryStatus(r: Pick<PoRow, "pendDelQty" | "deliveryDate">, to
   return "Pending";
 }
 
+export const PO_AGING_BANDS = ["0 – 60", "61 – 180", "181 – 365", "> 365"] as const;
+/** Band from SAP NO_OF_DAYS; blank/negative go to 0 – 60. */
+export function poAgingBand(days: number): (typeof PO_AGING_BANDS)[number] {
+  if (!(days > 60)) return "0 – 60";
+  if (days <= 180) return "61 – 180";
+  if (days <= 365) return "181 – 365";
+  return "> 365";
+}
+export function poAgingData(rows: PoRow[]) {
+  const m = new Map<string, number>(PO_AGING_BANDS.map((b) => [b, 0]));
+  for (const r of rows) if (r.inr) m.set(poAgingBand(r.days), (m.get(poAgingBand(r.days)) ?? 0) + r.netValue);
+  return PO_AGING_BANDS.map((name) => ({ name, value: m.get(name) ?? 0 })).filter((d) => d.value !== 0);
+}
+
 /** ₹ totals count INR lines only; foreign-currency lines are counted separately. */
 export function poTotals(rows: PoRow[]) {
   let value = 0, pendDel = 0, pendInv = 0, foreign = 0;
