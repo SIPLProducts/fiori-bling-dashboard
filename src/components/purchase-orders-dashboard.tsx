@@ -71,7 +71,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} note={foreignNote} tone="#1f6fd1" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} {...(foreignNote ? { note: foreignNote } : {})} tone="#1f6fd1" />
       <Tile icon={<Truck className="size-5" />} label="Pending Delivery Val" value={cr(tot.pendDel)} tone="#e08a1e" />
       <Tile icon={<FileText className="size-5" />} label="Pending Invoice Val" value={cr(tot.pendInv)} tone="#8e44ad" />
       <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
