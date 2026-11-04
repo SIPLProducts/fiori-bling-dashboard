@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type OpenPoRow = {
-  poNo: string; item: string; poDate: string; plant: string; plantName: string; plantFull: string; poType: string; sloc: string;
+  poNo: string; item: string; poDate: string; plant: string; plantName: string; plantFull: string; poType: string; poTypeCode: string; sloc: string;
   purGroup: string; vendor: string; vendorName: string; material: string; materialName: string;
   uom: string; poQty: number; poValue: number; migoQty: number; migoValue: number; openValue: number;
   deliveryDate: string; days: number; buyer: string; createdBy: string; delivComplete: boolean; deleted: boolean;
@@ -12,6 +12,14 @@ export type OpenPoStatus = "Open" | "Partially received" | "Overdue" | "Delivery
 export const AGING_BUCKETS = ["1 – 180", "181 – 365", "365 – 730", "> 730"] as const;
 export type AgingBucket = (typeof AGING_BUCKETS)[number];
 
+/** PO Type (BSART) → business group. Unlisted/blank codes fall into OTHERS; ZINT is excluded from the screen. */
+export const PO_TYPE_GROUPS: Record<string, string> = {
+  ZPDM: "DOMESTIC", ZPNI: "DOMESTIC", ZBBK: "DOMESTIC", ZPCT: "DOMESTIC", ZPPM: "PROJECT",
+  ZPCP: "CAPITAL", ZPIT: "CAPITAL", ZPSR: "SERVICE", ZPIS: "SERVICE", ZPIM: "IMPORTED",
+};
+export const poTypeGroup = (code: string) => PO_TYPE_GROUPS[code.trim().toUpperCase()] ?? "OTHERS";
+export const isExcludedPoType = (code: string) => code.trim().toUpperCase() === "ZINT";
+
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
 
@@ -20,7 +28,7 @@ export function toOpenPoRow(r: Rec): OpenPoRow {
   const poValue = n(r.netwr), migoValue = n(r.dmbtr1);
   return {
     poNo: t(r.ebeln), item: t(r.ebelp), poDate: t(r.bedat), plant: t(r.werks), plantName: t(r.plt_short) || t(r.plt_name) || t(r.werks), plantFull: t(r.plt_name),
-    poType: t(r.bsart) || "Other", sloc: t(r.lgort) || "—", purGroup: t(r.eknam) || t(r.ekgrp) || "—",
+    poType: poTypeGroup(t(r.bsart)), poTypeCode: t(r.bsart), sloc: t(r.lgort) || "—", purGroup: t(r.eknam) || t(r.ekgrp) || "—",
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr) || "—", material: t(r.matnr), materialName: t(r.txz01) || t(r.matnr) || "—",
     uom: t(r.meins), poQty: n(r.menge), poValue, migoQty: n(r.menge1), migoValue, openValue: Math.max(poValue - migoValue, 0),
     deliveryDate: t(r.eindt), days: n(r.days), buyer: t(r.buyer), createdBy: t(r.creat),
@@ -87,10 +95,10 @@ export async function getOpenPoRows(): Promise<OpenPoRow[]> {
     }
   };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, offsets.length) }, worker));
-  return pages.flat().map(toOpenPoRow).filter((r) => !r.deleted);
+  return pages.flat().map(toOpenPoRow).filter((r) => !r.deleted && !isExcludedPoType(r.poTypeCode));
 }
 
-export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v2-plt-short"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+export const openPoQuery = queryOptions({ queryKey: ["open-purchase-order", "v3-po-type-group"], queryFn: getOpenPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
 
 /** Launchpad summary: total PO value plus per-PO-Type value and line count, sorted by value. */
 export function openPoTypeSummary(rows: OpenPoRow[]) {
