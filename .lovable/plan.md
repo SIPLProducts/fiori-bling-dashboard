@@ -15,3 +15,11 @@
 ## Technical
 - Move the `tintBg`/`TINTS` helper from `open-po-dashboard.tsx` into a shared `src/lib/card-tints.ts` and import it in both screens.
 - `purchase-register-dashboard.tsx`: `Card` takes a `tint` prop (style from TINTS, underline on `<h2>`); assign a tint to each card; apply `TINTS.neutral` to the Filters bar.
+
+## PDF header (Purchase Register and Open Purchase Orders)
+- Each PDF starts with the HBL logo, "HBL Engineering Limited" and the screen name, in the same header layout as the Sales screen PDFs.
+- Pages get the same "HBL Confidential — Internal Use Only" numbered footer as those PDFs.
+- The header shows only in the PDF, not on screen.
+
+### Technical
+- In both route files, render a `data-pdf-header` block (hblLogo + company + screen title) inside the export ref while `busy`, and pass `headerSelector: "[data-pdf-header]"`, `footerText` and `preserveComputedChartColors: true` to `exportDashboardPdf`, matching open-sales-orders-dashboard.
