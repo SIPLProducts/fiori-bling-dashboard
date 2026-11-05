@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Eye } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, Download, Eye } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
   const names = useMemo(() => { const m = new Map<string, string>(); for (const r of rows) m.set(normMat(r.material), r.materialName); return m; }, [rows]);
   const [sel, setSel] = useState(ALL);
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
   const [detailMonth, setDetailMonth] = useState<string | null>(null);
 
   const perMat = useMemo(() => mats.map((m) => { const rs = matchRows(rows, m); return { m, rs, s: summarize(rs) }; }), [mats, rows]);
@@ -70,11 +73,30 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
   return <section className="rounded-xl border border-border bg-card p-2 shadow-sm">
     <div className="mb-2 flex flex-wrap items-center gap-2">
       <h2 className="mr-auto text-xs font-semibold text-card-foreground">ZRMMAT Material Comparison</h2>
-      <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search material" className="h-8 w-40 rounded-md border border-input bg-background px-2 text-xs" />
-      <select value={sel} onChange={(e) => setSel(e.target.value)} className="h-8 max-w-[260px] rounded-md border border-input bg-background px-2 text-xs">
-        <option value={ALL}>All ZRMMAT materials ({mats.length})</option>
-        {opts.map((p) => <option key={p.m.material} value={p.m.material}>{p.m.material}{names.get(p.m.material) ? ` - ${names.get(p.m.material)}` : ""}{p.rs.length ? "" : " (no purchase)"}</option>)}
-      </select>
+      {sel !== ALL && <Button size="sm" variant="outline" className="h-8" onClick={() => { setSel(ALL); setSearch(""); setDetailMonth(null); }}><ArrowLeft className="size-3.5" />Back</Button>}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="outline" className="h-8 w-[280px] justify-between text-xs font-normal">
+            <span className="truncate">{sel === ALL ? `All ZRMMAT materials (${mats.length})` : `${sel}${names.get(sel) ? ` - ${names.get(sel)}` : ""}`}</span>
+            <ChevronsUpDown className="size-3.5 opacity-60" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[340px] p-0" align="end">
+          <Command shouldFilter={false}>
+            <CommandInput value={search} onValueChange={setSearch} placeholder="Search material code or name" className="text-xs" />
+            <CommandList>
+              <CommandEmpty>No material found.</CommandEmpty>
+              <CommandItem value={ALL} onSelect={() => { setSel(ALL); setDetailMonth(null); setOpen(false); }} className="text-xs">
+                <Check className={`size-3.5 ${sel === ALL ? "opacity-100" : "opacity-0"}`} />All ZRMMAT materials ({mats.length})
+              </CommandItem>
+              {opts.map((p) => <CommandItem key={p.m.material} value={p.m.material} onSelect={() => { setSel(p.m.material); setDetailMonth(null); setOpen(false); }} className="text-xs">
+                <Check className={`size-3.5 ${sel === p.m.material ? "opacity-100" : "opacity-0"}`} />
+                <span className="truncate">{p.m.material}{names.get(p.m.material) ? ` - ${names.get(p.m.material)}` : ""}{p.rs.length ? "" : " (no purchase)"}</span>
+              </CommandItem>)}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       <Button size="sm" variant="outline" className="h-8" onClick={exportXlsx}><Download className="size-3.5" />Excel</Button>
     </div>
     {q.isLoading ? <p className="p-4 text-xs text-muted-foreground">Loading ZRMMAT materials…</p> : !mats.length ? <p className="p-4 text-xs text-muted-foreground">No ZRMMAT materials uploaded yet.</p> : <>
