@@ -106,8 +106,8 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
         </div>)}
       </div>
       {current ? <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
-        <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), price: +p.price.toFixed(2) }))} margin={{ top: 18 }}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis fontSize={10} domain={["auto", "auto"]} />
+        <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), price: +p.price.toFixed(2) }))} margin={{ top: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis fontSize={10} tickFormatter={(v: number) => n2(v)} domain={[(min: number) => { const max = Math.max(...series.map((p) => p.price)); const pad = Math.max((max - min) * 0.5, min * 0.01); return Math.max(0, +(min - pad).toFixed(2)); }, (max: number) => { const min = Math.min(...series.map((p) => p.price)); const pad = Math.max((max - min) * 0.1, max * 0.005); return +(max + pad).toFixed(2); }]} />
           <Tooltip formatter={(v: number) => [`₹ ${n2(v)}`, "Month avg price"]} />
           <defs>
             {series.map((p, i) => <linearGradient key={p.month} id={`zr-g-${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -116,10 +116,14 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
             </linearGradient>)}
           </defs>
           <Bar dataKey="price" name="Month avg price (₹)" radius={[8, 8, 0, 0]} maxBarSize={70}>
-            <LabelList dataKey="price" position="top" fontSize={10} fontWeight={600} formatter={(v: number) => n2(v)} />
             {series.map((p, i) => <Cell key={p.month} fill={`url(#zr-g-${i})`} stroke={radiantColor(i)} strokeWidth={1} />)}
           </Bar>
-          <Line type="monotone" dataKey="price" name="Trend" stroke="#d64550" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 2, fill: "white" }} activeDot={{ r: 6 }} legendType="none" tooltipType="none" />
+          <Line type="monotone" dataKey="price" name="Trend" stroke="#d64550" strokeWidth={2} dot={{ r: 3, strokeWidth: 1.5, fill: "white" }} activeDot={{ r: 5 }} legendType="none" tooltipType="none">
+            <LabelList dataKey="price" content={(props: { x?: number | string; y?: number | string; value?: number | string }) => {
+              const x = Number(props.x), y = Number(props.y), t = n2(Number(props.value)); const w = t.length * 6 + 10;
+              return <g><rect x={x - w / 2} y={y - 26} width={w} height={16} rx={4} fill="white" stroke="#cbd5e1" strokeWidth={0.75} /><text x={x} y={y - 15} textAnchor="middle" fontSize={10} fontWeight={700} fill="#1e293b" stroke="none">{t}</text></g>;
+            }} />
+          </Line>
         </ComposedChart></ResponsiveContainer></div>
         <div className="max-h-60 overflow-auto"><table className="w-full text-[11px]">
           <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Month avg price (₹)", "vs prev month", "Diff from first (₹)", "Item Details"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
