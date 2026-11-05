@@ -59,7 +59,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("ZRMMAT Compare");
     if (current) {
-      ws.addRow(["Month", "Quantity", "PO Value (₹ Cr)", "Unit Price (₹)", "vs prev (₹)", "vs prev (%)", "Diff from first (₹)"]);
+      ws.addRow(["Month", "Quantity", "PO Val (₹ Cr)", "Unit Price (₹)", "vs prev (₹)", "vs prev (%)", "Diff from first (₹)"]);
       series.forEach((p) => ws.addRow([ml(p.month), p.qty, p.valueInr / 1e7, p.price, p.mom, p.momPct, p.fromFirst]));
     } else {
       ws.addRow(["Material", "Description", "Quantity", "Value (₹ Cr)", "Unit Price (₹)", "Latest MoM (₹)", "Latest MoM (%)"]);
@@ -72,7 +72,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
 
   return <section className="rounded-xl border border-border bg-card p-2 shadow-sm">
     <div className="mb-2 flex flex-wrap items-center gap-2">
-      <h2 className="mr-auto text-xs font-semibold text-card-foreground">ZRMMAT Material Comparison</h2>
+      <h2 className="mr-auto text-xs font-semibold text-card-foreground">ZKEYRM Comparison</h2>
       {sel !== ALL && <Button size="sm" variant="outline" className="h-8" onClick={() => { setSel(ALL); setSearch(""); setDetailMonth(null); }}><ArrowLeft className="size-3.5" />Back</Button>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -108,14 +108,14 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
       {current ? <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
         <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), price: +p.price.toFixed(2) }))} margin={{ top: 30 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis fontSize={10} tickFormatter={(v: number) => n2(v)} domain={[(min: number) => { const max = Math.max(...series.map((p) => p.price)); const pad = Math.max((max - min) * 0.5, min * 0.01); return Math.max(0, +(min - pad).toFixed(2)); }, (max: number) => { const min = Math.min(...series.map((p) => p.price)); const pad = Math.max((max - min) * 0.1, max * 0.005); return +(max + pad).toFixed(2); }]} />
-          <Tooltip formatter={(v: number) => [`₹ ${n2(v)}`, "Month avg price"]} />
+          <Tooltip formatter={(v: number) => [`₹ ${n2(v)}`, "Avg Price"]} />
           <defs>
             {series.map((p, i) => <linearGradient key={p.month} id={`zr-g-${i}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={radiantColor(i)} stopOpacity={0.95} />
               <stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.35} />
             </linearGradient>)}
           </defs>
-          <Bar dataKey="price" name="Month avg price (₹)" radius={[8, 8, 0, 0]} maxBarSize={70}>
+          <Bar dataKey="price" name="Avg Price" radius={[8, 8, 0, 0]} maxBarSize={28}>
             {series.map((p, i) => <Cell key={p.month} fill={`url(#zr-g-${i})`} stroke={radiantColor(i)} strokeWidth={1} />)}
           </Bar>
           <Line type="monotone" dataKey="price" name="Trend" stroke="#d64550" strokeWidth={2} dot={{ r: 3, strokeWidth: 1.5, fill: "white" }} activeDot={{ r: 5 }} legendType="none" tooltipType="none">
@@ -126,11 +126,11 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
           </Line>
         </ComposedChart></ResponsiveContainer></div>
         <div className="max-h-60 overflow-auto"><table className="w-full text-[11px]">
-          <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Month avg price (₹)", "vs prev month", "Diff from first (₹)", "Item Details"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
+          <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Val (₹ Cr)", "Avg Price", "vs prev month", "Diff from first (₹)", "Dtls"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
           <tbody>{series.map((p) => <tr key={p.month} className="border-t border-border/60">
             <td className="px-1.5 py-0.5">{ml(p.month)}</td><td className="px-1.5 tabular-nums">{n2(p.qty)}</td><td className="px-1.5 tabular-nums">{cr(p.valueInr)}</td><td className="px-1.5 tabular-nums">{n2(p.price)}</td>
             <td className={`px-1.5 tabular-nums ${tone(p.mom)}`}>{sign(p.mom)}{p.momPct != null ? ` (${sign(p.momPct)}%)` : ""}</td><td className={`px-1.5 tabular-nums ${tone(p.fromFirst)}`}>{sign(p.fromFirst)}</td>
-            <td className="px-1.5"><Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => setDetailMonth(p.month)}><Eye className="size-3" />View</Button></td>
+            <td className="px-1.5"><Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" title="View" aria-label="View" onClick={() => setDetailMonth(p.month)}><Eye className="size-3" /></Button></td>
           </tr>)}</tbody>
         </table>{!series.length ? <p className="p-3 text-xs text-muted-foreground">No purchases of this material in the selected period.</p> : null}</div>
       </div> : <div className="mt-2 max-h-72 overflow-auto"><table className="w-full text-[11px]">
