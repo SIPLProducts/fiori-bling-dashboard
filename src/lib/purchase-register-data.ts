@@ -42,29 +42,39 @@ export const currentFy = (now = new Date()) => {
 /** Rows for one FY only, using the budat index and parallel pages. */
 export async function getPurchaseRows(fy: number): Promise<PurchaseRow[]> {
   const { from, to } = fyRange(fy);
-  const head = await supabase.from("purchase_register").select("id", { count: "exact", head: true }).gte("budat", from).lte("budat", to);
-  if (head.error) throw new Error(`Unable to load Purchase Register: ${head.error.message}`);
-  const total = head.count ?? 0;
-  const offsets: number[] = [];
-  for (let o = 0; o < total; o += PAGE) offsets.push(o);
-  const pages: Rec[][] = new Array(offsets.length);
+  void to;
+  // One window per month, each paged by id (keyset) so no page re-reads earlier rows.
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const s = new Date(Date.UTC(fy, 3 + i, 1)), e = new Date(Date.UTC(fy, 4 + i, 1));
+    return { s: s.toISOString().slice(0, 10), e: e.toISOString().slice(0, 10) };
+  });
+  const out: Rec[][] = new Array(months.length);
   let next = 0;
   const worker = async () => {
-    while (next < offsets.length) {
-      const i = next++, o = offsets[i]!;
-      const { data, error } = await supabase.from("purchase_register").select(COLS).gte("budat", from).lte("budat", to)
-        .order("budat").order("id").range(o, o + PAGE - 1);
-      if (error) throw new Error(`Unable to load Purchase Register: ${error.message}`);
-      pages[i] = (data ?? []) as unknown as Rec[];
+    while (next < months.length) {
+      const i = next++, { s, e } = months[i]!;
+      const acc: Rec[] = [];
+      let after: number | string | null = null;
+      for (;;) {
+        let q = supabase.from("purchase_register").select(COLS).gte("budat", s).lt("budat", e);
+        if (after != null) q = q.gt("id", after);
+        const { data, error } = await q.order("id").limit(PAGE);
+        if (error) throw new Error(`Unable to load Purchase Register: ${error.message}`);
+        const rows = (data ?? []) as unknown as (Rec & { id: number | string })[];
+        acc.push(...rows);
+        if (rows.length < PAGE) break;
+        after = rows[rows.length - 1]!.id;
+      }
+      out[i] = acc;
     }
   };
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, offsets.length) }, worker));
-  return pages.flat().map(toPurchaseRow);
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, months.length) }, worker));
+  return out.flat().map(toPurchaseRow);
 }
 
 const stable = { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false } as const;
 
-export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v7-qty-rate", fy], queryFn: () => getPurchaseRows(fy), ...stable });
+export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v8-keyset", fy], queryFn: () => getPurchaseRows(fy), ...stable });
 
 export const purchaseRegisterYearsQuery = {
   queryKey: ["purchase-register", "v5-years"],
