@@ -8,7 +8,6 @@ export type CronPreset = { label: string; expression: string };
 export const DAILY_SYNC_TIMES_PREFIX = "IST:";
 
 export const CRON_PRESETS: CronPreset[] = [
-  { label: "Every 5 minutes", expression: "*/5 * * * *" },
   { label: "Every 10 minutes", expression: "*/10 * * * *" },
   { label: "Every 15 minutes", expression: "*/15 * * * *" },
   { label: "Every 30 minutes", expression: "*/30 * * * *" },
