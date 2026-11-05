@@ -119,7 +119,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
             {series.map((p, i) => <Cell key={p.month} fill={`url(#zr-g-${i})`} stroke={radiantColor(i)} strokeWidth={1} />)}
           </Bar>
           <Line type="monotone" dataKey="price" name="Trend" stroke="#d64550" strokeWidth={2} dot={{ r: 3, strokeWidth: 1.5, fill: "white" }} activeDot={{ r: 5 }} legendType="none" tooltipType="none">
-            <LabelList dataKey="price" content={(props: { x?: number | string; y?: number | string; value?: number | string }) => {
+            <LabelList dataKey="price" content={(props: any) => {
               const x = Number(props.x), y = Number(props.y), t = n2(Number(props.value)); const w = t.length * 6 + 10;
               return <g><rect x={x - w / 2} y={y - 26} width={w} height={16} rx={4} fill="white" stroke="#cbd5e1" strokeWidth={0.75} /><text x={x} y={y - 15} textAnchor="middle" fontSize={10} fontWeight={700} fill="#1e293b" stroke="none">{t}</text></g>;
             }} />
