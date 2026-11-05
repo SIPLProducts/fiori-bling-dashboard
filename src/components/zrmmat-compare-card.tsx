@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { getMasterRows, mastersQuery } from "@/lib/sap-master";
 import { datedFileName } from "@/lib/format";
-import { radiantBar } from "@/lib/radiant";
+import { radiantBar, radiantColor } from "@/lib/radiant";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 import { matchRows, monthSeries, normMat, summarize, zrmmatMaterials } from "@/lib/purchase-zrmmat-compare";
 
@@ -87,10 +87,17 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
         <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), price: +p.price.toFixed(2) }))} margin={{ top: 18 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis fontSize={10} domain={["auto", "auto"]} />
           <Tooltip formatter={(v: number) => [`₹ ${n2(v)}`, "Month avg price"]} />
-          <Bar dataKey="price" name="Month avg price (₹)" radius={[4, 4, 0, 0]}>
-            <LabelList dataKey="price" position="top" fontSize={10} formatter={(v: number) => n2(v)} />
-            {series.map((p, i) => <Cell key={p.month} fill={radiantBar(i)} />)}
+          <defs>
+            {series.map((p, i) => <linearGradient key={p.month} id={`zr-g-${i}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={radiantColor(i)} stopOpacity={0.95} />
+              <stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.35} />
+            </linearGradient>)}
+          </defs>
+          <Bar dataKey="price" name="Month avg price (₹)" radius={[8, 8, 0, 0]} maxBarSize={70}>
+            <LabelList dataKey="price" position="top" fontSize={10} fontWeight={600} formatter={(v: number) => n2(v)} />
+            {series.map((p, i) => <Cell key={p.month} fill={`url(#zr-g-${i})`} stroke={radiantColor(i)} strokeWidth={1} />)}
           </Bar>
+          <Line type="monotone" dataKey="price" name="Trend" stroke="hsl(var(--destructive))" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 2, fill: "white" }} activeDot={{ r: 6 }} legendType="none" tooltipType="none" />
         </ComposedChart></ResponsiveContainer></div>
         <div className="max-h-60 overflow-auto"><table className="w-full text-[11px]">
           <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Month avg price (₹)", "vs prev month", "Diff from first (₹)", "Item Details"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
