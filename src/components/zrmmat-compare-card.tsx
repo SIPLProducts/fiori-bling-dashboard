@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Download, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { getMasterRows, mastersQuery } from "@/lib/sap-master";
 import { datedFileName } from "@/lib/format";
@@ -33,12 +34,14 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
   const names = useMemo(() => { const m = new Map<string, string>(); for (const r of rows) m.set(normMat(r.material), r.materialName); return m; }, [rows]);
   const [sel, setSel] = useState(ALL);
   const [search, setSearch] = useState("");
+  const [detailMonth, setDetailMonth] = useState<string | null>(null);
 
   const perMat = useMemo(() => mats.map((m) => { const rs = matchRows(rows, m); return { m, rs, s: summarize(rs) }; }), [mats, rows]);
   const current = sel === ALL ? null : perMat.find((p) => p.m.material === sel) ?? null;
   const matched = current ? current.rs : perMat.flatMap((p) => p.rs);
   const sum = useMemo(() => summarize(matched), [matched]);
   const series = useMemo(() => (current ? monthSeries(current.rs) : []), [current]);
+  const detailRows = useMemo(() => (current && detailMonth ? current.rs.filter((r) => r.date.startsWith(detailMonth)).sort((a, b) => a.date.localeCompare(b.date)) : []), [current, detailMonth]);
   const opts = perMat.filter((p) => { const s = search.toLowerCase(); return !s || p.m.material.toLowerCase().includes(s) || (names.get(p.m.material) ?? "").toLowerCase().includes(s); });
 
   const tiles = [
@@ -81,15 +84,20 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
         </div>)}
       </div>
       {current ? <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
-        <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), value: +(p.valueInr / 1e7).toFixed(4), price: +p.price.toFixed(2) }))}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis yAxisId="v" fontSize={10} /><YAxis yAxisId="p" orientation="right" fontSize={10} />
-          <Tooltip /><Bar yAxisId="v" dataKey="value" name="Value (₹ Cr)" fill="#1f6fd1" radius={[4, 4, 0, 0]} /><Line yAxisId="p" dataKey="price" name="Unit price (₹)" stroke="#e08a1e" strokeWidth={2} />
+        <div className="h-60"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={series.map((p) => ({ m: ml(p.month), price: +p.price.toFixed(2) }))} margin={{ top: 18 }}>
+          <CartesianGrid strokeDasharray="3 3" opacity={0.3} /><XAxis dataKey="m" fontSize={10} /><YAxis fontSize={10} domain={["auto", "auto"]} />
+          <Tooltip formatter={(v: number) => [`₹ ${n2(v)}`, "Month avg price"]} />
+          <Bar dataKey="price" name="Month avg price (₹)" radius={[4, 4, 0, 0]}>
+            <LabelList dataKey="price" position="top" fontSize={10} formatter={(v: number) => n2(v)} />
+            {series.map((p, i) => <Cell key={p.month} fill={radiantBar(i)} />)}
+          </Bar>
         </ComposedChart></ResponsiveContainer></div>
         <div className="max-h-60 overflow-auto"><table className="w-full text-[11px]">
-          <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Unit Price (₹)", "vs prev month", "Diff from first (₹)"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
+          <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Month avg price (₹)", "vs prev month", "Diff from first (₹)", "Item Details"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
           <tbody>{series.map((p) => <tr key={p.month} className="border-t border-border/60">
             <td className="px-1.5 py-0.5">{ml(p.month)}</td><td className="px-1.5 tabular-nums">{n2(p.qty)}</td><td className="px-1.5 tabular-nums">{cr(p.valueInr)}</td><td className="px-1.5 tabular-nums">{n2(p.price)}</td>
             <td className={`px-1.5 tabular-nums ${tone(p.mom)}`}>{sign(p.mom)}{p.momPct != null ? ` (${sign(p.momPct)}%)` : ""}</td><td className={`px-1.5 tabular-nums ${tone(p.fromFirst)}`}>{sign(p.fromFirst)}</td>
+            <td className="px-1.5"><Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => setDetailMonth(p.month)}><Eye className="size-3" />View</Button></td>
           </tr>)}</tbody>
         </table>{!series.length ? <p className="p-3 text-xs text-muted-foreground">No purchases of this material in the selected period.</p> : null}</div>
       </div> : <div className="mt-2 max-h-72 overflow-auto"><table className="w-full text-[11px]">
@@ -100,5 +108,22 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
         </tr>)}</tbody>
       </table></div>}
     </>}
+    <Dialog open={!!detailMonth} onOpenChange={(o) => !o && setDetailMonth(null)}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader><DialogTitle className="text-sm">{current?.m.material} {names.get(current?.m.material ?? "") ?? ""} — {detailMonth ? ml(detailMonth) : ""} ({detailRows.length} items)</DialogTitle></DialogHeader>
+        <div className="max-h-[60vh] overflow-auto"><table className="w-full text-[11px]">
+          <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["#", "Posting Date", "Invoice Doc", "GR Doc", "Plant", "Vendor", "Invoice Qty", "Net Amount (₹)", "Unit Price (₹)"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
+          <tbody>{detailRows.map((r, i) => <tr key={`${r.docNo}-${i}`} className="border-t border-border/60 odd:bg-muted/40">
+            <td className="px-1.5 py-0.5">{i + 1}</td><td className="px-1.5">{r.date.split("-").reverse().join("-")}</td><td className="px-1.5">{r.docNo}</td><td className="px-1.5">{r.grNo}</td>
+            <td className="px-1.5">{r.plant}{r.plantSh ? ` - ${r.plantSh}` : ""}</td><td className="truncate px-1.5">{r.vendorName}</td>
+            <td className="px-1.5 tabular-nums">{n2(r.qty ?? 0)} {r.unit}</td><td className="px-1.5 tabular-nums">{n2(r.value * 1e7)}</td><td className="px-1.5 tabular-nums">{n2(r.qty ? (r.value * 1e7) / r.qty : r.rate ?? 0)}</td>
+          </tr>)}</tbody>
+          <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1" colSpan={6}>Grand Total</td>
+            <td className="px-1.5 tabular-nums">{n2(detailRows.reduce((s, r) => s + (r.qty ?? 0), 0))}</td>
+            <td className="px-1.5 tabular-nums">{n2(detailRows.reduce((s, r) => s + r.value * 1e7, 0))}</td>
+            <td className="px-1.5 tabular-nums">{(() => { const q = detailRows.reduce((s, r) => s + (r.qty ?? 0), 0); return q ? n2(detailRows.reduce((s, r) => s + r.value * 1e7, 0) / q) : "–"; })()}</td></tr></tfoot>
+        </table></div>
+      </DialogContent>
+    </Dialog>
   </section>;
 }
