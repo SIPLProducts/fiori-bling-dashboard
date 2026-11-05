@@ -23,6 +23,9 @@ import { NetSalesLaunchCard } from "@/components/net-sales-launch-card";
 import { OpenSalesOrdersLaunchCard, OrderBookLaunchCard, SitLaunchCard, SalesRegisterLaunchCard } from "@/components/open-sales-orders-launch-card";
 import { CashFlowLaunchCard } from "@/components/cash-flow-launch-card";
 import { PurchaseRegisterLaunchCard } from "@/components/purchase-register-launch-card";
+import { useQuery } from "@tanstack/react-query";
+import { zrmmatRowsQuery } from "@/components/zrmmat-compare-card";
+import { zrmmatMaterials } from "@/lib/purchase-zrmmat-compare";
 import { OpenPoLaunchCard } from "@/components/open-po-launch-card";
 import { PurchaseOrdersLaunchCard } from "@/components/purchase-orders-launch-card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +123,7 @@ export function TileCard({ tile, kpi }: { tile: TileRecord; kpi?: KpiValue }) {
   if (tile.target_path === "/reports/mm/open-purchase-orders") return <OpenPoLaunchCard fallback={fallback} />;
   if (tile.target_path === "/reports/mm/purchase-orders") return <PurchaseOrdersLaunchCard fallback={fallback} />;
   if (tile.target_path === "/reports/mm/purchase-register") return <PurchaseRegisterLaunchCard fallback={fallback} />;
+  if (tile.kpi_key === "table_zrmmat") return <ZkeyrmTile tile={tile} />;
   const Icon = ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties;
   const href = tile.target_path || "/launchpad";
   return <CardSurface label={tile.title} value={kpi ? `${compact(kpi.value)}${kpi.unit ? ` ${kpi.unit}` : ""}` : "Open"} note={kpi?.footer ?? tile.subtitle ?? "Live SAP report"} icon={Icon} trend={kpi?.trend} href={href} accent={(tile.sort_order % 6) + 1} />;
@@ -144,4 +148,9 @@ export function PlaceholderTile({ type }: { type: PlaceholderType }) {
 
 export function TableStatusTile({ title, value, note, href, action = "Open table", icon = TableProperties }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge }) {
   return <CardSurface label={title} value={value} note={note} icon={icon} href={href} accent={6} status={href ? action : "Under development"} />;
+}
+function ZkeyrmTile({ tile }: { tile: TileRecord }) {
+  const q = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
+  const count = q.data ? zrmmatMaterials(q.data).length : null;
+  return <CardSurface label="ZKEYRM" value={count == null ? (q.isLoading ? "…" : "Open") : count.toLocaleString("en-IN")} note={count == null ? "Tables Master" : `${count === 1 ? "material" : "materials"}`} icon={ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties} href={tile.target_path ?? "/launchpad"} accent={(tile.sort_order % 6) + 1} />;
 }

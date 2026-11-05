@@ -150,9 +150,9 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <Card title="Top Vendors"><RankList data={vendors.map((v) => ({ name: v.name, value: v.value }))} /></Card>
     </div>
 
-    <MaterialTrendSection rows={filtered} onOpen={(t) => { setOpenMat(t); window.scrollTo({ top: 0 }); }} />
-
     <ZrmmatCompareCard rows={filtered} />
+
+    <MaterialTrendSection rows={filtered} onOpen={(t) => { setOpenMat(t); window.scrollTo({ top: 0 }); }} />
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Material Group" sub={<span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">Click to filter</span>}>
