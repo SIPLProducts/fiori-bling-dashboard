@@ -20,7 +20,7 @@ const sign = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${n2
 const tone = (v: number | null) => (v == null || v === 0 ? "" : v > 0 ? "text-destructive" : "text-emerald-600");
 const ALL = "__all__";
 
-const zrmmatRowsQuery = {
+export const zrmmatRowsQuery = {
   queryKey: ["sap-master-rows", "zrmmat-all"] as const,
   queryFn: async () => {
     const ms = await mastersQuery("zrmmat").queryFn();
@@ -57,7 +57,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
 
   const exportXlsx = async () => {
     const ExcelJS = (await import("exceljs")).default;
-    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("ZRMMAT Compare");
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("ZKEYRM Compare");
     if (current) {
       ws.addRow(["Month", "Quantity", "PO Val (₹ Cr)", "Unit Price (₹)", "vs prev (₹)", "vs prev (%)", "Diff from first (₹)"]);
       series.forEach((p) => ws.addRow([ml(p.month), p.qty, p.valueInr / 1e7, p.price, p.mom, p.momPct, p.fromFirst]));
@@ -77,7 +77,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button size="sm" variant="outline" className="h-8 w-[280px] justify-between text-xs font-normal">
-            <span className="truncate">{sel === ALL ? `All ZRMMAT materials (${mats.length})` : `${sel}${names.get(sel) ? ` - ${names.get(sel)}` : ""}`}</span>
+            <span className="truncate">{sel === ALL ? `All ZKEYRM materials (${mats.length})` : `${sel}${names.get(sel) ? ` - ${names.get(sel)}` : ""}`}</span>
             <ChevronsUpDown className="size-3.5 opacity-60" />
           </Button>
         </PopoverTrigger>
@@ -87,7 +87,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
             <CommandList>
               <CommandEmpty>No material found.</CommandEmpty>
               <CommandItem value={ALL} onSelect={() => { setSel(ALL); setDetailMonth(null); setOpen(false); }} className="text-xs">
-                <Check className={`size-3.5 ${sel === ALL ? "opacity-100" : "opacity-0"}`} />All ZRMMAT materials ({mats.length})
+                <Check className={`size-3.5 ${sel === ALL ? "opacity-100" : "opacity-0"}`} />All ZKEYRM materials ({mats.length})
               </CommandItem>
               {opts.map((p) => <CommandItem key={p.m.material} value={p.m.material} onSelect={() => { setSel(p.m.material); setDetailMonth(null); setOpen(false); }} className="text-xs">
                 <Check className={`size-3.5 ${sel === p.m.material ? "opacity-100" : "opacity-0"}`} />
@@ -99,7 +99,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
       </Popover>
       <Button size="sm" variant="outline" className="h-8" onClick={exportXlsx}><Download className="size-3.5" />Excel</Button>
     </div>
-    {q.isLoading ? <p className="p-4 text-xs text-muted-foreground">Loading ZRMMAT materials…</p> : !mats.length ? <p className="p-4 text-xs text-muted-foreground">No ZRMMAT materials uploaded yet.</p> : <>
+    {q.isLoading ? <p className="p-4 text-xs text-muted-foreground">Loading ZKEYRM materials…</p> : !mats.length ? <p className="p-4 text-xs text-muted-foreground">No ZKEYRM materials uploaded yet.</p> : <>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
         {tiles.map((t, i) => <div key={t.label} title={t.hint} className="text-on-radiant rounded-lg p-2 shadow-sm" style={{ background: radiantBar(i) }}>
           <div className="text-[10px] opacity-90">{t.label}</div><div className="text-sm font-bold tabular-nums">{t.value}</div>

@@ -14,10 +14,10 @@ import { addMasterRow, deleteMaster, deleteMasterRows, downloadMasterExcel, getM
 
 export const Route = createFileRoute("/_authenticated/reports/tables/zrmmat")({
   head: () => ({ meta: [
-    { title: "ZRMMAT — HBL MIS Portal" },
-    { name: "description", content: "Upload, edit and delete ZRMMAT master rows from Excel." },
-    { property: "og:title", content: "ZRMMAT — HBL MIS Portal" },
-    { property: "og:description", content: "Upload, edit and delete ZRMMAT master rows from Excel." },
+    { title: "ZKEYRM — HBL MIS Portal" },
+    { name: "description", content: "Upload, edit and delete ZKEYRM master rows from Excel." },
+    { property: "og:title", content: "ZKEYRM — HBL MIS Portal" },
+    { property: "og:description", content: "Upload, edit and delete ZKEYRM master rows from Excel." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
@@ -32,8 +32,8 @@ function Page() {
   const { data, isLoading } = useLaunchpad();
   const isAdmin = !!data?.isSuperAdmin || (data?.roles ?? []).some((r) => r === "admin" || r === "super_admin");
   const allowed = isAdmin || hasScreen(data?.screens, "tables.zrmmat");
-  return <ReportShell title="ZRMMAT" description="Tables Master">
-    {!isLoading && !allowed ? <AccessDenied area="ZRMMAT" /> : <View isAdmin={isAdmin} />}
+  return <ReportShell title="ZKEYRM" description="Tables Master">
+    {!isLoading && !allowed ? <AccessDenied area="ZKEYRM" /> : <View isAdmin={isAdmin} />}
   </ReportShell>;
 }
 
@@ -110,7 +110,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
       <Input className="max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
       {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)} · Last upload {new Date(current.last_uploaded_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>}
       <div className="ml-auto flex flex-wrap gap-2">
-        {current && <Button variant="outline" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), "ZRMMAT")}><Download className="mr-1 h-4 w-4" />Excel</Button>}
+        {current && <Button variant="outline" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), "ZKEYRM")}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           {current && <Button variant="outline" onClick={() => setEdit({ id: null, data: Object.fromEntries(cols.map((c) => [c, ""])) })}><Plus className="mr-1 h-4 w-4" />Add row</Button>}
           {picked.size > 0 && <Button variant="destructive" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
@@ -137,7 +137,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Delete row" onClick={() => delRows([r.id])}><Trash2 className="h-3.5 w-3.5" /></Button>
             </td>}
           </tr>)}
-          {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create ZRMMAT." : "No ZRMMAT data uploaded yet."}</td></tr>}
+          {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create ZKEYRM." : "No ZKEYRM data uploaded yet."}</td></tr>}
         </tbody>
       </table>
     </div>
@@ -162,7 +162,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
 
     <Dialog open={!!sheets} onOpenChange={(o) => { if (!o && !busy) setSheets(null); }}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Upload ZRMMAT</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Upload ZKEYRM</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">Each sheet is stored separately. With no key, every Excel row is kept and the sheet is fully replaced. With key columns, rows with a matching key are updated.</p>
         <div className="max-h-80 space-y-3 overflow-y-auto">
           {sheets?.map((s) => <div key={s.name} className="rounded border p-3">
