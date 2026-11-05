@@ -1,14 +1,14 @@
-# Fix "Purchase Register: statement timeout"
+# Fix "statement timeout" / 500 on Purchase Register (and same risk on other screens)
 
-## Why it happens
-The screen loads a whole financial year (tens of thousands of lines) in pages of 1,000, 8 pages at a time, using "skip N rows" paging. For later pages the database must re-read and throw away every earlier row (page 80 reads 80,000 rows to return 1,000). Plus a full "exact count" runs first, and the permission check runs on every row. With 8 such heavy requests in parallel on ~90k lines, some exceed the database time limit and the screen fails.
+## Root cause (confirmed)
+The permission rule on `purchase_register` calls `user_can_see(werks, prctr)` for **every row**. That function re-reads the user's profile and admin status each time, so a page of 1,000 rows at offset 8,000 runs ~9,000 permission lookups. With 8 pages loading in parallel the database hits its time limit and returns 500.
+The same per-row rule is used by **Sales In Transit, Sales Register, Order Book, Open Purchase Orders and Purchase Orders** — they will fail the same way as data grows. Net Sales, Open Sales Orders and Cash Flow already use the fast form.
 
 ## Fix
-1. **Keyset paging** in `getPurchaseRows`: fetch the next 1,000 rows "after the last (date, id) seen" using the existing `(budat, id)` index, so each page costs the same regardless of depth. To keep parallelism, split the FY into 12 monthly windows and page each month by keyset (4–6 months concurrently).
-2. **Drop the exact count** request (no longer needed).
-3. **Faster permission check**: rewrite the purchase_register read policy so the permission function is evaluated once per query (`(select fn(...))` form) instead of per row; mirror as a timestamped migration in `supabase/migrations` for Quality/Production.
-4. Bump the query key so old cached results don't survive.
-5. Verify: run EXPLAIN on a deep page before/after in the preview database; confirm screen loads.
+1. **Fast permission rules** (one migration, same access result): rewrite the read rules on those 6 tables to the form Net Sales uses — check "unrestricted / my plants / my profit centers" once per query, then compare each row's plant/profit center in memory.
+2. **Purchase Register paging**: replace "skip N rows" paging with month-by-month loading keyed on (date, id) using the existing index; drop the exact count request; bump the query key.
+3. Mirror the migration in a timestamped `supabase/migrations` file for Quality/Production.
+4. Verify with EXPLAIN on the failing request and by loading the screen.
 
-## Deploy note
-Quality/Production need the new migration and the frontend build; no middleware change.
+## Deploy
+Quality/Production: run the new migration + rebuild frontend. No middleware change.
