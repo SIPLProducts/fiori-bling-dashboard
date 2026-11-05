@@ -97,7 +97,7 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
             <LabelList dataKey="price" position="top" fontSize={10} fontWeight={600} formatter={(v: number) => n2(v)} />
             {series.map((p, i) => <Cell key={p.month} fill={`url(#zr-g-${i})`} stroke={radiantColor(i)} strokeWidth={1} />)}
           </Bar>
-          <Line type="monotone" dataKey="price" name="Trend" stroke="hsl(var(--destructive))" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 2, fill: "white" }} activeDot={{ r: 6 }} legendType="none" tooltipType="none" />
+          <Line type="monotone" dataKey="price" name="Trend" stroke="#d64550" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 2, fill: "white" }} activeDot={{ r: 6 }} legendType="none" tooltipType="none" />
         </ComposedChart></ResponsiveContainer></div>
         <div className="max-h-60 overflow-auto"><table className="w-full text-[11px]">
           <thead className="text-on-radiant sticky top-0" style={{ background: "linear-gradient(90deg,#1f6fd1,#0f9d8a,#8e44ad)" }}><tr>{["Month", "Qty", "PO Value (₹ Cr)", "Month avg price (₹)", "vs prev month", "Diff from first (₹)", "Item Details"].map((h) => <th key={h} className="px-1.5 py-1 text-left">{h}</th>)}</tr></thead>
