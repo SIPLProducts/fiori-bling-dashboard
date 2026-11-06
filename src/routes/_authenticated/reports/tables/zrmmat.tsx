@@ -60,7 +60,7 @@ function View({ isAdmin }: { isAdmin: boolean }) {
   const [sheets, setSheets] = useState<ParsedSheet[] | null>(null);
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const reload = async () => { setPicked(new Set()); await qc.invalidateQueries({ queryKey: ["sap-masters", CAT] }); await qc.invalidateQueries({ queryKey: ["zrmmat-rows"] }); };
+  const reload = async () => { setPicked(new Set()); await qc.invalidateQueries({ queryKey: ["sap-masters", CAT] }); await qc.invalidateQueries({ queryKey: ["zrmmat-rows"] }); await qc.invalidateQueries({ queryKey: ["sap-master-rows", "zrmmat-all"] }); };
 
   const onFile = async (f: File) => {
     try {
