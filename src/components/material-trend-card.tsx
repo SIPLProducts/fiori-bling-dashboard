@@ -5,6 +5,9 @@ import { radiantColor } from "@/lib/radiant";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { isPriceMoverMaterial, materialPoints, materialTrends, TREND_RULES, type MaterialTrend } from "@/lib/purchase-material-trend";
+import { useQuery } from "@tanstack/react-query";
+import { zrmmatRowsQuery } from "@/components/zrmmat-compare-card";
+import { excludeZkeyrm, zrmmatMaterials } from "@/lib/purchase-zrmmat-compare";
 import type { PurchaseRow } from "@/lib/purchase-register-data";
 
 const n2 = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,7 +25,9 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [peek, setPeek] = useState<MaterialTrend | null>(null);
-  const res = useMemo(() => materialTrends(rows.filter((r) => isPriceMoverMaterial(r.material))), [rows]);
+  const zk = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
+  const zkCodes = useMemo(() => zrmmatMaterials(zk.data ?? []).map((m) => m.material), [zk.data]);
+  const res = useMemo(() => materialTrends(excludeZkeyrm(rows.filter((r) => isPriceMoverMaterial(r.material)), zkCodes)), [rows, zkCodes]);
   const sparks = useMemo(() => {
     const by = new Map<string, PurchaseRow[]>();
     for (const r of rows) { const a = by.get(r.material); if (a) a.push(r); else by.set(r.material, [r]); }

@@ -69,3 +69,9 @@ export function summarize(rows: PurchaseRow[]): CompareSummary {
   const last = [...series].reverse().find((p) => p.mom != null);
   return { valueInr, qty, docs, price: qty > 0 ? valueInr / qty : 0, unit: rows.find((r) => r.unit)?.unit ?? "", latestMom: last?.mom ?? null, latestMomPct: last?.momPct ?? null };
 }
+
+/** Pure: drop rows whose material is in the ZKEYRM list (leading zeros ignored). */
+export function excludeZkeyrm<T extends { material: string }>(rows: T[], codes: string[]): T[] {
+  const set = new Set(codes.map(normMat));
+  return set.size ? rows.filter((r) => !set.has(normMat(r.material))) : rows;
+}
