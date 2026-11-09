@@ -59,13 +59,15 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
     </section>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-      <Tile icon={<PackageCheck className="size-5" />} label="Unrestr.stk (V)" value={lah(t.unrV)} note={`Unrestr.stk (Q) ${inr(t.unrQ)}`} tone="#0f9d8a" />
-      <Tile icon={<ShieldAlert className="size-5" />} label="Stk in QC (V)" value={lah(t.qcV)} note={`Stk in QC (Q) ${inr(t.qcQ)}`} tone="#7b4fd6" />
-      <Tile icon={<ArrowLeftRight className="size-5" />} label="Restr.batch stk (V)" value={lah(t.restrV)} note={`Restr.batch stk (Q) ${inr(t.restrQ)}`} tone="#c06a12" />
-      <Tile icon={<Lock className="size-5" />} label="Block.Stk (V)" value={lah(t.blkV)} note={`Block.Stk (Q) ${inr(t.blkQ)}`} tone="#d64550" />
-      <Tile icon={<IndianRupee className="size-5" />} label="Blk stk ret (V)" value={lah(t.retV)} note={`Blk stk ret (Q) ${inr(t.retQ)}`} tone="#1f6fd1" />
-      <Tile icon={<Boxes className="size-5" />} label="Materials" value={String(t.materials)} tone="#e08a1e" />
+    <div className="flex gap-2 overflow-x-auto pb-1">
+      {([
+        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", lah(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", lah(t.qcV), "#7b4fd6", ShieldAlert],
+        ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", lah(t.restrV), "#c06a12", ArrowLeftRight],
+        ["Block.Stk (Q)", inr(t.blkQ), "#d64550", Lock], ["Block.Stk (V)", lah(t.blkV), "#d64550", Lock],
+        ["Blk stk ret(Q)", inr(t.retQ), "#1f6fd1", IndianRupee], ["Blk stk ret (V)", lah(t.retV), "#1f6fd1", IndianRupee],
+        ["Materials", String(t.materials), "#e08a1e", Boxes],
+      ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-[8.5rem] flex-1 [&_p]:whitespace-nowrap"><Tile icon={<Icon className="size-4" />} label={label} value={value} tone={tone} /></div>)}
     </div>
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value * 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
