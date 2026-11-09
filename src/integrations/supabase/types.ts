@@ -29,6 +29,87 @@ export type Database = {
         }
         Relationships: []
       }
+      current_stock: {
+        Row: {
+          binno: string | null
+          charg: string
+          id: string
+          insme: number | null
+          labst: number | null
+          lgobe: string | null
+          lgort: string
+          maktx: string | null
+          matnr: string
+          meins: string | null
+          mtart: string | null
+          rackno: string | null
+          raw: Json
+          rowno: string | null
+          shelfno: string | null
+          source_endpoint: string | null
+          speme: number | null
+          synced_at: string
+          trame: number | null
+          werks: string
+          winsm: number | null
+          wlabs: number | null
+          wspem: number | null
+          wtram: number | null
+        }
+        Insert: {
+          binno?: string | null
+          charg?: string
+          id?: string
+          insme?: number | null
+          labst?: number | null
+          lgobe?: string | null
+          lgort?: string
+          maktx?: string | null
+          matnr: string
+          meins?: string | null
+          mtart?: string | null
+          rackno?: string | null
+          raw?: Json
+          rowno?: string | null
+          shelfno?: string | null
+          source_endpoint?: string | null
+          speme?: number | null
+          synced_at?: string
+          trame?: number | null
+          werks?: string
+          winsm?: number | null
+          wlabs?: number | null
+          wspem?: number | null
+          wtram?: number | null
+        }
+        Update: {
+          binno?: string | null
+          charg?: string
+          id?: string
+          insme?: number | null
+          labst?: number | null
+          lgobe?: string | null
+          lgort?: string
+          maktx?: string | null
+          matnr?: string
+          meins?: string | null
+          mtart?: string | null
+          rackno?: string | null
+          raw?: Json
+          rowno?: string | null
+          shelfno?: string | null
+          source_endpoint?: string | null
+          speme?: number | null
+          synced_at?: string
+          trame?: number | null
+          werks?: string
+          winsm?: number | null
+          wlabs?: number | null
+          wspem?: number | null
+          wtram?: number | null
+        }
+        Relationships: []
+      }
       open_purchase_order: {
         Row: {
           bedat: string | null
