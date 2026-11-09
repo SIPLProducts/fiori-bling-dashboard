@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowLeftRight, Boxes, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, Donut, Tile, PlantColumns } from "@/components/open-po-dashboard";
+import { Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
 import { groupValue, rowValue, STOCK_CATEGORIES, stockTotals, type CurrentStockRow } from "@/lib/current-stock-data";
