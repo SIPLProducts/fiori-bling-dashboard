@@ -57,7 +57,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const t = stockTotals(data);
   const mtypes = groupValue(data, (r) => r.mtype);
   const cats = STOCK_CATEGORIES.map((c) => ({ name: c.label, value: data.reduce((a, r) => a + r[c.key], 0) })).filter((c) => c.value > 0);
-  const plants = groupValue(data, (r) => r.plant).map((d) => ({ ...d, value: d.value / CR }));
+  const plants = groupValue(data, (r) => r.plant).slice(0, 15).map((d) => ({ ...d, value: d.value / CR }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
   const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
@@ -103,7 +103,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       <Card title="Highest Mat Price" sub="Val in Cr" tint="violet"><Bars data={prices} /></Card>
       <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><StackBars data={nonFree} /></Card>
     </div>
-    <Card title="Plant Analytics" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
+    <Card title="Plant Analytics (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Stock Details" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Restr.batch stk (Q)", "Restr.batch stk (V)", "Block.Stk (Q)", "Block.Stk (V)", "Blk stk ret(Q)", "Blk stk ret (V)", "Transfer (Q)", "Transfer (V)", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
