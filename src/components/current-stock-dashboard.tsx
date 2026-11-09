@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Boxes, ChevronDown, IndianRupee, Lock, PackageCheck } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, Donut, Tile, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
@@ -40,9 +39,12 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
-  const exportXlsx = () => {
-    const ws = XLSX.utils.json_to_sheet(table.map((r) => ({ Plant: r.plant, "St.Locn": r.sloc, "Location Desc": r.slocDesc, "Mat.type": r.mtype, Material: r.material, Description: r.matDesc, UOM: r.uom, "Mat.price": r.price, "Unrestr (Q)": r.unrQ, "Unrestr (V)": r.unrV, "QC (Q)": r.qcQ, "QC (V)": r.qcV, "Restr (Q)": r.restrQ, "Restr (V)": r.restrV, "Blocked (Q)": r.blkQ, "Blocked (V)": r.blkV, "Blk Ret (Q)": r.retQ, "Blk Ret (V)": r.retV, "Total Qty": rowQty(r), "Total Value": rowValue(r) })));
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Current Stock"); XLSX.writeFile(wb, datedFileName("Current Stock", "xlsx"));
+  const exportXlsx = async () => {
+    const { Workbook } = await import("exceljs");
+    const wb = new Workbook(); const ws = wb.addWorksheet("Current Stock");
+    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "UOM", "Mat.price", "Unrestr (Q)", "Unrestr (V)", "QC (Q)", "QC (V)", "Restr (Q)", "Restr (V)", "Blocked (Q)", "Blocked (V)", "Blk Ret (Q)", "Blk Ret (V)", "Total Qty", "Total Value"]).font = { bold: true };
+    table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, rowQty(r), rowValue(r)]));
+    const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("Current Stock", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
   };
   const field = (k: keyof typeof f, label: string, list: (string | [string, string])[]) => <label className="space-y-1 text-[10px] font-medium text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}><option value="">All</option>{list.map((o) => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>)}</select></label>;
