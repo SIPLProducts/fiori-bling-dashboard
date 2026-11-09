@@ -24,6 +24,24 @@ function Bars({ data, fmt = cr }: { data: { name: string; value: number }[]; fmt
     <span className="font-bold tabular-nums">{fmt(d.value)}</span></li>)}</ul>;
 }
 
+const NONFREE = [{ key: "qcV", label: "QC", tone: "#7b4fd6" }, { key: "blkV", label: "Blocked", tone: "#d64550" }, { key: "trfV", label: "Transfer", tone: "#1f6fd1" }] as const;
+type NF = { name: string; qcV: number; blkV: number; trfV: number; value: number };
+function StackBars({ data }: { data: NF[] }) {
+  const max = Math.max(...data.map((d) => d.value), 0) || 1;
+  return <div className="space-y-1.5">
+    <div className="flex flex-wrap gap-3 text-[10px] font-semibold">{NONFREE.map((c) => <span key={c.key} className="flex items-center gap-1"><span className="size-2.5 rounded-sm" style={{ background: c.tone }} />{c.label}</span>)}</div>
+    {data.length ? null : <p className="text-[11px] text-muted-foreground">No stock in this view</p>}
+    {data.map((d) => <div key={d.name} className="text-[11px]">
+      <div className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2">
+        <span className="truncate font-semibold" title={d.name}>{d.name}</span>
+        <span className="flex h-3.5 overflow-hidden rounded-full bg-background/60"><span className="flex h-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%` }}>{NONFREE.map((c) => d[c.key] > 0 ? <span key={c.key} title={`${c.label}: ${cr(d[c.key])} Cr`} style={{ width: `${(d[c.key] / d.value) * 100}%`, background: c.tone }} /> : null)}</span></span>
+        <span className="font-bold tabular-nums">{cr(d.value)}</span>
+      </div>
+      <div className="flex flex-wrap gap-x-3 pl-1 text-[10px] text-muted-foreground tabular-nums">{NONFREE.map((c) => <span key={c.key}><span style={{ color: c.tone }} className="font-semibold">{c.label}</span> {cr(d[c.key])}</span>)}</div>
+    </div>)}
+  </div>;
+}
+
 export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentStockRow[]; sample?: boolean }) {
   const [f, setF] = useState<Record<"plant" | "sloc" | "mtype" | "material", string[] | null>>(EMPTY);
   const [open, setOpen] = useState(true);
@@ -43,7 +61,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
   const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
-  const nonFree = groupValue(data, (r) => r.matDesc, (r) => r.qcV + r.blkV + r.trfV + r.restrV + r.retV).slice(0, 10);
+  const nonFree = [...data.reduce((m, r) => { const e = m.get(r.matDesc) ?? { name: r.matDesc, qcV: 0, blkV: 0, trfV: 0, value: 0 }; e.qcV += r.qcV; e.blkV += r.blkV; e.trfV += r.trfV; e.value = e.qcV + e.blkV + e.trfV; m.set(r.matDesc, e); return m; }, new Map<string, NF>()).values()].filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
   const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
@@ -64,7 +82,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     </div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
       {([
-        ["Mat.price (V)", inr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
+        ["Mat.price (V)", cr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
         ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
         ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
         ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", cr(t.restrV), "#c06a12", ArrowLeftRight],
@@ -82,8 +100,8 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       <Card title="Top Unrestr. Stk (Q)" sub="Quantity" tint="teal"><Bars data={unrQty} fmt={inr} /></Card>
-      <Card title="Highest Mat Price" sub="₹ per unit" tint="violet"><Bars data={prices} fmt={inr} /></Card>
-      <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><Bars data={nonFree} /></Card>
+      <Card title="Highest Mat Price" sub="Val in Cr" tint="violet"><Bars data={prices} /></Card>
+      <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><StackBars data={nonFree} /></Card>
     </div>
     <Card title="Plant Analytics" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Stock Details" tint="neutral">
