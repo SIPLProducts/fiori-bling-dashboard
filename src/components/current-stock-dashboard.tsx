@@ -60,16 +60,16 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
     </section>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Value" value={lah(t.value)} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="Unrestr. Stk Val" value={lah(t.unrV)} note={`Qty ${inr(t.unrQ)}`} tone="#0f9d8a" />
-      <Tile icon={<ShieldAlert className="size-5" />} label="Quality Insp. Val" value={lah(t.qcV)} tone="#7b4fd6" />
-      <Tile icon={<Lock className="size-5" />} label="Blocked Val" value={lah(t.blkV)} tone="#d64550" />
-      <Tile icon={<ArrowLeftRight className="size-5" />} label="In Transfer Val" value={lah(t.trfV)} tone="#c06a12" />
-      <Tile icon={<Boxes className="size-5" />} label="Materials" value={String(t.materials)} note={`Qty ${inr(t.qty)}`} tone="#e08a1e" />
+      <Tile icon={<PackageCheck className="size-5" />} label="Unrestr.stk (V)" value={lah(t.unrV)} note={`Unrestr.stk (Q) ${inr(t.unrQ)}`} tone="#0f9d8a" />
+      <Tile icon={<ShieldAlert className="size-5" />} label="Stk in QC (V)" value={lah(t.qcV)} note={`Stk in QC (Q) ${inr(t.qcQ)}`} tone="#7b4fd6" />
+      <Tile icon={<ArrowLeftRight className="size-5" />} label="Restr.batch stk (V)" value={lah(t.restrV)} note={`Restr.batch stk (Q) ${inr(t.restrQ)}`} tone="#c06a12" />
+      <Tile icon={<Lock className="size-5" />} label="Block.Stk (V)" value={lah(t.blkV)} note={`Block.Stk (Q) ${inr(t.blkQ)}`} tone="#d64550" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Blk stk ret (V)" value={lah(t.retV)} note={`Blk stk ret (Q) ${inr(t.retQ)}`} tone="#1f6fd1" />
+      <Tile icon={<Boxes className="size-5" />} label="Materials" value={String(t.materials)} tone="#e08a1e" />
     </div>
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
-      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Status", "Val", "%"]} /></Card>
+      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value * 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
+      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value * 100 }))} heads={["Status", "Val", "%"]} /></Card>
       <Card title="Top 10 Materials" tint="steel"><Bars data={mats} /></Card>
       <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
     </div>

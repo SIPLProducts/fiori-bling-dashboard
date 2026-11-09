@@ -23,7 +23,9 @@ const sum = (rows: CurrentStockRow[], f: (r: CurrentStockRow) => number) => rows
 export function stockTotals(rows: CurrentStockRow[]) {
   return {
     value: sum(rows, rowValue), qty: sum(rows, rowQty), unrV: sum(rows, (r) => r.unrV), unrQ: sum(rows, (r) => r.unrQ),
-    qcV: sum(rows, (r) => r.qcV), blkV: sum(rows, (r) => r.blkV + r.restrV + r.retV), trfV: sum(rows, (r) => r.trfV),
+    qcV: sum(rows, (r) => r.qcV), qcQ: sum(rows, (r) => r.qcQ), blkV: sum(rows, (r) => r.blkV), blkQ: sum(rows, (r) => r.blkQ),
+    restrV: sum(rows, (r) => r.restrV), restrQ: sum(rows, (r) => r.restrQ), retV: sum(rows, (r) => r.retV), retQ: sum(rows, (r) => r.retQ),
+    trfV: sum(rows, (r) => r.trfV),
     nonUnrV: sum(rows, (r) => rowValue(r) - r.unrV), materials: new Set(rows.map((r) => r.material)).size,
   };
 }
