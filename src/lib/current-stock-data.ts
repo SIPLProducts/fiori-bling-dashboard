@@ -35,7 +35,7 @@ export function groupValue(rows: CurrentStockRow[], key: (r: CurrentStockRow) =>
 
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const n = (v: unknown) => Number(v) || 0;
-type Rec = Record<string, unknown>;
+type Rec = Partial<Record<"id" | "matnr" | "werks" | "lgort" | "charg" | "lgobe" | "maktx" | "meins" | "mtart" | "labst" | "wlabs" | "insme" | "winsm" | "speme" | "wspem" | "trame" | "wtram" | "rowno" | "shelfno" | "rackno" | "binno", unknown>>;
 export function toCurrentStockRow(r: Rec): CurrentStockRow {
   const unrQ = n(r.labst), unrV = n(r.wlabs), qcQ = n(r.insme), qcV = n(r.winsm), blkQ = n(r.speme), blkV = n(r.wspem), trfQ = n(r.trame), trfV = n(r.wtram);
   const q = unrQ + qcQ + blkQ + trfQ, v = unrV + qcV + blkV + trfV;
