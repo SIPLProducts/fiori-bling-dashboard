@@ -253,6 +253,13 @@
       "when": 1793868696555,
       "tag": "0035_fast_access_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794227412419,
+      "tag": "0036_current_stock",
+      "breakpoints": true
     }
   ]
 }

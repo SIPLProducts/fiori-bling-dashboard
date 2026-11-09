@@ -887,6 +887,52 @@ function mapOpenPoPayload(payload, endpointName, now = /* @__PURE__ */ new Date(
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/current-stock-map.ts
+var CURRENT_STOCK_TEXT_FIELDS = ["LGOBE", "MAKTX", "MEINS", "MTART", "ROWNO", "SHELFNO", "RACKNO", "BINNO"];
+var CURRENT_STOCK_NUMERIC_FIELDS = ["LABST", "WLABS", "INSME", "WINSM", "SPEME", "WSPEM", "TRAME", "WTRAM"];
+function isCurrentStockEndpoint(name) {
+  const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n.includes("currentstock") || n === "zcurrstk" || n.includes("zdprmisreport");
+}
+function pick9(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
+  return real ? raw[real] : void 0;
+}
+function text7(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows7(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows7(obj[key]);
+  }
+  return [];
+}
+function mapCurrentStockPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows7(payload);
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const matnr = text7(pick9(raw, "MATNR"));
+    if (!matnr) {
+      invalid++;
+      continue;
+    }
+    const werks = text7(pick9(raw, "WERKS")) ?? "", lgort = text7(pick9(raw, "LGORT")) ?? "", charg = text7(pick9(raw, "CHARG")) ?? "";
+    const row = { matnr, werks, lgort, charg, raw, source_endpoint: endpointName, synced_at: syncedAt };
+    for (const k of CURRENT_STOCK_TEXT_FIELDS) row[k.toLowerCase()] = text7(pick9(raw, k));
+    for (const k of CURRENT_STOCK_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick9(raw, k));
+    byKey.set(`${matnr}|${werks}|${lgort}|${charg}`, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+
 // ../src/lib/purchase-orders-map.ts
 var PO_TEXT_FIELDS = [
   "PO_DOC_TYPE",
@@ -948,42 +994,42 @@ function isPurchaseOrdersEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
   return n.includes("zme2n") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
 }
-function pick9(raw, key) {
+function pick10(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
 }
-function text7(v) {
+function text8(v) {
   if (v === void 0 || v === null || typeof v === "object") return null;
   const s = String(v).trim();
   return s ? s : null;
 }
-function extractRows7(payload) {
+function extractRows8(payload) {
   if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
   if (payload && typeof payload === "object") {
     const obj = payload;
-    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows7(obj[key]);
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows8(obj[key]);
   }
   return [];
 }
 function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
-  const source = extractRows7(payload);
+  const source = extractRows8(payload);
   const syncedAt = now.toISOString();
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const po = text7(pick9(raw, "PO"));
+    const po = text8(pick10(raw, "PO"));
     if (!po) {
       invalid++;
       continue;
     }
-    const poItem = text7(pick9(raw, "PO_ITEM")) ?? "";
+    const poItem = text8(pick10(raw, "PO_ITEM")) ?? "";
     const row = { po, po_item: poItem, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of PO_TEXT_FIELDS) row[k.toLowerCase()] = text7(pick9(raw, k));
-    for (const k of PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick9(raw, k));
-    row["po_date"] = orderBookDate(pick9(raw, "PO_DATE"));
-    row["delivery_date"] = orderBookDate(pick9(raw, "DELIVERY_DATE"));
-    row["doc_date"] = orderBookDate(pick9(raw, "DOC_DATE"));
+    for (const k of PO_TEXT_FIELDS) row[k.toLowerCase()] = text8(pick10(raw, k));
+    for (const k of PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick10(raw, k));
+    row["po_date"] = orderBookDate(pick10(raw, "PO_DATE"));
+    row["delivery_date"] = orderBookDate(pick10(raw, "DELIVERY_DATE"));
+    row["doc_date"] = orderBookDate(pick10(raw, "DOC_DATE"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];
@@ -994,7 +1040,7 @@ function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ n
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text8(v) {
+function text9(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -1022,7 +1068,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text8(field(raw, codeKey));
+      const code = text9(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -1030,7 +1076,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text8(field(raw, nameKey)),
+        name: text9(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -1049,8 +1095,8 @@ function stripJsonComments(raw) {
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text9) {
-  const trimmed = text9.trimStart();
+function salvageTruncatedArray(text10) {
+  const trimmed = text10.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -1085,11 +1131,11 @@ function salvageTruncatedArray(text9) {
     return null;
   }
 }
-function extractEmbeddedBody(text9) {
+function extractEmbeddedBody(text10) {
   const marker = '"body":"';
-  const start = text9.indexOf(marker);
+  const start = text10.indexOf(marker);
   if (start < 0) return null;
-  const raw = text9.slice(start + marker.length);
+  const raw = text10.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -1283,6 +1329,7 @@ export {
   extractEmbeddedBody,
   extractRows,
   formatBytes,
+  isCurrentStockEndpoint,
   isOpenPoEndpoint,
   isOpenSalesOrdersEndpoint,
   isOrderBookEndpoint,
@@ -1293,6 +1340,7 @@ export {
   isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
+  mapCurrentStockPayload,
   mapOpenPoPayload,
   mapOpenSalesOrderRow,
   mapOpenSalesOrdersPayload,

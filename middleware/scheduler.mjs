@@ -33,6 +33,8 @@ import {
   isPurchaseRegisterEndpoint,
   mapOpenPoPayload,
   isOpenPoEndpoint,
+  mapCurrentStockPayload,
+  isCurrentStockEndpoint,
   mapPurchaseOrdersPayload,
   isPurchaseOrdersEndpoint,
   keyValueObject,
@@ -207,6 +209,20 @@ export function createScheduler({ callSap, resolveSystem, logLine, newTraceId })
         removed = count ?? 0;
       }
       return { received, stored: rows.length, replaced: removed, skipped: 0, invalid, duplicates, syncScopeKey: "purchase_orders", snapshotId: null, postingFrom: null, postingTo: null };
+    }
+    if (isCurrentStockEndpoint(endpoint)) {
+      const { received, rows, invalid, duplicates } = mapCurrentStockPayload(payload, endpoint);
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const { error } = await db.from("current_stock").upsert(rows.slice(i, i + BATCH), { onConflict: "matnr,werks,lgort,charg" });
+        if (error) throw new Error(error.message);
+      }
+      let removed = 0;
+      if (rows.length) {
+        const { count, error } = await db.from("current_stock").delete({ count: "exact" }).lt("synced_at", rows[0].synced_at);
+        if (error) throw new Error(error.message);
+        removed = count ?? 0;
+      }
+      return { received, stored: rows.length, replaced: removed, skipped: 0, invalid, duplicates, syncScopeKey: "current_stock", snapshotId: null, postingFrom: null, postingTo: null };
     }
     if (isOpenPoEndpoint(endpoint)) {
       const { received, rows, invalid, duplicates } = mapOpenPoPayload(payload, endpoint);

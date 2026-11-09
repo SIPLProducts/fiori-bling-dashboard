@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Boxes, ChevronDown, IndianRupee, Lock, PackageCheck } from "lucide-react";
+import { ArrowLeftRight, Boxes, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, Donut, Tile, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
@@ -12,15 +12,15 @@ const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 const PAGE = 15;
 
-function Bars({ data }: { data: { name: string; value: number }[] }) {
+function Bars({ data, fmt = lah }: { data: { name: string; value: number }[]; fmt?: (v: number) => string }) {
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
-  return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2 text-[11px]">
+  return <ul className="space-y-1.5">{data.length ? null : <li className="text-[11px] text-muted-foreground">No stock in this view</li>}{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2 text-[11px]">
     <span className="truncate font-semibold" title={d.name}>{d.name}</span>
     <span className="h-3.5 rounded-full bg-background/60"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%`, background: radiantBar(i) }} /></span>
-    <span className="font-bold tabular-nums">{lah(d.value)}</span></li>)}</ul>;
+    <span className="font-bold tabular-nums">{fmt(d.value)}</span></li>)}</ul>;
 }
 
-export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
+export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentStockRow[]; sample?: boolean }) {
   const [f, setF] = useState({ plant: "", sloc: "", mtype: "", material: "" });
   const [open, setOpen] = useState(true);
   const [q, setQ] = useState("");
@@ -33,44 +33,56 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
   }), [rows]);
   const data = useMemo(() => rows.filter((r) => (!f.plant || r.plant === f.plant) && (!f.sloc || r.sloc === f.sloc) && (!f.mtype || r.mtype === f.mtype) && (!f.material || r.material === f.material)), [rows, f]);
   const t = stockTotals(data);
+  const mtypes = groupValue(data, (r) => r.mtype);
   const cats = STOCK_CATEGORIES.map((c) => ({ name: c.label, value: data.reduce((a, r) => a + r[c.key], 0) })).filter((c) => c.value > 0);
   const plants = groupValue(data, (r) => r.plant).map((d) => ({ ...d, value: d.value / LAH }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
-  const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
+  const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
+  const nonFree = groupValue(data, (r) => r.matDesc, (r) => r.qcV + r.blkV + r.trfV + r.restrV + r.retV).slice(0, 10);
+  const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
+  const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const ws = wb.addWorksheet("Current Stock");
-    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "UOM", "Mat.price", "Unrestr (Q)", "Unrestr (V)", "QC (Q)", "QC (V)", "Restr (Q)", "Restr (V)", "Blocked (Q)", "Blocked (V)", "Blk Ret (Q)", "Blk Ret (V)", "Total Qty", "Total Value"]).font = { bold: true };
-    table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, rowQty(r), rowValue(r)]));
+    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "Batch", "UOM", "Mat.price", "Unrestr.Stk (Q)", "Unrestr.Stk (V)", "QI (Q)", "QI (V)", "Blocked (Q)", "Blocked (V)", "Transfer (Q)", "Transfer (V)", "Row / Shelf / Rack / Bin", "Total Qty", "Total Value"]).font = { bold: true };
+    table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.batch, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.blkQ + r.restrQ + r.retQ, r.blkV + r.restrV + r.retV, r.trfQ, r.trfV, r.bin, rowQty(r), rowValue(r)]));
     const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("Current Stock", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
   };
   const field = (k: keyof typeof f, label: string, list: (string | [string, string])[]) => <label className="space-y-1 text-[10px] font-medium text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}><option value="">All</option>{list.map((o) => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <p className="-mt-2 text-xs font-semibold text-muted-foreground">Val in LAH</p>
+    <p className="-mt-2 text-xs font-semibold text-muted-foreground">Val in LAH{sample ? " · Sample sheet data (no SAP sync yet)" : ""}</p>
     <section className="rounded-xl border p-3" style={{ background: "var(--card)" }}>
       <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
     </section>
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Value" value={lah(t.value)} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="Unrestricted Val" value={lah(t.unrV)} tone="#0f9d8a" />
-      <Tile icon={<Lock className="size-5" />} label="QC / Blocked Val" value={lah(t.nonUnrV)} tone="#d64550" />
+      <Tile icon={<PackageCheck className="size-5" />} label="Unrestr. Stk Val" value={lah(t.unrV)} note={`Qty ${inr(t.unrQ)}`} tone="#0f9d8a" />
+      <Tile icon={<ShieldAlert className="size-5" />} label="Quality Insp. Val" value={lah(t.qcV)} tone="#7b4fd6" />
+      <Tile icon={<Lock className="size-5" />} label="Blocked Val" value={lah(t.blkV)} tone="#d64550" />
+      <Tile icon={<ArrowLeftRight className="size-5" />} label="In Transfer Val" value={lah(t.trfV)} tone="#c06a12" />
       <Tile icon={<Boxes className="size-5" />} label="Materials" value={String(t.materials)} note={`Qty ${inr(t.qty)}`} tone="#e08a1e" />
     </div>
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <Card title="Stock by Category" tint="sky"><Donut data={cats.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Type", "Val", "%"]} /></Card>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
+      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Status", "Val", "%"]} /></Card>
       <Card title="Top 10 Materials" tint="steel"><Bars data={mats} /></Card>
-      <Card title="Top Storage Locations" tint="peach"><Bars data={slocs} /></Card>
+      <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
+    </div>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <Card title="Top Unrestr. Stk (Q)" sub="Quantity" tint="teal"><Bars data={unrQty} fmt={inr} /></Card>
+      <Card title="Highest Mat Price" sub="₹ per unit" tint="violet"><Bars data={prices} fmt={inr} /></Card>
+      <Card title="QC / Blocked / Transfer" sub="Val in LAH" tint="amber"><Bars data={nonFree} /></Card>
     </div>
     <Card title="Plant Analytics" sub="Val in LAH" tint="copper"><PlantColumns data={plants} /></Card>
     <Card title="Stock Details" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "UOM", "Price", "Unrestr Q", "Unrestr V", "QC V", "Restr V", "Blocked V", "Blk Ret Q", "Blk Ret V", "Total V"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
-        <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.uom}</td>{[r.price, r.unrQ, r.unrV, r.qcV, r.restrV, r.blkV, r.retQ, r.retV, rowValue(r)].map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{inr(v)}</td>)}</tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.Stk (Q)", "Unrestr.Stk (V)", "QI (Q)", "QI (V)", "Blocked (Q)", "Blocked (V)", "Transfer (Q)", "Transfer (V)", "Total V", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
+        <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.batch}</td><td className="px-2 py-1">{r.uom}</td>{[r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.blkQ + r.restrQ + r.retQ, r.blkV + r.restrV + r.retV, r.trfQ, r.trfV, rowValue(r)].map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{inr(v)}</td>)}<td className="px-2 py-1">{r.bin}</td></tr>)}</tbody></table></div>
       <div className="mt-2 flex items-center gap-2 text-[11px]"><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button><span>Page {page + 1} / {pages}</span><Button size="sm" variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next</Button></div>
     </Card>
   </div>;
