@@ -24,7 +24,7 @@ function Page() {
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "inv.current-stock");
   const qc = useQueryClient();
   const stock = useQuery({ ...currentStockQuery, enabled: !!allowed });
-  return <ReportShell title="Current Stock" description="Inventory">
+  return <ReportShell title="Current Stock" description="Val in LAH">
     {!isLoading && !allowed ? <AccessDenied area="Current Stock" /> : stock.error ? <p className="text-sm text-destructive">{(stock.error as Error).message}</p> : !stock.data ? <p className="text-sm text-muted-foreground">Loading stock…</p> : <>
       <div className="mb-2 flex justify-end"><Button size="sm" variant="outline" disabled={stock.isFetching} onClick={() => qc.invalidateQueries({ queryKey: currentStockQuery.queryKey })}>{stock.isFetching ? "Refreshing…" : "Refresh"}</Button></div>
       <CurrentStockDashboard rows={stock.data.rows} sample={stock.data.sample} /></>}

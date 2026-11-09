@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, Boxes, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
@@ -54,19 +54,18 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     <select className={sel} value={f[k]} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}><option value="">All</option>{list.map((o) => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <p className="-mt-2 text-xs font-semibold text-muted-foreground">Val in LAH{sample ? " · Sample sheet data (no SAP sync yet)" : ""}</p>
     <section className="rounded-xl border p-3" style={{ background: "var(--card)" }}>
       <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
     </section>
     <div className="flex gap-1.5 overflow-x-auto pb-1">
       {([
+        ["Mat.price (V)", inr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
         ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", lah(t.unrV), "#0f9d8a", PackageCheck],
         ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", lah(t.qcV), "#7b4fd6", ShieldAlert],
         ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", lah(t.restrV), "#c06a12", ArrowLeftRight],
         ["Block.Stk (Q)", inr(t.blkQ), "#d64550", Lock], ["Block.Stk (V)", lah(t.blkV), "#d64550", Lock],
         ["Blk stk ret(Q)", inr(t.retQ), "#1f6fd1", IndianRupee], ["Blk stk ret (V)", lah(t.retV), "#1f6fd1", IndianRupee],
-        ["Materials", String(t.materials), "#e08a1e", Boxes],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-[6.75rem] flex-1 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 whitespace-nowrap text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p className="mt-1 text-lg font-bold tabular-nums leading-tight">{value}</p></div>)}
