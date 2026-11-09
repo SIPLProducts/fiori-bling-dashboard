@@ -25,6 +25,22 @@ function Bars({ data, fmt = cr }: { data: { name: string; value: number }[]; fmt
     <span className="font-bold tabular-nums">{fmt(d.value)}</span></li>)}</ul>;
 }
 
+type VQ = { name: string; value: number; qty: number; uom: string };
+function topVQ(rows: CurrentStockRow[], v: (r: CurrentStockRow) => number, q: (r: CurrentStockRow) => number): VQ[] {
+  const m = new Map<string, VQ>();
+  rows.forEach((r) => { const e = m.get(r.matDesc) ?? { name: r.matDesc, value: 0, qty: 0, uom: r.uom }; e.value += v(r); e.qty += q(r); m.set(r.matDesc, e); });
+  return [...m.values()].filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
+}
+function VQBars({ data }: { data: VQ[] }) {
+  const max = Math.max(...data.map((d) => d.value), 0) || 1;
+  if (!data.length) return <p className="text-[11px] text-muted-foreground">No stock in this view</p>;
+  return <div className="text-[11px]"><div className="mb-1 grid grid-cols-[minmax(0,10rem)_1fr_4rem_5rem] gap-2 text-[10px] font-bold text-muted-foreground"><span>Material</span><span /><span className="text-right">Val</span><span className="text-right">Qty</span></div>
+    <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,10rem)_1fr_4rem_5rem] items-center gap-2">
+      <span className="truncate font-semibold" title={d.name}>{d.name}</span>
+      <span className="h-3.5 rounded-full bg-background/60"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%`, background: radiantBar(i) }} /></span>
+      <span className="text-right font-bold tabular-nums">{cr(d.value)}</span><span className="truncate text-right tabular-nums" title={`${inr(d.qty)} ${d.uom}`}>{inr(d.qty)} {d.uom}</span></li>)}</ul></div>;
+}
+
 const NONFREE = [{ key: "qcV", label: "QC", tone: "#7b4fd6" }, { key: "blkV", label: "Blocked", tone: "#d64550" }, { key: "trfV", label: "Transfer", tone: "#1f6fd1" }] as const;
 type NF = { name: string; qcV: number; blkV: number; trfV: number; value: number };
 function StackBars({ data }: { data: NF[] }) {
@@ -61,8 +77,8 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const plants = groupValue(data, (r) => r.plant).slice(0, 15).map((d) => ({ ...d, value: d.value / CR }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
-  const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
-  const nonFree = [...data.reduce((m, r) => { const e = m.get(r.matDesc) ?? { name: r.matDesc, qcV: 0, blkV: 0, trfV: 0, value: 0 }; e.qcV += r.qcV; e.blkV += r.blkV; e.trfV += r.trfV; e.value = e.qcV + e.blkV + e.trfV; m.set(r.matDesc, e); return m; }, new Map<string, NF>()).values()].filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
+  const unrTop = topVQ(data, (r) => r.unrV, (r) => r.unrQ);
+  const qcTop = topVQ(data, (r) => r.qcV, (r) => r.qcQ);
   const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] = (acc[j] ?? 0) + v; }); return acc; }, Array<number>(7).fill(0));
@@ -103,9 +119,9 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <Card title="Top Unrestr. Stk (Q)" sub="Quantity" tint="teal"><Bars data={unrQty} fmt={inr} /></Card>
+      <Card title="Top Unrestr. Stk" sub="Val in Cr" tint="teal"><VQBars data={unrTop} /></Card>
       <Card title="Highest Mat Price" sub="Val in Cr" tint="violet"><Bars data={prices} /></Card>
-      <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><StackBars data={nonFree} /></Card>
+      <Card title="Top Stk in QC" sub="Val in Cr" tint="amber"><VQBars data={qcTop} /></Card>
     </div>
     <Card title="Plant Analytics (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Stock Details" sub="Val in Cr" tint="neutral">
