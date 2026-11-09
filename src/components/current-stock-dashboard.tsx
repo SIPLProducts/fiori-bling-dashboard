@@ -1,18 +1,22 @@
 import { useMemo, useState } from "react";
 import { ArrowLeftRight, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FilterMultiSelect } from "@/components/filter-multi-select";
+import { TINTS } from "@/lib/card-tints";
 import { Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
 import { groupValue, rowValue, STOCK_CATEGORIES, stockTotals, type CurrentStockRow } from "@/lib/current-stock-data";
 
-const LAH = 1e5;
-const lah = (v: number) => (v / LAH).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const CR = 1e7;
+const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 const PAGE = 15;
+const EMPTY = { plant: null, sloc: null, mtype: null, material: null };
+const ok = (sel: string[] | null, v: string) => !sel || sel.includes(v);
 
-function Bars({ data, fmt = lah }: { data: { name: string; value: number }[]; fmt?: (v: number) => string }) {
+function Bars({ data, fmt = cr }: { data: { name: string; value: number }[]; fmt?: (v: number) => string }) {
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
   return <ul className="space-y-1.5">{data.length ? null : <li className="text-[11px] text-muted-foreground">No stock in this view</li>}{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2 text-[11px]">
     <span className="truncate font-semibold" title={d.name}>{d.name}</span>
@@ -21,7 +25,7 @@ function Bars({ data, fmt = lah }: { data: { name: string; value: number }[]; fm
 }
 
 export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentStockRow[]; sample?: boolean }) {
-  const [f, setF] = useState({ plant: "", sloc: "", mtype: "", material: "" });
+  const [f, setF] = useState<Record<"plant" | "sloc" | "mtype" | "material", string[] | null>>(EMPTY);
   const [open, setOpen] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -31,11 +35,11 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     mtype: [...new Set(rows.map((r) => r.mtype))].sort(),
     material: [...new Map(rows.map((r) => [r.material, `${r.material} — ${r.matDesc}`]))].sort(),
   }), [rows]);
-  const data = useMemo(() => rows.filter((r) => (!f.plant || r.plant === f.plant) && (!f.sloc || r.sloc === f.sloc) && (!f.mtype || r.mtype === f.mtype) && (!f.material || r.material === f.material)), [rows, f]);
+  const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.sloc, r.sloc) && ok(f.mtype, r.mtype) && ok(f.material, r.material)), [rows, f]);
   const t = stockTotals(data);
   const mtypes = groupValue(data, (r) => r.mtype);
   const cats = STOCK_CATEGORIES.map((c) => ({ name: c.label, value: data.reduce((a, r) => a + r[c.key], 0) })).filter((c) => c.value > 0);
-  const plants = groupValue(data, (r) => r.plant).map((d) => ({ ...d, value: d.value / LAH }));
+  const plants = groupValue(data, (r) => r.plant).map((d) => ({ ...d, value: d.value / CR }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
   const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
@@ -50,43 +54,43 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.batch, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, r.trfQ, r.trfV, r.bin]));
     const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("Current Stock", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
   };
-  const field = (k: keyof typeof f, label: string, list: (string | [string, string])[]) => <label className="space-y-1 text-[10px] font-medium text-muted-foreground">{label}
-    <select className={sel} value={f[k]} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}><option value="">All</option>{list.map((o) => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>)}</select></label>;
+  const field = (k: keyof typeof f, label: string, list: (string | [string, string])[]) => <FilterMultiSelect label={label} placeholder="All" selected={f[k]} options={list.map((o) => Array.isArray(o) ? { value: o[0], label: o[1] } : { value: o, label: o })} onChange={(v) => { setF({ ...f, [k]: v.length === list.length ? null : v }); setPage(0); }} />;
 
   return <div className="space-y-3">
-    <section className="rounded-xl border p-3" style={{ background: "var(--card)" }}>
-      <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
-      {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
-    </section>
+    <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground"><span>Filters</span><ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} /></button>
+      {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-3 lg:grid-cols-5">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}
+        <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setPage(0); }}>Reset</Button></div></div> : null}
+    </div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
       {([
         ["Mat.price (V)", inr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
-        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", lah(t.unrV), "#0f9d8a", PackageCheck],
-        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", lah(t.qcV), "#7b4fd6", ShieldAlert],
-        ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", lah(t.restrV), "#c06a12", ArrowLeftRight],
-        ["Block.Stk (Q)", inr(t.blkQ), "#d64550", Lock], ["Block.Stk (V)", lah(t.blkV), "#d64550", Lock],
-        ["Blk stk ret(Q)", inr(t.retQ), "#1f6fd1", IndianRupee], ["Blk stk ret (V)", lah(t.retV), "#1f6fd1", IndianRupee],
+        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
+        ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", cr(t.restrV), "#c06a12", ArrowLeftRight],
+        ["Block.Stk (Q)", inr(t.blkQ), "#d64550", Lock], ["Block.Stk (V)", cr(t.blkV), "#d64550", Lock],
+        ["Blk stk ret(Q)", inr(t.retQ), "#1f6fd1", IndianRupee], ["Blk stk ret (V)", cr(t.retV), "#1f6fd1", IndianRupee],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
     </div>
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value * 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
-      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value * 100 }))} heads={["Status", "Val", "%"]} /></Card>
+      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value }))} heads={["Mat Type", "Val", "%"]} /></Card>
+      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value }))} heads={["Status", "Val", "%"]} /></Card>
       <Card title="Top 10 Materials" tint="steel"><Bars data={mats} /></Card>
       <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       <Card title="Top Unrestr. Stk (Q)" sub="Quantity" tint="teal"><Bars data={unrQty} fmt={inr} /></Card>
       <Card title="Highest Mat Price" sub="₹ per unit" tint="violet"><Bars data={prices} fmt={inr} /></Card>
-      <Card title="QC / Blocked / Transfer" sub="Val in LAH" tint="amber"><Bars data={nonFree} /></Card>
+      <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><Bars data={nonFree} /></Card>
     </div>
-    <Card title="Plant Analytics" sub="Val in LAH" tint="copper"><PlantColumns data={plants} /></Card>
-    <Card title="Stock Details" tint="neutral">
+    <Card title="Plant Analytics" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
+    <div data-pdf-exclude><Card title="Stock Details" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Restr.batch stk (Q)", "Restr.batch stk (V)", "Block.Stk (Q)", "Block.Stk (V)", "Blk stk ret(Q)", "Blk stk ret (V)", "Transfer (Q)", "Transfer (V)", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
         <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.batch}</td><td className="px-2 py-1">{r.uom}</td>{[r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, r.trfQ, r.trfV].map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{inr(v)}</td>)}<td className="px-2 py-1">{r.bin}</td></tr>)}</tbody></table></div>
       <div className="mt-2 flex items-center gap-2 text-[11px]"><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button><span>Page {page + 1} / {pages}</span><Button size="sm" variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next</Button></div>
-    </Card>
+    </Card></div>
   </div>;
 }
