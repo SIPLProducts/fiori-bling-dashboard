@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Boxes, ChevronDown, IndianRupee, Lock, PackageCheck } from "lucide-react";
+import { ArrowLeftRight, Boxes, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, Donut, Tile, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
@@ -12,12 +12,12 @@ const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 const PAGE = 15;
 
-function Bars({ data }: { data: { name: string; value: number }[] }) {
+function Bars({ data, fmt = lah }: { data: { name: string; value: number }[]; fmt?: (v: number) => string }) {
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
-  return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2 text-[11px]">
+  return <ul className="space-y-1.5">{data.length ? null : <li className="text-[11px] text-muted-foreground">No stock in this view</li>}{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-2 text-[11px]">
     <span className="truncate font-semibold" title={d.name}>{d.name}</span>
     <span className="h-3.5 rounded-full bg-background/60"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%`, background: radiantBar(i) }} /></span>
-    <span className="font-bold tabular-nums">{lah(d.value)}</span></li>)}</ul>;
+    <span className="font-bold tabular-nums">{fmt(d.value)}</span></li>)}</ul>;
 }
 
 export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
@@ -33,10 +33,14 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
   }), [rows]);
   const data = useMemo(() => rows.filter((r) => (!f.plant || r.plant === f.plant) && (!f.sloc || r.sloc === f.sloc) && (!f.mtype || r.mtype === f.mtype) && (!f.material || r.material === f.material)), [rows, f]);
   const t = stockTotals(data);
+  const mtypes = groupValue(data, (r) => r.mtype);
   const cats = STOCK_CATEGORIES.map((c) => ({ name: c.label, value: data.reduce((a, r) => a + r[c.key], 0) })).filter((c) => c.value > 0);
   const plants = groupValue(data, (r) => r.plant).map((d) => ({ ...d, value: d.value / LAH }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
+  const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
+  const nonFree = groupValue(data, (r) => r.matDesc, (r) => r.qcV + r.blkV + r.trfV + r.restrV + r.retV).slice(0, 10);
+  const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const exportXlsx = async () => {
@@ -55,16 +59,24 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
       <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
     </section>
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Value" value={lah(t.value)} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="Unrestricted Val" value={lah(t.unrV)} tone="#0f9d8a" />
-      <Tile icon={<Lock className="size-5" />} label="QC / Blocked Val" value={lah(t.nonUnrV)} tone="#d64550" />
+      <Tile icon={<PackageCheck className="size-5" />} label="Unrestr. Stk Val" value={lah(t.unrV)} note={`Qty ${inr(t.unrQ)}`} tone="#0f9d8a" />
+      <Tile icon={<ShieldAlert className="size-5" />} label="Quality Insp. Val" value={lah(t.qcV)} tone="#7b4fd6" />
+      <Tile icon={<Lock className="size-5" />} label="Blocked Val" value={lah(t.blkV)} tone="#d64550" />
+      <Tile icon={<ArrowLeftRight className="size-5" />} label="In Transfer Val" value={lah(t.trfV)} tone="#c06a12" />
       <Tile icon={<Boxes className="size-5" />} label="Materials" value={String(t.materials)} note={`Qty ${inr(t.qty)}`} tone="#e08a1e" />
     </div>
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      <Card title="Stock by Category" tint="sky"><Donut data={cats.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Type", "Val", "%"]} /></Card>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Card title="Value by Mat Type" tint="sky"><Donut data={mtypes.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Mat Type", "Val", "%"]} /></Card>
+      <Card title="Stock Status" tint="peach"><Donut data={cats.map((c) => ({ ...c, value: c.value / 100 }))} heads={["Status", "Val", "%"]} /></Card>
       <Card title="Top 10 Materials" tint="steel"><Bars data={mats} /></Card>
-      <Card title="Top Storage Locations" tint="peach"><Bars data={slocs} /></Card>
+      <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
+    </div>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <Card title="Top Unrestr. Stk (Q)" sub="Quantity" tint="teal"><Bars data={unrQty} fmt={inr} /></Card>
+      <Card title="Highest Mat Price" sub="₹ per unit" tint="violet"><Bars data={prices} fmt={inr} /></Card>
+      <Card title="QC / Blocked / Transfer" sub="Val in LAH" tint="amber"><Bars data={nonFree} /></Card>
     </div>
     <Card title="Plant Analytics" sub="Val in LAH" tint="copper"><PlantColumns data={plants} /></Card>
     <Card title="Stock Details" tint="neutral">
