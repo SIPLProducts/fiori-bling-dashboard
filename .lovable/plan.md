@@ -6,3 +6,7 @@
 
 ## Technical
 - `src/components/current-stock-dashboard.tsx`: group by matDesc summing unrV and unrQ, sort by unrV, slice 10; render a small Val/Qty list using the same radiant bars.
+
+# QC card
+- Rename "QC / Blocked / Transfer" to "Top Stk in QC".
+- Show top 10 materials by QC value (WINSM) only, with Val (Cr) and Qty (INSME) columns, same style as Top Unrestr. Stk. Blocked and Transfer removed from this card.
