@@ -87,11 +87,11 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
       {([
         ["Mat.price (V)", cr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
-        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
-        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
-        ["Restr.batch stk (Q)", inr(t.restrQ), "#c06a12", ArrowLeftRight], ["Restr.batch stk (V)", cr(t.restrV), "#c06a12", ArrowLeftRight],
-        ["Block.Stk (Q)", inr(t.blkQ), "#d64550", Lock], ["Block.Stk (V)", cr(t.blkV), "#d64550", Lock],
-        ["Blk stk ret(Q)", inr(t.retQ), "#1f6fd1", IndianRupee], ["Blk stk ret (V)", cr(t.retV), "#1f6fd1", IndianRupee],
+        ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
+        ["Restr.batch stk (V)", cr(t.restrV), "#c06a12", ArrowLeftRight],
+        ["Block.Stk (V)", cr(t.blkV), "#d64550", Lock],
+        ["Blk stk ret (V)", cr(t.retV), "#1f6fd1", IndianRupee],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
