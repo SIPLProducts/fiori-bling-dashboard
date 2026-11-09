@@ -63,6 +63,6 @@ export async function getCurrentStock(): Promise<{ rows: CurrentStockRow[]; samp
     if (!data || data.length < PAGE) break;
     after = String((data[data.length - 1] as Rec).id);
   }
-  return out.length ? { rows: out.map(toCurrentStockRow), sample: false } : { rows: CURRENT_STOCK_SAMPLE, sample: true };
+  return { rows: out.map(toCurrentStockRow), sample: false };
 }
 export const currentStockQuery = queryOptions({ queryKey: ["current-stock", "v1"], queryFn: getCurrentStock, staleTime: Infinity, refetchOnWindowFocus: false });
