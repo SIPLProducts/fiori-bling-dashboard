@@ -6,7 +6,7 @@ import { TINTS } from "@/lib/card-tints";
 import { Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
-import { groupValue, rowValue, STOCK_CATEGORIES, stockTotals, type CurrentStockRow } from "@/lib/current-stock-data";
+import { groupValue, rowValue, stockTotals, type CurrentStockRow } from "@/lib/current-stock-data";
 
 const CR = 1e7;
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -57,7 +57,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.sloc, r.sloc) && ok(f.mtype, r.mtype) && ok(f.material, r.material)), [rows, f]);
   const t = stockTotals(data);
   const mtypes = groupValue(data, (r) => r.mtype);
-  const cats = STOCK_CATEGORIES.map((c) => ({ name: c.label, value: data.reduce((a, r) => a + r[c.key], 0) })).filter((c) => c.value > 0);
+  const cats = [{ name: "Unrestricted", value: t.unrV }, { name: "Stk in QC", value: t.qcV }].filter((c) => c.value > 0);
   const plants = groupValue(data, (r) => r.plant).slice(0, 15).map((d) => ({ ...d, value: d.value / CR }));
   const slocs = groupValue(data, (r) => `${r.sloc} ${r.slocDesc}`).slice(0, 10);
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
@@ -84,11 +84,11 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-3 lg:grid-cols-5">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       {([
         ["Mat.price (V)", cr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
-        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
-        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
+        ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
         
         
         
