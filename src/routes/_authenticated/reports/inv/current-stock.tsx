@@ -1,5 +1,7 @@
 import { CurrentStockDashboard } from "@/components/current-stock-dashboard";
-import { CURRENT_STOCK_SAMPLE } from "@/lib/current-stock-data";
+import { currentStockQuery } from "@/lib/current-stock-data";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { hasScreen } from "@/lib/screens";
@@ -20,7 +22,11 @@ export const Route = createFileRoute("/_authenticated/reports/inv/current-stock"
 function Page() {
   const { data, isLoading } = useLaunchpad();
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "inv.current-stock");
+  const qc = useQueryClient();
+  const stock = useQuery({ ...currentStockQuery, enabled: !!allowed });
   return <ReportShell title="Current Stock" description="Inventory">
-    {!isLoading && !allowed ? <AccessDenied area="Current Stock" /> : <CurrentStockDashboard rows={CURRENT_STOCK_SAMPLE} />}
+    {!isLoading && !allowed ? <AccessDenied area="Current Stock" /> : stock.error ? <p className="text-sm text-destructive">{(stock.error as Error).message}</p> : !stock.data ? <p className="text-sm text-muted-foreground">Loading stock…</p> : <>
+      <div className="mb-2 flex justify-end"><Button size="sm" variant="outline" disabled={stock.isFetching} onClick={() => qc.invalidateQueries({ queryKey: currentStockQuery.queryKey })}>{stock.isFetching ? "Refreshing…" : "Refresh"}</Button></div>
+      <CurrentStockDashboard rows={stock.data.rows} sample={stock.data.sample} /></>}
   </ReportShell>;
 }

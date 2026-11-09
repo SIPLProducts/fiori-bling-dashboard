@@ -20,7 +20,7 @@ function Bars({ data, fmt = lah }: { data: { name: string; value: number }[]; fm
     <span className="font-bold tabular-nums">{fmt(d.value)}</span></li>)}</ul>;
 }
 
-export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
+export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentStockRow[]; sample?: boolean }) {
   const [f, setF] = useState({ plant: "", sloc: "", mtype: "", material: "" });
   const [open, setOpen] = useState(true);
   const [q, setQ] = useState("");
@@ -41,20 +41,20 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
   const unrQty = groupValue(data, (r) => `${r.matDesc} (${r.uom})`, (r) => r.unrQ).slice(0, 10);
   const nonFree = groupValue(data, (r) => r.matDesc, (r) => r.qcV + r.blkV + r.trfV + r.restrV + r.retV).slice(0, 10);
   const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
-  const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
+  const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const ws = wb.addWorksheet("Current Stock");
-    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "UOM", "Mat.price", "Unrestr (Q)", "Unrestr (V)", "QC (Q)", "QC (V)", "Restr (Q)", "Restr (V)", "Blocked (Q)", "Blocked (V)", "Blk Ret (Q)", "Blk Ret (V)", "Total Qty", "Total Value"]).font = { bold: true };
-    table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, rowQty(r), rowValue(r)]));
+    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "Batch", "UOM", "Mat.price", "Unrestr.Stk (Q)", "Unrestr.Stk (V)", "QI (Q)", "QI (V)", "Blocked (Q)", "Blocked (V)", "Transfer (Q)", "Transfer (V)", "Row / Shelf / Rack / Bin", "Total Qty", "Total Value"]).font = { bold: true };
+    table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.batch, r.uom, r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.blkQ + r.restrQ + r.retQ, r.blkV + r.restrV + r.retV, r.trfQ, r.trfV, r.bin, rowQty(r), rowValue(r)]));
     const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("Current Stock", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
   };
   const field = (k: keyof typeof f, label: string, list: (string | [string, string])[]) => <label className="space-y-1 text-[10px] font-medium text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}><option value="">All</option>{list.map((o) => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>)}</select></label>;
 
   return <div className="space-y-3">
-    <p className="-mt-2 text-xs font-semibold text-muted-foreground">Val in LAH</p>
+    <p className="-mt-2 text-xs font-semibold text-muted-foreground">Val in LAH{sample ? " · Sample sheet data (no SAP sync yet)" : ""}</p>
     <section className="rounded-xl border p-3" style={{ background: "var(--card)" }}>
       <div className="flex items-center justify-between"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-sm font-semibold"><ChevronDown className={`size-4 transition ${open ? "" : "-rotate-90"}`} />Filters</button><Button size="sm" variant="outline" onClick={() => setF({ plant: "", sloc: "", mtype: "", material: "" })}>Reset</Button></div>
       {open ? <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}</div> : null}
@@ -81,8 +81,8 @@ export function CurrentStockDashboard({ rows }: { rows: CurrentStockRow[] }) {
     <Card title="Plant Analytics" sub="Val in LAH" tint="copper"><PlantColumns data={plants} /></Card>
     <Card title="Stock Details" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "UOM", "Price", "Unrestr Q", "Unrestr V", "QC V", "Restr V", "Blocked V", "Blk Ret Q", "Blk Ret V", "Total V"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
-        <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.uom}</td>{[r.price, r.unrQ, r.unrV, r.qcV, r.restrV, r.blkV, r.retQ, r.retV, rowValue(r)].map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{inr(v)}</td>)}</tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.Stk (Q)", "Unrestr.Stk (V)", "QI (Q)", "QI (V)", "Blocked (Q)", "Blocked (V)", "Transfer (Q)", "Transfer (V)", "Total V", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
+        <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.batch}</td><td className="px-2 py-1">{r.uom}</td>{[r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.blkQ + r.restrQ + r.retQ, r.blkV + r.restrV + r.retV, r.trfQ, r.trfV, rowValue(r)].map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{inr(v)}</td>)}<td className="px-2 py-1">{r.bin}</td></tr>)}</tbody></table></div>
       <div className="mt-2 flex items-center gap-2 text-[11px]"><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button><span>Page {page + 1} / {pages}</span><Button size="sm" variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next</Button></div>
     </Card>
   </div>;
