@@ -1,5 +1,6 @@
+import { CurrentStockDashboard } from "@/components/current-stock-dashboard";
+import { CURRENT_STOCK_SAMPLE } from "@/lib/current-stock-data";
 import { createFileRoute } from "@tanstack/react-router";
-import { ModuleComingSoon } from "@/components/module-coming-soon";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { hasScreen } from "@/lib/screens";
 import { useLaunchpad } from "@/lib/use-launchpad";
@@ -20,6 +21,6 @@ function Page() {
   const { data, isLoading } = useLaunchpad();
   const allowed = data?.isSuperAdmin || hasScreen(data?.screens, "inv.current-stock");
   return <ReportShell title="Current Stock" description="Inventory">
-    {!isLoading && !allowed ? <AccessDenied area="Current Stock" /> : <ModuleComingSoon title="Current Stock" />}
+    {!isLoading && !allowed ? <AccessDenied area="Current Stock" /> : <CurrentStockDashboard rows={CURRENT_STOCK_SAMPLE} />}
   </ReportShell>;
 }
