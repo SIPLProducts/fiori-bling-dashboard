@@ -65,7 +65,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const nonFree = [...data.reduce((m, r) => { const e = m.get(r.matDesc) ?? { name: r.matDesc, qcV: 0, blkV: 0, trfV: 0, value: 0 }; e.qcV += r.qcV; e.blkV += r.blkV; e.trfV += r.trfV; e.value = e.qcV + e.blkV + e.trfV; m.set(r.matDesc, e); return m; }, new Map<string, NF>()).values()].filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
   const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
-  const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] += v; }); return acc; }, Array(13).fill(0) as number[]);
+  const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] = (acc[j] ?? 0) + v; }); return acc; }, Array<number>(13).fill(0));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
@@ -108,7 +108,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       <Card title="QC / Blocked / Transfer" sub="Val in Cr" tint="amber"><StackBars data={nonFree} /></Card>
     </div>
     <Card title="Plant Analytics (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
-    <div data-pdf-exclude><Card title="Stock Details" tint="neutral">
+    <div data-pdf-exclude><Card title="Stock Details" sub="Val in Cr" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Restr.batch stk (Q)", "Restr.batch stk (V)", "Block.Stk (Q)", "Block.Stk (V)", "Blk stk ret(Q)", "Blk stk ret (V)", "Transfer (Q)", "Transfer (V)", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
         <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.batch}</td><td className="px-2 py-1">{r.uom}</td>{numCols(r).map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{j % 2 === 0 ? cr(v) : inr(v)}</td>)}<td className="px-2 py-1">{r.bin}</td></tr>)}</tbody><tfoot><tr className="border-t-2 border-border font-bold"><td className="px-2 py-1.5" colSpan={6}>Total ({table.length} lines)</td>{totals.map((v, j) => <td key={j} className="px-2 py-1.5 text-right tabular-nums">{j % 2 === 0 ? cr(v) : inr(v)}</td>)}<td /></tr></tfoot></table></div>
