@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ChevronDown, IndianRupee, Lock, PackageCheck, ShieldAlert } from "lucide-react";
+import { ChevronDown, IndianRupee, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { TINTS } from "@/lib/card-tints";
@@ -13,7 +13,7 @@ const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigi
 const inr = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 const PAGE = 15;
-const numCols = (r: CurrentStockRow) => [r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.restrQ, r.restrV, r.blkQ, r.blkV, r.retQ, r.retV, r.trfQ, r.trfV];
+const numCols = (r: CurrentStockRow) => [r.price, r.unrQ, r.unrV, r.qcQ, r.qcV, r.trfQ, r.trfV];
 const EMPTY = { plant: null, sloc: null, mtype: null, material: null };
 const ok = (sel: string[] | null, v: string) => !sel || sel.includes(v);
 
@@ -65,12 +65,12 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const nonFree = [...data.reduce((m, r) => { const e = m.get(r.matDesc) ?? { name: r.matDesc, qcV: 0, blkV: 0, trfV: 0, value: 0 }; e.qcV += r.qcV; e.blkV += r.blkV; e.trfV += r.trfV; e.value = e.qcV + e.blkV + e.trfV; m.set(r.matDesc, e); return m; }, new Map<string, NF>()).values()].filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
   const prices = [...new Map(data.filter((r) => r.price > 0).map((r) => [r.material, { name: `${r.matDesc} / ${r.uom}`, value: r.price }])).values()].sort((a, b) => b.value - a.value).slice(0, 10);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
-  const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] = (acc[j] ?? 0) + v; }); return acc; }, Array<number>(13).fill(0));
+  const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] = (acc[j] ?? 0) + v; }); return acc; }, Array<number>(7).fill(0));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const ws = wb.addWorksheet("Current Stock");
-    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "Batch", "UOM", "Mat.price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Restr.batch stk (Q)", "Restr.batch stk (V)", "Block.Stk (Q)", "Block.Stk (V)", "Blk stk ret(Q)", "Blk stk ret (V)", "Transfer (Q)", "Transfer (V)", "Row / Shelf / Rack / Bin"]).font = { bold: true };
+    ws.addRow(["Plant", "St.Locn", "Location Desc", "Mat.type", "Material", "Description", "Batch", "UOM", "Mat.price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Transfer (Q)", "Transfer (V)", "Row / Shelf / Rack / Bin"]).font = { bold: true };
     const x = (vals: number[]) => vals.map((v, j) => j % 2 === 0 ? Math.round((v / CR) * 100) / 100 : v);
     table.forEach((r) => ws.addRow([r.plant, r.sloc, r.slocDesc, r.mtype, r.material, r.matDesc, r.batch, r.uom, ...x(numCols(r)), r.bin]));
     ws.addRow(["Total", "", "", "", "", "", "", "", ...x(totals), ""]).font = { bold: true };
@@ -84,14 +84,14 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-3 lg:grid-cols-5">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
       {([
         ["Mat.price (V)", cr(data.reduce((a, r) => a + r.price, 0)), "#5c6bc0", IndianRupee],
-        ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
-        ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
-        ["Restr.batch stk (V)", cr(t.restrV), "#c06a12", ArrowLeftRight],
-        ["Block.Stk (V)", cr(t.blkV), "#d64550", Lock],
-        ["Blk stk ret (V)", cr(t.retV), "#1f6fd1", IndianRupee],
+        ["Unrestr.stk (Q)", inr(t.unrQ), "#0f9d8a", PackageCheck], ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC (Q)", inr(t.qcQ), "#7b4fd6", ShieldAlert], ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
+        
+        
+        
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
@@ -110,7 +110,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
     <Card title="Plant Analytics (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Stock Details" sub="Val in Cr" tint="neutral">
       <div className="mb-2 flex flex-wrap items-center gap-2"><input className="h-8 w-60 rounded-md border border-border bg-background px-2 text-xs" placeholder="Search plant, location, material…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /><Button size="sm" variant="outline" onClick={exportXlsx}>Excel</Button><span className="text-[11px] text-muted-foreground">{table.length} lines</span></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Restr.batch stk (Q)", "Restr.batch stk (V)", "Block.Stk (Q)", "Block.Stk (V)", "Blk stk ret(Q)", "Blk stk ret (V)", "Transfer (Q)", "Transfer (V)", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1400px] text-[11px]"><thead><tr className="border-b text-left">{["Plant", "St.Locn", "Material", "Description", "Batch", "UOM", "Mat Price", "Unrestr.stk (Q)", "Unrestr.stk (V)", "Stk in QC (Q)", "Stk in QC (V)", "Transfer (Q)", "Transfer (V)", "Bin"].map((h) => <th key={h} className="px-2 py-1.5 font-bold">{h}</th>)}</tr></thead>
         <tbody>{table.slice(page * PAGE, page * PAGE + PAGE).map((r, i) => <tr key={i} className="border-b border-border/50"><td className="px-2 py-1">{r.plant}</td><td className="px-2 py-1" title={r.slocDesc}>{r.sloc}</td><td className="px-2 py-1">{r.material}</td><td className="px-2 py-1">{r.matDesc}</td><td className="px-2 py-1">{r.batch}</td><td className="px-2 py-1">{r.uom}</td>{numCols(r).map((v, j) => <td key={j} className="px-2 py-1 text-right tabular-nums">{j % 2 === 0 ? cr(v) : inr(v)}</td>)}<td className="px-2 py-1">{r.bin}</td></tr>)}</tbody><tfoot><tr className="border-t-2 border-border font-bold"><td className="px-2 py-1.5" colSpan={6}>Total ({table.length} lines)</td>{totals.map((v, j) => <td key={j} className="px-2 py-1.5 text-right tabular-nums">{j % 2 === 0 ? cr(v) : inr(v)}</td>)}<td /></tr></tfoot></table></div>
       <div className="mt-2 flex items-center gap-2 text-[11px]"><Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button><span>Page {page + 1} / {pages}</span><Button size="sm" variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next</Button></div>
     </Card></div>
