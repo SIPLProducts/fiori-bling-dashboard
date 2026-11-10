@@ -831,6 +831,7 @@ function mapPurchaseRegisterPayload(payload, endpointName, now = /* @__PURE__ */
     for (const k of PURCHASE_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text5(pick7(raw, k));
     for (const k of PURCHASE_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick7(raw, k));
     for (const k of PURCHASE_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick7(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
   }
   const rows = [...byKey.values()];
