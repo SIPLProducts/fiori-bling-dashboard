@@ -9,13 +9,15 @@ import type { MaterialTrend } from "@/lib/purchase-material-trend";
 import { datedFileName } from "@/lib/format";
 import { MONTHS, PURCHASE_TYPES, sumValues, type PurchaseType } from "@/lib/purchase-register-sample";
 import { currentFy, fyLabel, monthOf, monthly, quarters, rankBy, typeTotals, type PurchaseRow } from "@/lib/purchase-register-data";
+import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { TINTS, type Tint } from "@/lib/card-tints";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0"];
 const TYPE_COLOR: Record<PurchaseType, number> = { Domestic: 0, Imported: 3, Service: 4 };
 const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const CARD_TINT: Record<string, Tint> = { "Purchase Trend": "sky", "Purchase by Type": "peach", "Top Materials": "steel", "Top Vendors": "rose", "Material Group": "teal", "Material Group Summary": "violet", "Monthly Expenditure": "amber", "Quarterly Comparison": "mint", "Plant Analytics": "copper" };
+const CARD_TINT: Record<string, Tint> = { "Purchase Trend": "sky", "Purchase by Type": "peach", "Top Materials": "steel", "Top Vendors": "rose", "Material Group": "teal", "Material Group Summary": "violet", "Monthly Expenditure": "amber", "Quarterly Comparison": "mint", "Plant Analytics": "copper", "Value by Main Group": "teal", "Value by Sub Group 1": "violet", "Value by Sub Group 2": "amber", "Value by Sub Group 3": "mint" };
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
   const tint = TINTS[CARD_TINT[title] ?? "neutral"];
   return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={tint}>
@@ -71,17 +73,19 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const [month, setMonth] = useState("");
   const [plant, setPlant] = useState("");
   const [group, setGroup] = useState("");
+  const [mainGrp, setMainGrp] = useState("");
+  const [subGrp, setSubGrp] = useState("");
   const [postFrom, setPostFrom] = useState("");
   const [postTo, setPostTo] = useState("");
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const types = type ? [type] : PURCHASE_TYPES;
-  const base = (r: PurchaseRow) => (!plant || r.plant === plant) && (!group || r.group === group) && (!month || monthOf(r.date) === month)
+  const base = (r: PurchaseRow) => (!plant || r.plant === plant) && (!group || r.group === group) && (!mainGrp || r.mainGroup === mainGrp) && (!subGrp || r.subGroup === subGrp) && (!month || monthOf(r.date) === month)
     && (!postFrom || r.date >= postFrom) && (!postTo || r.date <= postTo);
   const yearRows = rows;
-  const noType = useMemo(() => yearRows.filter(base), [yearRows, plant, group, month, postFrom, postTo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const noType = useMemo(() => yearRows.filter(base), [yearRows, plant, group, mainGrp, subGrp, month, postFrom, postTo]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => noType.filter((r) => !type || r.type === type), [noType, type]);
   const [openMat, setOpenMat] = useState<MaterialTrend | null>(null);
-  const prevRows = useMemo(() => prevYearRows.filter((r) => base(r) && (!type || r.type === type)), [prevYearRows, plant, group, month, postFrom, postTo, type]); // eslint-disable-line react-hooks/exhaustive-deps
+  const prevRows = useMemo(() => prevYearRows.filter((r) => base(r) && (!type || r.type === type)), [prevYearRows, plant, group, mainGrp, subGrp, month, postFrom, postTo, type]); // eslint-disable-line react-hooks/exhaustive-deps
   const TYPE_TOTALS = typeTotals(noType);
   const TOTAL_PURCHASE = sumValues(PURCHASE_TYPES.map((t) => ({ value: TYPE_TOTALS[t] })));
   const monthlyData = monthly(filtered, types).filter((r) => !month || r.month === month);
@@ -91,6 +95,10 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   for (const r of yearRows) { const e = plantInfo.get(r.plant); if (!e || (!e.sh && r.plantSh) || (!e.full && r.plantFull)) plantInfo.set(r.plant, { full: e?.full || r.plantFull || "", sh: e?.sh || r.plantSh || "" }); }
   const allGroups = rankBy(yearRows.filter((r) => !type || r.type === type), (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const groups = rankBy(filtered, (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
+  const uniq = (k: "mainGroup" | "subGroup") => [...new Set(yearRows.map((r) => r[k] ?? "").filter(Boolean))].sort();
+  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.map((r, i) => ({ name: r[k] ?? "", value: r.value, order: r.docNo || String(i), division: r.plantSh || r.plantName || r.plant }));
+  const mainG = summarizeGroupsByDivision(grpRows("mainGroup"), (r) => r.name);
+  const subGs = [["Sub Group 1", summarizeGroupsByDivision(grpRows("subGroup"), (r) => r.name)], ["Sub Group 2", summarizeGroupsByDivision(grpRows("subGroup2"), (r) => r.name)], ["Sub Group 3", summarizeGroupsByDivision(grpRows("subGroup3"), (r) => r.name)]] as const;
   const materials = rankBy(filtered, (r) => r.material, (r) => r.materialName);
   const vendors = rankBy(filtered, (r) => r.vendor, (r) => r.vendorName);
   const qData = quarters(filtered, prevRows);
@@ -117,10 +125,12 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
       <select className={sel} value={plant} onChange={(e) => setPlant(e.target.value)} aria-label="Plant"><option value="">All Plants</option>{PLANTS.map((p) => <option key={p.code} value={p.code}>{p.code} — {p.name}</option>)}</select>
       <select className={sel} value={type} onChange={(e) => setType(e.target.value as "" | PurchaseType)} aria-label="Type"><option value="">All Types</option>{PURCHASE_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
       <select className={sel} value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Material Group"><option value="">All Material Groups</option>{allGroups.map((g) => <option key={g.name}>{g.name}</option>)}</select>
+      <select className={sel} value={mainGrp} onChange={(e) => setMainGrp(e.target.value)} aria-label="Main Group"><option value="">All Main Groups</option>{uniq("mainGroup").map((g) => <option key={g}>{g}</option>)}</select>
+      <select className={sel} value={subGrp} onChange={(e) => setSubGrp(e.target.value)} aria-label="Sub Group"><option value="">All Sub Groups</option>{uniq("subGroup").map((g) => <option key={g}>{g}</option>)}</select>
       <select className={sel} value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month"><option value="">All Months</option>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select>
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date From<input type="date" className={sel} value={postFrom} max={postTo || undefined} onChange={(e) => setPostFrom(e.target.value)} aria-label="Posting Date From" /></label>
       <label className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">Posting Date To<input type="date" className={sel} value={postTo} min={postFrom || undefined} onChange={(e) => setPostTo(e.target.value)} aria-label="Posting Date To" /></label>
-      <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setYear(null); setType(""); setMonth(""); setPlant(""); setGroup(""); setPostFrom(""); setPostTo(""); }}>Reset</Button>
+      <Button type="button" variant="reset" size="sm" className="h-8 text-xs" onClick={() => { setYear(null); setType(""); setMonth(""); setPlant(""); setGroup(""); setMainGrp(""); setSubGrp(""); setPostFrom(""); setPostTo(""); }}>Reset</Button>
       </div>}
     </div>
 
@@ -183,6 +193,13 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3">
+      <Card title="Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+    </div>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      {subGs.map(([label, g]) => <Card key={label} title={`Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
+    </div>
+
+    <div className="grid grid-cols-1 gap-3">
       <Card title="Plant Analytics" sub={<span className="inline-flex items-center gap-1"><Factory className="size-3" />Top 10</span>}>
         <Columns data={plants.map((p) => ({ name: plantInfo.get(p.code)?.sh || p.code, value: p.value }))} height={170} />
         <table className="w-full text-[10px]"><thead className="bg-primary/5 text-primary"><tr><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Plant Name</th><th className="px-1.5 py-1 text-left">Short Name</th><th className="px-1.5 py-1 text-right">Amount</th></tr></thead>
@@ -198,22 +215,22 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
-  const list = useMemo(() => [...rows].filter((r) => !s || [r.docNo, r.grNo, r.vendorName, r.vendor, r.material, r.materialName, r.plant].some((v) => (v ?? "").toLowerCase().includes(s))).sort((a, b) => b.date.localeCompare(a.date)), [rows, s]);
+  const list = useMemo(() => [...rows].filter((r) => !s || [r.docNo, r.grNo, r.vendorName, r.vendor, r.material, r.materialName, r.plant, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => (v ?? "").toLowerCase().includes(s))).sort((a, b) => b.date.localeCompare(a.date)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
   const dmy = (d: string) => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "";
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
-    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Amount"]);
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"]);
     h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, Number(r.value.toFixed(4))]));
+    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, Number(r.value.toFixed(4))]));
     sh.columns.forEach((c) => { c.width = 20; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Amount"];
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"];
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Purchase Register Details</h2>
@@ -228,7 +245,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
         <td className="px-2 py-1">{p * size + i + 1}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.date)}</td>
         <td className="px-2 py-1 font-medium text-primary">{r.docNo}</td><td className="px-2 py-1">{r.grNo}</td><td className="px-2 py-1">{r.type}</td>
         <td className="whitespace-nowrap px-2 py-1">{[r.plant, r.plantName].filter(Boolean).join(" — ")}</td><td className="px-2 py-1">{r.profitCenter}</td>
-        <td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.group}</td>
+        <td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.group}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup2}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup3}</td>
         <td className="px-2 py-1 text-right tabular-nums">{fmt(r.value)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No Purchase Register data for these filters.</td></tr>}</tbody>
       {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={heads.length - 1} className="px-2 py-1.5">Total ({list.length} lines)</td><td className="px-2 py-1.5 text-right tabular-nums">{fmt(list.reduce((a, r) => a + r.value, 0))}</td></tr></tfoot>}

@@ -7,8 +7,9 @@ export type PurchaseRow = {
   docNo?: string; grNo?: string; plantFull?: string; plantSh?: string;
   /** Quantity (MENGE_I), unit (MEINS_I) and ₹ per unit (net value ÷ qty, else NET_PRICE). */
   qty?: number; unit?: string; rate?: number;
+  mainGroup?: string; subGroup?: string; subGroup2?: string; subGroup3?: string;
 };
-type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt" | "menge_i" | "meins_i" | "net_price", string | number | null>>;
+type Rec = Partial<Record<"belnr" | "mblnr" | "budat" | "werks" | "name1_wer" | "plant_sh" | "prctr" | "ptext" | "lifnr" | "name1" | "matnr" | "maktx" | "ty_mat" | "ty_purch" | "shkzg" | "net_amt" | "menge_i" | "meins_i" | "net_price" | "mngrp1" | "pcgrp1" | "pcgrp2" | "pcgrp3", string | number | null>>;
 const t = (v: unknown) => (v == null ? "" : String(v)).trim();
 const CR = 1e7;
 
@@ -24,10 +25,11 @@ export function toPurchaseRow(r: Rec): PurchaseRow {
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr), material: t(r.matnr), materialName: t(r.maktx) || t(r.matnr),
     group: t(r.ty_mat) || "Others", type, value: value / CR, docNo: t(r.belnr), grNo: t(r.mblnr),
     qty, unit: t(r.meins_i), rate: qty > 0 && raw > 0 ? raw / qty : Number(r.net_price) || 0,
+    mainGroup: t(r.mngrp1) || "Others", subGroup: t(r.pcgrp1) || "Others", subGroup2: t(r.pcgrp2), subGroup3: t(r.pcgrp3),
   };
 }
 
-const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,plant_sh,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt,menge_i,meins_i,net_price";
+const COLS = "id,belnr,buzei,mblnr,zeile,budat,werks,name1_wer,plant_sh,prctr,ptext,lifnr,name1,matnr,maktx,ty_mat,ty_purch,shkzg,net_amt,menge_i,meins_i,net_price,mngrp1,pcgrp1,pcgrp2,pcgrp3";
 const PAGE = 1000, CONCURRENCY = 8;
 
 /** April–March FY window (YYYY-MM-DD). */
@@ -74,7 +76,7 @@ export async function getPurchaseRows(fy: number): Promise<PurchaseRow[]> {
 
 const stable = { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false } as const;
 
-export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v8-keyset", fy], queryFn: () => getPurchaseRows(fy), ...stable });
+export const purchaseRegisterFyQuery = (fy: number) => ({ queryKey: ["purchase-register", "v9-groups", fy], queryFn: () => getPurchaseRows(fy), ...stable });
 
 export const purchaseRegisterYearsQuery = {
   queryKey: ["purchase-register", "v5-years"],
