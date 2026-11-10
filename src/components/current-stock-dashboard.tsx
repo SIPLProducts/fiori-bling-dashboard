@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, IndianRupee, PackageCheck, ShieldAlert } from "lucide-react";
+import { ChevronDown, PackageCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { TINTS } from "@/lib/card-tints";
