@@ -1081,6 +1081,7 @@ export type Database = {
           meins_i: string | null
           menge_g: number | null
           menge_i: number | null
+          mngrp1: string | null
           mtbez: string | null
           mwskz: string | null
           name1: string | null
@@ -1089,6 +1090,9 @@ export type Database = {
           net_price: number | null
           no_cr: number | null
           oth: number | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           plan_del: number | null
           plant_sh: string | null
           prctr: string | null
@@ -1130,6 +1134,7 @@ export type Database = {
           meins_i?: string | null
           menge_g?: number | null
           menge_i?: number | null
+          mngrp1?: string | null
           mtbez?: string | null
           mwskz?: string | null
           name1?: string | null
@@ -1138,6 +1143,9 @@ export type Database = {
           net_price?: number | null
           no_cr?: number | null
           oth?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plan_del?: number | null
           plant_sh?: string | null
           prctr?: string | null
@@ -1179,6 +1187,7 @@ export type Database = {
           meins_i?: string | null
           menge_g?: number | null
           menge_i?: number | null
+          mngrp1?: string | null
           mtbez?: string | null
           mwskz?: string | null
           name1?: string | null
@@ -1187,6 +1196,9 @@ export type Database = {
           net_price?: number | null
           no_cr?: number | null
           oth?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plan_del?: number | null
           plant_sh?: string | null
           prctr?: string | null
