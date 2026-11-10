@@ -25,7 +25,7 @@ export function toPurchaseRow(r: Rec): PurchaseRow {
     vendor: t(r.lifnr), vendorName: t(r.name1) || t(r.lifnr), material: t(r.matnr), materialName: t(r.maktx) || t(r.matnr),
     group: t(r.ty_mat) || "Others", type, value: value / CR, docNo: t(r.belnr), grNo: t(r.mblnr),
     qty, unit: t(r.meins_i), rate: qty > 0 && raw > 0 ? raw / qty : Number(r.net_price) || 0,
-    mainGroup: t(r.mngrp1) || "Others", subGroup: t(r.pcgrp1) || "Others", subGroup2: t(r.pcgrp2), subGroup3: t(r.pcgrp3),
+    mainGroup: t(r.mngrp1), subGroup: t(r.pcgrp1), subGroup2: t(r.pcgrp2), subGroup3: t(r.pcgrp3),
   };
 }
 
