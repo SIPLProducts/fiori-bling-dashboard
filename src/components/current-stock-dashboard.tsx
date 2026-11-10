@@ -79,6 +79,7 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
   const mats = groupValue(data, (r) => r.matDesc).slice(0, 10);
   const unrTop = topVQ(data, (r) => r.unrV, (r) => r.unrQ);
   const qcTop = topVQ(data, (r) => r.qcV, (r) => r.qcQ);
+  const blkTop = topVQ(data, (r) => r.blkV, (r) => r.blkQ);
   const table = data.filter((r) => !q || `${r.plant} ${r.sloc} ${r.slocDesc} ${r.material} ${r.matDesc} ${r.batch} ${r.bin}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => rowValue(b) - rowValue(a));
   const totals = table.reduce((acc, r) => { numCols(r).forEach((v, j) => { acc[j] = (acc[j] ?? 0) + v; }); return acc; }, Array<number>(6).fill(0));
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
@@ -116,9 +117,10 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       <Card title="Top 10 Materials" tint="steel"><Bars data={mats} /></Card>
       <Card title="Top Storage Locations" tint="rose"><Bars data={slocs} /></Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card title="Top Unrestr. Stk" sub="Val in Cr" tint="teal"><VQBars data={unrTop} /></Card>
-      <Card title="Top Stk in QC" sub="Val in Cr" tint="amber"><VQBars data={qcTop} /></Card>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <Card title="Top 10 Unrestricted" sub="Val in Cr" tint="teal"><VQBars data={unrTop} /></Card>
+      <Card title="Top 10 Quality in QC" sub="Val in Cr" tint="amber"><VQBars data={qcTop} /></Card>
+      <Card title="Top 10 Blocked" sub="Val in Cr" tint="rose"><VQBars data={blkTop} /></Card>
     </div>
     <Card title="Plant Analytics (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Stock Details" sub="Val in Cr" tint="neutral">
