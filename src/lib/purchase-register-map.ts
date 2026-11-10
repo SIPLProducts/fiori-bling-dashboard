@@ -3,6 +3,7 @@
  * Typed column per SAP field plus the raw row; upserted on BELNR + BUZEI + MBLNR + ZEILE.
  */
 import { orderBookDate, orderBookNum } from "./order-book-map";
+import { sapGroupColumns } from "./sap-group-fields";
 
 export const PURCHASE_REGISTER_TEXT_FIELDS = ["WERKS", "NAME1_WER", "PLANT_SH", "PRCTR", "PTEXT", "LIFNR", "NAME1", "MTBEZ", "MATNR", "MAKTX", "MEINS_I", "MWSKZ", "TEXT1_M", "BWART", "MEINS_G", "WAERS", "SHKZG", "TY_PURCH", "TY_MAT"] as const;
 export const PURCHASE_REGISTER_NUMERIC_FIELDS = ["MENGE_I", "MENGE_G", "WRBTR", "KURSF", "DIS", "OTH", "PLAN_DEL", "TAX", "SGST", "CGST", "IGST", "NO_CR", "GL_ACC", "TOTAL", "NET_AMT", "GROSS_PRICE", "NET_PRICE"] as const;
@@ -46,6 +47,7 @@ export function mapPurchaseRegisterPayload(payload: unknown, endpointName: strin
     for (const k of PURCHASE_REGISTER_TEXT_FIELDS) row[k.toLowerCase()] = text(pick(raw, k));
     for (const k of PURCHASE_REGISTER_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick(raw, k));
     for (const k of PURCHASE_REGISTER_DATE_FIELDS) row[k.toLowerCase()] = orderBookDate(pick(raw, k));
+    Object.assign(row, sapGroupColumns(raw));
     byKey.set(`${belnr}|${buzei}|${mblnr}|${zeile}`, row);
   }
   const rows = [...byKey.values()];
