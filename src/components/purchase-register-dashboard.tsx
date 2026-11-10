@@ -17,7 +17,7 @@ const COLORS = ["#1f6fd1", "#0f9d8a", "#2e8b57", "#e08a1e", "#8e44ad", "#d64550"
 const TYPE_COLOR: Record<PurchaseType, number> = { Domestic: 0, Imported: 3, Service: 4 };
 const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const CARD_TINT: Record<string, Tint> = { "Purchase Trend": "sky", "Purchase by Type": "peach", "Top Materials": "steel", "Top Vendors": "rose", "Material Group": "teal", "Material Group Summary": "violet", "Monthly Expenditure": "amber", "Quarterly Comparison": "mint", "Plant Analytics": "copper", "Value by Main Group": "teal", "Value by Sub Group 1": "violet", "Value by Sub Group 2": "amber", "Value by Sub Group 3": "mint" };
+const CARD_TINT: Record<string, Tint> = { "Purchase Trend": "sky", "Purchase by Type": "peach", "Top Materials": "steel", "Top Vendors": "rose", "Material Group": "teal", "Material Group Summary": "violet", "Monthly Expenditure": "amber", "Quarterly Comparison": "mint", "Plant Analytics": "copper", "Main Group": "teal", "Sub Group 1": "violet", "Sub Group 2": "amber", "Sub Group 3": "mint" };
 function Card({ title, sub, children, className = "" }: { title: string; sub?: ReactNode; children: ReactNode; className?: string }) {
   const tint = TINTS[CARD_TINT[title] ?? "neutral"];
   return <section className={`flex min-w-0 flex-col rounded-xl border p-2 ${className}`} style={tint}>
@@ -96,7 +96,7 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
   const allGroups = rankBy(yearRows.filter((r) => !type || r.type === type), (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const groups = rankBy(filtered, (r) => r.group, (r) => r.group, 1000).map((g) => ({ name: g.name, value: g.value }));
   const uniq = (k: "mainGroup" | "subGroup") => [...new Set(yearRows.map((r) => r[k] ?? "").filter(Boolean))].sort();
-  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.map((r, i) => ({ name: r[k] ?? "", value: r.value, order: r.docNo || String(i), division: r.plantSh || r.plantName || r.plant }));
+  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.filter((r) => (r[k] ?? "").trim()).map((r, i) => ({ name: r[k] ?? "", value: r.value, order: r.docNo || String(i), division: r.plantSh || r.plantName || r.plant }));
   const mainG = summarizeGroupsByDivision(grpRows("mainGroup"), (r) => r.name);
   const subGs = [["Sub Group 1", summarizeGroupsByDivision(grpRows("subGroup"), (r) => r.name)], ["Sub Group 2", summarizeGroupsByDivision(grpRows("subGroup2"), (r) => r.name)], ["Sub Group 3", summarizeGroupsByDivision(grpRows("subGroup3"), (r) => r.name)]] as const;
   const materials = rankBy(filtered, (r) => r.material, (r) => r.materialName);
@@ -193,10 +193,10 @@ export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onY
     </div>
 
     <div className="grid grid-cols-1 gap-3">
-      <Card title="Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+      <Card title="Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      {subGs.map(([label, g]) => <Card key={label} title={`Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
+      {subGs.map(([label, g]) => <Card key={label} title={label} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
     </div>
 
     <div className="grid grid-cols-1 gap-3">
