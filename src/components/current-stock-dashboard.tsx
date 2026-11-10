@@ -100,13 +100,12 @@ export function CurrentStockDashboard({ rows, sample = false }: { rows: CurrentS
       {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-3 lg:grid-cols-5">{field("plant", "Plant", opts.plant)}{field("sloc", "Storage Location", opts.sloc)}{field("mtype", "Material Type", opts.mtype)}{field("material", "Material", opts.material)}
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {([
-        ["Unrestr.stk (V)", cr(t.unrV), "#0f9d8a", PackageCheck],
-        ["Stk in QC (V)", cr(t.qcV), "#7b4fd6", ShieldAlert],
-        
-        
-        
+        ["Current Inv Val", cr(t.unrV + t.qcV + t.blkV), "#1f6fd1", PackageCheck],
+        ["Unrestricted val", cr(t.unrV), "#0f9d8a", PackageCheck],
+        ["Stk in QC val", cr(t.qcV), "#7b4fd6", ShieldAlert],
+        ["Blocked Val", cr(t.blkV), "#d64550", ShieldAlert],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
