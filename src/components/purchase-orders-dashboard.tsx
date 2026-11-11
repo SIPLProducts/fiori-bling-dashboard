@@ -22,7 +22,7 @@ const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materi
 
 export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const [f, setF] = useState<Filters>(EMPTY);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const opts = useMemo(() => {
@@ -68,7 +68,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         <span>Filters</span><ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
       </button>
       {collapsed ? null : <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-8">
-        {field("plant", "Plant")}{field("poType", "Document Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}{field("mainGroup", "Main Group")}{field("sub1", "Sub Group 1")}{field("sub2", "Sub Group 2")}{field("division", "Division")}
+        {field("plant", "Plant")}{field("poType", "Document Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}{field("division", "Division")}
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date From<input type="date" className={sel} value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date To<input type="date" className={sel} value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></label>
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setFrom(""); setTo(""); }}>Reset</Button></div>

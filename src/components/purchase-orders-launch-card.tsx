@@ -14,7 +14,10 @@ export function PurchaseOrdersLaunchCard({ fallback }: { fallback: React.ReactNo
   const s = useMemo(() => (rows ? openPoTypeSummary(rows.filter((r) => r.inr).map((r) => ({ ...r, poValue: r.netValue })) as never) : null), [rows]);
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (isError || !s || !rows?.length) return <>{fallback}</>;
-  const max = Math.max(...s.types.map((g) => g.value), 1e-9);
+  const types = s ? Object.values(rows!.filter((r) => r.inr).reduce<Record<string, { name: string; value: number; count: number }>>((a, r) => {
+    const k = r.poType || "—"; (a[k] ??= { name: k, value: 0, count: 0 }); a[k].value += r.netValue; a[k].count++; return a;
+  }, {})).sort((a, b) => b.value - a.value) : [];
+  const max = Math.max(...types.map((g) => g.value), 1e-9);
   return <section aria-label="Purchase Orders" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
     borderColor: "color-mix(in oklab, var(--kpi-2) 28%, var(--color-border))",
     background: "linear-gradient(160deg, color-mix(in oklab, var(--kpi-2) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)",
@@ -24,8 +27,8 @@ export function PurchaseOrdersLaunchCard({ fallback }: { fallback: React.ReactNo
         <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold tabular-nums" style={{ color: "var(--kpi-1)" }}>{cr(s.poValue)}</p></div>
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><PackageOpen className="size-[18px]" /></span>
     </div>
-    <div className="mt-3 flex items-baseline justify-between gap-2"><p className="text-[9px] font-semibold text-primary">PO Value by PO Type</p><p className="text-[9px] font-medium tabular-nums">{s.poCount.toLocaleString("en-IN")} POs · {s.lines.toLocaleString("en-IN")} lines</p></div>
-    <div className="my-3 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">{s.types.map((g, i) => <div key={g.name}>
+    <div className="mt-3 flex items-baseline justify-between gap-2"><p className="text-[9px] font-semibold text-primary">PO Value by Doc Type</p><p className="text-[9px] font-medium tabular-nums">{s.poCount.toLocaleString("en-IN")} POs · {s.lines.toLocaleString("en-IN")} lines</p></div>
+    <div className="my-3 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">{types.map((g, i) => <div key={g.name}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[9px]"><span className="font-medium text-foreground">{g.name}</span>
         <span className="flex gap-x-2 text-muted-foreground tabular-nums"><span>{g.count.toLocaleString("en-IN")} lines</span><span className="font-semibold text-foreground">{cr(g.value)}</span></span></div>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full" style={{ width: `${(g.value / max) * 100}%`, background: TONES[i % TONES.length] }} /></div>
