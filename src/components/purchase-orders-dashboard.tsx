@@ -46,10 +46,10 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const stacked = monthlyByGroup(filtered).map((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? v / CR : v])));
   const qc = quarterlyCompare(filtered);
   const qData = qc.data.map((d) => ({ name: d.name, current: d.current / CR, previous: d.previous / CR }));
-  const plantRows = (() => { const m = new Map<string, { code: string; name: string; value: number }>(); for (const r of filtered) if (r.inr) { const o = m.get(r.plant) ?? { code: r.plant, name: r.plantName, value: 0 }; o.value += r.netValue; m.set(r.plant, o); } return [...m.values()].sort((a, b) => b.value - a.value).slice(0, 12); })();
+  const plantRows = (() => { const m = new Map<string, { code: string; name: string; value: number }>(); for (const r of filtered) if (r.inr) { const o = m.get(r.plant) ?? { code: r.plant, name: r.division || r.plant, value: 0 }; o.value += r.netValue; m.set(r.plant, o); } return [...m.values()].sort((a, b) => b.value - a.value).slice(0, 12); })();
   const vendors = sumInr(filtered, (r) => r.vendorName).slice(0, 10);
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
-  const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
+  const plants = sumInr(filtered, (r) => r.division || r.plant).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
   const grp = (k: (r: PoRow) => string) => summarizeGroupsByDivision(filtered.filter((r) => r.inr && k(r)).map((r) => ({ name: k(r), value: r.netValue, order: r.poNo, division: r.plantName || r.plant })), (r) => r.name);
   const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2);
@@ -117,7 +117,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     <Card tint="copper" title="Plant Analytics" sub="Top 12">
       <PlantColumns data={plants} />
       <table className="mt-2 w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Short Name</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
-        <tbody>{plantRows.map((p, i) => <tr key={p.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{p.code}</td><td className="px-1.5 py-0.5">{p.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{cr(p.value)}</td></tr>)}</tbody>
+        <tbody>{plantRows.map((p, i) => <tr key={p.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{p.name}</td><td className="px-1.5 py-0.5">{p.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{cr(p.value)}</td></tr>)}</tbody>
         <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(plantRows.reduce((s, p) => s + p.value, 0))}</td></tr></tfoot></table>
     </Card>
 
