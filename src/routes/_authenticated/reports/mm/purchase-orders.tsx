@@ -40,7 +40,10 @@ function Page() {
     catch (e) { toast.error(e instanceof Error ? e.message : "PDF failed"); }
     finally { setBusy(false); }
   };
+  const dates = (q.data ?? []).map((r) => r.poDate).filter(Boolean).sort();
+  const dmy = (d?: string) => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "-";
   const actions = <>
+    <span className="text-xs text-muted-foreground"><span className="font-medium">Data available:</span> {dates.length ? `${dmy(dates[0])} – ${dmy(dates[dates.length - 1])}` : "No data"}</span>
     <Button type="button" variant="action" size="sm" className="h-7 text-xs" onClick={() => void q.refetch()} disabled={q.isFetching}><RefreshCw className={`size-3.5 ${q.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
     <SyncNowButton endpointName="Purchase_Orders" label="Purchase Orders" />
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
