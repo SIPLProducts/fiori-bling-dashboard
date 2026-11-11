@@ -70,3 +70,14 @@ describe("ZPO_LIST purchase orders", () => {
     expect(out.document_date).toBeUndefined();
   });
 });
+
+describe("ZPO_LIST custom dates", () => {
+  it("keeps the selected From/To dates", () => {
+    const out = JSON.parse(withEndpointDates("Purchase_Orders", '{"BEDAT_FROM":"20260401","BEDAT_TO":"20260410"}', "custom", new Date("2026-11-11T06:00:00Z"))!);
+    expect([out.BEDAT_FROM, out.BEDAT_TO]).toEqual(["20260401", "20260410"]);
+  });
+  it("never sends an empty BEDAT_FROM", () => {
+    const out = JSON.parse(withEndpointDates("Purchase_Orders", '{"BEDAT_FROM":"","BEDAT_TO":""}', "custom", new Date("2026-11-11T06:00:00Z"))!);
+    expect(out.BEDAT_FROM).toBe("20260401");
+  });
+});

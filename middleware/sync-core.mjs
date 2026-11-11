@@ -1317,11 +1317,12 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
       const bt = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_TO") ?? "BEDAT_TO";
       const w = postingWindow(range, now);
       const ok = (v) => /^\d{8}$/.test(String(v ?? "").trim());
+      const fyStart = `${now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1}0401`;
       if (w) {
-        obj[bf] = range === "today" ? "" : w.from;
+        obj[bf] = range === "today" ? sapDateOf(now) : w.from;
         obj[bt] = w.to;
       } else {
-        if (!ok(obj[bf])) obj[bf] = "";
+        if (!ok(obj[bf])) obj[bf] = fyStart;
         if (!ok(obj[bt])) obj[bt] = sapDateOf(now);
       }
       return JSON.stringify(obj);

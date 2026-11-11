@@ -808,7 +808,7 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
     if (!w) return input;
     const flat = zme2n && /BEDAT_FROM/i.test(input.body_template ?? "");
     const [fk, tk] = flat ? ["BEDAT_FROM", "BEDAT_TO"] : zme2n ? ["document_date.from_date", "document_date.to_date"] : ["DOCUMENT_DATE.FROM_DATE", "DOCUMENT_DATE.TO_DATE"];
-    const next = setPayloadPaths(input.body_template, { [fk]: input.posting_range === "today" ? "" : w.from, [tk]: w.to });
+    const next = setPayloadPaths(input.body_template, { [fk]: input.posting_range === "today" && !flat ? "" : w.from, [tk]: w.to });
     return next === null ? input : { ...input, body_template: next };
   }
   const payload = parsePayload(input.body_template) ?? {};
@@ -1404,7 +1404,7 @@ function EndpointDetail({
                     const range = value as EndpointInput["posting_range"];
                     set("posting_range", range);
                     const rolling = postingWindow(range);
-                    if (rolling) applyPayloadValues({ [dateFromKey]: isOpenPo && range === "today" ? "" : rolling.from, [dateToKey]: rolling.to });
+                    if (rolling) applyPayloadValues({ [dateFromKey]: isOpenPo && !isPoList && range === "today" ? "" : rolling.from, [dateToKey]: rolling.to });
                   }}
                 >
                   <SelectTrigger>

@@ -249,8 +249,10 @@ export function withOpenPoDates(raw: string | null | undefined, range?: string |
       const bt = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_TO") ?? "BEDAT_TO";
       const w = postingWindow(range, now);
       const ok = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
-      if (w) { obj[bf] = range === "today" ? "" : w.from; obj[bt] = w.to; }
-      else { if (!ok(obj[bf])) obj[bf] = ""; if (!ok(obj[bt])) obj[bt] = sapDateOf(now); }
+      // SAP ZPO_LIST dumps (HTTP 500) on an empty BEDAT_FROM, so both dates are always sent.
+      const fyStart = `${now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1}0401`;
+      if (w) { obj[bf] = range === "today" ? sapDateOf(now) : w.from; obj[bt] = w.to; }
+      else { if (!ok(obj[bf])) obj[bf] = fyStart; if (!ok(obj[bt])) obj[bt] = sapDateOf(now); }
       return JSON.stringify(obj);
     }
     // Key case follows the saved payload (ZOPENPO uses DOCUMENT_DATE/FROM_DATE, ZME2N document_date/from_date).
