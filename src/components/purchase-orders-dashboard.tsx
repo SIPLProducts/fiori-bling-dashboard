@@ -117,7 +117,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     <Card tint="copper" title="Plant Analytics" sub="Top 12">
       <PlantColumns data={plants} />
       <table className="mt-2 w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Short Name</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
-        <tbody>{plantRows.map((p, i) => <tr key={p.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{p.name}</td><td className="px-1.5 py-0.5">{p.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{cr(p.value)}</td></tr>)}</tbody>
+        <tbody>{plantRows.map((p, i) => <tr key={p.code} className="border-t border-border/60"><td className="px-1.5 py-0.5 font-medium text-primary"><span className="mr-1 inline-block size-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />{p.code}</td><td className="px-1.5 py-0.5">{p.name}</td><td className="px-1.5 py-0.5 text-right tabular-nums">{cr(p.value)}</td></tr>)}</tbody>
         <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(plantRows.reduce((s, p) => s + p.value, 0))}</td></tr></tfoot></table>
     </Card>
 
