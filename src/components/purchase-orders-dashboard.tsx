@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ClipboardList, FileText, IndianRupee, Truck } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ComposedChart, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
+import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
@@ -49,8 +51,9 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
   const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
-  const grp = (k: (r: PoRow) => string) => sumInr(filtered.filter((r) => k(r)), k).slice(0, 10);
+  const grp = (k: (r: PoRow) => string) => summarizeGroupsByDivision(filtered.filter((r) => r.inr && k(r)).map((r) => ({ name: k(r), value: r.netValue, order: r.poNo, division: r.plantName || r.plant })), (r) => r.name);
   const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2);
+  const gChart = (g: ReturnType<typeof grp>, label: string) => g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
   const monthly = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of filtered) if (r.inr && r.poDate) m.set(r.poDate.slice(0, 7), (m.get(r.poDate.slice(0, 7)) ?? 0) + r.netValue);
@@ -106,10 +109,10 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         </BarChart></ResponsiveContainer></div></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Card tint="sky" title="Main Group"><BarList data={mainGroups} /></Card>
-      <Card tint="teal" title="Sub Group 1"><BarList data={sub1s} /></Card>
-      <Card tint="violet" title="Sub Group 2"><BarList data={sub2s} /></Card>
+    <Card tint="sky" title="Main Group" sub="₹ Cr">{gChart(mainGroups, "Main Group")}</Card>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <Card tint="teal" title="Sub Group 1" sub="₹ Cr">{gChart(sub1s, "Sub Group 1")}</Card>
+      <Card tint="violet" title="Sub Group 2" sub="₹ Cr">{gChart(sub2s, "Sub Group 2")}</Card>
     </div>
     <Card tint="copper" title="Plant Analytics" sub="Top 12">
       <PlantColumns data={plants} />
