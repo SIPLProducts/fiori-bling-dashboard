@@ -58,7 +58,6 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   }, [filtered]);
   const field = (k: keyof Filters, label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
-  const foreignNote = tot.foreignLines ? `${tot.foreignLines} foreign-currency lines not in ₹ totals` : undefined;
 
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
@@ -74,7 +73,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} {...(foreignNote ? { note: foreignNote } : {})} tone="#1f6fd1" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} tone="#1f6fd1" />
       <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
     </div>
 
