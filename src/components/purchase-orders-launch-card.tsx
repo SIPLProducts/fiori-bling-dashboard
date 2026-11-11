@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, PackageOpen } from "lucide-react";
-import { openPoTypeSummary } from "@/lib/open-po-data";
+import { openPoTypeSummary, poTypeGroup } from "@/lib/open-po-data";
 import { purchaseOrdersQuery } from "@/lib/purchase-orders-data";
 
 const TONES = ["var(--kpi-1)", "var(--kpi-2)", "var(--kpi-3)", "var(--kpi-4)", "var(--kpi-5)", "var(--kpi-6)"];
@@ -15,7 +15,7 @@ export function PurchaseOrdersLaunchCard({ fallback }: { fallback: React.ReactNo
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (isError || !s || !rows?.length) return <>{fallback}</>;
   const types = s ? Object.values(rows!.filter((r) => r.inr).reduce<Record<string, { name: string; value: number; count: number }>>((a, r) => {
-    const k = r.poType || "—"; (a[k] ??= { name: k, value: 0, count: 0 }); a[k].value += r.netValue; a[k].count++; return a;
+    const k = poTypeGroup(r.poType || ""); (a[k] ??= { name: k, value: 0, count: 0 }); a[k].value += r.netValue; a[k].count++; return a;
   }, {})).sort((a, b) => b.value - a.value) : [];
   const max = Math.max(...types.map((g) => g.value), 1e-9);
   return <section aria-label="Purchase Orders" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
