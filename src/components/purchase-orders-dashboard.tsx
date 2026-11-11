@@ -73,10 +73,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       </div>}
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} {...(foreignNote ? { note: foreignNote } : {})} tone="#1f6fd1" />
-      <Tile icon={<Truck className="size-5" />} label="Pending Delivery Val" value={cr(tot.pendDel)} tone="#e08a1e" />
-      <Tile icon={<FileText className="size-5" />} label="Pending Invoice Val" value={cr(tot.pendInv)} tone="#8e44ad" />
       <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
     </div>
 
@@ -136,8 +134,8 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "SLoc", "Main Group", "Sub Group 1", "Sub Group 2", "Division", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"];
-  const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"]);
+  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "SLoc", "Main Group", "Sub Group 1", "Sub Group 2", "Division", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)"];
+  const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)"]);
   const t = poTotals(list);
   const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
   const typeLabel = (r: PoRow) => `${r.poTypeCode || "—"} – ${poGroup(r)}`;
@@ -145,8 +143,8 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue), c2(r.pendDelValue), c2(r.pendInvValue)]));
-    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value), c2(t.pendDel), c2(t.pendInv)]); ft.font = { bold: true };
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue)]));
+    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value)]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Orders", "xlsx"); a.click();
@@ -169,10 +167,10 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
         {[r.sloc, r.mainGroup, r.sub1, r.sub2, r.division].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1">{v}</td>)}
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1 text-right tabular-nums">{num(r.qty)}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{num(r.netPrice)}</td><td className="px-2 py-1">{r.currency}</td>
-        <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendDelValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendInvValue)}</td></tr>)
+        <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No purchase orders for these filters.</td></tr>}</tbody>
       {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={18} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
-        <td className="px-2 py-1.5 text-right tabular-nums">{cr(t.value)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendDel)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendInv)}</td></tr></tfoot>}
+        <td className="px-2 py-1.5 text-right tabular-nums">{cr(t.value)}</td></tr></tfoot>}
     </table></div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">
       <span>Rows</span><select value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} className="rounded border border-border bg-background px-1 py-0.5">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select>
