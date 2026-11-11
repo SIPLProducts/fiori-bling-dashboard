@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poAgingData, poGroup, poTotals, quarterlyCompare, sumInr, type PoRow } from "@/lib/purchase-orders-data";
+import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const CR = 1e7;
@@ -41,7 +41,6 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
   const types = sumInr(filtered, poGroup);
-  const matGroups = sumInr(filtered, (r) => r.materialGroup);
   const stacked = monthlyByGroup(filtered).map((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? v / CR : v])));
   const qc = quarterlyCompare(filtered);
   const qData = qc.data.map((d) => ({ name: d.name, current: d.current / CR, previous: d.previous / CR }));
@@ -51,7 +50,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
   const grp = (k: (r: PoRow) => string) => sumInr(filtered.filter((r) => k(r)), k).slice(0, 10);
-  const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2), divisions = grp((r) => r.division);
+  const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2);
   const monthly = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of filtered) if (r.inr && r.poDate) m.set(r.poDate.slice(0, 7), (m.get(r.poDate.slice(0, 7)) ?? 0) + r.netValue);
@@ -87,21 +86,12 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         <Tooltip formatter={(v: number) => v.toFixed(2)} />
         <Bar dataKey="value" name="PO Val" fill="#1f6fd1" radius={[6, 6, 0, 0]} maxBarSize={40}><LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 10, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
-      <Card tint="sky" title="PO Value by Document Type"><Donut data={types} colors={types.map((d) => PO_GROUP_COLORS[d.name] ?? "#64748b")} heads={["Type", "Val", "%"]} /></Card>
+      <Card tint="sky" title="Document Type"><Donut data={types} colors={types.map((d) => PO_GROUP_COLORS[d.name] ?? "#64748b")} heads={["Type", "Val", "%"]} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card tint="steel" title="Top Materials"><BarList data={materials} /></Card>
       <Card tint="rose" title="Top Vendors"><BarList data={vendors} /></Card>
-    </div>
-
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card tint="violet" title="Material Group"><Donut data={matGroups} heads={["Group", "Val", "%"]} /></Card>
-      <Card tint="amber" title="Material Group Summary">
-        <table className="w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Material Group</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
-          <tbody>{matGroups.map((g, i) => <tr key={g.name} className="cursor-pointer border-t border-border/60 hover:bg-primary/10" onClick={() => setF({ ...f, materialGroup: f.materialGroup === g.name ? "" : g.name })}><td className="px-1.5 py-1"><span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{g.name}</td><td className="px-1.5 py-1 text-right font-semibold tabular-nums">{cr(g.value)}</td></tr>)}</tbody>
-          <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1">Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(matGroups.reduce((s, g) => s + g.value, 0))}</td></tr></tfoot></table>
-      </Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -119,11 +109,10 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         </BarChart></ResponsiveContainer></div></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <Card tint="sky" title="Main Group"><BarList data={mainGroups} /></Card>
       <Card tint="teal" title="Sub Group 1"><BarList data={sub1s} /></Card>
       <Card tint="violet" title="Sub Group 2"><BarList data={sub2s} /></Card>
-      <Card tint="amber" title="Division"><BarList data={divisions} /></Card>
     </div>
     <Card tint="copper" title="Plant Analytics" sub="Top 12">
       <PlantColumns data={plants} />
@@ -132,10 +121,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         <tfoot><tr className="border-t-2 border-border font-bold"><td className="px-1.5 py-1" colSpan={2}>Total</td><td className="px-1.5 py-1 text-right tabular-nums">{cr(plantRows.reduce((s, p) => s + p.value, 0))}</td></tr></tfoot></table>
     </Card>
 
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card tint="peach" title="Delivery Aging Status" sub="PO value · SAP NO_OF_DAYS"><Donut data={poAgingData(filtered)} heads={["Days", "Val", "%"]} /></Card>
-      <Card tint="violet" title="PO Value by Purchasing Group"><BarList data={purGroups} /></Card>
-    </div>
+    <Card tint="violet" title="PO Value by Purchasing Group"><BarList data={purGroups} /></Card>
 
     <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
   </div>;
