@@ -877,12 +877,14 @@ export type Database = {
           currency_key: string | null
           deletion_ind: string | null
           delivery_date: string | null
+          division_name: string | null
           doc_date: string | null
           id: string
           item_category: string | null
           item_category_epstp: string | null
           material: string | null
           material_group: string | null
+          mngrp1: string | null
           name_of_vendor: string | null
           net_order_value: number | null
           net_price: number | null
@@ -892,6 +894,9 @@ export type Database = {
           order_quantity: number | null
           order_unit: string | null
           package_no: number | null
+          pcgrp1: string | null
+          pcgrp2: string | null
+          pcgrp3: string | null
           plant: string | null
           plt_name: string | null
           plt_short: string | null
@@ -940,12 +945,14 @@ export type Database = {
           currency_key?: string | null
           deletion_ind?: string | null
           delivery_date?: string | null
+          division_name?: string | null
           doc_date?: string | null
           id?: string
           item_category?: string | null
           item_category_epstp?: string | null
           material?: string | null
           material_group?: string | null
+          mngrp1?: string | null
           name_of_vendor?: string | null
           net_order_value?: number | null
           net_price?: number | null
@@ -955,6 +962,9 @@ export type Database = {
           order_quantity?: number | null
           order_unit?: string | null
           package_no?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plt_name?: string | null
           plt_short?: string | null
@@ -1003,12 +1013,14 @@ export type Database = {
           currency_key?: string | null
           deletion_ind?: string | null
           delivery_date?: string | null
+          division_name?: string | null
           doc_date?: string | null
           id?: string
           item_category?: string | null
           item_category_epstp?: string | null
           material?: string | null
           material_group?: string | null
+          mngrp1?: string | null
           name_of_vendor?: string | null
           net_order_value?: number | null
           net_price?: number | null
@@ -1018,6 +1030,9 @@ export type Database = {
           order_quantity?: number | null
           order_unit?: string | null
           package_no?: number | null
+          pcgrp1?: string | null
+          pcgrp2?: string | null
+          pcgrp3?: string | null
           plant?: string | null
           plt_name?: string | null
           plt_short?: string | null

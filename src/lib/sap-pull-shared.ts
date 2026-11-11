@@ -243,6 +243,16 @@ export function withOpenPoDates(raw: string | null | undefined, range?: string |
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
     const obj = { ...(parsed as Record<string, unknown>) };
+    // ZPO_LIST: flat BEDAT_FROM / BEDAT_TO.
+    const bf = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_FROM");
+    if (bf) {
+      const bt = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_TO") ?? "BEDAT_TO";
+      const w = postingWindow(range, now);
+      const ok = (v: unknown) => /^\d{8}$/.test(String(v ?? "").trim());
+      if (w) { obj[bf] = range === "today" ? "" : w.from; obj[bt] = w.to; }
+      else { if (!ok(obj[bf])) obj[bf] = ""; if (!ok(obj[bt])) obj[bt] = sapDateOf(now); }
+      return JSON.stringify(obj);
+    }
     // Key case follows the saved payload (ZOPENPO uses DOCUMENT_DATE/FROM_DATE, ZME2N document_date/from_date).
     const docKey = Object.keys(obj).find((k) => k.toLowerCase() === "document_date") ?? "DOCUMENT_DATE";
     const doc = obj[docKey] && typeof obj[docKey] === "object" ? { ...(obj[docKey] as Record<string, unknown>) } : {};
@@ -273,7 +283,7 @@ export function withEndpointDates(
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   // ZME2N Purchase Orders: same document-date window as Open PO (lowercase keys).
-  if (/zme2n|^me2n|^purchaseorders?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
+  if (/zme2n|^me2n|^purchaseorders?$|zpolist|polist/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   // ZCASH_FLOW sends its saved payload verbatim (fiscal_year / posting_date object).

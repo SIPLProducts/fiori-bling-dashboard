@@ -267,6 +267,13 @@
       "when": 1794295785580,
       "tag": "0037_purchase_register_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794387062663,
+      "tag": "0038_purchase_orders_zpo_list",
+      "breakpoints": true
     }
   ]
 }

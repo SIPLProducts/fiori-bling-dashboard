@@ -494,10 +494,10 @@ function first(raw, keys) {
 }
 function sapGroupColumns(raw) {
   return {
-    mngrp1: first(raw, ["MNGRP1", "MAIN_GRP"]),
-    pcgrp1: first(raw, ["PCGRP1", "SUB_GRP"]),
-    pcgrp2: first(raw, ["PCGRP2", "SUB_GRP2"]),
-    pcgrp3: first(raw, ["PCGRP3", "SUB_GRP3"])
+    mngrp1: first(raw, ["MNGRP1", "MAIN_GRP", "MAIN_GROUP"]),
+    pcgrp1: first(raw, ["PCGRP1", "SUB_GRP", "SUB_GROUP"]),
+    pcgrp2: first(raw, ["PCGRP2", "SUB_GRP2", "SUB_GROUP2"]),
+    pcgrp3: first(raw, ["PCGRP3", "SUB_GRP3", "SUB_GROUP3"])
   };
 }
 
@@ -935,6 +935,24 @@ function mapCurrentStockPayload(payload, endpointName, now = /* @__PURE__ */ new
 }
 
 // ../src/lib/purchase-orders-map.ts
+var ALIASES = {
+  PO: ["EBELN"],
+  PO_ITEM: ["EBELP"],
+  DELIVERY_DATE: ["EINDT"],
+  PO_DOC_TYPE: ["BSART"],
+  NAME_OF_VENDOR: ["SUPERFIELD"],
+  PURCHASING_GROUP: ["EKGRP"],
+  MATERIAL: ["EMATN", "MATNR"],
+  SHORT_TEXT: ["TXZ01"],
+  PLANT: ["WERKS"],
+  STORAGE_LOCATION: ["LGORT"],
+  ORDER_QUANTITY: ["MENGE"],
+  ORDER_UNIT: ["MEINS"],
+  NET_PRICE: ["NETPR"],
+  PRICE_UNIT: ["PEINH"],
+  CURRENCY_KEY: ["WAERS"],
+  NET_ORDER_VALUE: ["NETWR"]
+};
 var PO_TEXT_FIELDS = [
   "PO_DOC_TYPE",
   "PO_DOC_CATEGORY",
@@ -993,12 +1011,19 @@ var PO_NUMERIC_FIELDS = [
 ];
 function isPurchaseOrdersEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-  return n.includes("zme2n") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
+  return n.includes("zme2n") || n.includes("zpolist") || n.includes("polist") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
 }
-function pick10(raw, key) {
+function pick1(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
+}
+function pick10(raw, key) {
+  for (const k of [key, ...ALIASES[key] ?? []]) {
+    const v = pick1(raw, k);
+    if (v !== void 0 && v !== null && String(v).trim() !== "") return v;
+  }
+  return void 0;
 }
 function text8(v) {
   if (v === void 0 || v === null || typeof v === "object") return null;
@@ -1031,6 +1056,8 @@ function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ n
     row["po_date"] = orderBookDate(pick10(raw, "PO_DATE"));
     row["delivery_date"] = orderBookDate(pick10(raw, "DELIVERY_DATE"));
     row["doc_date"] = orderBookDate(pick10(raw, "DOC_DATE"));
+    Object.assign(row, sapGroupColumns(raw));
+    row["division_name"] = text8(pick10(raw, "DIVISION_NAME"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];
@@ -1285,6 +1312,20 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
     const obj = { ...parsed };
+    const bf = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_FROM");
+    if (bf) {
+      const bt = Object.keys(obj).find((k) => k.toUpperCase() === "BEDAT_TO") ?? "BEDAT_TO";
+      const w = postingWindow(range, now);
+      const ok = (v) => /^\d{8}$/.test(String(v ?? "").trim());
+      if (w) {
+        obj[bf] = range === "today" ? "" : w.from;
+        obj[bt] = w.to;
+      } else {
+        if (!ok(obj[bf])) obj[bf] = "";
+        if (!ok(obj[bt])) obj[bt] = sapDateOf(now);
+      }
+      return JSON.stringify(obj);
+    }
     const docKey = Object.keys(obj).find((k) => k.toLowerCase() === "document_date") ?? "DOCUMENT_DATE";
     const doc = obj[docKey] && typeof obj[docKey] === "object" ? { ...obj[docKey] } : {};
     const lower = docKey === docKey.toLowerCase();
@@ -1308,7 +1349,7 @@ function withOpenPoDates(raw, range, now = /* @__PURE__ */ new Date()) {
 function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new Date(), scheduled = false) {
   if (raw && /^\s*\/\//m.test(raw)) raw = stripJsonComments(raw);
   if (/openpurchaseorder|^z?openpo$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
-  if (/zme2n|^me2n|^purchaseorders?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
+  if (/zme2n|^me2n|^purchaseorders?$|zpolist|polist/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withOpenPoDates(raw, range, now);
   if (isSitEndpoint(endpointName)) return withSitDates(raw, range, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("salesregister")) return withSalesRegisterMode(raw, scheduled, range, now);
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;

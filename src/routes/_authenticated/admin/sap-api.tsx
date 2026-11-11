@@ -806,7 +806,8 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
     // Preset windows show today's document dates in the pickers and payload.
     const w = postingWindow(input.posting_range);
     if (!w) return input;
-    const [fk, tk] = zme2n ? ["document_date.from_date", "document_date.to_date"] : ["DOCUMENT_DATE.FROM_DATE", "DOCUMENT_DATE.TO_DATE"];
+    const flat = zme2n && /BEDAT_FROM/i.test(input.body_template ?? "");
+    const [fk, tk] = flat ? ["BEDAT_FROM", "BEDAT_TO"] : zme2n ? ["document_date.from_date", "document_date.to_date"] : ["DOCUMENT_DATE.FROM_DATE", "DOCUMENT_DATE.TO_DATE"];
     const next = setPayloadPaths(input.body_template, { [fk]: input.posting_range === "today" ? "" : w.from, [tk]: w.to });
     return next === null ? input : { ...input, body_template: next };
   }
@@ -1169,8 +1170,9 @@ function EndpointDetail({
 
   const isZme2n = isPurchaseOrdersEndpoint(form.name) || isPurchaseOrdersEndpoint(form.endpoint_path);
   const isOpenPo = isZme2n || isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path);
-  const dateFromKey = isZme2n ? "document_date.from_date" : isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
-  const dateToKey = isZme2n ? "document_date.to_date" : isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
+  const isPoList = isZme2n && /BEDAT_FROM/i.test(form.body_template ?? "");
+  const dateFromKey = isPoList ? "BEDAT_FROM" : isZme2n ? "document_date.from_date" : isOpenPo ? "DOCUMENT_DATE.FROM_DATE" : "BUDAT_F";
+  const dateToKey = isPoList ? "BEDAT_TO" : isZme2n ? "document_date.to_date" : isOpenPo ? "DOCUMENT_DATE.TO_DATE" : "BUDAT_T";
   const dateWord = isOpenPo ? "Document" : "Posting";
   function dateValue(path: string): string {
     return path.includes(".") ? getPayloadPath(form.body_template, path) : payloadValue(path);

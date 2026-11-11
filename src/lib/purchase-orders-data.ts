@@ -11,6 +11,7 @@ export type PoRow = {
   netValue: number; pendDelQty: number; pendDelValue: number; pendInvValue: number;
   /** True when the line is in INR; only INR lines count toward ₹ Cr totals. */
   inr: boolean; userName: string; deleted: boolean;
+  sloc: string; mainGroup: string; sub1: string; sub2: string; division: string;
 };
 export const DELIVERY_STATUSES = ["Delivered", "Pending", "Overdue"] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
@@ -35,6 +36,7 @@ export function toPoRow(r: Rec): PoRow {
     qty: n(r["order_quantity"]), uom: t(r["order_unit"]), netPrice: n(r["net_price"]), currency: cur,
     netValue: n(r["net_order_value"]), pendDelQty: n(r["still_to_be_delivered_qty"]), pendDelValue: n(r["still_to_be_delivered_val"]),
     pendInvValue: n(r["still_to_be_invoiced_val"]), inr: cur === "INR", userName: t(r["user_name"]), deleted: !!t(r["deletion_ind"]),
+    sloc: t(r["storage_location"]), mainGroup: t(r["mngrp1"]), sub1: t(r["pcgrp1"]), sub2: t(r["pcgrp2"]), division: t(r["division_name"]),
   };
 }
 
@@ -113,7 +115,7 @@ export function quarterlyCompare(rows: PoRow[]) {
 }
 
 const PAGE = 1000, CONCURRENCY = 6;
-const COLS = "id,po,po_item,po_date,delivery_date,no_of_days,po_doc_type,vendor_supplying_plant,name_of_vendor,purchasing_group,plant,plt_name,plt_short,material,short_text,material_group,order_quantity,order_unit,net_price,currency_key,net_order_value,still_to_be_delivered_qty,still_to_be_delivered_val,still_to_be_invoiced_val,user_name,deletion_ind";
+const COLS = "id,po,po_item,po_date,delivery_date,no_of_days,po_doc_type,vendor_supplying_plant,name_of_vendor,purchasing_group,plant,plt_name,plt_short,material,short_text,material_group,order_quantity,order_unit,net_price,currency_key,net_order_value,still_to_be_delivered_qty,still_to_be_delivered_val,still_to_be_invoiced_val,user_name,deletion_ind,storage_location,mngrp1,pcgrp1,pcgrp2,division_name";
 
 export async function getPoRows(): Promise<PoRow[]> {
   const head = await supabase.from("purchase_orders").select("id", { count: "exact", head: true });
@@ -134,4 +136,4 @@ export async function getPoRows(): Promise<PoRow[]> {
   return pages.flat().map(toPoRow).filter((r) => !r.deleted && !isExcludedPoType(r.poTypeCode));
 }
 
-export const purchaseOrdersQuery = queryOptions({ queryKey: ["purchase-orders", "v1"], queryFn: getPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+export const purchaseOrdersQuery = queryOptions({ queryKey: ["purchase-orders", "v2-zpolist"], queryFn: getPoRows, staleTime: Infinity, refetchOnWindowFocus: false });

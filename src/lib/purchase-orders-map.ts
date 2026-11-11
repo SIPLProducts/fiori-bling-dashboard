@@ -3,6 +3,15 @@
  * Typed column per SAP field plus the raw row; upserted on PO + PO_ITEM.
  */
 import { orderBookDate, orderBookNum } from "./order-book-map";
+import { sapGroupColumns } from "./sap-group-fields";
+
+/** ZPO_LIST (/zpo_list/polist) keys → existing ZME2N columns. */
+const ALIASES: Record<string, string[]> = {
+  PO: ["EBELN"], PO_ITEM: ["EBELP"], DELIVERY_DATE: ["EINDT"], PO_DOC_TYPE: ["BSART"], NAME_OF_VENDOR: ["SUPERFIELD"],
+  PURCHASING_GROUP: ["EKGRP"], MATERIAL: ["EMATN", "MATNR"], SHORT_TEXT: ["TXZ01"], PLANT: ["WERKS"], STORAGE_LOCATION: ["LGORT"],
+  ORDER_QUANTITY: ["MENGE"], ORDER_UNIT: ["MEINS"], NET_PRICE: ["NETPR"], PRICE_UNIT: ["PEINH"], CURRENCY_KEY: ["WAERS"],
+  NET_ORDER_VALUE: ["NETWR"],
+};
 
 export const PO_TEXT_FIELDS = [
   "PO_DOC_TYPE", "PO_DOC_CATEGORY", "VENDOR_SUPPLYING_PLANT", "PURCHASE_ORG", "PURCHASING_GROUP", "MATERIAL", "SHORT_TEXT",
@@ -20,13 +29,20 @@ export const PO_NUMERIC_FIELDS = [
 /** ZME2N endpoint (named Purchase_Orders). Must not match Open Purchase Orders. */
 export function isPurchaseOrdersEndpoint(name: string): boolean {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-  return n.includes("zme2n") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
+  return n.includes("zme2n") || n.includes("zpolist") || n.includes("polist") || n.startsWith("me2n") || n === "purchaseorders" || n === "purchaseorder";
 }
 
-function pick(raw: Record<string, unknown>, key: string): unknown {
+function pick1(raw: Record<string, unknown>, key: string): unknown {
   if (raw[key] !== undefined) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : undefined;
+}
+function pick(raw: Record<string, unknown>, key: string): unknown {
+  for (const k of [key, ...(ALIASES[key] ?? [])]) {
+    const v = pick1(raw, k);
+    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+  }
+  return undefined;
 }
 function text(v: unknown): string | null {
   if (v === undefined || v === null || typeof v === "object") return null;
@@ -57,6 +73,8 @@ export function mapPurchaseOrdersPayload(payload: unknown, endpointName: string,
     row["po_date"] = orderBookDate(pick(raw, "PO_DATE"));
     row["delivery_date"] = orderBookDate(pick(raw, "DELIVERY_DATE"));
     row["doc_date"] = orderBookDate(pick(raw, "DOC_DATE"));
+    Object.assign(row, sapGroupColumns(raw));
+    row["division_name"] = text(pick(raw, "DIVISION_NAME"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];

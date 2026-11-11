@@ -15,8 +15,8 @@ const dmy = (d: string) => (d ? `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0,
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const sel = "h-8 w-full rounded-md border border-border bg-background px-2 text-xs";
 
-type Filters = Record<"plant" | "poType" | "vendor" | "purGroup" | "materialGroup", string>;
-const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materialGroup: "" };
+type Filters = Record<"plant" | "poType" | "vendor" | "purGroup" | "materialGroup" | "mainGroup" | "sub1" | "sub2" | "division", string>;
+const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materialGroup: "", mainGroup: "", sub1: "", sub2: "", division: "" };
 
 export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const [f, setF] = useState<Filters>(EMPTY);
@@ -31,11 +31,13 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     return {
       plant: u((r) => r.plant, (r) => `${r.plant} — ${r.plantName}`), poType: u((r) => r.poType), vendor: u((r) => r.vendor, (r) => r.vendorName),
       purGroup: u((r) => r.purGroup), materialGroup: u((r) => r.materialGroup),
+      mainGroup: u((r) => r.mainGroup), sub1: u((r) => r.sub1), sub2: u((r) => r.sub2), division: u((r) => r.division),
     };
   }, [rows]);
   const filtered = useMemo(() => rows.filter((r) =>
     (!f.plant || r.plant === f.plant) && (!f.poType || r.poType === f.poType) && (!f.vendor || r.vendor === f.vendor)
     && (!f.purGroup || r.purGroup === f.purGroup) && (!f.materialGroup || r.materialGroup === f.materialGroup)
+    && (!f.mainGroup || r.mainGroup === f.mainGroup) && (!f.sub1 || r.sub1 === f.sub1) && (!f.sub2 || r.sub2 === f.sub2) && (!f.division || r.division === f.division)
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
   const types = sumInr(filtered, poGroup);
@@ -48,6 +50,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
   const plants = sumInr(filtered, (r) => r.plantName).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
+  const grp = (k: (r: PoRow) => string) => sumInr(filtered.filter((r) => k(r)), k).slice(0, 10);
+  const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2), divisions = grp((r) => r.division);
   const monthly = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of filtered) if (r.inr && r.poDate) m.set(r.poDate.slice(0, 7), (m.get(r.poDate.slice(0, 7)) ?? 0) + r.netValue);
@@ -63,7 +67,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         <span>Filters</span><ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
       </button>
       {collapsed ? null : <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-8">
-        {field("plant", "Plant")}{field("poType", "Document Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}
+        {field("plant", "Plant")}{field("poType", "Document Type")}{field("vendor", "Vendor")}{field("purGroup", "Purchasing Group")}{field("materialGroup", "Material Group")}{field("mainGroup", "Main Group")}{field("sub1", "Sub Group 1")}{field("sub2", "Sub Group 2")}{field("division", "Division")}
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date From<input type="date" className={sel} value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-[10px] font-semibold text-muted-foreground">PO Date To<input type="date" className={sel} value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></label>
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setFrom(""); setTo(""); }}>Reset</Button></div>
@@ -115,6 +119,12 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
         </BarChart></ResponsiveContainer></div></Card>
     </div>
 
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Card tint="sky" title="Main Group"><BarList data={mainGroups} /></Card>
+      <Card tint="teal" title="Sub Group 1"><BarList data={sub1s} /></Card>
+      <Card tint="violet" title="Sub Group 2"><BarList data={sub2s} /></Card>
+      <Card tint="amber" title="Division"><BarList data={divisions} /></Card>
+    </div>
     <Card tint="copper" title="Plant Analytics" sub="Top 12">
       <PlantColumns data={plants} />
       <table className="mt-2 w-full text-[11px]"><thead><tr className="border-b border-border"><th className="px-1.5 py-1 text-left">Plant Code</th><th className="px-1.5 py-1 text-left">Short Name</th><th className="px-1.5 py-1 text-right">Val</th></tr></thead>
@@ -136,11 +146,11 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
-  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.poTypeCode, r.purGroup].some((v) => v.toLowerCase().includes(s)))
+  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.poTypeCode, r.purGroup, r.mainGroup, r.sub1, r.sub2, r.division].some((v) => v.toLowerCase().includes(s)))
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"];
+  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "SLoc", "Main Group", "Sub Group 1", "Sub Group 2", "Division", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"];
   const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (Cr)", "Pending Del Val (Cr)", "Pending Inv Val (Cr)"]);
   const t = poTotals(list);
   const c2 = (v: number) => Math.round((v / CR) * 100) / 100;
@@ -149,8 +159,8 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue), c2(r.pendDelValue), c2(r.pendInvValue)]));
-    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value), c2(t.pendDel), c2(t.pendInv)]); ft.font = { bold: true };
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue), c2(r.pendDelValue), c2(r.pendInvValue)]));
+    const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value), c2(t.pendDel), c2(t.pendInv)]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Orders", "xlsx"); a.click();
@@ -170,11 +180,12 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td>
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td><td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
         <td className="whitespace-nowrap px-2 py-1"><span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: PO_GROUP_COLORS[poGroup(r)], color: PO_GROUP_COLORS[poGroup(r)], background: `${PO_GROUP_COLORS[poGroup(r)]}1a` }}><span className="size-1.5 rounded-full" style={{ background: PO_GROUP_COLORS[poGroup(r)] }} />{typeLabel(r)}</span></td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plantName}</td>
+        {[r.sloc, r.mainGroup, r.sub1, r.sub2, r.division].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1">{v}</td>)}
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1 text-right tabular-nums">{num(r.qty)}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{num(r.netPrice)}</td><td className="px-2 py-1">{r.currency}</td>
         <td className="px-2 py-1 text-right font-semibold tabular-nums">{cr(r.netValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendDelValue)}</td><td className="px-2 py-1 text-right tabular-nums">{cr(r.pendInvValue)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No purchase orders for these filters.</td></tr>}</tbody>
-      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={13} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
+      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={18} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
         <td className="px-2 py-1.5 text-right tabular-nums">{cr(t.value)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendDel)}</td><td className="px-2 py-1.5 text-right tabular-nums">{cr(t.pendInv)}</td></tr></tfoot>}
     </table></div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">

@@ -56,3 +56,17 @@ describe("PO register-style helpers", () => {
   });
   it("stacks monthly value by group", () => { expect(mbg([{ ...base, poDate: "2026-05-10" }])[0]).toMatchObject({ month: "May-26", DOMESTIC: 100, total: 100 }); });
 });
+
+describe("ZPO_LIST purchase orders", () => {
+  const z = { EBELN: "4100013323", EBELP: 1, PO_DATE: "2026-04-01", EINDT: "2026-04-15", BSART: "ZPCP", SUPERFIELD: "CHILL AIR ENGINEERING", EKGRP: "010", TXZ01: "AIR CONDITIONER", WERKS: "1200", LGORT: "S001", MENGE: 1, MEINS: "NOS", NETPR: 53396, WAERS: "INR", PEINH: 1, NETWR: 53396, MAIN_GROUP: "INDL.BTY", SUB_GROUP: "BATTERY", SUB_GROUP2: "NICKEL", DIVISION_NAME: "VSEZ" };
+  it("detects the new endpoint path", () => expect(isPurchaseOrdersEndpoint("/zpo_list/polist?sap-client=234")).toBe(true));
+  it("maps new keys into existing columns", () => {
+    const r = mapPurchaseOrdersPayload([z], "Purchase_Orders").rows[0]!;
+    expect(r).toMatchObject({ po: "4100013323", po_item: "1", delivery_date: "2026-04-15", po_doc_type: "ZPCP", name_of_vendor: "CHILL AIR ENGINEERING", plant: "1200", storage_location: "S001", net_order_value: 53396, mngrp1: "INDL.BTY", pcgrp1: "BATTERY", pcgrp2: "NICKEL", division_name: "VSEZ" });
+  });
+  it("fills BEDAT_FROM / BEDAT_TO from the date window", () => {
+    const out = JSON.parse(withEndpointDates("Purchase_Orders", '{"EBELN":"","BEDAT_FROM":"","BEDAT_TO":""}', "custom", new Date("2026-11-11T06:00:00Z"))!);
+    expect(out.BEDAT_TO).toBe("20261111");
+    expect(out.document_date).toBeUndefined();
+  });
+});
