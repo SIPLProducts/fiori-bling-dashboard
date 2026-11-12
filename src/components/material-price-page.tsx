@@ -54,7 +54,7 @@ export function MaterialPricePage({ trend, rows, onBack }: { trend: MaterialTren
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" variant="outline" className="h-8" onClick={onBack}><ArrowLeft className="mr-1 size-4" />Back</Button>
-      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold text-on-radiant" style={{ background: trend.direction === "rising" ? UP : DOWN }}>{trend.direction === "rising" ? "▲ Rising" : "▼ Falling"}</span>
+      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold text-on-radiant" style={{ background: trend.direction === "rising" ? UP : DOWN }}>{trend.direction === "rising" ? "▲ Raising" : "▼ Falling"}</span>
       <div className="ml-auto flex items-center gap-2">
         <div className="flex rounded-full border border-border bg-card p-0.5 text-[11px] font-semibold">
           {(["day", "month", "quarter", "year"] as const).map((p) => <button key={p} type="button" onClick={() => setPeriod(p)}

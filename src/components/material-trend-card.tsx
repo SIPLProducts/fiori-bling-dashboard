@@ -85,7 +85,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
       </div>
       <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "Top 10 each", all.length)}{chip("rising", "▲ Top Raising", top.rising.length, UP)}{chip("falling", "▼ Top Falling", top.falling.length, DOWN)}</div>
       {filter === "all" ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <MoverPanel key={`r-${q}-${sort}`} title="▲ Rising" tone={UP} items={list.filter((t) => t.direction === "rising")} empty="No rising materials" renderTile={tile} />
+        <MoverPanel key={`r-${q}-${sort}`} title="▲ Raising" tone={UP} items={list.filter((t) => t.direction === "rising")} empty="No raising materials" renderTile={tile} />
         <MoverPanel key={`f-${q}-${sort}`} title="▼ Falling" tone={DOWN} items={list.filter((t) => t.direction !== "rising")} empty="No falling materials" renderTile={tile} />
       </div> : <>
       {list.length ? <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">{list.slice(pg * PAGE, pg * PAGE + PAGE).map((t, i) => tile(t, pg * PAGE + i))}</ul> : <p className="py-8 text-center text-xs text-muted-foreground">No material shows a steady price change for these filters.</p>}
