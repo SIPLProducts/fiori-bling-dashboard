@@ -879,6 +879,7 @@ export type Database = {
           delivery_date: string | null
           division_name: string | null
           doc_date: string | null
+          ekgrp_desc: string | null
           id: string
           item_category: string | null
           item_category_epstp: string | null
@@ -947,6 +948,7 @@ export type Database = {
           delivery_date?: string | null
           division_name?: string | null
           doc_date?: string | null
+          ekgrp_desc?: string | null
           id?: string
           item_category?: string | null
           item_category_epstp?: string | null
@@ -1015,6 +1017,7 @@ export type Database = {
           delivery_date?: string | null
           division_name?: string | null
           doc_date?: string | null
+          ekgrp_desc?: string | null
           id?: string
           item_category?: string | null
           item_category_epstp?: string | null

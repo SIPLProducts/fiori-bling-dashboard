@@ -93,3 +93,12 @@ describe("Domestic / Remaining tiles", () => {
     expect(domesticSplit(rows)).toEqual({ total: 140, domestic: 100, remaining: 40 });
   });
 });
+
+describe("EKGRP_DESC purchasing group", () => {
+  it("stores EKGRP_DESC and shows it instead of the code", () => {
+    const { rows } = mapPurchaseOrdersPayload([{ EBELN: "4100013323", EBELP: 1, EKGRP: "010", EKGRP_DESC: "PurGroup-NCPP", NETWR: 1 }], "Purchase_Orders");
+    expect(rows[0]!["ekgrp_desc"]).toBe("PurGroup-NCPP");
+    expect(toPoRow(rows[0]!).purGroup).toBe("PurGroup-NCPP");
+    expect(toPoRow({ ...rows[0]!, ekgrp_desc: null }).purGroup).toBe("010");
+  });
+});

@@ -5,7 +5,7 @@ import { isExcludedPoType, poTypeGroup } from "@/lib/open-po-data";
 
 export type PoRow = {
   poNo: string; item: string; poDate: string; deliveryDate: string; days: number;
-  poType: string; poTypeCode: string; vendor: string; vendorName: string; purGroup: string;
+  poType: string; poTypeCode: string; vendor: string; vendorName: string; purGroup: string; purGroupCode: string;
   plant: string; plantName: string; material: string; materialName: string; materialGroup: string;
   qty: number; uom: string; netPrice: number; currency: string;
   /** Raw value in the line's own currency. */
@@ -32,7 +32,7 @@ export function toPoRow(r: Rec): PoRow {
   return {
     poNo: t(r["po"]), item: t(r["po_item"]), poDate: t(r["po_date"]), deliveryDate: t(r["delivery_date"]), days: n(r["no_of_days"]),
     poType: t(r["po_doc_type"]) || "—", poTypeCode: t(r["po_doc_type"]), vendor: v.code, vendorName: v.name || "—",
-    purGroup: t(r["purchasing_group"]) || "—", plant: t(r["plant"]), plantName: t(r["division_name"]) || t(r["plt_short"]) || t(r["plt_name"]) || t(r["plant"]),
+    purGroup: t(r["ekgrp_desc"]) || t(r["purchasing_group"]) || "—", purGroupCode: t(r["purchasing_group"]), plant: t(r["plant"]), plantName: t(r["division_name"]) || t(r["plt_short"]) || t(r["plt_name"]) || t(r["plant"]),
     material: t(r["material"]), materialName: t(r["short_text"]) || t(r["material"]) || "—", materialGroup: t(r["material_group"]) || "—",
     qty: n(r["order_quantity"]), uom: t(r["order_unit"]), netPrice: n(r["net_price"]), currency: cur,
     netValue: n(r["net_order_value"]), pendDelQty: n(r["still_to_be_delivered_qty"]), pendDelValue: n(r["still_to_be_delivered_val"]),
@@ -116,7 +116,7 @@ export function quarterlyCompare(rows: PoRow[]) {
 }
 
 const PAGE = 1000, CONCURRENCY = 6;
-const COLS = "id,po,po_item,po_date,delivery_date,no_of_days,po_doc_type,vendor_supplying_plant,name_of_vendor,purchasing_group,plant,plt_name,plt_short,material,short_text,material_group,order_quantity,order_unit,net_price,currency_key,net_order_value,still_to_be_delivered_qty,still_to_be_delivered_val,still_to_be_invoiced_val,user_name,deletion_ind,storage_location,mngrp1,pcgrp1,pcgrp2,division_name";
+const COLS = "id,po,po_item,po_date,delivery_date,no_of_days,po_doc_type,vendor_supplying_plant,name_of_vendor,purchasing_group,plant,plt_name,plt_short,material,short_text,material_group,order_quantity,order_unit,net_price,currency_key,net_order_value,still_to_be_delivered_qty,still_to_be_delivered_val,still_to_be_invoiced_val,user_name,deletion_ind,storage_location,mngrp1,pcgrp1,pcgrp2,division_name,ekgrp_desc";
 
 export async function getPoRows(): Promise<PoRow[]> {
   const head = await supabase.from("purchase_orders").select("id", { count: "exact", head: true });
@@ -137,7 +137,7 @@ export async function getPoRows(): Promise<PoRow[]> {
   return pages.flat().map(toPoRow).filter((r) => !r.deleted && !isExcludedPoType(r.poTypeCode));
 }
 
-export const purchaseOrdersQuery = queryOptions({ queryKey: ["purchase-orders", "v2-zpolist"], queryFn: getPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+export const purchaseOrdersQuery = queryOptions({ queryKey: ["purchase-orders", "v3-ekgrp-desc"], queryFn: getPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
 
 /** DOMESTIC document-type value and the remaining value (INR lines only, raw ₹). */
 export function domesticSplit(rows: PoRow[]) {

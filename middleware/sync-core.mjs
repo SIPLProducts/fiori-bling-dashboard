@@ -1058,6 +1058,7 @@ function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ n
     row["doc_date"] = orderBookDate(pick10(raw, "DOC_DATE"));
     Object.assign(row, sapGroupColumns(raw));
     row["division_name"] = text8(pick10(raw, "DIVISION_NAME"));
+    row["ekgrp_desc"] = text8(pick10(raw, "EKGRP_DESC"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];

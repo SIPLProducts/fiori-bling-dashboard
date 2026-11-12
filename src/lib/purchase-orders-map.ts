@@ -75,6 +75,7 @@ export function mapPurchaseOrdersPayload(payload: unknown, endpointName: string,
     row["doc_date"] = orderBookDate(pick(raw, "DOC_DATE"));
     Object.assign(row, sapGroupColumns(raw));
     row["division_name"] = text(pick(raw, "DIVISION_NAME"));
+    row["ekgrp_desc"] = text(pick(raw, "EKGRP_DESC"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];
