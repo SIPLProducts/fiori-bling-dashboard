@@ -8,7 +8,7 @@ import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-d
 import { ZrmmatCompareCard } from "@/components/zrmmat-compare-card";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, domesticSplit, poToPurchaseRows, type PoRow } from "@/lib/purchase-orders-data";
+import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, poToPurchaseRows, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const CR = 1e7;
@@ -43,7 +43,6 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     && (!f.mainGroup || r.mainGroup === f.mainGroup) && (!f.sub1 || r.sub1 === f.sub1) && (!f.sub2 || r.sub2 === f.sub2) && (!f.division || r.division === f.division)
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
-  const dom = domesticSplit(filtered);
   const zkRows = useMemo(() => poToPurchaseRows(filtered), [filtered]);
   const types = sumInr(filtered, poGroup);
   const stacked = monthlyByGroup(filtered).map((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? v / CR : v])));
@@ -78,10 +77,9 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       </div>}
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} tone="#1f6fd1" />
-      <Tile icon={<IndianRupee className="size-5" />} label="DOMESTIC Val" value={cr(dom.domestic)} tone="#0f9d8a" />
-      <Tile icon={<IndianRupee className="size-5" />} label="Remaining Val" value={cr(dom.remaining)} tone="#e08a1e" />
+      {types.filter((t) => t.value !== 0).map((t) => <Tile key={t.name} icon={<IndianRupee className="size-5" />} label={`${t.name} Val`} value={cr(t.value)} tone={PO_GROUP_COLORS[t.name] ?? "#64748b"} />)}
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
