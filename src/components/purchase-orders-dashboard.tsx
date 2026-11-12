@@ -6,6 +6,9 @@ import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
 import { ZrmmatCompareCard } from "@/components/zrmmat-compare-card";
+import { MaterialTrendSection } from "@/components/material-trend-card";
+import { MaterialPricePage } from "@/components/material-price-page";
+import type { MaterialTrend } from "@/lib/purchase-material-trend";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
 import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, poToPurchaseRows, type PoRow } from "@/lib/purchase-orders-data";
@@ -24,6 +27,7 @@ const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materi
 export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const [f, setF] = useState<Filters>(EMPTY);
   const [collapsed, setCollapsed] = useState(true);
+  const [openMat, setOpenMat] = useState<MaterialTrend | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const opts = useMemo(() => {
@@ -63,6 +67,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   }, [filtered]);
   const field = (k: keyof Filters, label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
+
+  if (openMat) return <MaterialPricePage trend={openMat} rows={zkRows} onBack={() => setOpenMat(null)} />;
 
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
@@ -126,6 +132,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     <Card tint="violet" title="PO Value by Purchasing Group"><BarList data={purGroups} /></Card>
 
     <ZrmmatCompareCard rows={zkRows} />
+
+    <MaterialTrendSection rows={zkRows} onOpen={(t) => { setOpenMat(t); window.scrollTo({ top: 0 }); }} />
 
     <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
   </div>;
