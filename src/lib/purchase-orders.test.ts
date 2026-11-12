@@ -81,3 +81,15 @@ describe("ZPO_LIST custom dates", () => {
     expect(out.BEDAT_FROM).toBe("20260401");
   });
 });
+
+import { domesticSplit } from "./purchase-orders-data";
+describe("Domestic / Remaining tiles", () => {
+  it("splits INR value into DOMESTIC and remaining", () => {
+    const rows = [
+      { inr: true, netValue: 100, poTypeCode: "ZPDM" },
+      { inr: true, netValue: 40, poTypeCode: "ZPIM" },
+      { inr: false, netValue: 999, poTypeCode: "ZPDM" },
+    ] as never[];
+    expect(domesticSplit(rows)).toEqual({ total: 140, domestic: 100, remaining: 40 });
+  });
+});

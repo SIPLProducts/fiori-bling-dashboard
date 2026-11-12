@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { BarList, Card, Donut, PlantColumns, Tile } from "@/components/open-po-dashboard";
+import { ZrmmatCompareCard } from "@/components/zrmmat-compare-card";
 import { TINTS } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, type PoRow } from "@/lib/purchase-orders-data";
+import { monthlyByGroup, PO_GROUP_COLORS, PO_GROUPS, poGroup, poTotals, quarterlyCompare, sumInr, domesticSplit, poToPurchaseRows, type PoRow } from "@/lib/purchase-orders-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const CR = 1e7;
@@ -42,6 +43,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     && (!f.mainGroup || r.mainGroup === f.mainGroup) && (!f.sub1 || r.sub1 === f.sub1) && (!f.sub2 || r.sub2 === f.sub2) && (!f.division || r.division === f.division)
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to]);
   const tot = poTotals(filtered);
+  const dom = domesticSplit(filtered);
+  const zkRows = useMemo(() => poToPurchaseRows(filtered), [filtered]);
   const types = sumInr(filtered, poGroup);
   const stacked = monthlyByGroup(filtered).map((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? v / CR : v])));
   const qc = quarterlyCompare(filtered);
@@ -51,7 +54,7 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
   const materials = sumInr(filtered, (r) => r.materialName).slice(0, 10);
   const plants = sumInr(filtered, (r) => r.division || r.plant).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
   const purGroups = sumInr(filtered, (r) => r.purGroup).slice(0, 10);
-  const grp = (k: (r: PoRow) => string) => summarizeGroupsByDivision(filtered.filter((r) => r.inr && k(r)).map((r) => ({ name: k(r), value: r.netValue, order: r.poNo, division: r.plantName || r.plant })), (r) => r.name);
+  const grp = (k: (r: PoRow) => string) => summarizeGroupsByDivision(filtered.filter((r) => r.inr && k(r)).map((r) => ({ name: k(r), value: r.netValue / CR, order: r.poNo, division: r.plantName || r.plant })), (r) => r.name);
   const mainGroups = grp((r) => r.mainGroup), sub1s = grp((r) => r.sub1), sub2s = grp((r) => r.sub2);
   const gChart = (g: ReturnType<typeof grp>, label: string) => g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
   const monthly = useMemo(() => {
@@ -75,9 +78,10 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
       </div>}
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.value)} tone="#1f6fd1" />
-      <Tile icon={<ClipboardList className="size-5" />} label="POs / Lines" value={`${tot.poCount.toLocaleString("en-IN")} / ${tot.lines.toLocaleString("en-IN")}`} tone="#0f9d8a" />
+      <Tile icon={<IndianRupee className="size-5" />} label="DOMESTIC Val" value={cr(dom.domestic)} tone="#0f9d8a" />
+      <Tile icon={<IndianRupee className="size-5" />} label="Remaining Val" value={cr(dom.remaining)} tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
@@ -122,6 +126,8 @@ export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
     </Card>
 
     <Card tint="violet" title="PO Value by Purchasing Group"><BarList data={purGroups} /></Card>
+
+    <ZrmmatCompareCard rows={zkRows} />
 
     <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
   </div>;

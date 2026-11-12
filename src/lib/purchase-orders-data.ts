@@ -1,3 +1,4 @@
+import type { PurchaseRow } from "@/lib/purchase-register-data";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isExcludedPoType, poTypeGroup } from "@/lib/open-po-data";
@@ -137,3 +138,19 @@ export async function getPoRows(): Promise<PoRow[]> {
 }
 
 export const purchaseOrdersQuery = queryOptions({ queryKey: ["purchase-orders", "v2-zpolist"], queryFn: getPoRows, staleTime: Infinity, refetchOnWindowFocus: false });
+
+/** DOMESTIC document-type value and the remaining value (INR lines only, raw ₹). */
+export function domesticSplit(rows: PoRow[]) {
+  let total = 0, domestic = 0;
+  for (const r of rows) if (r.inr) { total += r.netValue; if (poGroup(r) === "DOMESTIC") domestic += r.netValue; }
+  return { total, domestic, remaining: total - domestic };
+}
+
+/** Adapt INR PO lines to the Purchase Register row shape used by the ZKEYRM Comparison card (value in ₹ Cr). */
+export function poToPurchaseRows(rows: PoRow[]): PurchaseRow[] {
+  return rows.filter((r) => r.inr).map((r) => ({
+    date: r.poDate, plant: r.plant, plantName: r.division || r.plantName, plantSh: r.division || r.plantName, profitCenter: "", profitCenterName: "",
+    vendor: r.vendor, vendorName: r.vendorName, material: r.material, materialName: r.materialName, group: r.materialGroup, type: "Domestic",
+    value: r.netValue / 1e7, docNo: r.poNo, grNo: r.item, qty: r.qty, unit: r.uom, rate: r.netPrice,
+  }));
+}
