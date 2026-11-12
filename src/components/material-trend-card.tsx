@@ -83,7 +83,7 @@ export function MaterialTrendSection({ rows, onOpen }: { rows: PurchaseRow[]; on
             <option value="count">Most purchased</option><option value="spend">Highest spend</option><option value="rise">Biggest rise</option><option value="fall">Biggest fall</option></select>
         </div>
       </div>
-      <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "Top 10 each", all.length)}{chip("rising", "▲ Top Rising", top.rising.length, UP)}{chip("falling", "▼ Top Falling", top.falling.length, DOWN)}</div>
+      <div className="mb-2 flex flex-wrap gap-1.5">{chip("all", "Top 10 each", all.length)}{chip("rising", "▲ Top Raising", top.rising.length, UP)}{chip("falling", "▼ Top Falling", top.falling.length, DOWN)}</div>
       {filter === "all" ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <MoverPanel key={`r-${q}-${sort}`} title="▲ Rising" tone={UP} items={list.filter((t) => t.direction === "rising")} empty="No rising materials" renderTile={tile} />
         <MoverPanel key={`f-${q}-${sort}`} title="▼ Falling" tone={DOWN} items={list.filter((t) => t.direction !== "rising")} empty="No falling materials" renderTile={tile} />

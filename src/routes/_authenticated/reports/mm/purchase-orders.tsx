@@ -17,9 +17,9 @@ import { purchaseOrdersQuery } from "@/lib/purchase-orders-data";
 
 export const Route = createFileRoute("/_authenticated/reports/mm/purchase-orders")({
   head: () => ({ meta: [
-    { title: "Purchase Orders — HBL MIS Portal" },
+    { title: "Purchase Orders List — HBL MIS Portal" },
     { name: "description", content: "Purchase orders by type, vendor, plant and delivery status (ZME2N)." },
-    { property: "og:title", content: "Purchase Orders — HBL MIS Portal" },
+    { property: "og:title", content: "Purchase Orders List — HBL MIS Portal" },
     { property: "og:description", content: "Purchase orders by type, vendor, plant and delivery status (ZME2N)." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
@@ -36,7 +36,7 @@ function Page() {
   const pdf = async () => {
     setBusy(true);
     await new Promise((r) => setTimeout(r, 300));
-    try { await exportDashboardPdf(ref.current, datedFileName("Purchase Orders", "pdf"), "[data-pdf-exclude]", { headerSelector: "[data-pdf-header]", footerText: "HBL Confidential — Internal Use Only", preserveComputedChartColors: true }); }
+    try { await exportDashboardPdf(ref.current, datedFileName("Purchase Orders List", "pdf"), "[data-pdf-exclude]", { headerSelector: "[data-pdf-header]", footerText: "HBL Confidential — Internal Use Only", preserveComputedChartColors: true }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "PDF failed"); }
     finally { setBusy(false); }
   };
@@ -45,10 +45,10 @@ function Page() {
   const actions = <>
     <span className="text-xs text-muted-foreground"><span className="font-medium">Data available:</span> {dates.length ? `${dmy(dates[0])} – ${dmy(dates[dates.length - 1])}` : "No data"}</span>
     <Button type="button" variant="action" size="sm" className="h-7 text-xs" onClick={() => void q.refetch()} disabled={q.isFetching}><RefreshCw className={`size-3.5 ${q.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
-    <SyncNowButton endpointName="Purchase_Orders" label="Purchase Orders" />
+    <SyncNowButton endpointName="Purchase_Orders" label="Purchase Orders List" />
     <Button type="button" variant="export" size="sm" className="h-7 text-xs" onClick={pdf} disabled={busy}><FileDown className="size-3.5" />PDF</Button>
   </>;
-  return <ReportShell title="Purchase Orders" unitLabel="Val in Cr" compact actions={allowed ? actions : undefined}>
-    {!isLoading && !allowed ? <AccessDenied area="Purchase Orders" /> : <div ref={ref}>{busy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3"><div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div><div className="text-right"><h1 className="text-lg font-bold text-card-foreground">Purchase Orders</h1><p className="text-[11px] font-medium text-muted-foreground">Val in Cr</p></div></div> : null}{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <PurchaseOrdersDashboard rows={q.data ?? []} />}</div>}
+  return <ReportShell title="Purchase Orders List" unitLabel="Val in Cr" compact actions={allowed ? actions : undefined}>
+    {!isLoading && !allowed ? <AccessDenied area="Purchase Orders List" /> : <div ref={ref}>{busy ? <div data-pdf-header className="flex items-center justify-between gap-6 border-b border-border bg-card px-4 py-3"><div className="min-w-0"><img src={hblLogo} alt="HBL" className="h-10 w-auto object-contain" /><p className="mt-1 text-xs font-semibold text-card-foreground">HBL Engineering Limited</p></div><div className="text-right"><h1 className="text-lg font-bold text-card-foreground">Purchase Orders List</h1><p className="text-[11px] font-medium text-muted-foreground">Val in Cr</p></div></div> : null}{q.isError ? <p className="p-4 text-sm text-destructive">{(q.error as Error).message}</p> : q.isLoading ? <GlassLoadingPage /> : <PurchaseOrdersDashboard rows={q.data ?? []} />}</div>}
   </ReportShell>;
 }

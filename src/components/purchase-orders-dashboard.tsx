@@ -155,13 +155,13 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
   const typeLabel = (r: PoRow) => `${r.poTypeCode || "—"} – ${poGroup(r)}`;
   const excel = async () => {
     const { Workbook } = await import("exceljs");
-    const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders");
+    const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders List");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
     list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue)]));
     const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value)]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-    const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Orders", "xlsx"); a.click();
+    const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Orders List", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return <section className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>

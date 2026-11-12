@@ -18,12 +18,12 @@ export function PurchaseOrdersLaunchCard({ fallback }: { fallback: React.ReactNo
     const k = poTypeGroup(r.poType || ""); (a[k] ??= { name: k, value: 0, count: 0 }); a[k].value += r.netValue; a[k].count++; return a;
   }, {})).sort((a, b) => b.value - a.value) : [];
   const max = Math.max(...types.map((g) => g.value), 1e-9);
-  return <section aria-label="Purchase Orders" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
+  return <section aria-label="Purchase Orders List" className="flex h-full min-h-[188px] flex-col overflow-hidden rounded-2xl border p-4 text-left shadow-launchpad-tile" style={{
     borderColor: "color-mix(in oklab, var(--kpi-2) 28%, var(--color-border))",
     background: "linear-gradient(160deg, color-mix(in oklab, var(--kpi-2) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)",
   }}>
     <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0"><p className="text-[11px] font-semibold text-primary uppercase">Purchase Orders</p>
+      <div className="min-w-0"><p className="text-[11px] font-semibold text-primary uppercase">Purchase Orders List</p>
         <p className="mt-2 text-[26px] xl:text-[22px] 2xl:text-[26px] leading-none font-semibold tabular-nums" style={{ color: "var(--kpi-1)" }}>{cr(s.poValue)}</p></div>
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><PackageOpen className="size-[18px]" /></span>
     </div>

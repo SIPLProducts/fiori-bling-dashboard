@@ -57,7 +57,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     groupKey: "purchase",
     children: [
       { key: "mm.purchase-register", label: "Purchase Register", tileKey: "mm_purchase_register" },
-      { key: "mm.purchase-orders", label: "Purchase Orders", tileKey: "mm_purchase_orders" },
+      { key: "mm.purchase-orders", label: "Purchase Orders List", tileKey: "mm_purchase_orders" },
       { key: "mm.open-purchase-orders", label: "Open Purchase Orders", tileKey: "mm_open_purchase_orders" },
     ],
   },
