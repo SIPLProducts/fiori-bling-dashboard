@@ -6,7 +6,9 @@ import { BarList, Card, Tile } from "@/components/open-po-dashboard";
 import { ZrmmatCompareCard } from "@/components/zrmmat-compare-card";
 import { TINTS, type Tint } from "@/lib/card-tints";
 import { datedFileName } from "@/lib/format";
-import { radiantBar } from "@/lib/radiant";
+import { radiantColor } from "@/lib/radiant";
+import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
+import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { sumBy, toPurchaseRows, type StockRow } from "@/lib/month-wise-stock-map";
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -37,6 +39,10 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
   const period = (k: "from" | "to", label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{periods.map((p) => <option key={p} value={p}>{pl(p)}</option>)}</select></label>;
   const sub = latest ? pl(latest) : "";
+  const gCard = (title: string, k: (r: StockRow) => string, tint: Tint) => {
+    const g = summarizeGroupsByDivision(cur.filter((r) => k(r)).map((r) => ({ name: k(r), value: r.value / 1e7, order: r.key, division: r.plant })), (r) => r.name);
+    return <Card tint={tint} title={title} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={title} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>;
+  };
   const groupCard = (title: string, k: (r: StockRow) => string, tint: Tint) => <Card tint={tint} title={title} sub={sub}><BarList data={sumBy(cur, k).slice(0, 10)} fmt={full} /></Card>;
 
   return <div className="space-y-3">
@@ -49,15 +55,15 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
     </div>
 
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Inv Val" value={full(total)} note={sub} tone="#1f6fd1" />
-      {types.filter((t) => t.value !== 0).map((t, i) => <Tile key={t.name} icon={<IndianRupee className="size-5" />} label={`${t.name} Val`} value={full(t.value)} note={sub} tone={TONES[i % TONES.length] ?? "#64748b"} />)}
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Inv Val" value={full(total)} tone="#1f6fd1" />
+      {types.filter((t) => t.value !== 0).map((t, i) => <Tile key={t.name} icon={<IndianRupee className="size-5" />} label={`${t.name} Val`} value={full(t.value)} tone={TONES[i % TONES.length] ?? "#64748b"} />)}
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
       <Card tint="teal" title="Month Wise Inventory" sub="CB Val"><div className="h-64"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 18, left: 10, right: 8 }}>
-        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
+        <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-g${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
         <Tooltip formatter={(v: number) => full(v)} />
-        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{monthly.map((_, i) => <Cell key={i} fill={radiantBar(i)} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
+        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{monthly.map((_, i) => <Cell key={i} fill={`url(#mws-g${i % 10})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
       <Card tint="sky" title="Top Types" sub={sub}><BarList data={types.slice(0, 10)} fmt={full} /></Card>
     </div>
@@ -67,10 +73,10 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
       {groupCard("Top 10 Material Groups", (r) => r.matGroup, "steel")}
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      {groupCard("Main Group", (r) => r.mainGroup, "sky")}
-      {groupCard("Sub Group 1", (r) => r.sub1, "teal")}
-      {groupCard("Sub Group 2", (r) => r.sub2, "violet")}
-      {groupCard("Sub Group 3", (r) => r.sub3, "rose")}
+      {gCard("Main Group", (r) => r.mainGroup, "sky")}
+      {gCard("Sub Group 1", (r) => r.sub1, "teal")}
+      {gCard("Sub Group 2", (r) => r.sub2, "violet")}
+      {gCard("Sub Group 3", (r) => r.sub3, "rose")}
     </div>
 
     <ZrmmatCompareCard rows={zk} />
