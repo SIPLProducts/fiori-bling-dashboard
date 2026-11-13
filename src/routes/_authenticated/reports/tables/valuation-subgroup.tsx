@@ -10,5 +10,5 @@ export const Route = createFileRoute("/_authenticated/reports/tables/valuation-s
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
-  component: () => <MasterTableScreen cat="valuation_subgroup" title="Valuation Class Wise Subgroup" screenKey="tables.valuation-subgroup" />,
+  component: () => <MasterTableScreen cat="valuation_subgroup" title="Valuation Class Wise Subgroup" screenKey="tables.valuation-subgroup" singleSheet />,
 });

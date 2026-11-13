@@ -68,30 +68,34 @@ function View({ canEdit }: { canEdit: boolean }) {
   const exportRows = filtered.map((r) => ({ ...r.data, Month: MONTHS[r.month - 1]!, Year: String(r.year), "Created Date": fmtIst(r.created_at), "Updated Date": fmtIst(r.updated_at) }));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 lg:flex-nowrap">
-      <div className="min-w-0 flex-1 sm:w-40 sm:flex-none"><div className="mb-1 text-xs text-muted-foreground">Month</div>
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 md:flex-nowrap">
+      <div className="min-w-0 flex-1 sm:w-40 sm:flex-none md:w-32"><div className="mb-1 text-xs text-muted-foreground">Month</div>
         <Select value={String(month)} onValueChange={(v) => { setMonth(Number(v)); setPage(0); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>{FY_MONTH_ORDER.map((m) => <SelectItem key={m} value={String(m)}>{MONTHS[m - 1]}</SelectItem>)}</SelectContent>
         </Select></div>
-      <div className="min-w-0 flex-1 sm:w-28 sm:flex-none"><div className="mb-1 text-xs text-muted-foreground">Year</div>
+      <div className="min-w-0 flex-1 sm:w-28 sm:flex-none md:w-24"><div className="mb-1 text-xs text-muted-foreground">Year</div>
         <Select value={String(year)} onValueChange={(v) => { setYear(Number(v)); setPage(0); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
         </Select></div>
-      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:w-48 lg:min-w-0 lg:flex-1 xl:max-w-72" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 md:w-32 md:min-w-0 xl:max-w-80" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
       <div className="shrink-0 pb-2 text-xs text-muted-foreground">{rows.length} rows</div>
-      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
-        {rows.length > 0 && <Button className="btn-success" onClick={() => void downloadMasterExcel(label, allCols, exportRows, TITLE)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
+      <div className="flex w-full flex-wrap justify-end gap-2 md:ml-auto md:w-auto md:shrink-0 md:flex-nowrap">
+        {rows.length > 0 && <Button className="btn-success md:px-3" onClick={() => void downloadMasterExcel(label, allCols, exportRows, TITLE)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {canEdit && <>
-          {rows.length > 0 && <Button className="btn-danger" onClick={() => { if (confirm(`Delete all ${rows.length} rows for ${label}?`)) void run(() => deleteRows(rows.map((r) => r.id), month, year), "Month deleted"); }}><Trash2 className="mr-1 h-4 w-4" />Delete month</Button>}
+          {rows.length > 0 && <Button className="btn-danger md:px-3" onClick={() => { if (confirm(`Delete all ${rows.length} rows for ${label}?`)) void run(() => deleteRows(rows.map((r) => r.id), month, year), "Month deleted"); }}><Trash2 className="mr-1 h-4 w-4" />Delete<span className="hidden xl:inline">&nbsp;month</span></Button>}
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
           <UploadExcelButton busy={busy} onClick={() => fileRef.current?.click()} />
         </>}
       </div>
     </div>
-    {rows.length > 0 && <div className="text-xs text-muted-foreground">{label} · Created on <span className="font-medium text-foreground">{fmtIst(created)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(updated)}</span> IST</div>}
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="tm-card">
+    <div className="tm-card-head">
+      <div className="text-sm font-semibold">{label} <span className="text-xs font-normal text-muted-foreground">· {filtered.length} rows</span></div>
+    {rows.length > 0 && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(created)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(updated)}</span> IST</div>}
+    </div>
+    <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="sticky top-0 z-10 tm-thead"><tr>
           {allCols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
@@ -113,11 +117,12 @@ function View({ canEdit }: { canEdit: boolean }) {
         </tbody>
       </table>
     </div>
-    {pages > 1 && <div className="flex items-center gap-2 text-xs">
+    {pages > 1 && <div className="flex items-center gap-2 border-t px-3 py-2 text-xs">
       <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button>
       <span>Page {page + 1} / {pages}</span>
       <Button size="sm" variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next</Button>
     </div>}
+    </div>
     <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Edit row</DialogTitle></DialogHeader>

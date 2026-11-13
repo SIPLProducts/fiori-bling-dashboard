@@ -10,5 +10,5 @@ export const Route = createFileRoute("/_authenticated/reports/tables/zpc-group")
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
-  component: () => <MasterTableScreen cat="zpc_group" title="ZPC GROUP" screenKey="tables.zpc-group" />,
+  component: () => <MasterTableScreen cat="zpc_group" title="ZPC GROUP" screenKey="tables.zpc-group" singleSheet />,
 });

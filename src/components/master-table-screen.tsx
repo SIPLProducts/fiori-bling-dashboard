@@ -15,21 +15,22 @@ import { addMasterRow, deleteMaster, deleteMasterRows, downloadMasterExcel, getM
 const PAGE = 50;
 const fmtIst = (s?: string | null) => s ? new Date(s).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "—";
 
-export function MasterTableScreen({ cat, title, screenKey }: { cat: MasterCategory; title: string; screenKey: string }) {
+export function MasterTableScreen({ cat, title, screenKey, singleSheet }: { cat: MasterCategory; title: string; screenKey: string; singleSheet?: boolean }) {
   const { data, isLoading } = useLaunchpad();
   const isAdmin = !!data?.isSuperAdmin || (data?.roles ?? []).some((r) => r === "admin" || r === "super_admin");
   const allowed = isAdmin || hasScreen(data?.screens, screenKey);
   return <ReportShell title={title} description="Tables Master">
-    {!isLoading && !allowed ? <AccessDenied area={title} /> : <View isAdmin={isAdmin} cat={cat} title={title} />}
+    {!isLoading && !allowed ? <AccessDenied area={title} /> : <View isAdmin={isAdmin} cat={cat} title={title} single={!!singleSheet} />}
   </ReportShell>;
 }
 
-function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCategory; title: string }) {
+function View({ isAdmin, cat: CAT, title, single }: { isAdmin: boolean; cat: MasterCategory; title: string; single: boolean }) {
   const masters = mastersQuery(CAT);
   const qc = useQueryClient();
   const list = useQuery({ ...masters, refetchOnWindowFocus: false });
   const [selId, setSelId] = useState("");
-  const current = list.data?.find((m) => m.id === selId) ?? list.data?.[0];
+  const latest = useMemo(() => [...(list.data ?? [])].sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))[0], [list.data]);
+  const current = single ? latest : list.data?.find((m) => m.id === selId) ?? list.data?.[0];
   const rows = useQuery({ queryKey: ["master-rows", CAT, current?.id, current?.last_uploaded_at], queryFn: () => getMasterRowsWithId(current!.id), enabled: !!current, refetchOnWindowFocus: false });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -54,6 +55,17 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
     try {
       const s = await parseWorkbook(f);
       if (!s.length) { toast.error("No sheets with a header row found"); return; }
+      if (single) {
+        const sheet = { ...s[0]!, name: current?.name ?? s[0]!.name };
+        if (current && !confirm(`This will replace the current ${title} data (${current.row_count} rows) with ${sheet.rows.length} rows from the file. Continue?`)) return;
+        try {
+          setBusy("Starting…");
+          const n = await uploadSheet(sheet, ROW_KEY, (d, t) => setBusy(`${d} / ${t} rows`), CAT);
+          for (const m of list.data ?? []) if (m.name !== sheet.name) await deleteMaster(m.id);
+          toast.success(`${n} rows saved`); await reload();
+        } catch (e) { toast.error(`Upload failed: ${(e as Error).message}`); } finally { setBusy(null); }
+        return;
+      }
       const known = new Map((list.data ?? []).map((m) => [m.name, m.key_column]));
       setKeys(Object.fromEntries(s.map((x) => { const k = known.get(x.name); return [x.name, k && k !== ROW_KEY && k.split("+").every((c) => x.columns.includes(c)) ? k : ROW_KEY]; })));
       setSheets(s);
@@ -87,30 +99,34 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
   const allOnPage = view.length > 0 && view.every((r) => picked.has(r.id));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 lg:flex-nowrap">
-      <div className="w-full sm:w-auto sm:min-w-56 lg:min-w-44 lg:shrink-0">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 md:flex-nowrap">
+      {!single && <div className="w-full sm:w-auto sm:min-w-56 md:min-w-40 md:shrink-0">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); setPicked(new Set()); }}>
           <SelectTrigger><SelectValue placeholder={list.isLoading ? "Loading…" : "Upload Excel to see sheets"} /></SelectTrigger>
           <SelectContent>{(list.data ?? []).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
-      </div>
-      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:w-48 lg:min-w-0 lg:flex-1 xl:max-w-72" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-      {current && <div className="min-w-0 text-xs text-muted-foreground lg:max-w-56 lg:truncate">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)}</div>}
-      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
-        {current && <Button className="btn-success" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), title)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
+      </div>}
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 md:w-32 md:min-w-0 xl:max-w-80" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      {current && <div className="min-w-0 text-xs text-muted-foreground md:max-w-40 md:truncate">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)}</div>}
+      <div className="flex w-full flex-wrap justify-end gap-2 md:ml-auto md:w-auto md:shrink-0 md:flex-nowrap">
+        {current && <Button className="btn-success md:px-3" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), title)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           {current && <Button variant="outline" onClick={() => setEdit({ id: null, data: Object.fromEntries(cols.map((c) => [c, ""])) })}><Plus className="mr-1 h-4 w-4" />Add row</Button>}
-          {picked.size > 0 && <Button className="btn-danger" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
-          {current && <Button className="btn-danger" onClick={() => { if (confirm(`Delete sheet "${current.name}" and all its rows?`)) void run(() => deleteMaster(current.id), "Sheet deleted").then(() => setSelId("")); }}><Trash2 className="mr-1 h-4 w-4" />Delete sheet</Button>}
+          {picked.size > 0 && <Button className="btn-danger md:px-3" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
+          {current && <Button className="btn-danger md:px-3" onClick={() => { if (confirm(single ? `Delete all ${title} data?` : `Delete sheet "${current.name}" and all its rows?`)) void run(() => deleteMaster(current.id), "Sheet deleted").then(() => setSelId("")); }}><Trash2 className="mr-1 h-4 w-4" />{single ? "Delete" : "Delete sheet"}</Button>}
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-          <UploadExcelButton onClick={() => fileRef.current?.click()} />
+          <UploadExcelButton busy={single ? busy : null} onClick={() => fileRef.current?.click()} />
         </>}
       </div>
     </div>
 
-    {current && <div className="min-w-0 text-xs text-muted-foreground lg:max-w-56 lg:truncate">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="tm-card">
+    <div className="tm-card-head">
+      <div className="text-sm font-semibold">{single ? title : current?.name ?? title} <span className="text-xs font-normal text-muted-foreground">· {filtered.length} rows</span></div>
+    {current && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
+    </div>
+    <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="sticky top-0 z-10 tm-thead"><tr>
           {isAdmin && cols.length > 0 && <th className="w-8 px-2.5 py-2"><input type="checkbox" aria-label="Select page" checked={allOnPage} onChange={() => { const n = new Set(picked); view.forEach((r) => allOnPage ? n.delete(r.id) : n.add(r.id)); setPicked(n); }} /></th>}
@@ -126,14 +142,15 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/15" aria-label="Delete row" onClick={() => delRows([r.id])}><Trash2 className="h-3.5 w-3.5" /></Button>
             </td>}
           </tr>)}
-          {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create {title}." : "No {title} data uploaded yet."}</td></tr>}
+          {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? `Upload an Excel file to create ${title}.` : `No ${title} data uploaded yet.`}</td></tr>}
         </tbody>
       </table>
     </div>
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-2 border-t px-3 py-2 text-sm">
       <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button>
       <span>Page {page + 1} of {pages} · {filtered.length} rows</span>
       <Button size="sm" variant="outline" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</Button>
+    </div>
     </div>
 
     <Dialog open={!!edit} onOpenChange={(o) => { if (!o) setEdit(null); }}>
