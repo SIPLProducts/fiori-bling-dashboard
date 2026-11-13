@@ -88,21 +88,21 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
-      <div className="min-w-56">
+      <div className="w-full sm:w-auto sm:min-w-56">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); setPicked(new Set()); }}>
           <SelectTrigger><SelectValue placeholder={list.isLoading ? "Loading…" : "Upload Excel to see sheets"} /></SelectTrigger>
           <SelectContent>{(list.data ?? []).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <Input className="max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
       {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)}</div>}
-      <div className="ml-auto flex flex-wrap gap-2">
-        {current && <Button variant="outline" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), title)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
+      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto">
+        {current && <Button className="btn-success" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), title)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           {current && <Button variant="outline" onClick={() => setEdit({ id: null, data: Object.fromEntries(cols.map((c) => [c, ""])) })}><Plus className="mr-1 h-4 w-4" />Add row</Button>}
-          {picked.size > 0 && <Button variant="destructive" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
-          {current && <Button variant="outline" onClick={() => { if (confirm(`Delete sheet "${current.name}" and all its rows?`)) void run(() => deleteMaster(current.id), "Sheet deleted").then(() => setSelId("")); }}><Trash2 className="mr-1 h-4 w-4" />Delete sheet</Button>}
+          {picked.size > 0 && <Button className="btn-danger" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
+          {current && <Button className="btn-danger" onClick={() => { if (confirm(`Delete sheet "${current.name}" and all its rows?`)) void run(() => deleteMaster(current.id), "Sheet deleted").then(() => setSelId("")); }}><Trash2 className="mr-1 h-4 w-4" />Delete sheet</Button>}
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
           <UploadExcelButton onClick={() => fileRef.current?.click()} />
         </>}
@@ -123,7 +123,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
             {cols.map((c) => <td key={c} className="whitespace-nowrap px-2.5 py-1">{r.data[c] ?? ""}</td>)}
             {isAdmin && <td className="whitespace-nowrap px-2.5 py-1 text-right">
               <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit row" onClick={() => setEdit({ id: r.id, data: { ...Object.fromEntries(cols.map((c) => [c, ""])), ...r.data } })}><Pencil className="h-3.5 w-3.5" /></Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Delete row" onClick={() => delRows([r.id])}><Trash2 className="h-3.5 w-3.5" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/15" aria-label="Delete row" onClick={() => delRows([r.id])}><Trash2 className="h-3.5 w-3.5" /></Button>
             </td>}
           </tr>)}
           {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create {title}." : "No {title} data uploaded yet."}</td></tr>}

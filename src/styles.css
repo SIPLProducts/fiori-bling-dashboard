@@ -860,13 +860,26 @@
   background: linear-gradient(160deg, color-mix(in oklab, var(--kpi-6) var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%);
 }
 @utility tm-thead {
-  background-image: linear-gradient(90deg, var(--kpi-6), color-mix(in oklab, var(--kpi-6) 55%, var(--kpi-4)));
+  background-image: linear-gradient(90deg, oklch(0.5 0.1 195), oklch(0.45 0.15 265));
   color: oklch(1 0 0);
 }
 @utility btn-upload {
-  background-image: linear-gradient(135deg, color-mix(in oklab, var(--kpi-6) 85%, white), var(--kpi-6) 55%, color-mix(in oklab, var(--kpi-6) 60%, var(--kpi-4)));
+  background-image: linear-gradient(135deg, color-mix(in oklab, oklch(0.58 0.15 150) 85%, white), oklch(0.58 0.15 150) 55%, color-mix(in oklab, oklch(0.58 0.15 150) 60%, oklch(0.45 0.13 160)));
   color: oklch(1 0 0); border-color: transparent;
-  box-shadow: 0 8px 20px -8px color-mix(in oklab, var(--kpi-6) 70%, transparent);
+  box-shadow: 0 8px 20px -8px color-mix(in oklab, oklch(0.58 0.15 150) 70%, transparent);
   transition: transform .15s, box-shadow .15s, filter .15s;
-  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 12px 26px -8px color-mix(in oklab, var(--kpi-6) 80%, transparent); }
+  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 12px 26px -8px color-mix(in oklab, oklch(0.58 0.15 150) 80%, transparent); }
+}
+
+@utility btn-success {
+  background-image: linear-gradient(135deg, color-mix(in oklab, oklch(0.58 0.15 150) 70%, white), oklch(0.58 0.15 150));
+  color: oklch(1 0 0); border: 0;
+  box-shadow: 0 6px 16px -8px color-mix(in oklab, oklch(0.58 0.15 150) 70%, transparent);
+  &:hover:not(:disabled) { filter: brightness(1.07); }
+}
+@utility btn-danger {
+  background-image: linear-gradient(135deg, color-mix(in oklab, var(--destructive) 70%, white), var(--destructive));
+  color: oklch(1 0 0); border: 0;
+  box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--destructive) 70%, transparent);
+  &:hover:not(:disabled) { filter: brightness(1.07); }
 }
