@@ -146,11 +146,27 @@ export function PlaceholderTile({ type }: { type: PlaceholderType }) {
   </>;
 }
 
-export function TableStatusTile({ title, value, note, href, action = "Open table", icon = TableProperties }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge }) {
-  return <CardSurface label={title} value={value} note={note} icon={icon} href={href} accent={6} status={href ? action : "Under development"} />;
+function CompactTableTile({ title, value, note, href, action = "Open", icon: Icon = TableProperties, accent = 6 }: { title: string; value: string; note: string; href?: string | undefined; action?: string; icon?: typeof Gauge; accent?: number }) {
+  const style = { background: `linear-gradient(160deg, color-mix(in oklab, var(--kpi-${accent}) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)` } as CSSProperties;
+  return <div className="flex h-full min-h-[150px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 shadow-launchpad-tile" style={style}>
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</p>
+        <p className="mt-2 truncate text-base leading-tight font-semibold text-foreground">{value}</p>
+      </div>
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
+    </div>
+    <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+      <p className="min-w-0 truncate text-[10px] text-muted-foreground" title={note}>{note}</p>
+      {href ? <Link to={href} aria-label={`${action}: ${title}`} className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 text-[9px] font-semibold">{action}<ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></Link> : <span className="shrink-0 text-[9px] text-muted-foreground">Under development</span>}
+    </div>
+  </div>;
+}
+export function TableStatusTile({ title, value, note, href, action = "Open", icon = TableProperties }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge }) {
+  return <CompactTableTile title={title} value={value} note={note} href={href} action={action === "Open table" ? "Open" : action} icon={icon} />;
 }
 function ZkeyrmTile({ tile }: { tile: TileRecord }) {
   const q = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
   const count = q.data ? zrmmatMaterials(q.data).length : null;
-  return <CardSurface label="ZKEYRM" value={count == null ? (q.isLoading ? "…" : "Open") : count.toLocaleString("en-IN")} note={count == null ? "Tables Master" : `${count === 1 ? "material" : "materials"}`} icon={ICONS[tile.kpi_key as keyof typeof ICONS] ?? TableProperties} href={tile.target_path ?? "/launchpad"} accent={(tile.sort_order % 6) + 1} />;
+  return <CompactTableTile title="ZKEYRM" value={count == null ? (q.isLoading ? "…" : "Open") : `${count.toLocaleString("en-IN")} ${count === 1 ? "material" : "materials"}`} note="Tables Master" href={tile.target_path ?? "/launchpad"} />;
 }
