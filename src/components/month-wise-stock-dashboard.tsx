@@ -89,7 +89,7 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
       {gCard("Sub Group 3", (r) => r.sub3, "rose")}
     </div>
 
-    <ZrmmatCompareCard rows={zk} />
+    <ZrmmatCompareCard rows={zk} emptyLabel="no stock in selected months" />
 
     <div data-pdf-exclude><DetailsTable rows={filtered} /></div>
   </div>;

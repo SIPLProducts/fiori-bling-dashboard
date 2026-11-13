@@ -30,7 +30,7 @@ export const zrmmatRowsQuery = {
   staleTime: Infinity,
 };
 
-export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
+export function ZrmmatCompareCard({ rows, emptyLabel = "no purchase in selected period" }: { rows: PurchaseRow[]; emptyLabel?: string }) {
   const q = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
   const mats = useMemo(() => zrmmatMaterials(q.data ?? []), [q.data]);
   const names = useMemo(() => { const m = new Map<string, string>(); for (const r of rows) m.set(normMat(r.material), r.materialName); return m; }, [rows]);
@@ -85,13 +85,14 @@ export function ZrmmatCompareCard({ rows }: { rows: PurchaseRow[] }) {
           <Command shouldFilter={false}>
             <CommandInput value={search} onValueChange={setSearch} placeholder="Search material code or name" className="text-xs" />
             <CommandList>
+              <div className="px-2 py-1.5 text-[10px] text-muted-foreground border-b">All materials listed are from the ZKEYRM master table.</div>
               <CommandEmpty>No material found.</CommandEmpty>
               <CommandItem value={ALL} onSelect={() => { setSel(ALL); setDetailMonth(null); setOpen(false); }} className="text-xs">
                 <Check className={`size-3.5 ${sel === ALL ? "opacity-100" : "opacity-0"}`} />All ZKEYRM materials ({mats.length})
               </CommandItem>
               {opts.map((p) => <CommandItem key={p.m.material} value={p.m.material} onSelect={() => { setSel(p.m.material); setDetailMonth(null); setOpen(false); }} className="text-xs">
                 <Check className={`size-3.5 ${sel === p.m.material ? "opacity-100" : "opacity-0"}`} />
-                <span className="truncate">{p.m.material}{names.get(p.m.material) ? ` - ${names.get(p.m.material)}` : ""}{p.rs.length ? "" : " (no purchase)"}</span>
+                <span className="truncate" title={p.rs.length ? undefined : "In ZKEYRM master, but no records found for the current filters."}>{p.m.material}{names.get(p.m.material) ? ` - ${names.get(p.m.material)}` : ""}{p.rs.length ? "" : ` (${emptyLabel})`}</span>
               </CommandItem>)}
             </CommandList>
           </Command>
