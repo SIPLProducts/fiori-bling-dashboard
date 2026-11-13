@@ -1,3 +1,4 @@
+import { monthWiseStockQuery } from "@/lib/month-wise-stock-data";
 import type * as React from "react";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -82,7 +83,7 @@ function Launchpad() {
         return <section key={group.key} className="mb-7" data-module-accent style={{ "--module-accent": `var(--kpi-${MODULE_ACCENT[group.key] ?? 2})` } as React.CSSProperties}>
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
           {group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
-            {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
+            {groupTiles.map((tile) => tile.screen_key === "inv.month-wise-stock" ? <MonthWiseStockTile key={tile.id} href={tile.target_path ?? "/reports/inv/month-wise-stock"} /> : <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {groupTiles.filter((tile) => ["tables.sap-master", "tables.zrmmat", "tables.zpc-group", "tables.valuation-subgroup", "tables.month-wise-upload"].includes(tile.screen_key ?? "")).map((tile, index) => (
               <TableStatusTile
@@ -102,4 +103,12 @@ function Launchpad() {
       {data ? <p className="mt-7 text-[10px] text-muted-foreground">Data source: {data.providerMode === "mock" ? "sample data (SAP not connected)" : "SAP OData"}</p> : null}
     </main>
   </div>;
+}
+const MWS_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function MonthWiseStockTile({ href }: { href: string }) {
+  const q = useQuery(monthWiseStockQuery);
+  const rows = q.data ?? [];
+  const latest = rows.reduce((m, r) => (r.period > m ? r.period : m), "");
+  const total = rows.filter((r) => r.period === latest).reduce((s, r) => s + r.value, 0);
+  return <TableStatusTile title="Month Wise Stock" value={q.isLoading ? "…" : latest ? `₹${total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : "No data"} note={latest ? `Total Inv Val · ${MWS_MON[Number(latest.slice(5, 7)) - 1]}-${latest.slice(0, 4)}` : "Inventory"} href={href} accent={5} />;
 }

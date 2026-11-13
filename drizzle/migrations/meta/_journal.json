@@ -302,6 +302,13 @@
       "when": 1794568139947,
       "tag": "0042_user_scoped_purchase_kpis_and_zkeyrm_read",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794574659304,
+      "tag": "0043_month_wise_stock_read",
+      "breakpoints": true
     }
   ]
 }

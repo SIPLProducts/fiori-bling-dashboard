@@ -39,13 +39,13 @@ export function Tile({ icon, label, value, note, tone, unit }: { icon: ReactNode
     <div className="min-w-0"><p className="truncate text-xs font-semibold opacity-90">{label}</p><p className="truncate text-lg font-bold">{value}</p>{unit ? <p className="truncate text-[10px] font-medium opacity-85">{unit}</p> : null}{note ? <p className="truncate text-[10px] opacity-85">{note}</p> : null}</div>
   </div>;
 }
-export function BarList({ data, empty = "No data" }: { data: { name: string; value: number }[]; empty?: string }) {
+export function BarList({ data, empty = "No data", fmt = cr }: { data: { name: string; value: number }[]; empty?: string; fmt?: (v: number) => string }) {
   const max = Math.max(...data.map((d) => d.value), 0) || 1;
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">{empty}</p>;
   return <ul className="space-y-1.5">{data.map((d, i) => <li key={d.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-2 text-[11px]">
     <span className="truncate font-semibold text-foreground" title={d.name}>{d.name}</span>
     <span className="h-3.5 rounded-full bg-background/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)]"><span className="block h-full rounded-full" style={{ width: `${Math.max((d.value / max) * 100, 3)}%`, background: `linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 55%), ${radiantBar(i)}`, boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} /></span>
-    <span className="tabular-nums font-bold text-foreground">{cr(d.value)}</span>
+    <span className="tabular-nums font-bold text-foreground">{fmt(d.value)}</span>
   </li>)}</ul>;
 }
 export function Donut({ data, colors = COLORS, heads }: { data: { name: string; value: number }[]; colors?: string[]; heads?: [string, string, string] }) {
