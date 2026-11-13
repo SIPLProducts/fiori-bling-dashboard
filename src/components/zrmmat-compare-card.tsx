@@ -21,7 +21,7 @@ const tone = (v: number | null) => (v == null || v === 0 ? "" : v > 0 ? "text-de
 const ALL = "__all__";
 
 export const zrmmatRowsQuery = {
-  queryKey: ["sap-master-rows", "zrmmat-all"] as const,
+  queryKey: ["sap-master-rows", "zrmmat-all", "v2"] as const,
   queryFn: async () => {
     const ms = await mastersQuery("zrmmat").queryFn();
     const all = await Promise.all(ms.map((m) => getMasterRows(m.id)));

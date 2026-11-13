@@ -93,7 +93,7 @@ export const purchaseRegisterYearsQuery = {
 export type PurchaseKpis = { by: { name: PurchaseType; count: number; value: number }[]; total: number; count: number };
 /** Launchpad totals for the current FY, aggregated in the database (3 rows). */
 export const purchaseRegisterKpiQuery = {
-  queryKey: ["purchase-register", "v5-kpis"],
+  queryKey: ["purchase-register", "v6-kpis-scoped"],
   queryFn: async (): Promise<PurchaseKpis> => {
     const { from, to } = fyRange(currentFy());
     const { data, error } = await supabase.rpc("purchase_register_kpis", { _from: from, _to: to });

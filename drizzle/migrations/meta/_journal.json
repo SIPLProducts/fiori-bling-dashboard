@@ -295,6 +295,13 @@
       "when": 1794547996368,
       "tag": "0041_month_wise_upload",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794568139947,
+      "tag": "0042_user_scoped_purchase_kpis_and_zkeyrm_read",
+      "breakpoints": true
     }
   ]
 }
