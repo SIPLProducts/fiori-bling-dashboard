@@ -281,6 +281,13 @@
       "when": 1794470213912,
       "tag": "0039_purchase_orders_ekgrp_desc",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794534236802,
+      "tag": "0040_tables_master_zpc_valuation",
+      "breakpoints": true
     }
   ]
 }

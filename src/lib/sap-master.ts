@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { datedFileName } from "@/lib/format";
 
-export type SapMaster = { id: string; name: string; columns: string[]; key_column: string; row_count: number; last_uploaded_at: string };
+export type SapMaster = { id: string; name: string; columns: string[]; key_column: string; row_count: number; last_uploaded_at: string; created_at?: string | null; updated_at?: string | null };
 export type ParsedSheet = { name: string; columns: string[]; rows: Record<string, string>[] };
 export type MasterRow = { k: string; d: Record<string, string> };
 
@@ -79,11 +79,11 @@ export async function parseWorkbook(file: File): Promise<ParsedSheet[]> {
   return out;
 }
 
-export type MasterCategory = "sap_master" | "zrmmat";
+export type MasterCategory = "sap_master" | "zrmmat" | "zpc_group" | "valuation_subgroup";
 export const mastersQuery = (category: MasterCategory = "sap_master") => ({
   queryKey: ["sap-masters", category] as const,
   queryFn: async (): Promise<SapMaster[]> => {
-    const { data, error } = await supabase.from("sap_masters").select("id,name,columns,key_column,row_count,last_uploaded_at").eq("category", category).order("name");
+    const { data, error } = await supabase.from("sap_masters").select("id,name,columns,key_column,row_count,last_uploaded_at,created_at,updated_at").eq("category", category).order("name");
     if (error) throw error;
     return data ?? [];
   },
@@ -104,7 +104,7 @@ export async function getMasterRowsWithId(masterId: string): Promise<EditableRow
 
 async function refreshCount(masterId: string) {
   const { count } = await supabase.from("sap_master_rows").select("id", { count: "exact", head: true }).eq("master_id", masterId);
-  await supabase.from("sap_masters").update({ row_count: count ?? 0 }).eq("id", masterId);
+  await supabase.from("sap_masters").update({ row_count: count ?? 0, updated_at: new Date().toISOString() }).eq("id", masterId);
 }
 
 /** Save one edited row; key_value follows the master's key column. */
@@ -112,12 +112,14 @@ export async function updateMasterRow(masterId: string, keyColumn: string, id: s
   if (keyColumn === ROW_KEY) {
     const { error } = await supabase.from("sap_master_rows").update({ data }).eq("id", id);
     if (error) throw error;
+    await supabase.from("sap_masters").update({ updated_at: new Date().toISOString() }).eq("id", masterId);
     return;
   }
   const key = buildKey(data, keyColumn);
   if (!key) throw new Error(`${keyLabel(keyColumn)} is required`);
   const { error } = await supabase.from("sap_master_rows").update({ data, key_value: key }).eq("id", id);
   if (error) throw error;
+  await supabase.from("sap_masters").update({ updated_at: new Date().toISOString() }).eq("id", masterId);
 }
 
 export async function addMasterRow(masterId: string, keyColumn: string, data: Record<string, string>) {

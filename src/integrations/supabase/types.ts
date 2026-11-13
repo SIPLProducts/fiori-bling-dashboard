@@ -2638,6 +2638,7 @@ export type Database = {
           last_uploaded_at: string
           name: string
           row_count: number
+          updated_at: string
         }
         Insert: {
           category?: string
@@ -2648,6 +2649,7 @@ export type Database = {
           last_uploaded_at?: string
           name: string
           row_count?: number
+          updated_at?: string
         }
         Update: {
           category?: string
@@ -2658,6 +2660,7 @@ export type Database = {
           last_uploaded_at?: string
           name?: string
           row_count?: number
+          updated_at?: string
         }
         Relationships: []
       }

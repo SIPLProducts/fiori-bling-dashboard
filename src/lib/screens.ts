@@ -95,6 +95,8 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     children: [
       { key: "tables.sap-master", label: "SAP MASTER", tileKey: "table_sap_master" },
       { key: "tables.zrmmat", label: "ZKEYRM", tileKey: "table_zrmmat" },
+      { key: "tables.zpc-group", label: "ZPC GROUP", tileKey: "table_zpc_group" },
+      { key: "tables.valuation-subgroup", label: "Valuation Class Wise Subgroup", tileKey: "table_valuation_subgroup" },
     ],
   },
 ];

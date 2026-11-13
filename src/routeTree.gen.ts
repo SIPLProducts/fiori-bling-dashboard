@@ -40,6 +40,8 @@ import { Route as AuthenticatedReportsSdOrderBookRouteImport } from './routes/_a
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
 import { Route as AuthenticatedReportsSdSitRouteImport } from './routes/_authenticated/reports/sd/sit'
 import { Route as AuthenticatedReportsTablesSapMasterRouteImport } from './routes/_authenticated/reports/tables/sap-master'
+import { Route as AuthenticatedReportsTablesValuationSubgroupRouteImport } from './routes/_authenticated/reports/tables/valuation-subgroup'
+import { Route as AuthenticatedReportsTablesZpcGroupRouteImport } from './routes/_authenticated/reports/tables/zpc-group'
 import { Route as AuthenticatedReportsTablesZrmmatRouteImport } from './routes/_authenticated/reports/tables/zrmmat'
 import { Route as AuthenticatedReportsFiTbnIndexRouteImport } from './routes/_authenticated/reports/fi/tbn/index'
 import { Route as AuthenticatedReportsFiTbnTableRouteImport } from './routes/_authenticated/reports/fi/tbn/table'
@@ -225,6 +227,18 @@ const AuthenticatedReportsTablesSapMasterRoute =
     path: '/reports/tables/sap-master',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsTablesValuationSubgroupRoute =
+  AuthenticatedReportsTablesValuationSubgroupRouteImport.update({
+    id: '/reports/tables/valuation-subgroup',
+    path: '/reports/tables/valuation-subgroup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsTablesZpcGroupRoute =
+  AuthenticatedReportsTablesZpcGroupRouteImport.update({
+    id: '/reports/tables/zpc-group',
+    path: '/reports/tables/zpc-group',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsTablesZrmmatRoute =
   AuthenticatedReportsTablesZrmmatRouteImport.update({
     id: '/reports/tables/zrmmat',
@@ -287,6 +301,8 @@ export interface FileRoutesByFullPath {
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
+  '/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
   '/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
@@ -323,6 +339,8 @@ export interface FileRoutesByTo {
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
+  '/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
   '/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
@@ -362,6 +380,8 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/_authenticated/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
   '/_authenticated/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
+  '/_authenticated/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
+  '/_authenticated/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
   '/_authenticated/reports/tables/zrmmat': typeof AuthenticatedReportsTablesZrmmatRoute
   '/_authenticated/reports/fi/tbn/table': typeof AuthenticatedReportsFiTbnTableRoute
   '/api/public/sap/pull/zfisales': typeof ApiPublicSapPullZfisalesRoute
@@ -401,6 +421,8 @@ export interface FileRouteTypes {
     | '/reports/sd/register'
     | '/reports/sd/sit'
     | '/reports/tables/sap-master'
+    | '/reports/tables/valuation-subgroup'
+    | '/reports/tables/zpc-group'
     | '/reports/tables/zrmmat'
     | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
@@ -437,6 +459,8 @@ export interface FileRouteTypes {
     | '/reports/sd/register'
     | '/reports/sd/sit'
     | '/reports/tables/sap-master'
+    | '/reports/tables/valuation-subgroup'
+    | '/reports/tables/zpc-group'
     | '/reports/tables/zrmmat'
     | '/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
@@ -475,6 +499,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/register'
     | '/_authenticated/reports/sd/sit'
     | '/_authenticated/reports/tables/sap-master'
+    | '/_authenticated/reports/tables/valuation-subgroup'
+    | '/_authenticated/reports/tables/zpc-group'
     | '/_authenticated/reports/tables/zrmmat'
     | '/_authenticated/reports/fi/tbn/table'
     | '/api/public/sap/pull/zfisales'
@@ -709,6 +735,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsTablesSapMasterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/tables/valuation-subgroup': {
+      id: '/_authenticated/reports/tables/valuation-subgroup'
+      path: '/reports/tables/valuation-subgroup'
+      fullPath: '/reports/tables/valuation-subgroup'
+      preLoaderRoute: typeof AuthenticatedReportsTablesValuationSubgroupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/tables/zpc-group': {
+      id: '/_authenticated/reports/tables/zpc-group'
+      path: '/reports/tables/zpc-group'
+      fullPath: '/reports/tables/zpc-group'
+      preLoaderRoute: typeof AuthenticatedReportsTablesZpcGroupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/tables/zrmmat': {
       id: '/_authenticated/reports/tables/zrmmat'
       path: '/reports/tables/zrmmat'
@@ -792,6 +832,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
   AuthenticatedReportsSdSitRoute: typeof AuthenticatedReportsSdSitRoute
   AuthenticatedReportsTablesSapMasterRoute: typeof AuthenticatedReportsTablesSapMasterRoute
+  AuthenticatedReportsTablesValuationSubgroupRoute: typeof AuthenticatedReportsTablesValuationSubgroupRoute
+  AuthenticatedReportsTablesZpcGroupRoute: typeof AuthenticatedReportsTablesZpcGroupRoute
   AuthenticatedReportsTablesZrmmatRoute: typeof AuthenticatedReportsTablesZrmmatRoute
 }
 
@@ -835,6 +877,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsSdSitRoute: AuthenticatedReportsSdSitRoute,
   AuthenticatedReportsTablesSapMasterRoute:
     AuthenticatedReportsTablesSapMasterRoute,
+  AuthenticatedReportsTablesValuationSubgroupRoute:
+    AuthenticatedReportsTablesValuationSubgroupRoute,
+  AuthenticatedReportsTablesZpcGroupRoute:
+    AuthenticatedReportsTablesZpcGroupRoute,
   AuthenticatedReportsTablesZrmmatRoute: AuthenticatedReportsTablesZrmmatRoute,
 }
 
