@@ -54,3 +54,9 @@ export const toPurchaseRows = (rows: StockRow[]): PurchaseRow[] => rows.map((r) 
   date: `${r.period}-01`, plant: r.plant, plantName: r.plant, profitCenter: r.profitCenter, profitCenterName: "", vendor: "", vendorName: "",
   material: r.material, materialName: r.materialName, group: r.matGroup, type: "Domestic" as PurchaseRow["type"], value: r.value / 1e7, qty: r.qty, unit: r.unit, docNo: r.period,
 }));
+
+/** Top-N list plus the remaining entries (already sorted by value desc). */
+export function topWithOthers<T extends { name: string; value: number }>(list: T[], n = 10) {
+  const sorted = [...list].sort((a, b) => b.value - a.value);
+  return { top: sorted.slice(0, n), others: sorted.slice(n) };
+}

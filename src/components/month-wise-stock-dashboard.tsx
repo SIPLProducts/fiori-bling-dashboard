@@ -9,9 +9,11 @@ import { datedFileName } from "@/lib/format";
 import { radiantColor } from "@/lib/radiant";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
-import { sumBy, toPurchaseRows, type StockRow } from "@/lib/month-wise-stock-map";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { sumBy, topWithOthers, toPurchaseRows, type StockRow } from "@/lib/month-wise-stock-map";
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const crv = (v: number) => (v / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const full = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pl = (p: string) => `${MON[Number(p.slice(5, 7)) - 1]}-${p.slice(0, 4)}`;
 const TONES = ["#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57", "#64748b"];
@@ -22,6 +24,7 @@ const EMPTY: F = { plant: "", type: "", matGroup: "", from: "", to: "" };
 export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
   const [f, setF] = useState<F>(EMPTY);
   const [collapsed, setCollapsed] = useState(true);
+  const [showOthers, setShowOthers] = useState(false);
   const periods = useMemo(() => [...new Set(rows.map((r) => r.period))].sort(), [rows]);
   const opt = (k: (r: StockRow) => string) => [...new Set(rows.map(k).filter(Boolean))].sort();
   const opts = useMemo(() => ({ plant: opt((r) => r.plant), type: opt((r) => r.type), matGroup: opt((r) => r.matGroup) }), [rows]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -31,6 +34,7 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
   const cur = filtered;
   const total = cur.reduce((s, r) => s + r.value, 0);
   const types = sumBy(cur, (r) => r.type);
+  const tw = topWithOthers(types, 10);
   const monthly = useMemo(() => { const m = new Map<string, number>(); for (const r of filtered) m.set(r.period, (m.get(r.period) ?? 0) + r.value); return [...m.entries()].sort().map(([k, v]) => ({ name: pl(k), value: v })); }, [filtered]);
   const zk = useMemo(() => toPurchaseRows(filtered), [filtered]);
   const field = (k: "plant" | "type" | "matGroup", label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
@@ -42,7 +46,7 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
     const g = summarizeGroupsByDivision(cur.filter((r) => k(r)).map((r) => ({ name: k(r), value: r.value / 1e7, order: r.key, division: r.plant })), (r) => r.name);
     return <Card tint={tint} title={title} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={title} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>;
   };
-  const groupCard = (title: string, k: (r: StockRow) => string, tint: Tint) => <Card tint={tint} title={title} sub={sub}><BarList data={sumBy(cur, k).slice(0, 10)} fmt={full} /></Card>;
+  const groupCard = (title: string, k: (r: StockRow) => string, tint: Tint) => <Card tint={tint} title={title} sub={`${sub} · ₹ Cr`}><BarList data={sumBy(cur, k).slice(0, 10)} fmt={crv} /></Card>;
 
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
@@ -54,25 +58,26 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
     </div>
 
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Inv Val" value={full(total)} tone="#1f6fd1" />
-      {types.filter((t) => t.value !== 0).map((t, i) => <Tile key={t.name} icon={<IndianRupee className="size-5" />} label={`${t.name} Val`} value={full(t.value)} tone={TONES[i % TONES.length] ?? "#64748b"} />)}
+      <Tile icon={<IndianRupee className="size-5" />} label="Total Inv Val" value={crv(total)} tone="#1f6fd1" />
+      {types.filter((t) => t.value !== 0).map((t, i) => <Tile key={t.name} icon={<IndianRupee className="size-5" />} label={`${t.name} Val`} value={crv(t.value)} tone={TONES[i % TONES.length] ?? "#64748b"} />)}
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
-      <Card tint="teal" title="Month Wise Inventory" sub="CB Val"><div className="h-64"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 18, left: 10, right: 8 }}>
-        <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-g${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
-        <Tooltip formatter={(v: number) => full(v)} />
-        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{monthly.map((_, i) => <Cell key={i} fill={`url(#mws-g${i % 10})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
+      <Card tint="teal" title="Month Wise Inventory" sub="CB Val · ₹ Cr"><div className="h-64"><ResponsiveContainer><ComposedChart data={monthly} margin={{ top: 18, left: 10, right: 8 }}>
+        <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-g${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => (v / 1e7).toFixed(0)} />
+        <Tooltip formatter={(v: number) => crv(v)} />
+        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{monthly.map((_, i) => <Cell key={i} fill={`url(#mws-g${i % 10})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => crv(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
-      <Card tint="sky" title="Top Types" sub={sub}><BarList data={types.slice(0, 10)} fmt={full} /></Card>
+      <Card tint="sky" title="Top Types" sub={`${sub} · ₹ Cr`}><BarList data={tw.top} fmt={crv} />{tw.others.length ? <button type="button" data-pdf-exclude onClick={() => setShowOthers(true)} className="mt-2 w-full rounded-md border border-border px-2 py-1 text-left text-[11px] font-semibold text-primary hover:bg-muted">Others ({tw.others.length}) · ₹ {crv(tw.others.reduce((a, o) => a + o.value, 0))} Cr — view</button> : null}</Card>
+      <Dialog open={showOthers} onOpenChange={setShowOthers}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Other Types (₹ Cr)</DialogTitle></DialogHeader><BarList data={tw.others} fmt={crv} /></DialogContent></Dialog>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-      <Card tint="copper" title="Top 10 Plants" sub={sub}><div className="h-64"><ResponsiveContainer><ComposedChart data={sumBy(cur, (r) => r.plant).slice(0, 10)} margin={{ top: 18, left: 10, right: 8 }}>
+      <Card tint="copper" title="Top 10 Plants" sub={`${sub} · ₹ Cr`}><div className="h-64"><ResponsiveContainer><ComposedChart data={sumBy(cur, (r) => r.plant).slice(0, 10)} margin={{ top: 18, left: 10, right: 8 }}>
         <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-p${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs>
-        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
-        <Tooltip formatter={(v: number) => full(v)} />
-        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{sumBy(cur, (r) => r.plant).slice(0, 10).map((_, i) => <Cell key={i} fill={`url(#mws-p${i})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => (v / 1e7).toFixed(0)} />
+        <Tooltip formatter={(v: number) => crv(v)} />
+        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{sumBy(cur, (r) => r.plant).slice(0, 10).map((_, i) => <Cell key={i} fill={`url(#mws-p${i})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => crv(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
       {groupCard("Top 10 Material Groups", (r) => r.matGroup, "steel")}
       {groupCard("Top 10 Materials", (r) => r.materialName || r.material, "violet")}

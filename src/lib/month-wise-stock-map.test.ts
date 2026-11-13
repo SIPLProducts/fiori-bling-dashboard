@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mapStockRows, sumBy, valuationLookup, zpcLookup } from "./month-wise-stock-map";
+import { topWithOthers as _tw } from "./month-wise-stock-map";
 
 const val = valuationLookup([{ "Valuation Class": "4011", Description: "Raw Materials (Domestic)", "Short Name": "Raw material" }, { "Valuation Class": "4031", Description: "Raw Materials (Adv. Lic)", "Short Name": "Raw material" }]);
 const zpc = zpcLookup([{ PRCTR: "COFF100001", MNGRP1: "Batteries", PCGRP1: "Defence", PCGRP2: "", PCGRP3: "" }]);
@@ -13,4 +14,14 @@ describe("month wise stock", () => {
     expect(sumBy(rows, (r) => r.type)).toEqual([{ name: "Raw material", value: 93472 }]);
   });
   it("profit centre maps to ZPC main group", () => { expect(rows[0]?.mainGroup).toBe("Batteries"); });
+});
+
+describe("topWithOthers", () => {
+  it("keeps top 10 and lists the remaining types", () => {
+    const list = Array.from({ length: 12 }, (_, i) => ({ name: `T${i}`, value: i }));
+    const r = _tw(list, 10);
+    expect(r.top).toHaveLength(10);
+    expect(r.top[0].name).toBe("T11");
+    expect(r.others.map((o) => o.name)).toEqual(["T1", "T0"]);
+  });
 });
