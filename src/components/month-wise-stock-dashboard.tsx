@@ -69,7 +69,12 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      {groupCard("Top 10 Plants", (r) => r.plant, "copper")}
+      <Card tint="copper" title="Top 10 Plants" sub={sub}><div className="h-64"><ResponsiveContainer><ComposedChart data={sumBy(cur, (r) => r.plant).slice(0, 10)} margin={{ top: 18, left: 10, right: 8 }}>
+        <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-p${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
+        <Tooltip formatter={(v: number) => full(v)} />
+        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{sumBy(cur, (r) => r.plant).slice(0, 10).map((_, i) => <Cell key={i} fill={`url(#mws-p${i})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
+      </ComposedChart></ResponsiveContainer></div></Card>
       {groupCard("Top 10 Material Groups", (r) => r.matGroup, "steel")}
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
