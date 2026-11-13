@@ -95,7 +95,7 @@ function View({ canEdit }: { canEdit: boolean }) {
       <div className="text-sm font-semibold">{label} <span className="text-xs font-normal text-muted-foreground">· {filtered.length} rows</span></div>
     {rows.length > 0 && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(created)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(updated)}</span> IST</div>}
     </div>
-    <div className="overflow-x-auto">
+    <div className="tm-card-body"><div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="sticky top-0 z-10 tm-thead"><tr>
           {allCols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
@@ -116,7 +116,7 @@ function View({ canEdit }: { canEdit: boolean }) {
           {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={allCols.length + 1}>{q.isLoading ? "Loading…" : `No data for ${label}. Upload an Excel file.`}</td></tr>}
         </tbody>
       </table>
-    </div>
+    </div></div>
     {pages > 1 && <div className="flex items-center gap-2 border-t px-3 py-2 text-xs">
       <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button>
       <span>Page {page + 1} / {pages}</span>

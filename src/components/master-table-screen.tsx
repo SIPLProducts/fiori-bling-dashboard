@@ -126,16 +126,16 @@ function View({ isAdmin, cat: CAT, title, single }: { isAdmin: boolean; cat: Mas
       <div className="text-sm font-semibold">{single ? title : current?.name ?? title} <span className="text-xs font-normal text-muted-foreground">· {filtered.length} rows</span></div>
     {current && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
     </div>
-    <div className="overflow-x-auto">
+    <div className="tm-card-body"><div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="sticky top-0 z-10 tm-thead"><tr>
-          {isAdmin && cols.length > 0 && <th className="w-8 px-2.5 py-2"><input type="checkbox" aria-label="Select page" checked={allOnPage} onChange={() => { const n = new Set(picked); view.forEach((r) => allOnPage ? n.delete(r.id) : n.add(r.id)); setPicked(n); }} /></th>}
+          {isAdmin && cols.length > 0 && <th className="w-8 px-2.5 py-2"><input type="checkbox" className="tm-check" title="Select all rows on this page" aria-label="Select page" checked={allOnPage} onChange={() => { const n = new Set(picked); view.forEach((r) => allOnPage ? n.delete(r.id) : n.add(r.id)); setPicked(n); }} /></th>}
           {cols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
           {isAdmin && cols.length > 0 && <th className="px-2.5 py-2 text-right text-[11px] font-semibold uppercase">Actions</th>}
         </tr></thead>
         <tbody>
           {view.map((r) => <tr key={r.id} className="border-t odd:bg-muted/40 hover:bg-accent/50">
-            {isAdmin && <td className="px-2.5 py-1"><input type="checkbox" aria-label="Select row" checked={picked.has(r.id)} onChange={() => { const n = new Set(picked); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); setPicked(n); }} /></td>}
+            {isAdmin && <td className="px-2.5 py-1"><input type="checkbox" className="tm-check" title="Select row" aria-label="Select row" checked={picked.has(r.id)} onChange={() => { const n = new Set(picked); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); setPicked(n); }} /></td>}
             {cols.map((c) => <td key={c} className="whitespace-nowrap px-2.5 py-1">{r.data[c] ?? ""}</td>)}
             {isAdmin && <td className="whitespace-nowrap px-2.5 py-1 text-right">
               <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit row" onClick={() => setEdit({ id: r.id, data: { ...Object.fromEntries(cols.map((c) => [c, ""])), ...r.data } })}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -145,7 +145,7 @@ function View({ isAdmin, cat: CAT, title, single }: { isAdmin: boolean; cat: Mas
           {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length + 2)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? `Upload an Excel file to create ${title}.` : `No ${title} data uploaded yet.`}</td></tr>}
         </tbody>
       </table>
-    </div>
+    </div></div>
     <div className="flex items-center gap-2 border-t px-3 py-2 text-sm">
       <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button>
       <span>Page {page + 1} of {pages} · {filtered.length} rows</span>

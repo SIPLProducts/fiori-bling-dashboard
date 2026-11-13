@@ -892,3 +892,10 @@
   box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--destructive) 70%, transparent);
   &:hover:not(:disabled) { filter: brightness(1.07); }
 }
+@utility tm-card-body {
+  padding: 0.75rem;
+  & > .overflow-x-auto { border: 1px solid var(--color-border); border-radius: 0.5rem; }
+}
+@utility tm-check {
+  width: 1rem; height: 1rem; cursor: pointer; vertical-align: middle; accent-color: var(--color-primary);
+}
