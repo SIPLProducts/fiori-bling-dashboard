@@ -47,7 +47,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
   const [sheets, setSheets] = useState<ParsedSheet[] | null>(null);
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const reload = async () => { setPicked(new Set()); await qc.invalidateQueries({ queryKey: ["sap-masters", CAT] }); await qc.invalidateQueries({ queryKey: ["master-rows", CAT] }); await qc.invalidateQueries({ queryKey: ["sap-master-rows", `${CAT}-all`] }); };
+  const reload = async () => { setPicked(new Set()); void qc.invalidateQueries({ queryKey: ["tables-master-status"] }); await qc.invalidateQueries({ queryKey: ["sap-masters", CAT] }); await qc.invalidateQueries({ queryKey: ["master-rows", CAT] }); await qc.invalidateQueries({ queryKey: ["sap-master-rows", `${CAT}-all`] }); }; 
 
   const onFile = async (f: File) => {
     try {

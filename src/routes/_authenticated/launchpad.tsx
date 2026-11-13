@@ -6,6 +6,8 @@ import { TableStatusTile, TileCard } from "@/components/tile-card";
 import { GlassLoadingPage } from "@/components/glass-loading-page";
 import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
 import { useLaunchpad } from "@/lib/use-launchpad";
+import { useQuery } from "@tanstack/react-query";
+import { tablesMasterStatusQuery } from "@/lib/tables-master-status";
 
 export const Route = createFileRoute("/_authenticated/launchpad")({
   head: () => ({ meta: [
@@ -46,6 +48,7 @@ function SectionHeading({ title, subtitle, icon: Icon }: { title: string; subtit
 
 function Launchpad() {
   const { data, isLoading, error, refetch } = useLaunchpad();
+  const tmStatus = useQuery({ ...tablesMasterStatusQuery, refetchOnWindowFocus: false, staleTime: Infinity });
   const [activeGroup, setActiveGroup] = useState("all");
   const groups = useMemo(() => data ? orderGroupsForRoles(data.groups.filter((group) => data.tiles.some((tile) => tile.group_key === group.key)), data.roles) : [], [data]);
   const role = primaryRole(data?.roles);
@@ -82,8 +85,8 @@ function Launchpad() {
               <TableStatusTile
                 key={tile.id}
                 title={tile.title}
-                value={tile.title === "ZFISALES_DETAIL" ? "Sync Active" : "Open"}
-                note={tile.subtitle ?? "Table configuration"}
+                value={tile.title === "ZFISALES_DETAIL" ? "Sync Active" : tmStatus.data?.[tile.screen_key ?? ""]?.value ?? (tmStatus.isLoading ? "…" : "Open")}
+                note={tmStatus.data?.[tile.screen_key ?? ""]?.note ?? tile.subtitle ?? "Table configuration"}
                 {...(tile.target_path ? { href: tile.target_path } : {})}
               />
             ))}

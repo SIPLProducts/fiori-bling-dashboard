@@ -48,7 +48,7 @@ function View({ canEdit }: { canEdit: boolean }) {
   }, [rows, cols, search]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
   const view = filtered.slice(page * PAGE, page * PAGE + PAGE);
-  const reload = () => qc.invalidateQueries({ queryKey: ["month-wise-upload", year, month] });
+  const reload = async () => { void qc.invalidateQueries({ queryKey: ["tables-master-status"] }); await qc.invalidateQueries({ queryKey: ["month-wise-upload", year, month] }); };
 
   const onFile = async (f: File) => {
     try {
