@@ -104,11 +104,10 @@ function Launchpad() {
     </main>
   </div>;
 }
-const MWS_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function MonthWiseStockTile({ href }: { href: string }) {
   const q = useQuery(monthWiseStockQuery);
   const rows = q.data ?? [];
   const latest = rows.reduce((m, r) => (r.period > m ? r.period : m), "");
-  const total = rows.filter((r) => r.period === latest).reduce((s, r) => s + r.value, 0);
-  return <TableStatusTile title="Month Wise Stock" value={q.isLoading ? "…" : latest ? `₹${total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : "No data"} note={latest ? `Total Inv Val · ${MWS_MON[Number(latest.slice(5, 7)) - 1]}-${latest.slice(0, 4)}` : "Inventory"} href={href} accent={5} />;
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  return <TableStatusTile title="Month Wise Stock" value={q.isLoading ? "…" : latest ? `₹${total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : "No data"} note={latest ? "Total Inv Val · All months" : "Inventory"} href={href} accent={5} />;
 }

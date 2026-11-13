@@ -27,9 +27,8 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
   const opts = useMemo(() => ({ plant: opt((r) => r.plant), type: opt((r) => r.type), matGroup: opt((r) => r.matGroup) }), [rows]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => rows.filter((r) => (!f.plant || r.plant === f.plant) && (!f.type || r.type === f.type) && (!f.matGroup || r.matGroup === f.matGroup)
     && (!f.from || r.period >= f.from) && (!f.to || r.period <= f.to)), [rows, f]);
-  // Closing stock is a snapshot: tiles and cards use the latest month in the range.
-  const latest = useMemo(() => filtered.reduce((m, r) => (r.period > m ? r.period : m), ""), [filtered]);
-  const cur = useMemo(() => filtered.filter((r) => r.period === latest), [filtered, latest]);
+  // Tiles and cards add up every month in the selected range (All = every month).
+  const cur = filtered;
   const total = cur.reduce((s, r) => s + r.value, 0);
   const types = sumBy(cur, (r) => r.type);
   const monthly = useMemo(() => { const m = new Map<string, number>(); for (const r of filtered) m.set(r.period, (m.get(r.period) ?? 0) + r.value); return [...m.entries()].sort().map(([k, v]) => ({ name: pl(k), value: v })); }, [filtered]);
@@ -38,7 +37,7 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{opts[k].map((v) => <option key={v} value={v}>{v}</option>)}</select></label>;
   const period = (k: "from" | "to", label: string) => <label className="min-w-0 text-[10px] font-semibold text-muted-foreground">{label}
     <select className={sel} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} aria-label={label}><option value="">All</option>{periods.map((p) => <option key={p} value={p}>{pl(p)}</option>)}</select></label>;
-  const sub = latest ? pl(latest) : "";
+  const sub = !f.from && !f.to ? "All months" : f.from && f.from === f.to ? pl(f.from) : `${f.from ? pl(f.from) : "Start"} – ${f.to ? pl(f.to) : "Latest"}`;
   const gCard = (title: string, k: (r: StockRow) => string, tint: Tint) => {
     const g = summarizeGroupsByDivision(cur.filter((r) => k(r)).map((r) => ({ name: k(r), value: r.value / 1e7, order: r.key, division: r.plant })), (r) => r.name);
     return <Card tint={tint} title={title} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={title} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>;
