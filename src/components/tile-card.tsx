@@ -1,3 +1,4 @@
+import type React from "react";
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -139,7 +140,7 @@ export function PlaceholderTile({ type }: { type: PlaceholderType }) {
   </>;
 }
 
-function CompactTableTile({ title, value, note, href, action = "Open", icon: Icon = TableProperties, accent = 6 }: { title: string; value: string; note: string; href?: string | undefined; action?: string; icon?: typeof Gauge; accent?: number }) {
+function CompactTableTile({ title, value, note, href, action = "Open", icon: Icon = TableProperties, accent = 6, children }: { title: string; value: string; note: string; href?: string | undefined; action?: string; icon?: typeof Gauge; accent?: number; children?: React.ReactNode }) {
   const style = { background: `linear-gradient(160deg, color-mix(in oklab, var(--kpi-${accent}) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%)` } as CSSProperties;
   return <div className="flex h-full min-h-[150px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-launchpad-tile p-4 shadow-launchpad-tile" style={style}>
     <div className="flex items-start justify-between gap-3">
@@ -149,14 +150,15 @@ function CompactTableTile({ title, value, note, href, action = "Open", icon: Ico
       </div>
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary shadow-sm"><Icon className="size-[18px]" /></span>
     </div>
+    {children}
     <div className="mt-auto flex items-center justify-between gap-2 pt-3">
       <p className="min-w-0 truncate text-[10px] text-muted-foreground" title={note}>{note}</p>
       {href ? <Link to={href} aria-label={`${action}: ${title}`} className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 text-[9px] font-semibold">{action}<ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></Link> : <span className="shrink-0 text-[9px] text-muted-foreground">Under development</span>}
     </div>
   </div>;
 }
-export function TableStatusTile({ title, value, note, href, action = "Open", icon = TableProperties, accent = 6 }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge; accent?: number }) {
-  return <CompactTableTile title={title} value={value} note={note} href={href} action={action === "Open table" ? "Open" : action} icon={icon} accent={accent} />;
+export function TableStatusTile({ title, value, note, href, action = "Open", icon = TableProperties, accent = 6, children }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge; accent?: number; children?: React.ReactNode }) {
+  return <CompactTableTile title={title} value={value} note={note} href={href} action={action === "Open table" ? "Open" : action} icon={icon} accent={accent}>{children}</CompactTableTile>;
 }
 function ZkeyrmTile({ tile }: { tile: TileRecord }) {
   const q = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
