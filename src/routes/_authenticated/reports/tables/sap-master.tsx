@@ -84,17 +84,17 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
   };
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
-      <div className="w-full sm:w-auto sm:min-w-56">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 lg:flex-nowrap">
+      <div className="w-full sm:w-auto sm:min-w-56 lg:min-w-44 lg:shrink-0">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); }}>
           <SelectTrigger><SelectValue placeholder={masters.isLoading ? "Loading…" : "Upload Excel to see sheets"} /></SelectTrigger>
           <SelectContent>{(masters.data ?? []).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-      {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {current.key_column} · Last upload {new Date(current.last_uploaded_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>}
-      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto">
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:w-48 lg:min-w-0 lg:flex-1 xl:max-w-72" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      {current && <div className="min-w-0 text-xs text-muted-foreground lg:max-w-56 lg:truncate">{current.row_count} rows · {cols.length} columns · Key: {current.key_column} · Last upload {new Date(current.last_uploaded_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>}
+      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
         {current && <Button className="btn-success" onClick={() => downloadMasterExcel(current.name, cols, filtered)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />

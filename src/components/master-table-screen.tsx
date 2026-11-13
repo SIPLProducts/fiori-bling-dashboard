@@ -87,17 +87,17 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
   const allOnPage = view.length > 0 && view.every((r) => picked.has(r.id));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
-      <div className="w-full sm:w-auto sm:min-w-56">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 lg:flex-nowrap">
+      <div className="w-full sm:w-auto sm:min-w-56 lg:min-w-44 lg:shrink-0">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); setPicked(new Set()); }}>
           <SelectTrigger><SelectValue placeholder={list.isLoading ? "Loading…" : "Upload Excel to see sheets"} /></SelectTrigger>
           <SelectContent>{(list.data ?? []).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-      {current && <div className="text-xs text-muted-foreground">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)}</div>}
-      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto">
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:w-48 lg:min-w-0 lg:flex-1 xl:max-w-72" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      {current && <div className="min-w-0 text-xs text-muted-foreground lg:max-w-56 lg:truncate">{current.row_count} rows · {cols.length} columns · Key: {keyLabel(current.key_column)}</div>}
+      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
         {current && <Button className="btn-success" onClick={() => downloadMasterExcel(current.name, cols, filtered.map((r) => r.data), title)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           {current && <Button variant="outline" onClick={() => setEdit({ id: null, data: Object.fromEntries(cols.map((c) => [c, ""])) })}><Plus className="mr-1 h-4 w-4" />Add row</Button>}
@@ -109,7 +109,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
       </div>
     </div>
 
-    {current && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
+    {current && <div className="min-w-0 text-xs text-muted-foreground lg:max-w-56 lg:truncate">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-xs">
         <thead className="sticky top-0 z-10 tm-thead"><tr>

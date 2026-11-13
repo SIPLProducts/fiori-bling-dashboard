@@ -68,7 +68,7 @@ function View({ canEdit }: { canEdit: boolean }) {
   const exportRows = filtered.map((r) => ({ ...r.data, Month: MONTHS[r.month - 1]!, Year: String(r.year), "Created Date": fmtIst(r.created_at), "Updated Date": fmtIst(r.updated_at) }));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4 lg:flex-nowrap">
       <div className="min-w-0 flex-1 sm:w-40 sm:flex-none"><div className="mb-1 text-xs text-muted-foreground">Month</div>
         <Select value={String(month)} onValueChange={(v) => { setMonth(Number(v)); setPage(0); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -79,9 +79,9 @@ function View({ canEdit }: { canEdit: boolean }) {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
         </Select></div>
-      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:max-w-xs" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-      <div className="text-xs text-muted-foreground">{rows.length} rows</div>
-      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto">
+      <Input className="w-full sm:w-auto sm:min-w-48 sm:flex-1 lg:w-48 lg:min-w-0 lg:flex-1 xl:max-w-72" placeholder="Search…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+      <div className="shrink-0 pb-2 text-xs text-muted-foreground">{rows.length} rows</div>
+      <div className="flex w-full flex-wrap justify-end gap-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
         {rows.length > 0 && <Button className="btn-success" onClick={() => void downloadMasterExcel(label, allCols, exportRows, TITLE)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {canEdit && <>
           {rows.length > 0 && <Button className="btn-danger" onClick={() => { if (confirm(`Delete all ${rows.length} rows for ${label}?`)) void run(() => deleteRows(rows.map((r) => r.id), month, year), "Month deleted"); }}><Trash2 className="mr-1 h-4 w-4" />Delete month</Button>}
