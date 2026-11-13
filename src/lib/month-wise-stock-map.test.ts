@@ -21,7 +21,7 @@ describe("topWithOthers", () => {
     const list = Array.from({ length: 12 }, (_, i) => ({ name: `T${i}`, value: i }));
     const r = _tw(list, 10);
     expect(r.top).toHaveLength(10);
-    expect(r.top[0].name).toBe("T11");
+    expect(r.top[0]?.name).toBe("T11");
     expect(r.others.map((o) => o.name)).toEqual(["T1", "T0"]);
   });
 });
