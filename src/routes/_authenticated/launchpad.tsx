@@ -1,3 +1,4 @@
+import type * as React from "react";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, Boxes, CircleDollarSign, Factory, Radio, ShoppingCart } from "lucide-react";
@@ -8,6 +9,8 @@ import { ROLE_HEADLINE, orderGroupsForRoles, primaryRole } from "@/lib/nav";
 import { useLaunchpad } from "@/lib/use-launchpad";
 import { useQuery } from "@tanstack/react-query";
 import { tablesMasterStatusQuery } from "@/lib/tables-master-status";
+
+const MODULE_ACCENT: Record<string, number> = { "sales-distribution": 1, purchase: 2, "financial-accounting": 3, inventory: 5, "production-planning": 4, "tables-master": 6 };
 
 export const Route = createFileRoute("/_authenticated/launchpad")({
   head: () => ({ meta: [
@@ -76,7 +79,7 @@ function Launchpad() {
         const groupTiles = data?.tiles.filter((tile) => tile.group_key === group.key) ?? [];
         if (!groupTiles.length) return null;
         const meta = SECTION_META[group.key] ?? { subtitle: "SAP Operational Analytics", icon: Boxes };
-        return <section key={group.key} className="mb-7">
+        return <section key={group.key} className="mb-7" data-module-accent style={{ "--module-accent": `var(--kpi-${MODULE_ACCENT[group.key] ?? 2})` } as React.CSSProperties}>
           <SectionHeading title={SECTION_TITLES[group.key] ?? group.title} subtitle={meta.subtitle} icon={meta.icon} />
           {group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
@@ -84,8 +87,7 @@ function Launchpad() {
             {groupTiles.filter((tile) => ["tables.sap-master", "tables.zrmmat", "tables.zpc-group", "tables.valuation-subgroup", "tables.month-wise-upload"].includes(tile.screen_key ?? "")).map((tile, index) => (
               <TableStatusTile
                 key={tile.id}
-                accent={(index % 6) + 1}
-                title={tile.title}
+                                title={tile.title}
                 value={tile.title === "ZFISALES_DETAIL" ? "Sync Active" : tmStatus.data?.[tile.screen_key ?? ""]?.value ?? (tmStatus.isLoading ? "…" : "Open")}
                 note={tmStatus.data?.[tile.screen_key ?? ""]?.note ?? tile.subtitle ?? "Table configuration"}
                 {...(tile.target_path ? { href: tile.target_path } : {})}

@@ -87,14 +87,7 @@ function CardSurface({ label, value, note, icon: Icon, trend, href, onOpen, acce
       <div className="launch-footer mt-auto">
       <p className="truncate text-[10px] text-muted-foreground">{note}</p>
       {href ? (
-        <Link
-          to={href}
-          aria-label={`${status ?? "Open Details"}: ${label}`}
-          className="group mt-3 flex min-h-8 items-center justify-between gap-2 rounded-full btn-soft px-3 text-[10px] transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transform-none"
-        >
-          <span className="truncate font-semibold">{status ? status : <>Open<span className="launch-details"> Details</span></>}</span>
-          <ArrowRight className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        <div className="mt-3 flex justify-end"><Link to={href} aria-label={`${status ?? "Open"}: ${label}`} className="group inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full btn-action px-3 text-[9px] font-semibold">{status ?? "Open"}<ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></Link></div>
       ) : (
         <Button
           type="button"
