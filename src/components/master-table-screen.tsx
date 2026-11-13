@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
+import { UploadExcelButton } from "@/components/upload-excel-button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
   const allOnPage = view.length > 0 && view.every((r) => picked.has(r.id));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
       <div className="min-w-56">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); setPicked(new Set()); }}>
@@ -103,7 +104,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
           {picked.size > 0 && <Button variant="destructive" onClick={() => delRows([...picked])}><Trash2 className="mr-1 h-4 w-4" />Delete selected ({picked.size})</Button>}
           {current && <Button variant="outline" onClick={() => { if (confirm(`Delete sheet "${current.name}" and all its rows?`)) void run(() => deleteMaster(current.id), "Sheet deleted").then(() => setSelId("")); }}><Trash2 className="mr-1 h-4 w-4" />Delete sheet</Button>}
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-          <Button onClick={() => fileRef.current?.click()}><Upload className="mr-1 h-4 w-4" />Upload Excel</Button>
+          <UploadExcelButton onClick={() => fileRef.current?.click()} />
         </>}
       </div>
     </div>
@@ -111,7 +112,7 @@ function View({ isAdmin, cat: CAT, title }: { isAdmin: boolean; cat: MasterCateg
     {current && <div className="text-xs text-muted-foreground">Created on <span className="font-medium text-foreground">{fmtIst(current.created_at)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(current.updated_at)}</span> IST</div>}
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-xs">
-        <thead className="sticky top-0 z-10 bg-primary text-primary-foreground"><tr>
+        <thead className="sticky top-0 z-10 tm-thead"><tr>
           {isAdmin && cols.length > 0 && <th className="w-8 px-2.5 py-2"><input type="checkbox" aria-label="Select page" checked={allOnPage} onChange={() => { const n = new Set(picked); view.forEach((r) => allOnPage ? n.delete(r.id) : n.add(r.id)); setPicked(n); }} /></th>}
           {cols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
           {isAdmin && cols.length > 0 && <th className="px-2.5 py-2 text-right text-[11px] font-semibold uppercase">Actions</th>}

@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from "react";
+import { UploadExcelButton } from "@/components/upload-excel-button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Upload } from "lucide-react";
+import { Download } from "lucide-react";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
   };
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
       <div className="min-w-56">
         <div className="mb-1 text-xs text-muted-foreground">Select Sheet</div>
         <Select value={current?.id ?? ""} onValueChange={(v) => { setSelId(v); setPage(0); setSearch(""); }}>
@@ -97,14 +98,14 @@ function MasterView({ isAdmin }: { isAdmin: boolean }) {
         {current && <Button variant="outline" onClick={() => downloadMasterExcel(current.name, cols, filtered)}><Download className="mr-1 h-4 w-4" />Excel</Button>}
         {isAdmin && <>
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-          <Button onClick={() => fileRef.current?.click()}><Upload className="mr-1 h-4 w-4" />Upload Excel</Button>
+          <UploadExcelButton onClick={() => fileRef.current?.click()} />
         </>}
       </div>
     </div>
 
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-xs">
-        <thead className="sticky top-0 z-10 bg-primary text-primary-foreground"><tr>{cols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}</tr></thead>
+        <thead className="sticky top-0 z-10 tm-thead"><tr>{cols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}</tr></thead>
         <tbody>
           {view.map((r, i) => <tr key={i} className="border-t odd:bg-muted/40 hover:bg-accent/50">{cols.map((c) => <td key={c} className="whitespace-nowrap px-2.5 py-1">{r[c] ?? ""}</td>)}</tr>)}
           {!view.length && <tr><td className="px-3 py-6 text-center text-muted-foreground" colSpan={Math.max(1, cols.length)}>{rows.isLoading ? "Loading…" : current ? "No rows" : isAdmin ? "Upload an Excel file to create your first master." : "No masters uploaded yet."}</td></tr>}

@@ -853,3 +853,20 @@
   border-color: color-mix(in oklab, var(--module-accent) 28%, var(--color-border)) !important;
   background: linear-gradient(160deg, color-mix(in oklab, var(--module-accent) var(--kpi-tint), var(--color-launchpad-tile)) 0%, var(--color-launchpad-tile) 70%) !important;
 }
+
+/* Tables Master screens: radiant panel, header and upload button in the module accent. */
+@utility tm-panel {
+  border-color: color-mix(in oklab, var(--kpi-6) 28%, var(--color-border));
+  background: linear-gradient(160deg, color-mix(in oklab, var(--kpi-6) var(--kpi-tint), var(--color-card)) 0%, var(--color-card) 70%);
+}
+@utility tm-thead {
+  background-image: linear-gradient(90deg, var(--kpi-6), color-mix(in oklab, var(--kpi-6) 55%, var(--kpi-4)));
+  color: oklch(1 0 0);
+}
+@utility btn-upload {
+  background-image: linear-gradient(135deg, color-mix(in oklab, var(--kpi-6) 85%, white), var(--kpi-6) 55%, color-mix(in oklab, var(--kpi-6) 60%, var(--kpi-4)));
+  color: oklch(1 0 0); border-color: transparent;
+  box-shadow: 0 8px 20px -8px color-mix(in oklab, var(--kpi-6) 70%, transparent);
+  transition: transform .15s, box-shadow .15s, filter .15s;
+  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 12px 26px -8px color-mix(in oklab, var(--kpi-6) 80%, transparent); }
+}

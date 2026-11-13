@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
+import { UploadExcelButton } from "@/components/upload-excel-button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Pencil, Trash2, Upload } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 import { AccessDenied, ReportShell } from "@/components/report-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,7 @@ function View({ canEdit }: { canEdit: boolean }) {
   const exportRows = filtered.map((r) => ({ ...r.data, Month: MONTHS[r.month - 1]!, Year: String(r.year), "Created Date": fmtIst(r.created_at), "Updated Date": fmtIst(r.updated_at) }));
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border tm-panel p-4">
       <div className="w-40"><div className="mb-1 text-xs text-muted-foreground">Month</div>
         <Select value={String(month)} onValueChange={(v) => { setMonth(Number(v)); setPage(0); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -85,14 +86,14 @@ function View({ canEdit }: { canEdit: boolean }) {
         {canEdit && <>
           {rows.length > 0 && <Button variant="outline" onClick={() => { if (confirm(`Delete all ${rows.length} rows for ${label}?`)) void run(() => deleteRows(rows.map((r) => r.id), month, year), "Month deleted"); }}><Trash2 className="mr-1 h-4 w-4" />Delete month</Button>}
           <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-          <Button disabled={!!busy} onClick={() => fileRef.current?.click()}><Upload className="mr-1 h-4 w-4" />{busy ?? "Upload Excel"}</Button>
+          <UploadExcelButton busy={busy} onClick={() => fileRef.current?.click()} />
         </>}
       </div>
     </div>
     {rows.length > 0 && <div className="text-xs text-muted-foreground">{label} · Created on <span className="font-medium text-foreground">{fmtIst(created)}</span> · Last updated on <span className="font-medium text-foreground">{fmtIst(updated)}</span> IST</div>}
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-xs">
-        <thead className="sticky top-0 z-10 bg-primary text-primary-foreground"><tr>
+        <thead className="sticky top-0 z-10 tm-thead"><tr>
           {allCols.map((c) => <th key={c} className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide">{c}</th>)}
           {canEdit && rows.length > 0 && <th className="px-2.5 py-2 text-right text-[11px] font-semibold uppercase">Actions</th>}
         </tr></thead>
