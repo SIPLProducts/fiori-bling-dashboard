@@ -162,11 +162,11 @@ function CompactTableTile({ title, value, note, href, action = "Open", icon: Ico
     </div>
   </div>;
 }
-export function TableStatusTile({ title, value, note, href, action = "Open", icon = TableProperties }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge }) {
-  return <CompactTableTile title={title} value={value} note={note} href={href} action={action === "Open table" ? "Open" : action} icon={icon} />;
+export function TableStatusTile({ title, value, note, href, action = "Open", icon = TableProperties, accent = 6 }: { title: string; value: string; note: string; href?: string; action?: string; icon?: typeof Gauge; accent?: number }) {
+  return <CompactTableTile title={title} value={value} note={note} href={href} action={action === "Open table" ? "Open" : action} icon={icon} accent={accent} />;
 }
 function ZkeyrmTile({ tile }: { tile: TileRecord }) {
   const q = useQuery({ ...zrmmatRowsQuery, refetchOnWindowFocus: false });
   const count = q.data ? zrmmatMaterials(q.data).length : null;
-  return <CompactTableTile title="ZKEYRM" value={count == null ? (q.isLoading ? "…" : "Open") : `${count.toLocaleString("en-IN")} ${count === 1 ? "material" : "materials"}`} note="Tables Master" href={tile.target_path ?? "/launchpad"} />;
+  return <CompactTableTile title="ZKEYRM" value={count == null ? (q.isLoading ? "…" : "Open") : `${count.toLocaleString("en-IN")} ${count === 1 ? "material" : "materials"}`} note="Tables Master" href={tile.target_path ?? "/launchpad"} accent={(tile.sort_order % 6) + 1} />;
 }

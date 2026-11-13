@@ -81,9 +81,10 @@ function Launchpad() {
           {group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" || group.key === "financial-accounting" ? <div className={group.key === "sales-distribution" || group.key === "purchase" || group.key === "production-planning" || group.key === "inventory" ? "sd-compact grid grid-cols-1 gap-2 md:grid-cols-5" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
             {groupTiles.map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div> : group.key === "tables-master" ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {groupTiles.filter((tile) => ["tables.sap-master", "tables.zrmmat", "tables.zpc-group", "tables.valuation-subgroup", "tables.month-wise-upload"].includes(tile.screen_key ?? "")).map((tile) => (
+            {groupTiles.filter((tile) => ["tables.sap-master", "tables.zrmmat", "tables.zpc-group", "tables.valuation-subgroup", "tables.month-wise-upload"].includes(tile.screen_key ?? "")).map((tile, index) => (
               <TableStatusTile
                 key={tile.id}
+                accent={(index % 6) + 1}
                 title={tile.title}
                 value={tile.title === "ZFISALES_DETAIL" ? "Sync Active" : tmStatus.data?.[tile.screen_key ?? ""]?.value ?? (tmStatus.isLoading ? "…" : "Open")}
                 note={tmStatus.data?.[tile.screen_key ?? ""]?.note ?? tile.subtitle ?? "Table configuration"}
@@ -91,7 +92,7 @@ function Launchpad() {
               />
             ))}
           </div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <TableStatusTile title="PP Overview" value="Live" note="Production overview" href="/reports/module/pp" action="Open overview" icon={Factory} />
+            <TableStatusTile title="PP Overview" value="Live" note="Production overview" href="/reports/module/pp" action="Open overview" icon={Factory} accent={3} />
             {groupTiles.filter((tile) => tile.kind !== "launch").map((tile) => <TileCard key={tile.id} tile={tile} {...(data?.kpis[tile.kpi_key ?? ""] ? { kpi: data.kpis[tile.kpi_key ?? ""] } : {})} />)}
           </div>}
         </section>;
