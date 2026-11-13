@@ -49,8 +49,8 @@ const ALL_GROUPS = [
   "sales-distribution",
   "purchase",
   "financial-accounting",
-  "production-planning",
   "inventory",
+  "production-planning",
   "tables-master",
 ];
 

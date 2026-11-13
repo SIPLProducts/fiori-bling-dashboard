@@ -71,14 +71,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     ],
   },
   {
-    key: "module.pp",
-    label: "Production Planning",
-    groupKey: "production-planning",
-    children: [
-      { key: "pp.daily-production-report", label: "Daily Production Report", tileKey: "pp_daily_production" },
-    ],
-  },
-  {
     key: "module.inv",
     label: "Inventory",
     groupKey: "inventory",
@@ -86,6 +78,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: "inv.current-stock", label: "Current Stock", tileKey: "inv_current_stock" },
       { key: "inv.month-wise-stock", label: "Month Wise Stock", tileKey: "inv_month_wise_stock" },
       { key: "inv.inventory-aging", label: "Inventory Aging", tileKey: "inv_inventory_aging" },
+    ],
+  },
+  {
+    key: "module.pp",
+    label: "Production Planning",
+    groupKey: "production-planning",
+    children: [
+      { key: "pp.daily-production-report", label: "Daily Production Report", tileKey: "pp_daily_production" },
     ],
   },
   {
