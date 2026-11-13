@@ -39,6 +39,7 @@ import { Route as AuthenticatedReportsSdOpenSalesOrdersRouteImport } from './rou
 import { Route as AuthenticatedReportsSdOrderBookRouteImport } from './routes/_authenticated/reports/sd/order-book'
 import { Route as AuthenticatedReportsSdRegisterRouteImport } from './routes/_authenticated/reports/sd/register'
 import { Route as AuthenticatedReportsSdSitRouteImport } from './routes/_authenticated/reports/sd/sit'
+import { Route as AuthenticatedReportsTablesMonthWiseUploadRouteImport } from './routes/_authenticated/reports/tables/month-wise-upload'
 import { Route as AuthenticatedReportsTablesSapMasterRouteImport } from './routes/_authenticated/reports/tables/sap-master'
 import { Route as AuthenticatedReportsTablesValuationSubgroupRouteImport } from './routes/_authenticated/reports/tables/valuation-subgroup'
 import { Route as AuthenticatedReportsTablesZpcGroupRouteImport } from './routes/_authenticated/reports/tables/zpc-group'
@@ -221,6 +222,12 @@ const AuthenticatedReportsSdSitRoute =
     path: '/reports/sd/sit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsTablesMonthWiseUploadRoute =
+  AuthenticatedReportsTablesMonthWiseUploadRouteImport.update({
+    id: '/reports/tables/month-wise-upload',
+    path: '/reports/tables/month-wise-upload',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsTablesSapMasterRoute =
   AuthenticatedReportsTablesSapMasterRouteImport.update({
     id: '/reports/tables/sap-master',
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/reports/sd/order-book': typeof AuthenticatedReportsSdOrderBookRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
+  '/reports/tables/month-wise-upload': typeof AuthenticatedReportsTablesMonthWiseUploadRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
   '/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
   '/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
@@ -338,6 +346,7 @@ export interface FileRoutesByTo {
   '/reports/sd/order-book': typeof AuthenticatedReportsSdOrderBookRoute
   '/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
+  '/reports/tables/month-wise-upload': typeof AuthenticatedReportsTablesMonthWiseUploadRoute
   '/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
   '/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
   '/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
@@ -379,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sd/order-book': typeof AuthenticatedReportsSdOrderBookRoute
   '/_authenticated/reports/sd/register': typeof AuthenticatedReportsSdRegisterRoute
   '/_authenticated/reports/sd/sit': typeof AuthenticatedReportsSdSitRoute
+  '/_authenticated/reports/tables/month-wise-upload': typeof AuthenticatedReportsTablesMonthWiseUploadRoute
   '/_authenticated/reports/tables/sap-master': typeof AuthenticatedReportsTablesSapMasterRoute
   '/_authenticated/reports/tables/valuation-subgroup': typeof AuthenticatedReportsTablesValuationSubgroupRoute
   '/_authenticated/reports/tables/zpc-group': typeof AuthenticatedReportsTablesZpcGroupRoute
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/reports/sd/order-book'
     | '/reports/sd/register'
     | '/reports/sd/sit'
+    | '/reports/tables/month-wise-upload'
     | '/reports/tables/sap-master'
     | '/reports/tables/valuation-subgroup'
     | '/reports/tables/zpc-group'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/reports/sd/order-book'
     | '/reports/sd/register'
     | '/reports/sd/sit'
+    | '/reports/tables/month-wise-upload'
     | '/reports/tables/sap-master'
     | '/reports/tables/valuation-subgroup'
     | '/reports/tables/zpc-group'
@@ -498,6 +510,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sd/order-book'
     | '/_authenticated/reports/sd/register'
     | '/_authenticated/reports/sd/sit'
+    | '/_authenticated/reports/tables/month-wise-upload'
     | '/_authenticated/reports/tables/sap-master'
     | '/_authenticated/reports/tables/valuation-subgroup'
     | '/_authenticated/reports/tables/zpc-group'
@@ -728,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSdSitRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/tables/month-wise-upload': {
+      id: '/_authenticated/reports/tables/month-wise-upload'
+      path: '/reports/tables/month-wise-upload'
+      fullPath: '/reports/tables/month-wise-upload'
+      preLoaderRoute: typeof AuthenticatedReportsTablesMonthWiseUploadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/tables/sap-master': {
       id: '/_authenticated/reports/tables/sap-master'
       path: '/reports/tables/sap-master'
@@ -831,6 +851,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsSdOrderBookRoute: typeof AuthenticatedReportsSdOrderBookRoute
   AuthenticatedReportsSdRegisterRoute: typeof AuthenticatedReportsSdRegisterRoute
   AuthenticatedReportsSdSitRoute: typeof AuthenticatedReportsSdSitRoute
+  AuthenticatedReportsTablesMonthWiseUploadRoute: typeof AuthenticatedReportsTablesMonthWiseUploadRoute
   AuthenticatedReportsTablesSapMasterRoute: typeof AuthenticatedReportsTablesSapMasterRoute
   AuthenticatedReportsTablesValuationSubgroupRoute: typeof AuthenticatedReportsTablesValuationSubgroupRoute
   AuthenticatedReportsTablesZpcGroupRoute: typeof AuthenticatedReportsTablesZpcGroupRoute
@@ -875,6 +896,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsSdOrderBookRoute: AuthenticatedReportsSdOrderBookRoute,
   AuthenticatedReportsSdRegisterRoute: AuthenticatedReportsSdRegisterRoute,
   AuthenticatedReportsSdSitRoute: AuthenticatedReportsSdSitRoute,
+  AuthenticatedReportsTablesMonthWiseUploadRoute:
+    AuthenticatedReportsTablesMonthWiseUploadRoute,
   AuthenticatedReportsTablesSapMasterRoute:
     AuthenticatedReportsTablesSapMasterRoute,
   AuthenticatedReportsTablesValuationSubgroupRoute:

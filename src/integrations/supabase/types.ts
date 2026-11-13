@@ -110,6 +110,36 @@ export type Database = {
         }
         Relationships: []
       }
+      month_wise_upload: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       open_purchase_order: {
         Row: {
           bedat: string | null
