@@ -1,10 +1,10 @@
 # Month Wise Stock dashboard (Inventory)
 
-Build the Inventory → Month Wise Stock screen from the data uploaded in Tables Master → Month Wise Upload. Quantity = **CB Qty**, Value = **CB Val** (shown in ₹ Cr on screen, full values in table/Excel).
+Build the Inventory → Month Wise Stock screen from the data uploaded in Tables Master → Month Wise Upload. Quantity = **CB Qty**, Value = **CB Val**, shown as full values everywhere (e.g. 34,86,712.96), no Cr conversion.
 
 ## Lookups
 - **Group names** (Main Group, Sub Group 1/2/3): match each row's **Profit Centre** to **PRCTR** in ZPC GROUP → MNGRP1, PCGRP1, PCGRP2, PCGRP3. Empty groups ignored.
-- **Type (used like "doc type" on purchase screens)**: match **ValCl** to **Valuation Class** in Valuation Class Wise Subgroup → Short Name (fallback Description, then code).
+- **Type (used like "doc type" on purchase screens)**: match **ValCl** to **Valuation Class** in Valuation Class Wise Subgroup → Short Name (fallback Description, then code). Example: ValCl 4011 → "Raw material"; its tile = sum of CB Val of all 4011 (and other "Raw material" class) rows. Classes sharing a Short Name are added together.
 
 ## Filters (collapsible, closed by default, like purchase screens)
 Year, Month (From–To), Plant, Type, Material Group. "Data available: first – last month" beside Refresh.
@@ -18,7 +18,7 @@ Year, Month (From–To), Plant, Type, Material Group. "Data available: first –
 2. **Top Types** – top 8 or 10 by value depending on card height.
 3. **Top 10 Plants** by value.
 4. **Top 10 Material Groups** by value.
-5. **Main Group**, **Sub Group 1**, **Sub Group 2**, **Sub Group 3** bar cards (₹ Cr), same as Purchase Register.
+5. **Main Group**, **Sub Group 1**, **Sub Group 2**, **Sub Group 3** bar cards (full values), same as Purchase Register.
 6. **ZKEYRM Comparison** – reuse the purchase card; month on month unit price = CB Val ÷ CB Qty per ZKEYRM material.
 7. **Detailed table** – all columns incl. Main/Sub groups and Type, search, pagination, Excel download.
 
