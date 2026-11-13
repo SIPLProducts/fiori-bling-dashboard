@@ -68,7 +68,7 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
       <Card tint="sky" title="Top Types" sub={sub}><BarList data={types.slice(0, 10)} fmt={full} /></Card>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
       <Card tint="copper" title="Top 10 Plants" sub={sub}><div className="h-64"><ResponsiveContainer><ComposedChart data={sumBy(cur, (r) => r.plant).slice(0, 10)} margin={{ top: 18, left: 10, right: 8 }}>
         <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-p${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i)} /><stop offset="100%" stopColor={radiantColor(i)} stopOpacity={0.45} /></linearGradient>)}</defs>
         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
@@ -76,6 +76,12 @@ export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
         <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={44}>{sumBy(cur, (r) => r.plant).slice(0, 10).map((_, i) => <Cell key={i} fill={`url(#mws-p${i})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => full(v)} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
       </ComposedChart></ResponsiveContainer></div></Card>
       {groupCard("Top 10 Material Groups", (r) => r.matGroup, "steel")}
+      <Card tint="violet" title="Top 10 Materials" sub={sub}><div className="h-64"><ResponsiveContainer><ComposedChart data={sumBy(cur, (r) => r.materialName || r.material).slice(0, 10)} margin={{ top: 18, left: 10, right: 8, bottom: 10 }}>
+        <defs>{Array.from({ length: 10 }, (_, i) => <linearGradient key={i} id={`mws-m${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={radiantColor(i + 3)} /><stop offset="100%" stopColor={radiantColor(i + 3)} stopOpacity={0.45} /></linearGradient>)}</defs>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={60} tick={{ fontSize: 9, fill: "var(--foreground)", fontWeight: 600 }} tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 12)}…` : v)} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} tickFormatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} />
+        <Tooltip formatter={(v: number) => full(v)} />
+        <Bar dataKey="value" name="CB Val" radius={[6, 6, 0, 0]} maxBarSize={40}>{Array.from({ length: 10 }, (_, i) => <Cell key={i} fill={`url(#mws-m${i})`} />)}<LabelList dataKey="value" position="top" formatter={(v: number) => v.toLocaleString("en-IN", { notation: "compact" })} style={{ fontSize: 9, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
+      </ComposedChart></ResponsiveContainer></div></Card>
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       {gCard("Main Group", (r) => r.mainGroup, "sky")}
