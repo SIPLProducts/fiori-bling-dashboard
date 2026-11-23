@@ -49,6 +49,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: "sd.dispatches", label: "Sales Register", tileKey: "sd_dispatches" },
       { key: "sd.order-book", label: "Order Book", tileKey: "sd_order_book" },
       { key: "sd.open-sales-orders", label: "Open Sales Orders", tileKey: "sd_open_orders" },
+      { key: "sd.so-ageing", label: "SO Ageing", tileKey: "sd_so_ageing" },
     ],
   },
   {

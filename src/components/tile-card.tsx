@@ -44,6 +44,7 @@ const ICONS = {
   inv_current_stock: PackageCheck,
   inv_month_wise_stock: ChartNoAxesCombined,
   inv_inventory_aging: CalendarClock,
+  sd_so_ageing: CalendarClock,
   pp_open_orders: Factory,
   pp_schedule_adherence: PackageCheck,
   pp_capacity_load: Gauge,

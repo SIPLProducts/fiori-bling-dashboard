@@ -3209,6 +3209,105 @@ export type Database = {
         }
         Relationships: []
       }
+      so_ageing: {
+        Row: {
+          bkt1: number | null
+          bkt2: number | null
+          bkt3: number | null
+          bldat: string | null
+          buck1: number | null
+          buck2: number | null
+          buck3: number | null
+          buck4: number | null
+          charg: string
+          cl_stck: number | null
+          id: string
+          key_date: string | null
+          lgort: string
+          maktx: string | null
+          matnr: string
+          mblnr: string
+          meins: string | null
+          mjahr: string
+          plant_name: string | null
+          prctr: string | null
+          price: number | null
+          raw: Json
+          sname: string | null
+          source_endpoint: string | null
+          synced_at: string
+          valu1: number | null
+          valu2: number | null
+          valu3: number | null
+          valu4: number | null
+          werks: string
+        }
+        Insert: {
+          bkt1?: number | null
+          bkt2?: number | null
+          bkt3?: number | null
+          bldat?: string | null
+          buck1?: number | null
+          buck2?: number | null
+          buck3?: number | null
+          buck4?: number | null
+          charg?: string
+          cl_stck?: number | null
+          id?: string
+          key_date?: string | null
+          lgort?: string
+          maktx?: string | null
+          matnr?: string
+          mblnr?: string
+          meins?: string | null
+          mjahr?: string
+          plant_name?: string | null
+          prctr?: string | null
+          price?: number | null
+          raw?: Json
+          sname?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          valu1?: number | null
+          valu2?: number | null
+          valu3?: number | null
+          valu4?: number | null
+          werks?: string
+        }
+        Update: {
+          bkt1?: number | null
+          bkt2?: number | null
+          bkt3?: number | null
+          bldat?: string | null
+          buck1?: number | null
+          buck2?: number | null
+          buck3?: number | null
+          buck4?: number | null
+          charg?: string
+          cl_stck?: number | null
+          id?: string
+          key_date?: string | null
+          lgort?: string
+          maktx?: string | null
+          matnr?: string
+          mblnr?: string
+          meins?: string | null
+          mjahr?: string
+          plant_name?: string | null
+          prctr?: string | null
+          price?: number | null
+          raw?: Json
+          sname?: string | null
+          source_endpoint?: string | null
+          synced_at?: string
+          valu1?: number | null
+          valu2?: number | null
+          valu3?: number | null
+          valu4?: number | null
+          werks?: string
+        }
+        Relationships: []
+      }
       tile_groups: {
         Row: {
           created_at: string

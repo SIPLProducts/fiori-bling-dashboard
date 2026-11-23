@@ -12,6 +12,7 @@ export { mapSalesRegisterPayload, isSalesRegisterEndpoint } from "../../src/lib/
 export { mapPurchaseRegisterPayload, isPurchaseRegisterEndpoint } from "../../src/lib/purchase-register-map";
 export { mapOpenPoPayload, isOpenPoEndpoint } from "../../src/lib/open-po-map";
 export { mapDailyProductionPayload, isDailyProductionEndpoint } from "../../src/lib/daily-production-map";
+export { mapSoAgeingPayload, isSoAgeingEndpoint } from "../../src/lib/so-ageing-map";
 export { mapCurrentStockPayload, isCurrentStockEndpoint } from "../../src/lib/current-stock-map";
 export { mapPurchaseOrdersPayload, isPurchaseOrdersEndpoint } from "../../src/lib/purchase-orders-map";
 export { mapUserDropdownPayload, isUserDropdownEndpoint } from "../../src/lib/user-dropdown-map";

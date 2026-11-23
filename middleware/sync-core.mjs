@@ -990,6 +990,98 @@ function mapDailyProductionPayload(payload, endpointName, now = /* @__PURE__ */ 
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
+// ../src/lib/so-ageing-map.ts
+var TEXT2 = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "meins", PRCTR: "prctr" };
+var NUM2 = ["BUCK1", "VALU1", "BUCK2", "VALU2", "BUCK3", "VALU3", "BUCK4", "VALU4", "CL_STCK", "PRICE"];
+function isSoAgeingEndpoint(name) {
+  const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return n.includes("soageing") || n.includes("zageing");
+}
+var norm2 = (k) => k.replace(/[^a-z0-9]/gi, "").toLowerCase();
+function pick10(raw, key) {
+  if (raw[key] !== void 0) return raw[key];
+  const real = Object.keys(raw).find((k) => norm2(k) === norm2(key));
+  return real ? raw[real] : void 0;
+}
+function text8(v) {
+  if (v === void 0 || v === null || typeof v === "object") return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function extractRows8(payload) {
+  if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
+  if (payload && typeof payload === "object") {
+    const obj = payload;
+    for (const key of ["DATA", "data", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows8(obj[key]);
+  }
+  return [];
+}
+var bucket = (v) => {
+  const n = parseInt(String(v ?? "").replace(/\D/g, ""), 10);
+  return Number.isFinite(n) ? n : null;
+};
+function mapSoAgeingPayload(payload, endpointName, request, now = /* @__PURE__ */ new Date()) {
+  const source = extractRows8(payload);
+  const req = request && typeof request === "object" ? request : {};
+  let body = req;
+  const b = req["body"];
+  if (b && typeof b === "object") body = b;
+  else if (typeof b === "string") {
+    try {
+      const p = JSON.parse(b);
+      if (p && typeof p === "object") body = p;
+    } catch {
+    }
+  }
+  const keyDate = sapIsoDate(body["P_BUDAT"]);
+  const bkt = [bucket(body["P2_BKT1"]) ?? 90, bucket(body["P2_BKT2"]) ?? 180, bucket(body["P2_BKT3"]) ?? 365];
+  const syncedAt = now.toISOString();
+  const byKey = /* @__PURE__ */ new Map();
+  let invalid = 0;
+  for (const raw of source) {
+    const matnr = (text8(pick10(raw, "MATNR")) ?? "").replace(/^0+(?=\d)/, "");
+    if (!matnr) {
+      invalid++;
+      continue;
+    }
+    const key = { werks: text8(pick10(raw, "WERKS")) ?? "", lgort: text8(pick10(raw, "LGORT")) ?? "", matnr, charg: text8(pick10(raw, "CHARG")) ?? "", mblnr: text8(pick10(raw, "MBLNR")) ?? "", mjahr: text8(pick10(raw, "MJAHR")) ?? "" };
+    const row = { ...key, raw, source_endpoint: endpointName, synced_at: syncedAt, key_date: keyDate, bkt1: bkt[0], bkt2: bkt[1], bkt3: bkt[2], bldat: sapIsoDate(pick10(raw, "BLDAT")) };
+    for (const [k, c] of Object.entries(TEXT2)) row[c] = text8(pick10(raw, k));
+    for (const k of NUM2) row[k.toLowerCase()] = orderBookNum(pick10(raw, k));
+    const id = Object.values(key).join("|");
+    const prev = byKey.get(id);
+    if (prev) for (const k of NUM2) {
+      const c = k.toLowerCase();
+      prev[c] = (Number(prev[c]) || 0) + (Number(row[c]) || 0);
+    }
+    else byKey.set(id, row);
+  }
+  const rows = [...byKey.values()];
+  return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
+}
+function withSoAgeingDate(raw, now = /* @__PURE__ */ new Date(), scheduled = false) {
+  if (!raw || !raw.trim()) return raw ?? void 0;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return raw;
+    const obj = { ...parsed };
+    delete obj["BUDAT_F"];
+    delete obj["BUDAT_T"];
+    const ist = new Date(now.getTime() + 330 * 6e4);
+    const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
+    const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
+    obj["P_BUDAT"] = scheduled || !/^\d{8}$/.test(saved) ? today : saved;
+    const defs = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
+    for (const k of Object.keys(defs)) {
+      const d = String(obj[k] ?? "").replace(/\D/g, "");
+      obj[k] = d ? d.padStart(4, "0").slice(-4) : defs[k];
+    }
+    return JSON.stringify(obj);
+  } catch {
+    return raw;
+  }
+}
+
 // ../src/lib/current-stock-map.ts
 var CURRENT_STOCK_TEXT_FIELDS = ["LGOBE", "MAKTX", "MEINS", "MTART", "ROWNO", "SHELFNO", "RACKNO", "BINNO"];
 var CURRENT_STOCK_NUMERIC_FIELDS = ["LABST", "WLABS", "INSME", "WINSM", "SPEME", "WSPEM", "TRAME", "WTRAM"];
@@ -1012,45 +1104,45 @@ function isCurrentStockEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
   return n.includes("currentstock") || n === "zcurrstk" || n.includes("zdprmisreport");
 }
-function pick10(raw, key) {
+function pick11(raw, key) {
   if (raw[key] !== void 0) return raw[key];
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
 }
-function text8(v) {
+function text9(v) {
   if (v === void 0 || v === null || typeof v === "object") return null;
   const s = String(v).trim();
   return s ? s : null;
 }
-function extractRows8(payload) {
+function extractRows9(payload) {
   if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
   if (payload && typeof payload === "object") {
     const obj = payload;
-    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows8(obj[key]);
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows9(obj[key]);
   }
   return [];
 }
 function mapCurrentStockPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
-  const source = extractRows8(payload);
+  const source = extractRows9(payload);
   const syncedAt = now.toISOString();
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const m0 = text8(pick10(raw, "MATNR"));
+    const m0 = text9(pick11(raw, "MATNR"));
     const matnr = m0 ? trimMatnr(m0) : null;
     if (!matnr) {
       invalid++;
       continue;
     }
-    const werks = text8(pick10(raw, "WERKS")) ?? "", lgort = text8(pick10(raw, "LGORT")) ?? "", charg = text8(pick10(raw, "CHARG")) ?? "";
+    const werks = text9(pick11(raw, "WERKS")) ?? "", lgort = text9(pick11(raw, "LGORT")) ?? "", charg = text9(pick11(raw, "CHARG")) ?? "";
     const row = { matnr, werks, lgort, charg, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of CURRENT_STOCK_TEXT_FIELDS) row[k.toLowerCase()] = text8(pick10(raw, k));
+    for (const k of CURRENT_STOCK_TEXT_FIELDS) row[k.toLowerCase()] = text9(pick11(raw, k));
     for (const k of CURRENT_STOCK_NUMERIC_FIELDS) {
-      const key = (NUM_ALIASES[k] ?? [k]).find((a) => pick10(raw, a) !== void 0 && pick10(raw, a) !== null && pick10(raw, a) !== "");
-      row[k.toLowerCase()] = key ? orderBookNum(pick10(raw, key)) : null;
+      const key = (NUM_ALIASES[k] ?? [k]).find((a) => pick11(raw, a) !== void 0 && pick11(raw, a) !== null && pick11(raw, a) !== "");
+      row[k.toLowerCase()] = key ? orderBookNum(pick11(raw, key)) : null;
     }
-    for (const k of CURRENT_STOCK_EXTRA_TEXT) row[k.toLowerCase()] = text8(pick10(raw, k));
-    for (const k of CURRENT_STOCK_EXTRA_NUM) row[k.toLowerCase()] = orderBookNum(pick10(raw, k));
+    for (const k of CURRENT_STOCK_EXTRA_TEXT) row[k.toLowerCase()] = text9(pick11(raw, k));
+    for (const k of CURRENT_STOCK_EXTRA_NUM) row[k.toLowerCase()] = orderBookNum(pick11(raw, k));
     const n = (v) => Number(v) || 0;
     if (!n(row["wlabs"]) && !n(row["winsm"]) && !n(row["wspem"]) && n(row["wbwbest"])) {
       row["wlabs"] = row["wbwbest"];
@@ -1146,47 +1238,47 @@ function pick1(raw, key) {
   const real = Object.keys(raw).find((k) => k.toLowerCase() === key.toLowerCase());
   return real ? raw[real] : void 0;
 }
-function pick11(raw, key) {
+function pick12(raw, key) {
   for (const k of [key, ...ALIASES[key] ?? []]) {
     const v = pick1(raw, k);
     if (v !== void 0 && v !== null && String(v).trim() !== "") return v;
   }
   return void 0;
 }
-function text9(v) {
+function text10(v) {
   if (v === void 0 || v === null || typeof v === "object") return null;
   const s = String(v).trim();
   return s ? s : null;
 }
-function extractRows9(payload) {
+function extractRows10(payload) {
   if (Array.isArray(payload)) return payload.filter((r) => r && typeof r === "object");
   if (payload && typeof payload === "object") {
     const obj = payload;
-    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows9(obj[key]);
+    for (const key of ["data", "DATA", "results", "items", "value"]) if (Array.isArray(obj[key])) return extractRows10(obj[key]);
   }
   return [];
 }
 function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ new Date()) {
-  const source = extractRows9(payload);
+  const source = extractRows10(payload);
   const syncedAt = now.toISOString();
   const byKey = /* @__PURE__ */ new Map();
   let invalid = 0;
   for (const raw of source) {
-    const po = text9(pick11(raw, "PO"));
+    const po = text10(pick12(raw, "PO"));
     if (!po) {
       invalid++;
       continue;
     }
-    const poItem = text9(pick11(raw, "PO_ITEM")) ?? "";
+    const poItem = text10(pick12(raw, "PO_ITEM")) ?? "";
     const row = { po, po_item: poItem, raw, source_endpoint: endpointName, synced_at: syncedAt };
-    for (const k of PO_TEXT_FIELDS) row[k.toLowerCase()] = text9(pick11(raw, k));
-    for (const k of PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick11(raw, k));
-    row["po_date"] = orderBookDate(pick11(raw, "PO_DATE"));
-    row["delivery_date"] = orderBookDate(pick11(raw, "DELIVERY_DATE"));
-    row["doc_date"] = orderBookDate(pick11(raw, "DOC_DATE"));
+    for (const k of PO_TEXT_FIELDS) row[k.toLowerCase()] = text10(pick12(raw, k));
+    for (const k of PO_NUMERIC_FIELDS) row[k.toLowerCase()] = orderBookNum(pick12(raw, k));
+    row["po_date"] = orderBookDate(pick12(raw, "PO_DATE"));
+    row["delivery_date"] = orderBookDate(pick12(raw, "DELIVERY_DATE"));
+    row["doc_date"] = orderBookDate(pick12(raw, "DOC_DATE"));
     Object.assign(row, sapGroupColumns(raw));
-    row["division_name"] = text9(pick11(raw, "DIVISION_NAME"));
-    row["ekgrp_desc"] = text9(pick11(raw, "EKGRP_DESC"));
+    row["division_name"] = text10(pick12(raw, "DIVISION_NAME"));
+    row["ekgrp_desc"] = text10(pick12(raw, "EKGRP_DESC"));
     byKey.set(`${po}|${poItem}`, row);
   }
   const rows = [...byKey.values()];
@@ -1197,7 +1289,7 @@ function mapPurchaseOrdersPayload(payload, endpointName, now = /* @__PURE__ */ n
 function isUserDropdownEndpoint(endpointName) {
   return endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown");
 }
-function text10(v) {
+function text11(v) {
   if (v === void 0 || v === null) return null;
   const s = String(v).trim();
   return s ? s : null;
@@ -1225,7 +1317,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
   const add = (category, rows2, codeKey, nameKey) => {
     for (const raw of rows2) {
       received++;
-      const code = text10(field(raw, codeKey));
+      const code = text11(field(raw, codeKey));
       if (!code) {
         invalid++;
         continue;
@@ -1233,7 +1325,7 @@ function mapUserDropdownPayload(payload, endpointName, now = /* @__PURE__ */ new
       byKey.set(`${category}|${code}`, {
         category,
         code,
-        name: text10(field(raw, nameKey)),
+        name: text11(field(raw, nameKey)),
         raw,
         source_endpoint: endpointName,
         synced_at: syncedAt
@@ -1252,8 +1344,8 @@ function stripJsonComments(raw) {
 }
 
 // ../src/lib/sap-pull-shared.ts
-function salvageTruncatedArray(text11) {
-  const trimmed = text11.trimStart();
+function salvageTruncatedArray(text12) {
+  const trimmed = text12.trimStart();
   if (!trimmed.startsWith("[")) return null;
   let depth = 0;
   let inString = false;
@@ -1288,11 +1380,11 @@ function salvageTruncatedArray(text11) {
     return null;
   }
 }
-function extractEmbeddedBody(text11) {
+function extractEmbeddedBody(text12) {
   const marker = '"body":"';
-  const start = text11.indexOf(marker);
+  const start = text12.indexOf(marker);
   if (start < 0) return null;
-  const raw = text11.slice(start + marker.length);
+  const raw = text12.slice(start + marker.length);
   try {
     const safe = raw.replace(/\\$/, "");
     return JSON.parse(`"${safe.replace(/"$/, "")}"`);
@@ -1510,6 +1602,7 @@ function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new D
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   if (/dailyproduction|^zdpr$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withDprDates(raw, range, now);
+  if (isSoAgeingEndpoint(endpointName)) return withSoAgeingDate(raw, now, scheduled);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
   return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }
@@ -1536,6 +1629,7 @@ export {
   isPurchaseRegisterEndpoint,
   isSalesRegisterEndpoint,
   isSitEndpoint,
+  isSoAgeingEndpoint,
   isUserDropdownEndpoint,
   isZcashFlowEndpoint,
   keyValueObject,
@@ -1551,6 +1645,7 @@ export {
   mapRow,
   mapSalesRegisterPayload,
   mapSitPayload,
+  mapSoAgeingPayload,
   mapUserDropdownPayload,
   mapZcashFlowPayload,
   postingDateRange,
