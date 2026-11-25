@@ -23,14 +23,16 @@ function DailyChart({ data }: { data: { date: string; value: number }[] }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
   const max = Math.max(...data.map((d) => d.value / CR), 0.01);
-  const rows = data.map((d) => { const none = isNoProductionDay(d.value); return { name: ddmm(d.date).slice(0, 5), real: d.value, none, bar: none ? max : d.value / CR }; });
+  const step = max > 10 ? 15 : max > 2 ? 1 : 0.5;
+  const top = Math.ceil((max * 1.1) / step) * step;
+  const rows = data.map((d) => { const none = isNoProductionDay(d.value); return { name: ddmm(d.date).slice(0, 5), full: ddmm(d.date), real: d.value, none, bar: none ? top : d.value / CR }; });
   return <div><div className="h-60"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
     <defs><linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={GREEN} stopOpacity={0.55} /><stop offset="100%" stopColor={GREEN} /></linearGradient>
       <linearGradient id={`${id}r`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={RED} stopOpacity={0.55} /><stop offset="100%" stopColor={RED} /></linearGradient></defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval="preserveStartEnd" />
-    <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
-    <Tooltip formatter={(_v: number, _k, item) => { const p = (item as { payload: { real: number; none: boolean } }).payload; return p.none ? [`₹${p.real.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} – No production`, ""] : [`${(p.real / CR).toFixed(2)} Cr`, "Production Val"]; }} />
+    <YAxis domain={[0, top]} allowDataOverflow tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
+    <Tooltip cursor={false} labelFormatter={(_l: unknown, p: readonly { payload?: { full?: string } }[]) => p?.[0]?.payload?.full ?? ""} formatter={(_v: unknown, _k: unknown, item: unknown): [string, string] => { const p = (item as { payload: { real: number; none: boolean } }).payload; return p.none ? ["No production", ""] : [`${(p.real / CR).toFixed(2)} Cr`, "Production Val: "]; }} separator={""} />
     <Bar dataKey="bar" maxBarSize={18} radius={[4, 4, 0, 0]}>{rows.map((r, i) => <Cell key={i} fill={`url(#${id}${r.none ? "r" : "g"})`} />)}</Bar>
   </BarChart></ResponsiveContainer></div>
     <div className="mt-1 flex justify-center gap-4 text-[11px] text-foreground">
