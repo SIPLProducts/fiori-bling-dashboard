@@ -35,7 +35,7 @@ export async function getSalesRegisterRows(): Promise<SalesRegisterRow[]> {
     const { data, error } = await supabase.from("sales_register").select(COLS)
       .order("vbeln", { ascending: true }).order("posnr", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(`Unable to load Sales Register: ${error.message}`);
+    if (error) throw new Error(`Unable to load Dispatches: ${error.message}`);
     out.push(...((data ?? []) as unknown as Rec[]));
     if (!data || data.length < PAGE_SIZE) break;
   }

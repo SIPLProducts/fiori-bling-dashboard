@@ -115,7 +115,7 @@ export function SalesRegisterLaunchCard({ fallback }: { fallback: React.ReactNod
   const { data: lastSynced } = useReportSync("sales-register");
   if (isLoading) return <div className="h-[188px] w-full animate-pulse rounded-2xl border border-border bg-launchpad-tile" />;
   if (!data || !rows?.length) return <>{fallback}</>;
-  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Sales Register" subtitle="All billed" caption="All billing dates" lineLabel="invoice lines" href="/reports/sd/dispatches" />;
+  return <LaunchSummaryCard data={data} lastSynced={lastSynced} title="Dispatches" subtitle="All billed" caption="All billing dates" lineLabel="invoice lines" href="/reports/sd/dispatches" />;
 }
 
 async function fetchSummary(): Promise<Summary> {

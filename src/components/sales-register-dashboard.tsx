@@ -127,7 +127,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
     </div>}
     <div data-pdf-block><ModelTypeCards rows={rows.map((r) => ({ model: r.model, type: r.productType, amount: r.netValue, ah: r.totalAh }))} /></div>
     <div data-pdf-block className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Card title={`Sales Register (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
+      <Card title={`Dispatches (${trend.granularity[0]!.toUpperCase()}${trend.granularity.slice(1)})`}>{trend.points.length ? <ResponsiveContainer width="100%" height={150}><BarChart data={trend.points.map((d) => ({ ...d, net: cr(d.net) }))} margin={{ top: 16, left: -16, right: 4, bottom: 0 }}>
         {grad("sr-trend")}<CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip formatter={(v: number) => [`₹ ${v} Cr`, "Net Value"]} />
         <Bar dataKey="net" name="Net Value" radius={[3, 3, 0, 0]} maxBarSize={32}>{trend.points.map((_, i) => <Cell key={i} fill={`url(#sr-trend-${i % COLORS.length})`} />)}
@@ -140,7 +140,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
     </div>
     <section data-pdf-exclude className="rounded-xl border border-border bg-card shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-3 py-2">
-        <h2 className="flex min-w-0 items-center gap-2 truncate text-xs font-semibold"><BarChart3 className="size-4 shrink-0 text-primary" />Sales Register Details</h2>
+        <h2 className="flex min-w-0 items-center gap-2 truncate text-xs font-semibold"><BarChart3 className="size-4 shrink-0 text-primary" />Dispatches Details</h2>
         <div className="flex items-center gap-2">
           <button type="button" disabled={!filtered.length} onClick={() => void downloadSalesRegisterExcel(filtered)} className="btn-export inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-40"><FileSpreadsheet className="size-3.5" />Excel</button>
           <div className="relative"><Search className="absolute left-2 top-2 size-3.5 text-muted-foreground" /><Input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search customer, invoice no, material..." className="h-8 w-56 pl-7 text-xs" /></div>
@@ -170,7 +170,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
             <TableCell className={R}>{fullInr(r.igst)}</TableCell>
             <TableCell><span className={`rounded px-2 py-0.5 ${r.status === "Posted" ? "bg-chart-2/15 font-semibold text-chart-2" : "bg-chart-4/20 font-semibold text-foreground"}`}>{r.status}</span></TableCell>
           </TableRow>;
-        }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Sales Register data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
+        }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Dispatches data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
         {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
           <TableCell colSpan={12}>Total ({filtered.length} lines)</TableCell>
           <TableCell className={R}>{(sum("billedQty")).toLocaleString("en-IN", { maximumFractionDigits: 3 })}</TableCell>

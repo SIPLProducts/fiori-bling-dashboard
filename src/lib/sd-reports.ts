@@ -41,7 +41,7 @@ export const SD_REPORTS: SdReportDef[] = [
     key: "register",
     screen: "sdr.register",
     to: "/reports/sd/register",
-    title: "Sales Register report",
+    title: "Dispatches report",
     tcode: "ZVF05_SAL",
     description: "Document-level sales register listing.",
   },

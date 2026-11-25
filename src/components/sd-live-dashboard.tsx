@@ -1,3 +1,4 @@
+import { topCustomersByQuarter } from "@/lib/sd-quarter-customers";
 import { RadiantDefs, radiantFill } from "@/components/radiant-defs";
 import { radiantBar } from "@/lib/radiant";
 import { OrderBookSubGroupChart } from "./order-book-subgroup-chart";
@@ -2225,6 +2226,7 @@ export function SdLiveDashboard() {
     return { sub1: summarizeGroupsByDivision(rows, (r) => r.s1), sub2: summarizeGroupsByDivision(rows, (r) => r.s2), sub3: summarizeGroupsByDivision(rows, (r) => r.s3) };
   }, [filtered]);
   const analytics = useMemo(() => buildSdAnalytics(filtered), [filtered]);
+  const quarterCustomers = useMemo(() => topCustomersByQuarter(filtered), [filtered]);
   const industries = useMemo(() => industryTotals(filtered, (r) => r.industryText, (r) => r.amount), [filtered]);
   const segments = useMemo(() => segmentTotals(filtered, (r) => r.segmentCode, (r) => r.industryText, (r) => r.amount), [filtered]);
   const segmentNames = useMemo(() => segmentNameMap(all, (r) => r.segmentCode, (r) => r.industryText), [all]);
@@ -2844,9 +2846,8 @@ export function SdLiveDashboard() {
             />
           ) : (
             <>
-          {/* PDF pairs these six cards into three break-safe rows; screen keeps the three-column layout. */}
-          <div className={pdfBusy ? "space-y-4" : "grid gap-4 lg:grid-cols-3"}>
-            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
+          {/* Row A: customers + quarter cards; Row B: segment/contribution/mix/trend. PDF pairs cards. */}
+          <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : `grid gap-4 md:grid-cols-2 ${quarterCustomers.length >= 4 ? "lg:grid-cols-5" : quarterCustomers.length === 3 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
             <Panel title="Top 10 Customers" accent={2} expandable>
               {(full: boolean) => (
                 <BarList
@@ -2864,97 +2865,26 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
-            <Panel
-              title="Sales Trend"
-              accent={1}
-              expandable
-              actions={
-                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
-                  {TREND_MODES.map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setTrendMode(mode)}
-                      className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                        trendMode === mode
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              }
-            >
-              {(full: boolean) => (
-                <div className={full ? "flex h-full flex-col" : ""}>
-                  <div className="mb-1 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
-                      Current period ({trend.cy})
-                    </span>
-                    {trend.py ? (
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className="h-0 w-5 border-t-2 border-dashed"
-                          style={{ borderColor: "var(--color-muted-foreground)" }}
-                        />
-                        Previous period ({trend.py})
-                      </span>
-                    ) : null}
-                    <span className="ml-auto">Amount (₹)</span>
-                  </div>
-                  <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
-                    <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
-                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }} onClick={(state) => { if (trendMode === "Monthly" && state?.activeLabel) openDrilldown({ month: String(state.activeLabel) }); }} className={trendMode === "Monthly" ? "cursor-pointer" : ""}>
-                        <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
-                        <YAxis
-                          tickFormatter={axisCompact}
-                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
-                          width={60}
-                          stroke="var(--chart-axis-line)"
-                          tickLine={false}
-                        />
-                        <Tooltip {...tooltipStyle} formatter={(v: number) => INRC(v)} />
-                        <Line
-                          type="monotone"
-                          dataKey="current"
-                          name="Current period"
-                          stroke="var(--kpi-1)"
-                          strokeWidth={2.5}
-                          dot={{ r: 3 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="previous"
-                          name="Previous period"
-                          stroke="var(--color-muted-foreground)"
-                          strokeDasharray="5 5"
-                          strokeWidth={2}
-                          dot={{ r: 2.5 }}
-                          connectNulls
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </Panel>
-            </div>
+            {quarterCustomers.map((q) => (
+              <Panel key={q.key} title={q.label} accent={3} expandable>
+                {(full: boolean) => (
+                  <BarList
+                    items={q.items}
+                    tone={2}
+                    full={full}
+                    onSelect={(customer) => openDrilldown({ customer })}
+                    valueFormatter={CRORES_VALUE}
+                  />
+                )}
+              </Panel>
+            ))}
+          </div>
 
+          <div className={pdfBusy ? "space-y-4" : "grid gap-4 md:grid-cols-2 lg:grid-cols-4"}>
             <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
-            <Panel title="Top 10 Profit Centres" accent={4} expandable>
-              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} valueFormatter={CRORES_VALUE} />}
-            </Panel>
-
             <Panel title="Segment" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
             </Panel>
-            </div>
-
-            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Customer Contribution (Top Sales up to 10)" accent={1} expandable>
               {(full: boolean) => (
                 <div className={`cxo-chart-surface ${full ? "h-full" : ""}`}>
@@ -3049,6 +2979,8 @@ export function SdLiveDashboard() {
               )}
             </Panel>
 
+            </div>
+            <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Sales Mix" accent={2} expandable>
               {(full: boolean) => (
                 <div className={full ? "flex h-full flex-col" : ""}>
@@ -3072,6 +3004,84 @@ export function SdLiveDashboard() {
                         <span className="tabular">{CRORES_VALUE(m.value)}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+            </Panel>
+            <Panel
+              title="Sales Trend"
+              accent={1}
+              expandable
+              actions={
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-0.5">
+                  {TREND_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setTrendMode(mode)}
+                      className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                        trendMode === mode
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              }
+            >
+              {(full: boolean) => (
+                <div className={full ? "flex h-full flex-col" : ""}>
+                  <div className="mb-1 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-0.5 w-5 rounded" style={{ background: "var(--kpi-1)" }} />
+                      Current period ({trend.cy})
+                    </span>
+                    {trend.py ? (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="h-0 w-5 border-t-2 border-dashed"
+                          style={{ borderColor: "var(--color-muted-foreground)" }}
+                        />
+                        Previous period ({trend.py})
+                      </span>
+                    ) : null}
+                    <span className="ml-auto">Amount (₹)</span>
+                  </div>
+                  <div className={`cxo-chart-surface ${full ? "min-h-0 flex-1" : ""}`}>
+                    <ResponsiveContainer width="100%" height={full ? "100%" : 290}>
+                      <ComposedChart data={trend.rows} margin={{ top: 18, left: 0, right: 8, bottom: 2 }} onClick={(state) => { if (trendMode === "Monthly" && state?.activeLabel) openDrilldown({ month: String(state.activeLabel) }); }} className={trendMode === "Monthly" ? "cursor-pointer" : ""}>
+                        <CartesianGrid strokeDasharray="2 6" stroke="var(--chart-grid-line)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }} stroke="var(--chart-axis-line)" tickLine={false} tickMargin={8} />
+                        <YAxis
+                          tickFormatter={axisCompact}
+                          tick={{ fontSize: 10, fill: "var(--chart-axis-label)" }}
+                          width={60}
+                          stroke="var(--chart-axis-line)"
+                          tickLine={false}
+                        />
+                        <Tooltip {...tooltipStyle} formatter={(v: number) => INRC(v)} />
+                        <Line
+                          type="monotone"
+                          dataKey="current"
+                          name="Current period"
+                          stroke="var(--kpi-1)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="previous"
+                          name="Previous period"
+                          stroke="var(--color-muted-foreground)"
+                          strokeDasharray="5 5"
+                          strokeWidth={2}
+                          dot={{ r: 2.5 }}
+                          connectNulls
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               )}
@@ -3211,7 +3221,7 @@ export function SdLiveDashboard() {
           </Dialog>
 
           {/* Additional analysis kept below the management view */}
-          <div data-pdf-page-block className="grid gap-4 lg:grid-cols-3">
+          <div data-pdf-page-block className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Panel title="Top 10 Materials" accent={3} expandable>
               {(full: boolean) => <BarList items={analytics.topMaterials} tone={2} full={full} valueFormatter={CRORES_VALUE} />}
             </Panel>
@@ -3225,6 +3235,11 @@ export function SdLiveDashboard() {
                 {(full: boolean) => <BarList items={industries.slice(0, 10)} tone={3} full={full} valueFormatter={CRORES_VALUE} />}
               </Panel>
             )}
+
+            <Panel title="Top 10 Profit Centres" accent={4} expandable>
+              {(full: boolean) => <BarList items={analytics.topProfitCentres} tone={0} full={full} valueFormatter={CRORES_VALUE} />}
+            </Panel>
+
 
           </div>
 

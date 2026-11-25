@@ -24,7 +24,7 @@ export const SALES_REGISTER_EXPORT_COLUMNS: [string, (r: SalesRegisterRow) => st
 export async function downloadSalesRegisterExcel(rows: SalesRegisterRow[]) {
   const { Workbook } = await import("exceljs");
   const wb = new Workbook();
-  const sheet = wb.addWorksheet("Sales Register");
+  const sheet = wb.addWorksheet("Dispatches");
   const header = sheet.addRow(SALES_REGISTER_EXPORT_COLUMNS.map(([h]) => h));
   header.font = { bold: true, color: { argb: "FFFFFFFF" } };
   header.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
@@ -40,6 +40,6 @@ export async function downloadSalesRegisterExcel(rows: SalesRegisterRow[]) {
   seg.columns.forEach((c) => { c.width = 28; });
   const buf = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-  const a = document.createElement("a"); a.href = url; a.download = datedFileName("Sales Register", "xlsx"); a.click();
+  const a = document.createElement("a"); a.href = url; a.download = datedFileName("Dispatches", "xlsx"); a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
