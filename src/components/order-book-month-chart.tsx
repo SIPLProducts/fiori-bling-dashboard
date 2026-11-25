@@ -36,6 +36,5 @@ export function OrderBookMonthChart({ data, pdf = false, sit = false }: { data: 
         </BarChart>
       </ResponsiveContainer>
     </div>
-    {sit ? <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px]">{divisions.map((d, i) => <span key={d} className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm" style={{ background: ORDER_CHART_COLORS[i % ORDER_CHART_COLORS.length] }} />{d}</span>)}</div> : null}
   </div>;
 }

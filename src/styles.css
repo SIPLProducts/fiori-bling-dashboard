@@ -896,3 +896,10 @@
   padding: 0.75rem;
   & > .overflow-x-auto { border: 1px solid var(--color-border); border-radius: 0.5rem; }
 }
+
+@media (min-width: 768px) {
+  .order-overview-row.order-overview-sit,
+  .orders-compact .order-overview-row.order-overview-sit { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .order-overview-row.order-overview-sit > *,
+  .orders-compact .order-overview-row.order-overview-sit > :last-child { grid-column: auto; }
+}
