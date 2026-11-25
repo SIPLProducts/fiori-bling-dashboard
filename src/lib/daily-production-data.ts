@@ -82,3 +82,7 @@ export function dprDailyChart(rows: DprRow[]) {
   }
   return out;
 }
+/** A day showing 0.00 Cr (under ₹50,000) counts as no production on the day-wise chart. */
+export function isNoProductionDay(value: number) {
+  return value / 1e7 < 0.005;
+}

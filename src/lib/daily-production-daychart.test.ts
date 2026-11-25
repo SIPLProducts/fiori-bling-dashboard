@@ -8,3 +8,9 @@ describe("Day Wise Production chart", () => {
   it("fills missing weekdays with zero", () => expect(out.find((d) => d.date === "2026-06-08")?.value).toBe(0));
   it("sums production per day", () => expect(out.find((d) => d.date === "2026-06-09")?.value).toBe(8));
 });
+
+import { isNoProductionDay } from "./daily-production-data";
+describe("no-production days", () => {
+  it("₹7,944 (0.00 Cr) counts as no production", () => expect(isNoProductionDay(7944.93)).toBe(true));
+  it("₹1,00,000 (0.01 Cr) counts as production", () => expect(isNoProductionDay(100000)).toBe(false));
+});
