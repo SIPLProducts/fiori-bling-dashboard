@@ -2,7 +2,7 @@ import { fullInr, inr2 } from "@/lib/format";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { summarizeGroupsByDivision } from "@/lib/open-orders-groups";
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, ClipboardList, IndianRupee, Maximize2, PackageCheck, Users } from "lucide-react";
+import { ChevronDown, ClipboardList, Maximize2, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -58,13 +58,13 @@ export function Donut({ data, colors = COLORS, heads, showPct = true }: { data: 
   </div></div>;
 }
 
-export function PlantColumns({ data }: { data: { name: string; value: number }[] }) {
+export function PlantColumns({ data, onSelect }: { data: { name: string; value: number }[]; onSelect?: (name: string) => void }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return <div className="h-56"><ResponsiveContainer><BarChart data={data} margin={{ top: 16, left: -16, right: 4 }}>
     <defs>{COLORS.map((c, i) => <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.6} /><stop offset="35%" stopColor={c} stopOpacity={0.9} /><stop offset="100%" stopColor={c} stopOpacity={1} /></linearGradient>)}</defs>
     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" /><XAxis dataKey="name" interval={0} tick={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 600 }} /><YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} />
     <Tooltip formatter={(v: number) => v.toFixed(2)} />
-    <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40} stroke="rgba(255,255,255,0.5)" strokeWidth={1}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
+    <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40} stroke="rgba(255,255,255,0.5)" strokeWidth={1} cursor={onSelect ? "pointer" : "default"} onClick={(d) => { const n = (d as { name?: string })?.name; if (n && onSelect) onSelect(n); }}>{data.map((_, i) => <Cell key={i} fill={`url(#${id}-${i % COLORS.length})`} />)}
       <LabelList dataKey="value" position="top" formatter={(v: number) => v.toFixed(2)} style={{ fontSize: 10, fontWeight: 700, fill: "var(--foreground)" }} /></Bar>
   </BarChart></ResponsiveContainer></div>;
 }
@@ -78,6 +78,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [plantPick, setPlantPick] = useState<string | null>(null);
   const opts = useMemo(() => {
     const u = (k: (r: OpenPoRow) => string, l?: (r: OpenPoRow) => string) => {
       const m = new Map<string, string>(); for (const r of rows) if (k(r)) m.set(k(r), l ? l(r) : k(r));
@@ -96,7 +97,7 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     && (!from || r.poDate >= from) && (!to || r.poDate <= to)), [rows, f, from, to, today]);
   const tot = openPoTotals(filtered);
   const vendors = sumBy(filtered, (r) => r.vendorName, (r) => r.openValue).slice(0, 10);
-  const types = sumBy(filtered, (r) => r.poType, (r) => r.poValue);
+  const types = sumBy(filtered, (r) => r.poType, (r) => r.openValue);
   const aging = AGING_BUCKETS.map((b) => ({ name: b, value: filtered.filter((r) => agingBucket(r) === b).reduce((a, r) => a + r.openValue, 0) }));
   const daily = useMemo(() => {
     const m = new Map<string, { po: number; migo: number }>();
@@ -104,9 +105,9 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     return [...m.entries()].sort().map(([d, v]) => ({ name: dmy(d).slice(0, 5), po: v.po / CR, migo: v.migo / CR }));
   }, [filtered]);
   const purGroups = sumBy(filtered, (r) => r.purGroup, (r) => r.openValue).slice(0, 8).map((d) => ({ name: d.name, value: d.value / CR }));
-  const plants = sumBy(filtered, (r) => r.plantName || r.plant, (r) => r.poValue).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
-  const materials = sumBy(filtered, (r) => r.materialName, (r) => r.poValue).slice(0, 10);
-  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.map((r) => ({ name: r[k] ?? "", value: r.poValue / CR, order: r.poNo, division: r.plantName || r.plant }));
+  const plants = sumBy(filtered, (r) => r.plantName || r.plant, (r) => r.openValue).slice(0, 12).map((d) => ({ name: d.name, value: d.value / CR }));
+  const materials = sumBy(filtered, (r) => r.materialName, (r) => r.openValue).slice(0, 10);
+  const grpRows = (k: "mainGroup" | "subGroup" | "subGroup2" | "subGroup3") => filtered.map((r) => ({ name: r[k] ?? "", value: r.openValue / CR, order: r.poNo, division: r.plantName || r.plant }));
   const mainG = summarizeGroupsByDivision(grpRows("mainGroup"), (r) => r.name);
   const subG1 = summarizeGroupsByDivision(grpRows("subGroup"), (r) => r.name);
   const subG2 = summarizeGroupsByDivision(grpRows("subGroup2"), (r) => r.name);
@@ -130,28 +131,27 @@ export function OpenPoDashboard({ rows }: { rows: OpenPoRow[] }) {
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Tile icon={<IndianRupee className="size-5" />} label="Total Val" value={cr(tot.poValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#1f6fd1" />
-      <Tile icon={<PackageCheck className="size-5" />} label="Gr Val" value={cr(tot.migoValue)} tone="#0f9d8a" />
-      <Tile icon={<ClipboardList className="size-5" />} label="Open Val" value={cr(tot.openValue)} tone="#e08a1e" />
+      <Tile icon={<ClipboardList className="size-5" />} label="Open Val" value={cr(tot.openValue)} note={`${filtered.length.toLocaleString("en-IN")} lines`} tone="#e08a1e" />
     </div>
 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Card tint="sky" title="PO Value by PO Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
+      <Card tint="sky" title="Open Value by PO Type"><Donut data={types} heads={["Type", "Val", "%"]} /></Card>
       <Card tint="peach" title="Delivery Aging Status" sub="Open value · SAP Days"><Donut data={aging} colors={AGING_COLORS} heads={["Days", "Val", "%"]} /></Card>
       <Card tint="rose" title="Top 10 Vendors"><BarList data={vendors} /></Card>
-      <Card tint="steel" title="Top 10 Materials" sub="PO value"><BarList data={materials} /></Card>
+      <Card tint="steel" title="Top 10 Materials" sub="Open value"><BarList data={materials} /></Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <Card tint="copper" title="Plant Analytics" sub="PO value"><PlantColumns data={plants} /></Card>
-      <Card tint="teal" title="PO Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
+      <Card tint="copper" title="Plant Analytics" sub="Open value · click a bar"><PlantColumns data={plants} onSelect={setPlantPick} /></Card>
+      <Card tint="teal" title="Open Value by Main Group" sub="₹ Cr">{mainG.groups.length ? <OrderBookSubGroupChart groups={mainG.groups} divisions={mainG.divisions} groupLabel="Main Group" /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>
     </div>
 
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-      {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} tint={(["violet", "amber", "mint"] as const)[label.endsWith("1") ? 0 : label.endsWith("2") ? 1 : 2]} title={`PO Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
+      {([["Sub Group 1", subG1], ["Sub Group 2", subG2], ["Sub Group 3", subG3]] as const).map(([label, g]) => <Card key={label} tint={(["violet", "amber", "mint"] as const)[label.endsWith("1") ? 0 : label.endsWith("2") ? 1 : 2]} title={`Open Value by ${label}`} sub="₹ Cr">{g.groups.length ? <OrderBookSubGroupChart groups={g.groups} divisions={g.divisions} groupLabel={label} /> : <p className="py-8 text-center text-xs text-muted-foreground">No data</p>}</Card>)}
     </div>
 
     <div data-pdf-exclude><DetailsTable rows={filtered} today={today} /></div>
+    <PlantPopup plant={plantPick} rows={filtered} onClose={() => setPlantPick(null)} />
   </div>;
 }
 
@@ -211,4 +211,36 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
       <button type="button" disabled={p >= pages - 1} onClick={() => setPage(p + 1)} className="btn-soft rounded-md px-2 py-0.5 disabled:opacity-40">Next</button>
     </div>
   </section>;
+}
+
+function PlantPopup({ plant, rows, onClose }: { plant: string | null; rows: OpenPoRow[]; onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const lines = useMemo(() => plant ? rows.filter((r) => (r.plantName || r.plant) === plant) : [], [plant, rows]);
+  const s = q.toLowerCase();
+  const list = useMemo(() => lines.filter((r) => !s || [r.poNo, r.vendorName, r.materialName, r.material].some((v) => v.toLowerCase().includes(s)))
+    .sort((a, b) => b.openValue - a.openValue), [lines, s]);
+  const total = lines.reduce((a, r) => a + r.openValue, 0);
+  const pos = new Set(lines.map((r) => r.poNo)).size;
+  const vendors = sumBy(lines, (r) => r.vendorName, (r) => r.openValue).slice(0, 5);
+  const mats = sumBy(lines, (r) => r.materialName, (r) => r.openValue).slice(0, 5);
+  return <Dialog open={!!plant} onOpenChange={(o) => { if (!o) { setQ(""); onClose(); } }}>
+    <DialogContent data-pdf-exclude className="max-h-[90vh] max-w-5xl overflow-y-auto">
+      <DialogHeader><DialogTitle>{plant} – Open POs</DialogTitle></DialogHeader>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {([["Open Val (₹ Cr)", cr(total)], ["POs", pos.toLocaleString("en-IN")], ["Lines", lines.length.toLocaleString("en-IN")]] as const).map(([l, v]) => <div key={l} className="rounded-lg border border-border p-2"><p className="text-[10px] font-semibold text-muted-foreground">{l}</p><p className="text-base font-bold tabular-nums">{v}</p></div>)}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div><p className="mb-1 text-xs font-bold">Top Vendors</p><BarList data={vendors} /></div>
+        <div><p className="mb-1 text-xs font-bold">Top Materials</p><BarList data={mats} /></div>
+      </div>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search PO, vendor, material" className={sel} aria-label="Search plant lines" />
+      <div className="overflow-x-auto"><table className="w-full text-[11px]"><thead><tr className="border-b border-border text-left">
+        {["PO Date", "PO No", "Vendor", "Material", "Open Qty", "Open Value (₹)", "Delivery Date", "Days"].map((h) => <th key={h} className="whitespace-nowrap px-2 py-1 font-bold">{h}</th>)}
+      </tr></thead><tbody>{list.slice(0, 200).map((r) => <tr key={r.poNo + r.item} className="border-b border-border/50">
+        <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1">{r.poNo}</td><td className="px-2 py-1">{r.vendorName}</td><td className="px-2 py-1">{r.materialName}</td>
+        <td className="px-2 py-1 text-right tabular-nums">{inr(Math.max(r.poQty - r.migoQty, 0))}</td><td className="px-2 py-1 text-right tabular-nums">{fullInr(r.openValue)}</td>
+        <td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td><td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
+      </tr>)}</tbody></table>{list.length > 200 ? <p className="py-1 text-[10px] text-muted-foreground">Showing top 200 of {list.length} lines</p> : null}</div>
+    </DialogContent>
+  </Dialog>;
 }
