@@ -1,11 +1,14 @@
-# Red bar for near-zero production days
+# Day Wise Production: clear red bars for no-production days
 
-On 01-06 there was production of only ₹7,944 (3 lines), which is 0.00 Cr. It counted as "production", so it got a green bar too thin to see.
+On 01-06 production was only ₹7,944 (3 lines), which is 0.00 Cr. It showed as a green bar too thin to see.
 
-Change: any day whose production shows as **0.00 Cr** (under ₹50,000) is treated as "No production". It gets the short red bar, and the legend stays the same. The tooltip still shows the real amount, for example "₹7,944.93 – No production".
-
-Days with 0.01 Cr or more keep their green bars.
+Changes:
+- Any day showing **0.00 Cr** (under ₹50,000), or with no entries at all, counts as **No production**.
+- No-production days get a **full-height red radiant bar**, as tall as the tallest day, so they stand out.
+- All bars become **narrower** (about 18 px wide), leaving more space between days.
+- The tooltip still shows the real amount: "₹7,944.93 – No production".
+- The legend stays: green = Production, red = No production. Same in the PDF.
 
 ## Technical details
-- `src/components/daily-production-dashboard.tsx` `DailyChart`: flag `low = value / CR < 0.005`; low days use the red gradient and stub height. Tooltip shows full ₹ for low days.
-- Add a test for the threshold through a small pure helper `isNoProductionDay(value)` in `daily-production-data.ts`.
+- `daily-production-data.ts`: pure `isNoProductionDay(value)` (value / 1e7 < 0.005); test it.
+- `daily-production-dashboard.tsx` `DailyChart`: bar height = chart max for no-production days, red gradient, `maxBarSize={18}`; tooltip shows full ₹ for those days.
