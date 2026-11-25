@@ -23,7 +23,7 @@ export function toDprRow(r: Rec): DprRow {
 export function dprTotals(rows: DprRow[]) {
   let qty = 0, value = 0, scrapQty = 0, scrapVal = 0;
   for (const r of rows) { qty += r.qty; value += r.value; scrapQty += r.scrapQty; scrapVal += r.scrapVal; }
-  return { qty, value, scrapQty, scrapVal, scrapPct: qty + scrapQty ? (scrapQty / (qty + scrapQty)) * 100 : 0, orders: new Set(rows.map((r) => r.order).filter(Boolean)).size };
+  return { qty, value, scrapQty, scrapVal, net: value - scrapVal, scrapPct: qty + scrapQty ? (scrapQty / (qty + scrapQty)) * 100 : 0, orders: new Set(rows.map((r) => r.order).filter(Boolean)).size };
 }
 export function dprGroup(rows: DprRow[], key: (r: DprRow) => string, val: (r: DprRow) => number = (r) => r.value) {
   const m = new Map<string, number>();

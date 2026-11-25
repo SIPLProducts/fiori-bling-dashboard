@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, ChevronDown, ClipboardList, Factory, Gauge, Package, Trash2 } from "lucide-react";
+import { ChevronDown, ClipboardList, Factory, Gauge, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { TINTS } from "@/lib/card-tints";
@@ -86,14 +86,12 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
       {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-5">{field("plant", "Plant")}{periodField("year", "Year", dateOptions.years)}{periodField("month", "Month", dateOptions.months)}{dateInput("Posting Date From", dates.from, (from) => updateDates({ from }))}{dateInput("To", dates.to, (to) => updateDates({ to }))}{field("material", "Material")}
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setChosenDates(null); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {([
-        ["Production", cr(t.value), "#1f6fd1", Factory],
-        ["Production Qty", num(t.qty, 0), "#0f9d8a", Package],
-        ["Scrap", cr(t.scrapVal), "#d64550", Trash2],
-        ["Scrap Qty", num(t.scrapQty), "#e07b39", AlertTriangle],
-        ["Scrap %", `${t.scrapPct.toFixed(2)}%`, "#7b4fd6", Gauge],
-        ["Prod. Orders", num(t.orders, 0), "#2f8f4e", ClipboardList],
+        ["No of Prod Order", num(t.orders, 0), "#2f8f4e", ClipboardList],
+        ["Prod Val", cr(t.value), "#1f6fd1", Factory],
+        ["Scrap Val", cr(t.scrapVal), "#d64550", Trash2],
+        ["Net Prod Val", cr(t.net), "#7b4fd6", Gauge],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
