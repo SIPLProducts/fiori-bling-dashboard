@@ -210,3 +210,4 @@
 - [x] Stop auto-refresh on tab focus/session renewal; add Cash Flow launchpad card (Credit/Debit/Net bars, last sync).
 - [x] Sales Register: visible chart colours, plant columns, rank lists, launchpad doc-type card, Distribution Channel column, coloured table, full Excel
 - [x] Month Wise Stock dashboard from Month Wise Upload
+- [x] Add Daily Production Year/Month filters with latest available month opening/Reset and initially empty posting dates; 10 tests pass, signed-in June/All/date filtering and Excel verified without runtime errors.

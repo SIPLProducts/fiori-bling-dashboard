@@ -3,10 +3,11 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { AlertTriangle, ChevronDown, ClipboardList, Factory, Gauge, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TINTS } from "@/lib/card-tints";
 import { BarList, Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
-import { currentReportPeriod } from "@/lib/report-period";
+import { defaultDprDates, dprDateOptions, matchesDprDates, type DprDateFilters } from "@/lib/daily-production-filters";
 import { dprDaily, dprGroup, dprTotals, type DprRow } from "@/lib/daily-production-data";
 
 const CR = 1e7;
@@ -36,9 +37,11 @@ function DailyChart({ data }: { data: { date: string; value: number; scrap: numb
 
 export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   const [f, setF] = useState(EMPTY);
-  const fy = useMemo(() => currentReportPeriod(), []);
-  const [from, setFrom] = useState(fy.from);
-  const [to, setTo] = useState(fy.to);
+  const latestDates = useMemo(() => defaultDprDates(rows), [rows]);
+  const [chosenDates, setChosenDates] = useState<DprDateFilters | null>(null);
+  const dates = chosenDates ?? latestDates;
+  const dateOptions = useMemo(() => dprDateOptions(rows, dates.year), [rows, dates.year]);
+  const updateDates = (patch: Partial<DprDateFilters>) => { setChosenDates({ ...dates, ...patch }); setPage(0); };
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -46,7 +49,7 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
     const pairs = (k: (r: DprRow) => string, l: (r: DprRow) => string) => [...new Map(rows.filter((r) => k(r)).map((r) => [k(r), l(r) && l(r) !== k(r) ? `${k(r)} - ${l(r)}` : k(r)]))].sort((a, b) => a[0].localeCompare(b[0])).map(([value, label]) => ({ value, label }));
     return { plant: [...new Map(rows.filter((r) => r.plant).map((r) => [r.plant, r.plantName || r.plant]))].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label)), material: pairs((r) => r.material, (r) => r.matDesc), sloc: pairs((r) => r.sloc, () => ""), wc: pairs((r) => r.wc, (r) => r.wcDesc), cc: pairs((r) => r.cc, (r) => r.ccName) };
   }, [rows]);
-  const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.material, r.material) && ok(f.sloc, r.sloc) && ok(f.wc, r.wc) && ok(f.cc, r.cc) && (!from || r.date >= from) && (!to || r.date <= to)), [rows, f, from, to]);
+  const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.material, r.material) && ok(f.sloc, r.sloc) && ok(f.wc, r.wc) && ok(f.cc, r.cc) && matchesDprDates(r.date, dates)), [rows, f, dates]);
   const t = dprTotals(data);
   const wcs = dprGroup(data, (r) => r.wcDesc).slice(0, 10);
   const ccs = dprGroup(data, (r) => r.ccName).slice(0, 10);
@@ -68,12 +71,18 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   };
   const field = (k: Key, label: string) => <FilterMultiSelect label={label} placeholder="All" selected={f[k]} options={opts[k]} onChange={(v) => { setF({ ...f, [k]: v.length === opts[k].length ? null : v }); setPage(0); }} />;
   const dateInput = (label: string, v: string, set: (s: string) => void) => <label className="flex flex-col gap-1 text-[11px] font-medium text-foreground">{label}<input type="date" value={v} onChange={(e) => { set(e.target.value); setPage(0); }} className="h-8 rounded-md border border-border bg-background px-2 text-xs" /></label>;
+  const periodField = (key: "year" | "month", label: string, values: string[]) => <div className="min-w-0 space-y-1"><span className="text-[11px] font-medium text-foreground">{label}</span><Select value={dates[key]} onValueChange={(value) => {
+    if (key === "year") {
+      const months = dprDateOptions(rows, value).months;
+      updateDates({ year: value, month: dates.month === "all" || months.includes(dates.month) ? dates.month : "all" });
+    } else updateDates({ month: value });
+  }}><SelectTrigger aria-label={label} className="h-8 bg-background px-2 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem>{values.map((value) => <SelectItem key={value} value={value}>{key === "month" ? new Date(2000, Number(value) - 1, 1).toLocaleString("en", { month: "long" }) : value}</SelectItem>)}</SelectContent></Select></div>;
 
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground"><span>Filters</span><ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} /></button>
-      {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-8">{field("plant", "Plant")}{dateInput("Posting Date From", from, setFrom)}{dateInput("To", to, setTo)}{field("material", "Material")}{field("sloc", "Storage Location")}{field("wc", "Work Center")}{field("cc", "Cost Center")}
-        <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setFrom(fy.from); setTo(fy.to); setPage(0); }}>Reset</Button></div></div> : null}
+      {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-5">{field("plant", "Plant")}{periodField("year", "Year", dateOptions.years)}{periodField("month", "Month", dateOptions.months)}{dateInput("Posting Date From", dates.from, (from) => updateDates({ from }))}{dateInput("To", dates.to, (to) => updateDates({ to }))}{field("material", "Material")}{field("sloc", "Storage Location")}{field("wc", "Work Center")}{field("cc", "Cost Center")}
+        <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setChosenDates(null); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
     <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
       {([
