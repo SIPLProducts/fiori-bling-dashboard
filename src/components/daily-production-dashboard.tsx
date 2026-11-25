@@ -3,7 +3,6 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { AlertTriangle, ChevronDown, ClipboardList, Factory, Gauge, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TINTS } from "@/lib/card-tints";
 import { BarList, Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
@@ -71,12 +70,15 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   };
   const field = (k: Key, label: string) => <FilterMultiSelect label={label} placeholder="All" selected={f[k]} options={opts[k]} onChange={(v) => { setF({ ...f, [k]: v.length === opts[k].length ? null : v }); setPage(0); }} />;
   const dateInput = (label: string, v: string, set: (s: string) => void) => <label className="flex flex-col gap-1 text-[11px] font-medium text-foreground">{label}<input type="date" value={v} onChange={(e) => { set(e.target.value); setPage(0); }} className="h-8 rounded-md border border-border bg-background px-2 text-xs" /></label>;
-  const periodField = (key: "year" | "month", label: string, values: string[]) => <div className="min-w-0 space-y-1"><span className="text-[11px] font-medium text-foreground">{label}</span><Select value={dates[key]} onValueChange={(value) => {
+  const monthName = (m: string) => new Date(2000, Number(m) - 1, 1).toLocaleString("en", { month: "long" });
+  const periodField = (key: "year" | "month", label: string, values: string[]) => <FilterMultiSelect label={label} placeholder="All" selected={dates[key]} options={values.map((value) => ({ value, label: key === "month" ? monthName(value) : value }))} onChange={(v) => {
+    const picked = v.length === 0 || v.length === values.length ? null : v;
     if (key === "year") {
-      const months = dprDateOptions(rows, value).months;
-      updateDates({ year: value, month: dates.month === "all" || months.includes(dates.month) ? dates.month : "all" });
-    } else updateDates({ month: value });
-  }}><SelectTrigger aria-label={label} className="h-8 bg-background px-2 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem>{values.map((value) => <SelectItem key={value} value={value}>{key === "month" ? new Date(2000, Number(value) - 1, 1).toLocaleString("en", { month: "long" }) : value}</SelectItem>)}</SelectContent></Select></div>;
+      const months = dprDateOptions(rows, picked).months;
+      const kept = dates.month?.filter((m) => months.includes(m)) ?? null;
+      updateDates({ year: picked, month: kept && kept.length ? kept : null });
+    } else updateDates({ month: picked });
+  }} />;
 
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
