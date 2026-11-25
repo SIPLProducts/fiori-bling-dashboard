@@ -32,7 +32,7 @@ export function ReportShell({
       <ShellBar title={title} displayName={launchpad?.profile?.display_name} screens={launchpad?.screens} />
 
       <div className="border-b border-border bg-card">
-        <div className={`mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 ${compact ? "py-2" : "py-4"}`}>
+        <div className={`flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 ${compact ? "py-2" : "py-4"}`}>
           <div className="min-w-0">
             {/* Home moved to the top navigation bar; this space is used by the screen. */}
             {title ? <h1 className={`${compact ? "text-base font-medium" : "text-2xl font-light"} text-foreground`}>{title}</h1> : null}
@@ -49,9 +49,9 @@ export function ReportShell({
       </div>
 
 
-      <main className="mx-auto max-w-[1400px] px-4 py-6">{children}</main>
+      <main className="px-3 py-6 sm:px-4">{children}</main>
       {providerMode ? (
-        <p className="mx-auto max-w-[1400px] px-4 pb-8 text-xs text-muted-foreground">
+        <p className="px-3 pb-8 text-xs sm:px-4 text-muted-foreground">
           Data source: {providerMode === "mock" ? "sample data (SAP not connected)" : "SAP OData"}
         </p>
       ) : null}
