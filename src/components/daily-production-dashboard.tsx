@@ -81,7 +81,7 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   return <div className="space-y-3">
     <div data-pdf-exclude className="rounded-xl border border-border shadow-sm" style={TINTS.neutral}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-card-foreground"><span>Filters</span><ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} /></button>
-      {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-5">{field("plant", "Plant")}{periodField("year", "Year", dateOptions.years)}{periodField("month", "Month", dateOptions.months)}{dateInput("Posting Date From", dates.from, (from) => updateDates({ from }))}{dateInput("To", dates.to, (to) => updateDates({ to }))}{field("material", "Material")}{field("sloc", "Storage Location")}{field("wc", "Work Center")}{field("cc", "Cost Center")}
+      {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-4 lg:grid-cols-5">{field("plant", "Plant")}{periodField("year", "Year", dateOptions.years)}{periodField("month", "Month", dateOptions.months)}{dateInput("Posting Date From", dates.from, (from) => updateDates({ from }))}{dateInput("To", dates.to, (to) => updateDates({ to }))}{field("material", "Material")}
         <div className="flex items-end"><Button type="button" variant="reset" size="sm" className="h-8 w-full text-xs" onClick={() => { setF(EMPTY); setChosenDates(null); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
     <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
