@@ -67,3 +67,18 @@ export async function getDailyProduction(): Promise<DprRow[]> {
   return out.map(toDprRow);
 }
 export const dailyProductionQuery = queryOptions({ queryKey: ["daily-production", "v3"], queryFn: getDailyProduction, staleTime: Infinity, refetchOnWindowFocus: false });
+/** Every non-Sunday date from first to last posting date, with summed production value (0 = no production). */
+export function dprDailyChart(rows: DprRow[]) {
+  const m = new Map<string, number>();
+  for (const r of rows) if (/^\d{4}-\d{2}-\d{2}$/.test(r.date)) m.set(r.date, (m.get(r.date) ?? 0) + r.value);
+  const keys = [...m.keys()].sort();
+  if (!keys.length) return [];
+  const out: { date: string; value: number }[] = [];
+  const end = new Date(`${keys[keys.length - 1]}T00:00:00Z`);
+  for (const d = new Date(`${keys[0]}T00:00:00Z`); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (d.getUTCDay() === 0) continue;
+    const iso = d.toISOString().slice(0, 10);
+    out.push({ date: iso, value: m.get(iso) ?? 0 });
+  }
+  return out;
+}

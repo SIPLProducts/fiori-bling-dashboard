@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChevronDown, ClipboardList, Factory, Gauge, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
@@ -7,7 +7,7 @@ import { TINTS } from "@/lib/card-tints";
 import { BarList, Card, Donut, PlantColumns } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
 import { defaultDprDates, dprDateOptions, matchesDprDates, type DprDateFilters } from "@/lib/daily-production-filters";
-import { dprDaily, dprGroup, dprTotals, type DprRow } from "@/lib/daily-production-data";
+import { dprDailyChart, dprGroup, dprTotals, type DprRow } from "@/lib/daily-production-data";
 
 const CR = 1e7;
 const cr = (v: number) => (v / CR).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -18,20 +18,25 @@ const EMPTY: Record<Key, string[] | null> = { plant: null, material: null, sloc:
 const ok = (sel: string[] | null, v: string) => sel === null || sel.includes(v);
 const ddmm = (iso: string) => (iso ? `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}` : "");
 
-function DailyChart({ data }: { data: { date: string; value: number; scrap: number }[] }) {
+const GREEN = "#2f8f4e", RED = "#d64550";
+function DailyChart({ data }: { data: { date: string; value: number }[] }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
-  const rows = data.map((d) => ({ name: ddmm(d.date).slice(0, 5), value: d.value / CR, scrap: d.scrap / CR }));
-  return <div className="h-60"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
-    <defs><linearGradient id={`${id}p`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--kpi-1)" stopOpacity={0.6} /><stop offset="100%" stopColor="var(--kpi-1)" /></linearGradient>
-      <linearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.6} /><stop offset="100%" stopColor="var(--destructive)" /></linearGradient></defs>
+  const max = Math.max(...data.map((d) => d.value / CR), 0.01);
+  const rows = data.map((d) => ({ name: ddmm(d.date).slice(0, 5), real: d.value / CR, bar: d.value > 0 ? d.value / CR : max * 0.04 }));
+  return <div><div className="h-60"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
+    <defs><linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={GREEN} stopOpacity={0.55} /><stop offset="100%" stopColor={GREEN} /></linearGradient>
+      <linearGradient id={`${id}r`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={RED} stopOpacity={0.55} /><stop offset="100%" stopColor={RED} /></linearGradient></defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval="preserveStartEnd" />
     <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
-    <Tooltip formatter={(v: number, k) => [`${v.toFixed(2)} Cr`, k === "value" ? "Production Val" : "Scrap Val"]} />
-    <Bar dataKey="value" fill={`url(#${id}p)`} radius={[4, 4, 0, 0]} />
-    <Bar dataKey="scrap" fill={`url(#${id}s)`} radius={[4, 4, 0, 0]} />
-  </BarChart></ResponsiveContainer></div>;
+    <Tooltip formatter={(_v: number, _k, item) => { const r = (item as { payload: { real: number } }).payload.real; return r > 0 ? [`${r.toFixed(2)} Cr`, "Production Val"] : ["No production", ""]; }} />
+    <Bar dataKey="bar" radius={[4, 4, 0, 0]}>{rows.map((r, i) => <Cell key={i} fill={`url(#${id}${r.real > 0 ? "g" : "r"})`} />)}</Bar>
+  </BarChart></ResponsiveContainer></div>
+    <div className="mt-1 flex justify-center gap-4 text-[11px] text-foreground">
+      <span className="flex items-center gap-1"><span className="size-2.5 rounded-sm" style={{ background: `linear-gradient(180deg, ${GREEN}8c, ${GREEN})` }} />Production</span>
+      <span className="flex items-center gap-1"><span className="size-2.5 rounded-sm" style={{ background: `linear-gradient(180deg, ${RED}8c, ${RED})` }} />No production</span>
+    </div></div>;
 }
 
 export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
@@ -97,7 +102,7 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
-      <Card title="Day Wise Production vs Scrap" sub="Val in Cr" tint="sky"><DailyChart data={dprDaily(data)} /></Card>
+      <Card title="Day Wise Production" sub="Val in Cr" tint="sky"><DailyChart data={dprDailyChart(data)} /></Card>
       <Card title="Top 10 Work Centers" sub="Val in Cr" tint="peach"><Donut data={wcs} heads={["Work Center", "Val", "%"]} /></Card>
     </div>
     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
