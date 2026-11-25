@@ -56,7 +56,7 @@ export function openOrderStatusLabel(deliveredQuantity: number) {
 export function displayOpenOrderDate(value: string) {
   if (!value) return "—";
   const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd.MM.yyyy");
+  return Number.isNaN(date.getTime()) ? "—" : format(date, "dd-MM-yyyy");
 }
 
 export function filterOpenOrderTable(rows: OpenSalesOrder[], status: OpenOrderTableStatus, search: string) {

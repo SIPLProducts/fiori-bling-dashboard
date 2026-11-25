@@ -26,3 +26,8 @@ describe("Daily Production posting filters", () => {
     expect(defaultDprDates([])).toEqual({ year: "all", month: "all", from: "", to: "" });
   });
 });
+describe("month order", () => {
+  it("lists latest month first", () => {
+    expect(dprDateOptions([{ date: "2026-04-02" }, { date: "2026-06-10" }, { date: "2026-05-01" }], "2026").months).toEqual(["06", "05", "04"]);
+  });
+});

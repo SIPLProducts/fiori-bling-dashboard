@@ -11,7 +11,7 @@ export function dprDateOptions(rows: readonly DatedRow[], year: string) {
   const dates = rows.map((r) => r.date).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
   return {
     years: [...new Set(dates.map((date) => date.slice(0, 4)))].sort().reverse(),
-    months: [...new Set(dates.filter((date) => year === "all" || date.startsWith(`${year}-`)).map((date) => date.slice(5, 7)))].sort(),
+    months: [...new Set(dates.filter((date) => year === "all" || date.startsWith(`${year}-`)).map((date) => date.slice(5, 7)))].sort().reverse(),
   };
 }
 
