@@ -57,7 +57,6 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   }, [rows]);
   const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.material, r.material) && ok(f.sloc, r.sloc) && ok(f.wc, r.wc) && ok(f.cc, r.cc) && matchesDprDates(r.date, dates)), [rows, f, dates]);
   const t = dprTotals(data);
-  const wcs = dprGroup(data, (r) => r.wcDesc).slice(0, 10);
   const ccs = dprGroup(data, (r) => r.ccName).slice(0, 10);
   const mats = dprGroup(data, (r) => r.matDesc).slice(0, 10);
   const scrapMats = dprGroup(data, (r) => r.matDesc, (r) => r.scrapVal).slice(0, 10);
@@ -105,12 +104,11 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
     </div>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
       <Card title="Day Wise Production" sub="Val in Cr" tint="sky"><DailyChart data={dprDailyChart(data)} /></Card>
-      <Card title="Top 10 Work Centers" sub="Val in Cr" tint="peach"><Donut data={wcs} heads={["Work Center", "Val", "%"]} /></Card>
+      <Card title="Top 10 Cost Center" sub="Val in Cr" tint="peach"><Donut data={ccs} heads={["Cost Center", "Val", ""]} showPct={false} /></Card>
     </div>
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <Card title="Top 10 Materials Produced" sub="Val in Cr" tint="teal"><BarList data={mats} /></Card>
       <Card title="Top 10 Scrap Materials" sub="Val in Cr" tint="rose"><BarList data={scrapMats} /></Card>
-      <Card title="Production by Cost Center" sub="Val in Cr" tint="amber"><BarList data={ccs} /></Card>
     </div>
     <Card title="Plant Wise Production (Top 15)" sub="Val in Cr" tint="copper"><PlantColumns data={plants} /></Card>
     <div data-pdf-exclude><Card title="Production Details" tint="neutral">
