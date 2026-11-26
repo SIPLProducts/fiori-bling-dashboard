@@ -1,6 +1,5 @@
 import { soAgeingQuery, ageTotals } from "@/lib/so-ageing-data";
 import { dailyProductionQuery, dprLatestMonthSummary } from "@/lib/daily-production-data";
-import { currentReportPeriod } from "@/lib/report-period";
 import { lastSyncedLabel, lastSyncShortLabel } from "@/lib/report-sync-time";
 import { currentStockQuery, stockTotals } from "@/lib/current-stock-data";
 import { monthWiseStockKpisQuery } from "@/lib/month-wise-stock-data";
