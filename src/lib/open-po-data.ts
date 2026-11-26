@@ -112,3 +112,11 @@ export function openPoTypeSummary(rows: OpenPoRow[]) {
   }
   return { poValue, poCount: pos.size, lines: rows.length, types: [...m.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name)) };
 }
+
+/** PO Date oldest first (full date order); rows without a PO Date go last. */
+export function sortOpenPoByDate<T extends { poDate: string; poNo: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
+    if (!a.poDate !== !b.poDate) return a.poDate ? -1 : 1;
+    return a.poDate.localeCompare(b.poDate) || a.poNo.localeCompare(b.poNo, undefined, { numeric: true });
+  });
+}

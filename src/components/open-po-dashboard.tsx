@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { datedFileName } from "@/lib/format";
 import { radiantBar } from "@/lib/radiant";
 import { tintForTitle, TINTS, type Tint } from "@/lib/card-tints";
-import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, poStatus, sumBy, type OpenPoRow, type OpenPoStatus } from "@/lib/open-po-data";
+import { AGING_BUCKETS, agingBucket, istToday, openPoTotals, sortOpenPoByDate, poStatus, sumBy, type OpenPoRow, type OpenPoStatus } from "@/lib/open-po-data";
 
 const COLORS = ["#1f6fd1", "#0f9d8a", "#e08a1e", "#8e44ad", "#d64550", "#3a8dde", "#16a3b8", "#c0841a", "#5c6bc0", "#2e8b57"];
 const AGING_COLORS = ["#0f9d8a", "#1f6fd1", "#e08a1e", "#d64550", "#6b7280"];
@@ -161,8 +161,7 @@ function DetailsTable({ rows, today }: { rows: OpenPoRow[]; today: string }) {
   const [size, setSize] = useState(10);
   const s = q.toLowerCase();
   const typeKeys = useMemo(() => [...new Set(rows.map((r) => r.poType))].sort(), [rows]);
-  const list = useMemo(() => rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.poTypeCode, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))
-    .sort((a, b) => a.poDate.localeCompare(b.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
+  const list = useMemo(() => sortOpenPoByDate(rows.filter((r) => !s || [r.poNo, r.vendorName, r.vendor, r.material, r.materialName, r.plantName, r.poType, r.poTypeCode, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3].some((v) => v.toLowerCase().includes(s)))), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
   const heads = ["PO Date", "PO No", "Item", "PO Type", "Plant", "Vendor", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Material", "SLoc", "UOM", "PO Qty", "PO Value (₹)", "MIGO Qty", "MIGO Value (₹)", "Open Value (₹)", "Delivery Date", "Days"];
