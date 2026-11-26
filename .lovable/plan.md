@@ -1,13 +1,15 @@
-# Daily Production launchpad tile: No of Prod Order, Prod Val, Scrap Val
+# Daily Production launchpad tile: latest month, four figures
 
-The launchpad tile will show the same three figures as the screen tiles, for the current financial year (April to today), as now:
+The launchpad tile will show the same month the screen opens on (the latest month with data, e.g. June 2026), with the month name shown on the tile. Figures, in this order:
 
-- **Prod Val (₹ Cr)** — main big figure (total of Value).
-- **No of Prod Order** — each Prod. Order number counted once.
-- **Scrap Val (₹ Cr)** — total of Scrap Val.
-- Last sync line stays. "Total Count" (line count) is removed.
+1. **No of Prod Order** — each Prod. Order number counted once.
+2. **Prod Val (₹ Cr)** — total of Value.
+3. **Scrap Val (₹ Cr)** — total of Scrap Val.
+4. **Net Prod Val (₹ Cr)** — Prod Val minus Scrap Val.
+
+Last sync line stays. "Total Count" is removed. Figures match the screen tiles when it opens.
 
 ## Technical details
-- `src/lib/daily-production-data.ts`: `dprPeriodSummary` adds `orders` = distinct non-empty `aufnr` in range (reuse the screen tile helper if present).
-- `src/routes/_authenticated/launchpad.tsx` `DailyProductionTile`: note "Prod Val (₹ Cr)", list rows "No of Prod Order" and "Scrap Val (₹ Cr)".
-- Update `daily-production-period.test.ts` to assert distinct order count.
+- Use `defaultDprDates` (daily-production-filters) to pick the latest month, and the same tile helper as the screen for distinct `aufnr`, value, scrap and net.
+- `launchpad.tsx` `DailyProductionTile`: big value = No of Prod Order, note shows month label (e.g. "Jun 2026"), list rows Prod Val, Scrap Val, Net Prod Val.
+- Add/update a test asserting the tile summary uses only the latest month and counts distinct orders.
