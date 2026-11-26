@@ -2880,7 +2880,7 @@ export function SdLiveDashboard() {
             ))}
           </div>
 
-          <div className={pdfBusy ? "space-y-4" : "grid gap-4 md:grid-cols-2 lg:grid-cols-4"}>
+          <div className={pdfBusy ? "space-y-4" : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
             <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
             <Panel title="Segment" accent={2} expandable>
               <SegmentDonut items={analytics.bySegment} total={totalRevenue} />
@@ -2981,33 +2981,6 @@ export function SdLiveDashboard() {
 
             </div>
             <div data-pdf-page-block className={pdfBusy ? "grid grid-cols-2 gap-4" : "contents"}>
-            <Panel title="Sales Mix" accent={2} expandable>
-              {(full: boolean) => (
-                <div className={full ? "flex h-full flex-col" : ""}>
-                  <div className={full ? "min-h-0 flex-1" : ""}>
-                    <MixBars
-                      items={analytics.mixByType}
-                      total={totalRevenue}
-                      {...(full ? { height: "100%" as const } : {})}
-                    />
-                  </div>
-                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    {analytics.mixByType.map((m, i) => (
-                      <div key={m.name} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="size-2 rounded-full"
-                            style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
-                          />
-                          {m.name || "—"}
-                        </span>
-                        <span className="tabular">{CRORES_VALUE(m.value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Panel>
             <Panel
               title="Sales Trend"
               accent={1}
