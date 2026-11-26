@@ -1,5 +1,5 @@
 import { soAgeingQuery, ageTotals } from "@/lib/so-ageing-data";
-import { dailyProductionQuery, dprPeriodSummary } from "@/lib/daily-production-data";
+import { dailyProductionQuery, dprLatestMonthSummary } from "@/lib/daily-production-data";
 import { currentReportPeriod } from "@/lib/report-period";
 import { lastSyncedLabel, lastSyncShortLabel } from "@/lib/report-sync-time";
 import { currentStockQuery, stockTotals } from "@/lib/current-stock-data";
@@ -137,13 +137,14 @@ function SoAgeingTile({ href }: { href: string }) {
 }
 function DailyProductionTile({ href }: { href: string }) {
   const q = useQuery(dailyProductionQuery);
-  const fy = currentReportPeriod();
-  const s = q.data ? dprPeriodSummary(q.data, fy.from, fy.to) : null;
+  const s = q.data ? dprLatestMonthSummary(q.data) : null;
   const cr = (v: number) => (v / 1e7).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return <TableStatusTile title="Daily Production Report" value={q.isLoading ? "…" : q.isError ? "Couldn't load" : s ? `₹ ${cr(s.production)} Cr` : "No data"} note={q.isError ? "Refresh the page to try again" : "Production Val (₹ Cr)"} href={href} accent={4}>
+  const line = (label: string, v: string) => <li className="flex justify-between gap-1"><span className="text-muted-foreground">{label}</span><span className="font-semibold tabular-nums text-foreground">{v}</span></li>;
+  return <TableStatusTile title="Daily Production Report" value={q.isLoading ? "…" : q.isError ? "Couldn't load" : s ? s.orders.toLocaleString("en-IN") : "No data"} note={q.isError ? "Refresh the page to try again" : s ? `No of Prod Order · ${s.month}` : "No of Prod Order"} href={href} accent={4}>
     {s && <ul className="mt-2 space-y-0.5 text-[10px]">
-      <li className="flex justify-between gap-1"><span className="text-muted-foreground">Scrap Val (₹ Cr)</span><span className="font-semibold tabular-nums text-foreground">{cr(s.scrap)}</span></li>
-      <li className="flex justify-between gap-1"><span className="text-muted-foreground">Total Count</span><span className="font-semibold tabular-nums text-foreground">{s.count.toLocaleString("en-IN")}</span></li>
+      {line("Prod Val (₹ Cr)", cr(s.production))}
+      {line("Scrap Val (₹ Cr)", cr(s.scrap))}
+      {line("Net Prod Val (₹ Cr)", cr(s.net))}
       <li className="truncate text-muted-foreground" title={lastSyncedLabel(s.syncedAt)}>{lastSyncShortLabel(s.syncedAt)}</li>
     </ul>}
   </TableStatusTile>;

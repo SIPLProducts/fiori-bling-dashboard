@@ -36,6 +36,14 @@ export function dprPeriodSummary(rows: DprRow[], from: string, to: string) {
   const t = dprTotals(inRange);
   return { production: t.value, scrap: t.scrapVal, count: inRange.length, syncedAt: dprLastSync(rows) };
 }
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+/** Latest posting month with data (same month the screen opens on). */
+export function dprLatestMonthSummary(rows: DprRow[]) {
+  const latest = rows.reduce((m, r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.date > m ? r.date : m, "");
+  if (!latest) return null;
+  const t = dprTotals(rows.filter((r) => r.date.slice(0, 7) === latest.slice(0, 7)));
+  return { month: `${MON[Number(latest.slice(5, 7)) - 1]} ${latest.slice(0, 4)}`, orders: t.orders, production: t.value, scrap: t.scrapVal, net: t.net, syncedAt: dprLastSync(rows) };
+}
 export function dprLastSync(rows: DprRow[]) {
   let m = "";
   for (const r of rows) if (r.syncedAt > m) m = r.syncedAt;
