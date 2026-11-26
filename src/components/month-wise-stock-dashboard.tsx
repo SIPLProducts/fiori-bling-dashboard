@@ -1,4 +1,6 @@
+import { usePlantNames } from "@/hooks/use-plant-names";
 import { useMemo, useState } from "react";
+import { plantShort } from "@/lib/plant-names";
 import { ChevronDown, IndianRupee } from "lucide-react";
 import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, ResponsiveContainer, Tooltip, Legend, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ type F = { plants: string[] | null; types: string[] | null };
 const EMPTY: F = { plants: null, types: null };
 
 export function MonthWiseStockDashboard({ rows }: { rows: StockRow[] }) {
+  usePlantNames();
   const [f, setF] = useState<F>(EMPTY);
   const [collapsed, setCollapsed] = useState(true);
   const [showOthers, setShowOthers] = useState(false);
@@ -117,8 +120,8 @@ function MonthDetails({ period, plants, types }: { period: string; plants: strin
   return <DetailsTable rows={rows} />;
 }
 
-const HEADS = ["Month", "Plant", "Location", "Material", "Description", "Profit Centre", "Val Class", "Type", "Matl Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "UOM", "CB Qty", "CB Val"];
-const cells = (r: StockRow) => [pl(r.period), r.plant, r.location, r.material, r.materialName, r.profitCenter, r.valClass, r.type, r.matGroup, r.mainGroup, r.sub1, r.sub2, r.sub3, r.unit, r.qty, r.value];
+const HEADS = ["Month", "Plant", "Plant Short Name", "Location", "Material", "Description", "Profit Centre", "Val Class", "Type", "Matl Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "UOM", "CB Qty", "CB Val"];
+const cells = (r: StockRow) => [pl(r.period), r.plant, plantShort(r.plant), r.location, r.material, r.materialName, r.profitCenter, r.valClass, r.type, r.matGroup, r.mainGroup, r.sub1, r.sub2, r.sub3, r.unit, r.qty, r.value];
 
 function DetailsTable({ rows }: { rows: StockRow[] }) {
   const [q, setQ] = useState(""); const [page, setPage] = useState(0); const [size, setSize] = useState(10);

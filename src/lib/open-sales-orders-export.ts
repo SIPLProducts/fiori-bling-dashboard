@@ -1,4 +1,5 @@
 import type { OpenSalesOrder } from "@/lib/open-sales-orders-data";
+import { plantShort } from "@/lib/plant-names";
 import { displayOpenOrderDate } from "@/lib/open-sales-orders-table";
 import { channelDescription } from "@/lib/open-sales-orders-filters";
 
@@ -24,6 +25,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     { header: "Division", key: "division", width: 13 },
     { header: "Plant", key: "plant", width: 13 },
     { header: "Plant Name", key: "plantName", width: 25 },
+    { header: "Plant Short Name", key: "plantShort", width: 18 },
     { header: "Sales Office", key: "office", width: 16 },
     { header: "Sales Group", key: "salesGroup", width: 16 },
     { header: "Sales Representative", key: "salesRepName", width: 26 },
@@ -79,6 +81,7 @@ export async function downloadOpenSalesOrdersExcel(rows: OpenSalesOrder[], fileN
     division: row.division,
     plant: row.plant,
     plantName: row.plantName,
+    plantShort: plantShort(row.plant),
     office: row.office,
     salesGroup: row.salesGroup,
     salesRepName: row.salesRepName,

@@ -1,4 +1,5 @@
 import { datedFileName, inr2 } from "@/lib/format";
+import { plantShort } from "@/lib/plant-names";
 import { industryTotals, segmentTotals } from "@/lib/industry-name";
 import type { SalesRegisterRow } from "@/lib/sales-register";
 
@@ -11,7 +12,7 @@ export const SALES_REGISTER_EXPORT_COLUMNS: [string, (r: SalesRegisterRow) => st
   ["Billing Type", (r) => r.billingType], ["Distribution Channel", channelLabel],
   ["Division", (r) => r.division], ["Product Category", (r) => r.productCategory],
   ["Customer", (r) => r.customer], ["Customer Name", (r) => r.customerName], ["Sales Man", (r) => r.salesMan ?? ""], ["Industry Name", (r) => r.industry ?? ""], ["Segment", (r) => r.segmentName || r.segmentCode || ""],
-  ["Plant", (r) => r.plant], ["Plant Name", (r) => r.descs?.["plant"] ?? ""],
+  ["Plant", (r) => r.plant], ["Plant Name", (r) => r.descs?.["plant"] ?? ""], ["Plant Short Name", (r) => plantShort(r.plant, r.descs?.["plantShort"])],
   ["Profit Center", (r) => r.profitCenter], ["Sales Office", (r) => r.salesOffice],
   ["Sales Document", (r) => r.salesDocument], ["Sales Document Item", (r) => r.salesDocumentItem],
   ["Main Group", (r) => r.mainGroup], ["Sub Group", (r) => r.subGroup],

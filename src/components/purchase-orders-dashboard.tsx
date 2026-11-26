@@ -1,4 +1,6 @@
+import { usePlantNames } from "@/hooks/use-plant-names";
 import { fullInr, inr2 } from "@/lib/format";
+import { plantShort } from "@/lib/plant-names";
 import { useMemo, useState } from "react";
 import { ChevronDown, ClipboardList, FileText, IndianRupee, Truck } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ComposedChart, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -26,6 +28,7 @@ type Filters = Record<"plant" | "poType" | "vendor" | "purGroup" | "materialGrou
 const EMPTY: Filters = { plant: "", poType: "", vendor: "", purGroup: "", materialGroup: "", mainGroup: "", sub1: "", sub2: "", division: "" };
 
 export function PurchaseOrdersDashboard({ rows }: { rows: PoRow[] }) {
+  usePlantNames();
   const [f, setF] = useState<Filters>(EMPTY);
   const [collapsed, setCollapsed] = useState(true);
   const [openMat, setOpenMat] = useState<MaterialTrend | null>(null);
@@ -149,7 +152,7 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
     .sort((a, b) => b.poDate.localeCompare(a.poDate) || a.poNo.localeCompare(b.poNo)), [rows, s]);
   const pages = Math.max(1, Math.ceil(list.length / size));
   const p = Math.min(page, pages - 1);
-  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "SLoc", "Main Group", "Sub Group 1", "Sub Group 2", "Division", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (₹)"];
+  const heads = ["PO Date", "PO No", "Item", "Delivery Date", "Days", "Document Type", "Vendor", "Plant", "Plant Short Name", "SLoc", "Main Group", "Sub Group 1", "Sub Group 2", "Division", "Material", "Qty", "UOM", "Net Price", "Currency", "Net Order Val (₹)"];
   const numeric = new Set(["Days", "Qty", "Net Price", "Net Order Val (₹)"]);
   const t = poTotals(list);
   const c2 = inr2;
@@ -158,7 +161,7 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Orders List");
     const h = sh.addRow(heads); h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, `${r.plant} ${r.plantName}`, r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue)]));
+    list.forEach((r) => sh.addRow([dmy(r.poDate), r.poNo, r.item, dmy(r.deliveryDate), r.days, typeLabel(r), r.vendorName, r.plant, plantShort(r.plant), r.sloc, r.mainGroup, r.sub1, r.sub2, r.division, [r.material, r.materialName].filter(Boolean).join(" "), r.qty, r.uom, r.netPrice, r.currency, c2(r.netValue)]));
     const ft = sh.addRow(["Total (INR)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", c2(t.value)]); ft.font = { bold: true };
     sh.columns.forEach((c) => { c.width = 18; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
@@ -178,13 +181,13 @@ function DetailsTable({ rows }: { rows: PoRow[] }) {
       <tbody>{list.length ? list.slice(p * size, p * size + size).map((r) => <tr key={`${r.poNo}-${r.item}`} className="border-t border-border/60 transition-colors odd:bg-muted/30 hover:bg-primary/10">
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.poDate)}</td><td className="px-2 py-1 font-medium text-primary">{r.poNo}</td><td className="px-2 py-1">{r.item}</td>
         <td className="whitespace-nowrap px-2 py-1">{dmy(r.deliveryDate)}</td><td className="px-2 py-1 text-right tabular-nums">{r.days}</td>
-        <td className="whitespace-nowrap px-2 py-1"><span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: PO_GROUP_COLORS[poGroup(r)], color: PO_GROUP_COLORS[poGroup(r)], background: `${PO_GROUP_COLORS[poGroup(r)]}1a` }}><span className="size-1.5 rounded-full" style={{ background: PO_GROUP_COLORS[poGroup(r)] }} />{typeLabel(r)}</span></td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plantName}</td>
+        <td className="whitespace-nowrap px-2 py-1"><span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: PO_GROUP_COLORS[poGroup(r)], color: PO_GROUP_COLORS[poGroup(r)], background: `${PO_GROUP_COLORS[poGroup(r)]}1a` }}><span className="size-1.5 rounded-full" style={{ background: PO_GROUP_COLORS[poGroup(r)] }} />{typeLabel(r)}</span></td><td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="whitespace-nowrap px-2 py-1">{r.plant}</td><td className="whitespace-nowrap px-2 py-1">{plantShort(r.plant)}</td>
         {[r.sloc, r.mainGroup, r.sub1, r.sub2, r.division].map((v, i) => <td key={i} className="whitespace-nowrap px-2 py-1">{v}</td>)}
         <td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1 text-right tabular-nums">{num(r.qty)}</td><td className="px-2 py-1">{r.uom}</td>
         <td className="px-2 py-1 text-right tabular-nums">{num(r.netPrice)}</td><td className="px-2 py-1">{r.currency}</td>
         <td className="px-2 py-1 text-right font-semibold tabular-nums">{fullInr(r.netValue)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No purchase orders for these filters.</td></tr>}</tbody>
-      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={18} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
+      {list.length > 0 && <tfoot><tr className="border-t-2 border-border bg-muted font-semibold"><td colSpan={19} className="px-2 py-1.5">Total INR ({list.length} lines)</td>
         <td className="px-2 py-1.5 text-right tabular-nums">{fullInr(t.value)}</td></tr></tfoot>}
     </table></div>
     <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 text-xs">

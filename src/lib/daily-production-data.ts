@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type DprRow = {
-  plant: string; plantName: string; stage: string; mvt: string; material: string; matDesc: string; sloc: string; batch: string; qty: number; uom: string;
+  plant: string; plantName: string; plantShort: string; stage: string; mvt: string; material: string; matDesc: string; sloc: string; batch: string; qty: number; uom: string;
   order: string; date: string; value: number; rate: number; wc: string; wcDesc: string; cc: string; ccName: string;
   doc: string; scrapQty: number; scrapVal: number; user: string; syncedAt: string;
 };
@@ -12,7 +12,7 @@ const n = (v: unknown) => Number(v) || 0;
 type Rec = Record<string, unknown>;
 export function toDprRow(r: Rec): DprRow {
   return {
-    plant: t(r["werks"]), plantName: t(r["plant_short_name"]) || t(r["werks"]), stage: t(r["zstage"]), mvt: t(r["bwart"]), material: t(r["matnr"]), matDesc: t(r["maktx"]) || t(r["matnr"]),
+    plant: t(r["werks"]), plantName: t(r["plant_short_name"]) || t(r["werks"]), plantShort: t(r["plant_short_name"]), stage: t(r["zstage"]), mvt: t(r["bwart"]), material: t(r["matnr"]), matDesc: t(r["maktx"]) || t(r["matnr"]),
     sloc: t(r["lgort"]), batch: t(r["charg"]), qty: n(r["menge"]), uom: t(r["meins"]), order: t(r["aufnr"]), date: t(r["budat"]),
     value: n(r["dmbtr"]), rate: n(r["rate"]), wc: t(r["arbpl"]), wcDesc: t(r["ktext_up"]) || t(r["arbpl"]), cc: t(r["zkostl"]),
     ccName: t(r["zkostl_name"]) || t(r["zkostl"]), doc: t(r["mblnr"]), scrapQty: n(r["scrap_qty"]), scrapVal: n(r["scrap_value"]), user: t(r["uname"]) || t(r["usnam"]), syncedAt: t(r["synced_at"]),

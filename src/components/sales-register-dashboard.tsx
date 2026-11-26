@@ -1,4 +1,6 @@
+import { usePlantNames } from "@/hooks/use-plant-names";
 import { fullInr } from "@/lib/format";
+import { plantShort } from "@/lib/plant-names";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { OrderBookSubGroupChart } from "@/components/order-book-subgroup-chart";
 import { ModelTypeCards } from "@/components/model-type-cards";
@@ -79,6 +81,7 @@ function Donut({ data, total, showPercent = true, showBoth = false, size = 140 }
 }
 
 export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: SalesRegisterRow[]; range?: SalesRegisterDateRange | undefined }) {
+  usePlantNames();
   const rows = rawRows;
   const a = useMemo(() => buildSalesRegister(rows), [rows]);
   const trend = useMemo(() => salesRegisterTrend(rows, range), [rows, range]);
@@ -97,7 +100,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
   const has = rows.length > 0;
   const sum = (k: "billedQty" | "netValue" | "invoiceValue" | "cgst" | "sgst" | "igst") => filtered.reduce((s, r) => s + r[k], 0);
   const channels = [...new Set(rows.map((r) => r.channelCode || r.channel))];
-  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Industry Name", "Segment", "Distribution Channel", "Plant", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
+  const heads = ["#", "Bill. Date", "Bill. Doc. No", "Invoice No", "Customer Name", "Industry Name", "Segment", "Distribution Channel", "Plant", "Plant Short Name", "Profit Center", "Main Group / Sub Group", "Material Description", "Billed Qty", "Net Value (₹)", "Invoice Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Posting Status"];
   const R = "text-right tabular-nums whitespace-nowrap";
 
   return <div className="space-y-3">
@@ -159,7 +162,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
             <TableCell className="whitespace-nowrap">{r.industry || ""}</TableCell>
             <TableCell className="whitespace-nowrap">{r.segmentName || r.segmentCode || "—"}</TableCell>
             <TableCell className="whitespace-nowrap font-medium"><span className="inline-flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm" style={{ background: COLORS[ci % COLORS.length] }} />{r.channelCode && r.channel ? `${r.channelCode} — ${r.channel}` : r.channel || r.channelCode || "—"}</span></TableCell>
-            <TableCell className="whitespace-nowrap">{[r.plant, r.descs?.["plantShort"] || r.descs?.["plant"]].filter(Boolean).join(" — ")}</TableCell>
+            <TableCell className="whitespace-nowrap">{r.plant}</TableCell><TableCell className="whitespace-nowrap">{plantShort(r.plant, r.descs?.["plantShort"])}</TableCell>
             <TableCell className="whitespace-nowrap">{r.profitCenter}</TableCell>
             <TableCell className="whitespace-nowrap">{`${r.mainGroup} / ${r.subGroup}`}</TableCell>
             <TableCell className="min-w-56">{r.material}</TableCell>
@@ -172,7 +175,7 @@ export function SalesRegisterDashboard({ rows: rawRows = [], range }: { rows?: S
           </TableRow>;
         }) : <TableRow><TableCell colSpan={heads.length} className="h-24 text-center text-muted-foreground">No Dispatches data for these filters yet — run Sync in SAP API Settings.</TableCell></TableRow>}</TableBody>
         {filtered.length > 0 && <TableFooter><TableRow className="border-t-2 border-border bg-muted text-[11px] font-semibold">
-          <TableCell colSpan={12}>Total ({filtered.length} lines)</TableCell>
+          <TableCell colSpan={13}>Total ({filtered.length} lines)</TableCell>
           <TableCell className={R}>{(sum("billedQty")).toLocaleString("en-IN", { maximumFractionDigits: 3 })}</TableCell>
           <TableCell className={R}>{fullInr(sum("netValue"))}</TableCell><TableCell className={R}>{fullInr(sum("invoiceValue"))}</TableCell>
                     <TableCell className={R}>{fullInr(sum("cgst"))}</TableCell>

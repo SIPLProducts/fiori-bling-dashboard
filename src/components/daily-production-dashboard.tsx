@@ -53,7 +53,7 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   const [page, setPage] = useState(0);
   const opts = useMemo(() => {
     const pairs = (k: (r: DprRow) => string, l: (r: DprRow) => string) => [...new Map(rows.filter((r) => k(r)).map((r) => [k(r), l(r) && l(r) !== k(r) ? `${k(r)} - ${l(r)}` : k(r)]))].sort((a, b) => a[0].localeCompare(b[0])).map(([value, label]) => ({ value, label }));
-    return { plant: [...new Map(rows.filter((r) => r.plant).map((r) => [r.plant, r.plantName || r.plant]))].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label)), material: pairs((r) => r.material, (r) => r.matDesc), sloc: pairs((r) => r.sloc, () => ""), wc: pairs((r) => r.wc, (r) => r.wcDesc), cc: pairs((r) => r.cc, (r) => r.ccName) };
+    return { plant: [...new Map(rows.filter((r) => r.plant).map((r) => [r.plant, r.plantShort ? `${r.plant} — ${r.plantShort}` : r.plant]))].map(([value, label]) => ({ value, label })).sort((a, b) => a.value.localeCompare(b.value)), material: pairs((r) => r.material, (r) => r.matDesc), sloc: pairs((r) => r.sloc, () => ""), wc: pairs((r) => r.wc, (r) => r.wcDesc), cc: pairs((r) => r.cc, (r) => r.ccName) };
   }, [rows]);
   const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.material, r.material) && ok(f.sloc, r.sloc) && ok(f.wc, r.wc) && ok(f.cc, r.cc) && matchesDprDates(r.date, dates)), [rows, f, dates]);
   const t = dprTotals(data);
@@ -64,8 +64,8 @@ export function DailyProductionDashboard({ rows }: { rows: DprRow[] }) {
   const table = data.filter((r) => !q || `${r.plant} ${r.plantName} ${r.order} ${r.material} ${r.matDesc} ${r.batch} ${r.wc} ${r.wcDesc} ${r.ccName} ${r.doc} ${r.sloc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.date.localeCompare(a.date) || b.value - a.value);
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const tt = dprTotals(table);
-  const HEADS = ["Posting Date", "Plant", "Stage", "Mvt", "Prod. Order", "Material", "Description", "St.Locn", "Batch", "Qty", "UOM", "Rate", "Value (₹)", "Scrap Qty", "Scrap Val (₹)", "Work Center", "WC Desc", "Cost Center", "Mat. Doc"];
-  const cells = (r: DprRow) => [ddmm(r.date), r.plantName, r.stage, r.mvt, r.order, r.material, r.matDesc, r.sloc, r.batch, r.qty, r.uom, r.rate, r.value, r.scrapQty, r.scrapVal, r.wc, r.wcDesc, r.ccName, r.doc];
+  const HEADS = ["Posting Date", "Plant", "Plant Short Name", "Stage", "Mvt", "Prod. Order", "Material", "Description", "St.Locn", "Batch", "Qty", "UOM", "Rate", "Value (₹)", "Scrap Qty", "Scrap Val (₹)", "Work Center", "WC Desc", "Cost Center", "Mat. Doc"];
+  const cells = (r: DprRow) => [ddmm(r.date), r.plant, r.plantShort, r.stage, r.mvt, r.order, r.material, r.matDesc, r.sloc, r.batch, r.qty, r.uom, r.rate, r.value, r.scrapQty, r.scrapVal, r.wc, r.wcDesc, r.ccName, r.doc];
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const ws = wb.addWorksheet("Daily Production");

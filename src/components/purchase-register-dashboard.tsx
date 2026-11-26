@@ -1,4 +1,6 @@
+import { usePlantNames } from "@/hooks/use-plant-names";
 import { useId, useMemo, useState, type ReactNode } from "react";
+import { plantShort } from "@/lib/plant-names";
 import { ChevronDown, Factory, Globe2, IndianRupee, Truck, Wrench } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -68,6 +70,7 @@ function CodeTable({ rows, codeLabel }: { rows: { code: string; name: string; va
 const sel = "h-8 rounded-md border border-border bg-background px-2 text-xs";
 
 export function PurchaseRegisterDashboard({ rows, prevYearRows, years, year, onYear }: { rows: PurchaseRow[]; prevYearRows: PurchaseRow[]; years: number[]; year: number; onYear: (y: number) => void }) {
+  usePlantNames();
   const setYear = (y: number | null) => onYear(y ?? currentFy());
   const [type, setType] = useState<"" | PurchaseType>("");
   const [month, setMonth] = useState("");
@@ -222,15 +225,15 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
   const excel = async () => {
     const { Workbook } = await import("exceljs");
     const wb = new Workbook(); const sh = wb.addWorksheet("Purchase Register");
-    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"]);
+    const h = sh.addRow(["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Plant Short Name", "Profit Center", "Vendor", "Material", "Material Name", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"]);
     h.font = { bold: true, color: { argb: "FFFFFFFF" } }; h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A6ED1" } }; });
-    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, `${r.plant} ${r.plantName}`.trim(), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, Number(r.value.toFixed(4))]));
+    list.forEach((r, i) => sh.addRow([i + 1, dmy(r.date), r.docNo, r.grNo, r.type, r.plant, plantShort(r.plant, r.plantSh), r.profitCenter, `${r.vendor} ${r.vendorName}`.trim(), r.material, r.materialName, r.group, r.mainGroup, r.subGroup, r.subGroup2, r.subGroup3, Number(r.value.toFixed(4))]));
     sh.columns.forEach((c) => { c.width = 20; });
     const url = URL.createObjectURL(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const a = document.createElement("a"); a.href = url; a.download = datedFileName("Purchase Register", "xlsx"); a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Profit Center", "Vendor", "Material", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"];
+  const heads = ["#", "Posting Date", "Document No", "GR No", "Type", "Plant", "Plant Short Name", "Profit Center", "Vendor", "Material", "Material Group", "Main Group", "Sub Group 1", "Sub Group 2", "Sub Group 3", "Amount"];
   return <section className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <h2 className="text-xs font-semibold">Purchase Register Details</h2>
@@ -244,7 +247,7 @@ function DetailsTable({ rows }: { rows: PurchaseRow[] }) {
       <tbody>{list.length ? list.slice(p * size, p * size + size).map((r, i) => <tr key={i} className="border-t border-border/60">
         <td className="px-2 py-1">{p * size + i + 1}</td><td className="whitespace-nowrap px-2 py-1">{dmy(r.date)}</td>
         <td className="px-2 py-1 font-medium text-primary">{r.docNo}</td><td className="px-2 py-1">{r.grNo}</td><td className="px-2 py-1">{r.type}</td>
-        <td className="whitespace-nowrap px-2 py-1">{[r.plant, r.plantName].filter(Boolean).join(" — ")}</td><td className="px-2 py-1">{r.profitCenter}</td>
+        <td className="whitespace-nowrap px-2 py-1">{r.plant}</td><td className="whitespace-nowrap px-2 py-1">{plantShort(r.plant, r.plantSh)}</td><td className="px-2 py-1">{r.profitCenter}</td>
         <td className="whitespace-nowrap px-2 py-1">{r.vendorName}</td><td className="min-w-48 px-2 py-1">{r.materialName}</td><td className="px-2 py-1">{r.group}</td><td className="whitespace-nowrap px-2 py-1">{r.mainGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup2}</td><td className="whitespace-nowrap px-2 py-1">{r.subGroup3}</td>
         <td className="px-2 py-1 text-right tabular-nums">{fmt(r.value)}</td></tr>)
         : <tr><td colSpan={heads.length} className="h-20 text-center text-muted-foreground">No Purchase Register data for these filters.</td></tr>}</tbody>

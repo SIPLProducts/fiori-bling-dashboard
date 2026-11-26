@@ -1,3 +1,4 @@
+import { plantShort } from "@/lib/plant-names";
 import { datedFileName } from "@/lib/format";
 export type CashTransaction = {
   id: string; date: string; plant: string; profitCentre: string; glCode: string;
@@ -103,8 +104,8 @@ export async function downloadCashLedger(rows: CashTransaction[]) {
   const { Workbook } = await import("exceljs");
   const workbook = new Workbook();
   const sheet = workbook.addWorksheet("Cash Flow");
-  sheet.addRow(["Plant", "Profit Centre", "Profit Centre Name", "PC Group", "GL Code", "GL Name", "Classification", "Nature", "Collection/Disbursement", "Credit (₹)", "Debit (₹)", "Net Balance"]);
-  rows.forEach(row => sheet.addRow([row.plant, row.profitCentre, row.profitCentreName ?? "", row.pcGroup, row.glCode, row.glName ?? "", row.classification, row.nature, row.collectionDisbursement ?? "", row.credit, row.debit, rowNet(row)]));
+  sheet.addRow(["Plant", "Plant Short Name", "Profit Centre", "Profit Centre Name", "PC Group", "GL Code", "GL Name", "Classification", "Nature", "Collection/Disbursement", "Credit (₹)", "Debit (₹)", "Net Balance"]);
+  rows.forEach(row => sheet.addRow([row.plant, plantShort(row.plant), row.profitCentre, row.profitCentreName ?? "", row.pcGroup, row.glCode, row.glName ?? "", row.classification, row.nature, row.collectionDisbursement ?? "", row.credit, row.debit, rowNet(row)]));
   sheet.columns.forEach(column => { column.width = 22; });
   [10, 11, 12].forEach(index => { sheet.getColumn(index).numFmt = '#,##0.00;[Red]-#,##0.00'; });
   const buffer = await workbook.xlsx.writeBuffer();

@@ -4659,6 +4659,13 @@ export type Database = {
               type_total: number
             }[]
           }
+      plant_short_names: {
+        Args: never
+        Returns: {
+          code: string
+          name: string
+        }[]
+      }
       purchase_register_fiscal_years: {
         Args: never
         Returns: {
