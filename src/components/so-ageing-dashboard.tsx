@@ -29,7 +29,7 @@ function BucketColumns({ data, labels }: { data: { name: string; b1: number; b2:
     <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
     <Tooltip formatter={(v: number, k) => [`${v.toFixed(2)} Cr`, labels[Number(String(k).slice(1)) - 1] ?? k]} />
     <Legend formatter={(k: string) => `${labels[Number(k.slice(1)) - 1]} days`} wrapperStyle={{ fontSize: 10 }} />
-    {["b1", "b2", "b3", "b4"].map((k, i) => <Bar key={k} dataKey={k} stackId="a" fill={`url(#${id}${i})`} />)}
+    {["b1", "b2", "b3", "b4"].map((k, i) => <Bar key={k} dataKey={k} stackId="a" fill={`url(#${id}${i})`} maxBarSize={28} />)}
   </BarChart></ResponsiveContainer></div>;
 }
 
