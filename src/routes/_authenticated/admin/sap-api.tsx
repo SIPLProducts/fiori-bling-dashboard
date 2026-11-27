@@ -808,8 +808,11 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
     // Inventory Aging: only P_BUDAT (today, set at send time); never BUDAT_F/BUDAT_T.
     try {
       const p = JSON.parse(input.body_template || "{}") as Record<string, unknown>;
-      if (!("BUDAT_F" in p || "BUDAT_T" in p)) return input;
+      const today = new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10).replace(/-/g, "");
+      const needsDate = input.posting_range !== "custom" && p["P_BUDAT"] !== today;
+      if (!("BUDAT_F" in p || "BUDAT_T" in p) && !needsDate) return input;
       delete p["BUDAT_F"]; delete p["BUDAT_T"];
+      if (needsDate) p["P_BUDAT"] = today;
       return { ...input, body_template: JSON.stringify(p, null, 2) };
     } catch { return input; }
   }
@@ -2050,7 +2053,7 @@ function AgeingRequestFields({ value, range, onChange, onRange }: { value: strin
     <div className="space-y-1.5">
       <label className="text-sm font-medium">Key date</label>
       <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={custom ? "custom" : "today"}
-        onChange={(e) => { const c = e.target.value === "custom"; onRange(c ? "custom" : "today"); write({ P_BUDAT: c ? iso.replace(/-/g, "") : "" }); }}>
+        onChange={(e) => { const c = e.target.value === "custom"; onRange(c ? "custom" : "today"); write({ P_BUDAT: (c ? iso : todayIso).replace(/-/g, "") }); }}>
         <option value="today">Current date</option>
         <option value="custom">Custom date</option>
       </select>
