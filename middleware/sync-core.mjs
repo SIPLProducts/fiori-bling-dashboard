@@ -1059,7 +1059,7 @@ function mapSoAgeingPayload(payload, endpointName, request, now = /* @__PURE__ *
   const rows = [...byKey.values()];
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
-function withSoAgeingDate(raw, now = /* @__PURE__ */ new Date(), scheduled = false) {
+function withSoAgeingDate(raw, now = /* @__PURE__ */ new Date(), scheduled = false, range = "today") {
   if (!raw || !raw.trim()) return raw ?? void 0;
   try {
     const parsed = JSON.parse(raw);
@@ -1070,7 +1070,7 @@ function withSoAgeingDate(raw, now = /* @__PURE__ */ new Date(), scheduled = fal
     const ist = new Date(now.getTime() + 330 * 6e4);
     const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
     const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
-    void saved; void scheduled; obj["P_BUDAT"] = today;
+    obj["P_BUDAT"] = !scheduled && range === "custom" && /^\d{8}$/.test(saved) ? saved : today;
     for (const k of Object.keys(obj)) if (/_(FROM|TO)$/.test(k) && (obj[k] === "" || obj[k] == null)) obj[k] = [];
     const defs = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
     for (const k of Object.keys(defs)) {
@@ -1603,7 +1603,7 @@ function withEndpointDates(endpointName, raw, range, now = /* @__PURE__ */ new D
   if (/^zcashflown?$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return raw ?? void 0;
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? void 0;
   if (/dailyproduction|^zdpr$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withDprDates(raw, range, now);
-  if (isSoAgeingEndpoint(endpointName)) return withSoAgeingDate(raw, now, scheduled);
+  if (isSoAgeingEndpoint(endpointName)) return withSoAgeingDate(raw, now, scheduled, range);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
   return isOpenSalesOrdersEndpoint(endpointName) ? withOpenSalesOrdersDate(raw, now, scheduled) : withPostingDates(raw, range);
 }

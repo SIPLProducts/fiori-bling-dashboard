@@ -316,7 +316,7 @@ export function withEndpointDates(
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("usermanagementdropdown")) return raw ?? undefined;
   if (/dailyproduction|^zdpr$/.test(endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase())) return withDprDates(raw, range, now);
   // SO Ageing: single key date P_BUDAT (today when scheduled), buckets padded.
-  if (isSoAgeingEndpoint(endpointName)) return withSoAgeingDate(raw, now, scheduled);
+  if (isSoAgeingEndpoint(endpointName)) return withSoAgeingDate(raw, now, scheduled, range);
   if (endpointName.replace(/[^a-z0-9]/gi, "").toLowerCase().includes("orderbook")) return withOrderBookDates(raw, range, now);
   return isOpenSalesOrdersEndpoint(endpointName)
     ? withOpenSalesOrdersDate(raw, now, scheduled)

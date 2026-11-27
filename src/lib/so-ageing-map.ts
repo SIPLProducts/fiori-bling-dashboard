@@ -63,7 +63,7 @@ export function mapSoAgeingPayload(payload: unknown, endpointName: string, reque
 }
 
 /** Request body: P_BUDAT = always today (IST), buckets zero-padded to 4 digits, posting-range keys dropped. */
-export function withSoAgeingDate(raw: string | null | undefined, now: Date = new Date(), scheduled = false): string | undefined {
+export function withSoAgeingDate(raw: string | null | undefined, now: Date = new Date(), scheduled = false, range: string | null = "today"): string | undefined {
   if (!raw || !raw.trim()) return raw ?? undefined;
   try {
     const parsed = JSON.parse(raw) as unknown;
@@ -73,7 +73,7 @@ export function withSoAgeingDate(raw: string | null | undefined, now: Date = new
     const ist = new Date(now.getTime() + 330 * 60000);
     const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
     const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
-    void saved; void scheduled; obj["P_BUDAT"] = today;
+    obj["P_BUDAT"] = !scheduled && range === "custom" && /^\d{8}$/.test(saved) ? saved : today;
     for (const k of Object.keys(obj)) if (/_(FROM|TO)$/.test(k) && (obj[k] === "" || obj[k] == null)) obj[k] = [];
     const defs: Record<string, string> = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
     for (const k of Object.keys(defs)) { const d = String(obj[k] ?? "").replace(/\D/g, ""); obj[k] = d ? d.padStart(4, "0").slice(-4) : defs[k]; }

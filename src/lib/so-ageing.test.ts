@@ -31,3 +31,13 @@ describe("Inventory Aging request body", () => {
     expect(out).toEqual(expected);
   });
 });
+
+describe("Inventory Aging key date mode", () => {
+  const now = new Date("2026-11-27T06:00:00Z");
+  it("custom manual run sends the picked date", () => {
+    expect(JSON.parse(withSoAgeingDate('{"P_BUDAT":"20261001"}', now, false, "custom")!).P_BUDAT).toBe("20261001");
+  });
+  it("scheduled run ignores the custom date", () => {
+    expect(JSON.parse(withSoAgeingDate('{"P_BUDAT":"20261001"}', now, true, "custom")!).P_BUDAT).toBe("20261127");
+  });
+});

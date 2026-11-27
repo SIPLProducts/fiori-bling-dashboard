@@ -1377,8 +1377,15 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
-            {isAgeing ? <p className="text-xs text-muted-foreground">P_BUDAT is sent as today's date (YYYYMMDD) on every sync.</p> : null}
-            {usesPayloadFields ? (
+            {isAgeing ? (
+              <AgeingRequestFields
+                value={form.body_template}
+                range={form.posting_range}
+                onChange={(v) => set("body_template", v)}
+                onRange={(r) => set("posting_range", r as EndpointInput["posting_range"])}
+              />
+            ) : null}
+            {usesPayloadFields && !isAgeing ? (
               <PayloadRequestFields
                 value={form.body_template}
                 range={form.posting_range}
@@ -2028,4 +2035,32 @@ function MiddlewareTab() {
       </div>
     </section>
   );
+}
+
+/** Inventory Aging: key-date mode dropdown + date picker; buckets fixed (0090/0180/0365). */
+function AgeingRequestFields({ value, range, onChange, onRange }: { value: string; range: string; onChange: (v: string) => void; onRange: (r: string) => void }) {
+  let obj: Record<string, unknown> = {};
+  try { obj = JSON.parse(value || "{}") as Record<string, unknown>; } catch { obj = {}; }
+  const custom = range === "custom";
+  const saved = String(obj["P_BUDAT"] ?? "");
+  const todayIso = new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10);
+  const iso = /^\d{8}$/.test(saved) ? `${saved.slice(0, 4)}-${saved.slice(4, 6)}-${saved.slice(6, 8)}` : todayIso;
+  const write = (patch: Record<string, unknown>) => onChange(JSON.stringify({ ...obj, P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365", ...patch }, null, 2));
+  return <div className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">Key date</label>
+      <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={custom ? "custom" : "today"}
+        onChange={(e) => { const c = e.target.value === "custom"; onRange(c ? "custom" : "today"); write({ P_BUDAT: c ? iso.replace(/-/g, "") : "" }); }}>
+        <option value="today">Current date</option>
+        <option value="custom">Custom date</option>
+      </select>
+      <p className="text-xs text-muted-foreground">Scheduled syncs always use today's date.</p>
+    </div>
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">P_BUDAT</label>
+      <input type="date" disabled={!custom} value={custom ? iso : todayIso} onChange={(e) => write({ P_BUDAT: e.target.value.replace(/-/g, "") })}
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60" />
+      <p className="text-xs text-muted-foreground">Sent as P_BUDAT (YYYYMMDD).</p>
+    </div>
+  </div>;
 }
