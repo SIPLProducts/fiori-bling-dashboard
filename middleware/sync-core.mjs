@@ -991,7 +991,7 @@ function mapDailyProductionPayload(payload, endpointName, now = /* @__PURE__ */ 
 }
 
 // ../src/lib/so-ageing-map.ts
-var TEXT2 = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "meins", PRCTR: "prctr" };
+var TEXT2 = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "meins", PRCTR: "prctr", PRCTR_DESC: "prctr_desc" };
 var NUM2 = ["BUCK1", "VALU1", "BUCK2", "VALU2", "BUCK3", "VALU3", "BUCK4", "VALU4", "CL_STCK", "PRICE"];
 function isSoAgeingEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();

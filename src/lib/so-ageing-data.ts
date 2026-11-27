@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AgeRow = {
   plant: string; plantName: string; sloc: string; slocName: string; material: string; matDesc: string; uom: string; batch: string;
-  doc: string; year: string; docDate: string; pc: string; q: [number, number, number, number]; v: [number, number, number, number];
+  doc: string; year: string; docDate: string; pc: string; pcDesc: string; q: [number, number, number, number]; v: [number, number, number, number];
   qty: number; value: number; keyDate: string; bkt: [number, number, number]; syncedAt: string;
 };
 type Rec = Record<string, unknown>;
@@ -13,7 +13,7 @@ export function toAgeRow(r: Rec): AgeRow {
   return {
     plant: t(r["werks"]), plantName: t(r["plant_name"]) || t(r["werks"]), sloc: t(r["lgort"]), slocName: t(r["sname"]) || t(r["lgort"]),
     material: t(r["matnr"]), matDesc: t(r["maktx"]) || t(r["matnr"]), uom: t(r["meins"]), batch: t(r["charg"]), doc: t(r["mblnr"]), year: t(r["mjahr"]),
-    docDate: t(r["bldat"]), pc: t(r["prctr"]), q: [n(r["buck1"]), n(r["buck2"]), n(r["buck3"]), n(r["buck4"])], v: [n(r["valu1"]), n(r["valu2"]), n(r["valu3"]), n(r["valu4"])],
+    docDate: t(r["bldat"]), pc: t(r["prctr"]), pcDesc: t(r["prctr_desc"]), q: [n(r["buck1"]), n(r["buck2"]), n(r["buck3"]), n(r["buck4"])], v: [n(r["valu1"]), n(r["valu2"]), n(r["valu3"]), n(r["valu4"])],
     qty: n(r["cl_stck"]), value: n(r["price"]), keyDate: t(r["key_date"]), bkt: [n(r["bkt1"]) || 90, n(r["bkt2"]) || 180, n(r["bkt3"]) || 365], syncedAt: t(r["synced_at"]),
   };
 }
@@ -45,7 +45,7 @@ export function ageLastSync(rows: AgeRow[]) {
   return m || null;
 }
 
-const COLS = "id,werks,plant_name,lgort,sname,matnr,maktx,meins,charg,mblnr,mjahr,bldat,prctr,buck1,valu1,buck2,valu2,buck3,valu3,buck4,valu4,cl_stck,price,key_date,bkt1,bkt2,bkt3,synced_at";
+const COLS = "id,werks,plant_name,lgort,sname,matnr,maktx,meins,charg,mblnr,mjahr,bldat,prctr,prctr_desc,buck1,valu1,buck2,valu2,buck3,valu3,buck4,valu4,cl_stck,price,key_date,bkt1,bkt2,bkt3,synced_at";
 const PAGE = 1000;
 export async function getSoAgeing(): Promise<AgeRow[]> {
   const out: Rec[] = [];
@@ -63,4 +63,4 @@ export async function getSoAgeing(): Promise<AgeRow[]> {
   }
   return out.map(toAgeRow);
 }
-export const soAgeingQuery = queryOptions({ queryKey: ["so-ageing", "v1"], queryFn: getSoAgeing, staleTime: Infinity, refetchOnWindowFocus: false });
+export const soAgeingQuery = queryOptions({ queryKey: ["so-ageing", "v2"], queryFn: getSoAgeing, staleTime: Infinity, refetchOnWindowFocus: false });

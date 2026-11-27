@@ -386,6 +386,13 @@
       "when": 1795760443967,
       "tag": "0054_move_so_ageing_to_inventory_aging",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795774736971,
+      "tag": "0055_so_ageing_prctr_desc",
+      "breakpoints": true
     }
   ]
 }

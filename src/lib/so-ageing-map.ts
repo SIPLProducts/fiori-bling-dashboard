@@ -5,7 +5,7 @@
 import { orderBookNum } from "./order-book-map";
 import { sapIsoDate } from "./daily-production-map";
 
-const TEXT: Record<string, string> = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "meins", PRCTR: "prctr" };
+const TEXT: Record<string, string> = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "meins", PRCTR: "prctr", PRCTR_DESC: "prctr_desc" };
 const NUM = ["BUCK1", "VALU1", "BUCK2", "VALU2", "BUCK3", "VALU3", "BUCK4", "VALU4", "CL_STCK", "PRICE"];
 
 export function isSoAgeingEndpoint(name: string): boolean {

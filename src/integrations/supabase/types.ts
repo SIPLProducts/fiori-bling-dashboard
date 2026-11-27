@@ -3231,6 +3231,7 @@ export type Database = {
           mjahr: string
           plant_name: string | null
           prctr: string | null
+          prctr_desc: string | null
           price: number | null
           raw: Json
           sname: string | null
@@ -3263,6 +3264,7 @@ export type Database = {
           mjahr?: string
           plant_name?: string | null
           prctr?: string | null
+          prctr_desc?: string | null
           price?: number | null
           raw?: Json
           sname?: string | null
@@ -3295,6 +3297,7 @@ export type Database = {
           mjahr?: string
           plant_name?: string | null
           prctr?: string | null
+          prctr_desc?: string | null
           price?: number | null
           raw?: Json
           sname?: string | null

@@ -57,21 +57,21 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const labels = bucketLabels(rows[0]?.bkt ?? [90, 180, 365]);
   const opts = useMemo(() => {
     const pairs = (k: (r: AgeRow) => string, l: (r: AgeRow) => string) => [...new Map(rows.filter((r) => k(r)).map((r) => [k(r), l(r) && l(r) !== k(r) ? `${k(r)} - ${l(r)}` : k(r)]))].sort((a, b) => a[0].localeCompare(b[0])).map(([value, label]) => ({ value, label }));
-    return { plant: [...new Map(rows.filter((r) => r.plant).map((r) => [r.plant, r.plantName]))].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label)), sloc: pairs((r) => r.sloc, (r) => r.slocName), material: pairs((r) => r.material, (r) => r.matDesc), pc: pairs((r) => r.pc, () => "") };
+    return { plant: [...new Map(rows.filter((r) => r.plant).map((r) => [r.plant, r.plantName]))].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label)), sloc: pairs((r) => r.sloc, (r) => r.slocName), material: pairs((r) => r.material, (r) => r.matDesc), pc: pairs((r) => r.pc, (r) => r.pcDesc) };
   }, [rows]);
   const data = useMemo(() => rows.filter((r) => ok(f.plant, r.plant) && ok(f.sloc, r.sloc) && ok(f.material, r.material) && ok(f.pc, r.pc)), [rows, f]);
   const t = ageTotals(data);
   const donut = labels.map((l, i) => ({ name: `${l} days`, value: t.v[i]! })).filter((d) => d.value > 0);
   const plants = ageGroupBuckets(data, (r) => r.plantName).slice(0, 15);
   const plantBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.plantName, (r) => r.v[i]!).filter((d) => d.value > 0) }));
-  const pcs = ageGroupBuckets(data, (r) => r.pc).slice(0, 15);
+  const pcs = ageGroupBuckets(data, (r) => r.pcDesc || r.pc).slice(0, 15);
   const matDesc = new Map(data.map((r) => [r.material, r.matDesc]));
   const matBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.material, (r) => r.v[i]!).filter((d) => d.value > 0).slice(0, 10).map((d) => { const desc = matDesc.get(d.name) || d.name; return { ...d, name: desc, full: `${d.name} — ${desc}` }; }) }));
-  const table = data.filter((r) => !q || `${r.plant} ${r.plantName} ${r.sloc} ${r.slocName} ${r.material} ${r.matDesc} ${r.batch} ${r.doc} ${r.pc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.value - a.value);
+  const table = data.filter((r) => !q || `${r.plant} ${r.plantName} ${r.sloc} ${r.slocName} ${r.material} ${r.matDesc} ${r.batch} ${r.doc} ${r.pc} ${r.pcDesc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.value - a.value);
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const tt = ageTotals(table);
-  const HEADS = ["Plant", "Plant Name", "St.Locn", "St.Locn Desc", "Material", "Description", "UoM", "Batch", "Mat. Doc", "Year", "Doc Date", "Profit Centre", ...labels.flatMap((l) => [`${l} Qty`, `${l} Val (₹)`]), "Closing Qty", "Closing Val (₹)"];
-  const cells = (r: AgeRow): (string | number)[] => [r.plant, r.plantName, r.sloc, r.slocName, r.material, r.matDesc, r.uom, r.batch, r.doc, r.year, ddmm(r.docDate), r.pc, r.q[0], r.v[0], r.q[1], r.v[1], r.q[2], r.v[2], r.q[3], r.v[3], r.qty, r.value];
+  const HEADS = ["Plant", "Plant Name", "St.Locn", "St.Locn Desc", "Material", "Description", "UoM", "Batch", "Mat. Doc", "Year", "Doc Date", "Profit Centre", "Profit Centre Desc", ...labels.flatMap((l) => [`${l} Qty`, `${l} Val (₹)`]), "Closing Qty", "Closing Val (₹)"];
+  const cells = (r: AgeRow): (string | number)[] => [r.plant, r.plantName, r.sloc, r.slocName, r.material, r.matDesc, r.uom, r.batch, r.doc, r.year, ddmm(r.docDate), r.pc, r.pcDesc, r.q[0], r.v[0], r.q[1], r.v[1], r.q[2], r.v[2], r.q[3], r.v[3], r.qty, r.value];
   const totals = [tt.q[0]!, tt.v[0]!, tt.q[1]!, tt.v[1]!, tt.q[2]!, tt.v[2]!, tt.q[3]!, tt.v[3]!, tt.qty, tt.value];
   const isQty = (j: number) => j >= 12 && (j - 12) % 2 === 0;
   const exportXlsx = async () => {
