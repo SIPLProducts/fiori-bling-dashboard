@@ -25,7 +25,9 @@ function BucketColumns({ data, labels }: { data: { name: string; b1: number; b2:
   return <div className="h-64"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
     <defs>{BUCKET_COLORS.map((c, i) => <linearGradient key={i} id={`${id}${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.6} /><stop offset="100%" stopColor={c} /></linearGradient>)}</defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />
+    {angled
+      ? <XAxis dataKey="name" interval={0} height={84} angle={-35} textAnchor="end" tick={{ fontSize: 9, fill: "var(--foreground)" }} tickFormatter={(v: string) => (v.length > 18 ? `${v.slice(0, 17)}…` : v)} />
+      : <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />}
     <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
     <Tooltip formatter={(v: number, k) => [`${v.toFixed(2)} Cr`, labels[Number(String(k).slice(1)) - 1] ?? k]} />
     <Legend formatter={(k: string) => `${labels[Number(k.slice(1)) - 1]} days`} wrapperStyle={{ fontSize: 10 }} />
@@ -33,17 +35,19 @@ function BucketColumns({ data, labels }: { data: { name: string; b1: number; b2:
   </BarChart></ResponsiveContainer></div>;
 }
 
-function SingleColumns({ data, color, label }: { data: { name: string; value: number }[]; color: string; label: string }) {
+function SingleColumns({ data, color, label, angled = false }: { data: { name: string; value: number; full?: string }[]; color: string; label: string; angled?: boolean }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
-  const rows = data.map((d) => ({ name: d.name, v: d.value / CR }));
+  const rows = data.map((d) => ({ name: d.name, full: d.full ?? d.name, v: d.value / CR }));
   return <div className="h-64"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
     <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.6} /><stop offset="100%" stopColor={color} /></linearGradient></defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />
+    {angled
+      ? <XAxis dataKey="name" interval={0} height={84} angle={-35} textAnchor="end" tick={{ fontSize: 9, fill: "var(--foreground)" }} tickFormatter={(v: string) => (v.length > 18 ? `${v.slice(0, 17)}…` : v)} />
+      : <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />}
     <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
-    <Tooltip cursor={false} formatter={(v: number) => [`${v.toFixed(2)} Cr`, label]} />
-    <Bar dataKey="v" fill={`url(#${id})`} maxBarSize={60} />
+    <Tooltip cursor={false} labelFormatter={(_l, p) => (p?.[0]?.payload as { full?: string } | undefined)?.full ?? String(_l)} formatter={(v: number) => [`${v.toFixed(2)} Cr`, label]} />
+    <Bar dataKey="v" fill={`url(#${id})`} maxBarSize={28} />
   </BarChart></ResponsiveContainer></div>;
 }
 
@@ -63,7 +67,8 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const plants = ageGroupBuckets(data, (r) => r.plantName).slice(0, 15);
   const plantBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.plantName, (r) => r.v[i]!).filter((d) => d.value > 0) }));
   const pcs = ageGroupBuckets(data, (r) => r.pc).slice(0, 15);
-  const matBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.matDesc, (r) => r.v[i]!).filter((d) => d.value > 0).slice(0, 10) }));
+  const matDesc = new Map(data.map((r) => [r.material, r.matDesc]));
+  const matBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.material, (r) => r.v[i]!).filter((d) => d.value > 0).slice(0, 10).map((d) => { const desc = matDesc.get(d.name) || d.name; return { ...d, name: desc, full: `${d.name} — ${desc}` }; }) }));
   const table = data.filter((r) => !q || `${r.plant} ${r.plantName} ${r.sloc} ${r.slocName} ${r.material} ${r.matDesc} ${r.batch} ${r.doc} ${r.pc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.value - a.value);
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const tt = ageTotals(table);
@@ -107,7 +112,7 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
       {plantBuckets.map(({ i, data: d }) => <Card key={i} title={`Plant Wise ${labels[i]} Days`} sub="Val in Cr" tint="sky"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} /></Card>)}
     </div>
     <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      {matBuckets.map(({ i, data: d }) => <Card key={i} title={`Material Wise ${labels[i]} Days`} sub="Top 10 · Val in Cr" tint="rose"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} /></Card>)}
+      {matBuckets.map(({ i, data: d }) => <Card key={i} title={`Material Wise ${labels[i]} Days`} sub="Top 10 · Val in Cr" tint="rose"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} angled /></Card>)}
     </div>
     <div data-pdf-block><Card title="Profit Centre Wise Ageing" sub="Val in Cr" tint="amber"><BucketColumns data={pcs} labels={labels} /></Card></div>
     <div data-pdf-exclude><Card title="Ageing Details" tint="neutral">
