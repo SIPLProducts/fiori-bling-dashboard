@@ -59,11 +59,11 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const isQty = (j: number) => j >= 12 && (j - 12) % 2 === 0;
   const exportXlsx = async () => {
     const { Workbook } = await import("exceljs");
-    const wb = new Workbook(); const ws = wb.addWorksheet("SO Ageing");
+    const wb = new Workbook(); const ws = wb.addWorksheet("Inventory Aging");
     ws.addRow(HEADS).font = { bold: true };
     table.forEach((r) => ws.addRow(cells(r)));
     ws.addRow(["Total", ...Array(11).fill(""), ...totals]).font = { bold: true };
-    const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("SO Ageing", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
+    const blob = new Blob([await wb.xlsx.writeBuffer()]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = datedFileName("Inventory Aging", "xlsx"); a.click(); URL.revokeObjectURL(a.href);
   };
   const field = (k: Key, label: string) => <FilterMultiSelect label={label} placeholder="All" selected={f[k]} options={opts[k]} onChange={(v) => { setF({ ...f, [k]: v.length === opts[k].length ? null : v }); setPage(0); }} />;
   const fmtCell = (v: string | number, j: number) => typeof v === "number" ? full(v, isQty(j) || j === 20 ? 3 : 2) : v;

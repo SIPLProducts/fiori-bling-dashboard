@@ -10,7 +10,7 @@ const NUM = ["BUCK1", "VALU1", "BUCK2", "VALU2", "BUCK3", "VALU3", "BUCK4", "VAL
 
 export function isSoAgeingEndpoint(name: string): boolean {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-  return n.includes("soageing") || n.includes("zageing");
+  return n.includes("soageing") || n.includes("zageing") || n.includes("inventoryaging");
 }
 
 const norm = (k: string) => k.replace(/[^a-z0-9]/gi, "").toLowerCase();

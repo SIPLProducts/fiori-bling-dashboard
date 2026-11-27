@@ -995,7 +995,7 @@ var TEXT2 = { PLANT_NAME: "plant_name", SNAME: "sname", MAKTX: "maktx", MEINS: "
 var NUM2 = ["BUCK1", "VALU1", "BUCK2", "VALU2", "BUCK3", "VALU3", "BUCK4", "VALU4", "CL_STCK", "PRICE"];
 function isSoAgeingEndpoint(name) {
   const n = (name ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-  return n.includes("soageing") || n.includes("zageing");
+  return n.includes("soageing") || n.includes("zageing") || n.includes("inventoryaging");
 }
 var norm2 = (k) => k.replace(/[^a-z0-9]/gi, "").toLowerCase();
 function pick10(raw, key) {
