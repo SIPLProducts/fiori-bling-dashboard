@@ -33,6 +33,20 @@ function BucketColumns({ data, labels }: { data: { name: string; b1: number; b2:
   </BarChart></ResponsiveContainer></div>;
 }
 
+function SingleColumns({ data, color, label }: { data: { name: string; value: number }[]; color: string; label: string }) {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
+  if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
+  const rows = data.map((d) => ({ name: d.name, v: d.value / CR }));
+  return <div className="h-64"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
+    <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.6} /><stop offset="100%" stopColor={color} /></linearGradient></defs>
+    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />
+    <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
+    <Tooltip cursor={false} formatter={(v: number) => [`${v.toFixed(2)} Cr`, label]} />
+    <Bar dataKey="v" fill={`url(#${id})`} maxBarSize={60} />
+  </BarChart></ResponsiveContainer></div>;
+}
+
 export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const [f, setF] = useState(EMPTY);
   const [open, setOpen] = useState(false);
@@ -47,6 +61,7 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const t = ageTotals(data);
   const donut = labels.map((l, i) => ({ name: `${l} days`, value: t.v[i]! })).filter((d) => d.value > 0);
   const plants = ageGroupBuckets(data, (r) => r.plantName).slice(0, 15);
+  const plantBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.plantName, (r) => r.v[i]!).filter((d) => d.value > 0) }));
   const pcs = ageGroupBuckets(data, (r) => r.pc).slice(0, 15);
   const slocs = ageGroup(data, (r) => r.slocName).slice(0, 10);
   const old = ageGroup(data, (r) => r.matDesc, (r) => r.v[3]).slice(0, 10);
@@ -88,6 +103,9 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
     <div data-pdf-block className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_2fr]">
       <Card title="Ageing Buckets" sub="Val in Cr" tint="peach"><Donut data={donut} heads={["Bucket", "Val", "%"]} /></Card>
       <Card title="Plant Wise Ageing" sub="Val in Cr" tint="sky"><BucketColumns data={plants} labels={labels} /></Card>
+    </div>
+    <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {plantBuckets.map(({ i, data: d }) => <Card key={i} title={`Plant Wise ${labels[i]} Days`} sub="Val in Cr" tint="sky"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} /></Card>)}
     </div>
     <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <Card title="Top 10 Storage Locations" sub="Val in Cr" tint="teal"><BarList data={slocs} /></Card>
