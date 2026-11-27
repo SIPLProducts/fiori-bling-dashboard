@@ -1070,7 +1070,7 @@ function withSoAgeingDate(raw, now = /* @__PURE__ */ new Date(), scheduled = fal
     const ist = new Date(now.getTime() + 330 * 6e4);
     const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
     const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
-    obj["P_BUDAT"] = scheduled || !/^\d{8}$/.test(saved) ? today : saved;
+    void saved; void scheduled; obj["P_BUDAT"] = today;
     const defs = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
     for (const k of Object.keys(defs)) {
       const d = String(obj[k] ?? "").replace(/\D/g, "");

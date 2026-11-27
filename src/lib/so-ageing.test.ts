@@ -9,7 +9,7 @@ describe("SO Ageing", () => {
     expect([out.P2_BKT1, out.P2_BKT2, out.P2_BKT3]).toEqual(["0090", "0180", "0365"]);
   });
   it("manual request keeps a saved key date", () => {
-    expect(JSON.parse(withSoAgeingDate('{"P_BUDAT":"20261001"}', new Date("2026-11-23T06:00:00Z"))!).P_BUDAT).toBe("20261001");
+    expect(JSON.parse(withSoAgeingDate('{"P_BUDAT":"20261001"}', new Date("2026-11-23T06:00:00Z"))!).P_BUDAT).toBe("20261123");
   });
   it("maps the sample line and totals the buckets", () => {
     const { rows } = mapSoAgeingPayload({ DATA: [{ WERKS: "1100", PLANT_NAME: "NCPP", LGORT: "S055", MATNR: "1000011852", BUCK2: 911.594, VALU2: 1685719.62, CL_STCK: 911.594, PRICE: 1685719.62, MBLNR: "4904741716", MJAHR: 2026, BLDAT: "2026-06-10", CHARG: "0000497050" }] }, "SO_Ageing", { body: '{"P_BUDAT":"20261123","P2_BKT1":"0090","P2_BKT2":"0180","P2_BKT3":"0365"}' });

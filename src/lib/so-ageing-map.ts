@@ -62,7 +62,7 @@ export function mapSoAgeingPayload(payload: unknown, endpointName: string, reque
   return { received: source.length, rows, invalid, duplicates: source.length - invalid - rows.length };
 }
 
-/** Request body: P_BUDAT = today (scheduled, or missing/invalid), buckets zero-padded to 4 digits, posting-range keys dropped. */
+/** Request body: P_BUDAT = always today (IST), buckets zero-padded to 4 digits, posting-range keys dropped. */
 export function withSoAgeingDate(raw: string | null | undefined, now: Date = new Date(), scheduled = false): string | undefined {
   if (!raw || !raw.trim()) return raw ?? undefined;
   try {
@@ -73,7 +73,7 @@ export function withSoAgeingDate(raw: string | null | undefined, now: Date = new
     const ist = new Date(now.getTime() + 330 * 60000);
     const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
     const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
-    obj["P_BUDAT"] = scheduled || !/^\d{8}$/.test(saved) ? today : saved;
+    void saved; void scheduled; obj["P_BUDAT"] = today;
     const defs: Record<string, string> = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
     for (const k of Object.keys(defs)) { const d = String(obj[k] ?? "").replace(/\D/g, ""); obj[k] = d ? d.padStart(4, "0").slice(-4) : defs[k]; }
     return JSON.stringify(obj);
