@@ -4,7 +4,7 @@ import { CalendarClock, ChevronDown, Hourglass, Timer, TimerOff, Wallet } from "
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { TINTS } from "@/lib/card-tints";
-import { BarList, Card, Donut } from "@/components/open-po-dashboard";
+import { Card, Donut } from "@/components/open-po-dashboard";
 import { datedFileName } from "@/lib/format";
 import { ageGroup, ageGroupBuckets, ageTotals, bucketLabels, type AgeRow } from "@/lib/so-ageing-data";
 
@@ -63,8 +63,7 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
   const plants = ageGroupBuckets(data, (r) => r.plantName).slice(0, 15);
   const plantBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.plantName, (r) => r.v[i]!).filter((d) => d.value > 0) }));
   const pcs = ageGroupBuckets(data, (r) => r.pc).slice(0, 15);
-  const slocs = ageGroup(data, (r) => r.slocName).slice(0, 10);
-  const old = ageGroup(data, (r) => r.matDesc, (r) => r.v[3]).slice(0, 10);
+  const matBuckets = [3, 2, 1, 0].map((i) => ({ i, data: ageGroup(data, (r) => r.matDesc, (r) => r.v[i]!).filter((d) => d.value > 0).slice(0, 10) }));
   const table = data.filter((r) => !q || `${r.plant} ${r.plantName} ${r.sloc} ${r.slocName} ${r.material} ${r.matDesc} ${r.batch} ${r.doc} ${r.pc}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.value - a.value);
   const pages = Math.max(1, Math.ceil(table.length / PAGE));
   const tt = ageTotals(table);
@@ -107,9 +106,8 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
     <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       {plantBuckets.map(({ i, data: d }) => <Card key={i} title={`Plant Wise ${labels[i]} Days`} sub="Val in Cr" tint="sky"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} /></Card>)}
     </div>
-    <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <Card title="Top 10 Storage Locations" sub="Val in Cr" tint="teal"><BarList data={slocs} /></Card>
-      <Card title={`Top 10 Materials (${labels[3]} Days)`} sub="Val in Cr" tint="rose"><BarList data={old} /></Card>
+    <div data-pdf-block className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {matBuckets.map(({ i, data: d }) => <Card key={i} title={`Material Wise ${labels[i]} Days`} sub="Top 10 · Val in Cr" tint="rose"><SingleColumns data={d} color={BUCKET_COLORS[i]!} label={`${labels[i]} days`} /></Card>)}
     </div>
     <div data-pdf-block><Card title="Profit Centre Wise Ageing" sub="Val in Cr" tint="amber"><BucketColumns data={pcs} labels={labels} /></Card></div>
     <div data-pdf-exclude><Card title="Ageing Details" tint="neutral">
