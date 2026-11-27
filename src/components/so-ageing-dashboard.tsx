@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CalendarClock, ChevronDown, Hourglass, Package, Timer, TimerOff, Wallet } from "lucide-react";
+import { CalendarClock, ChevronDown, Hourglass, Timer, TimerOff, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { TINTS } from "@/lib/card-tints";
@@ -74,14 +74,13 @@ export function SoAgeingDashboard({ rows }: { rows: AgeRow[] }) {
       {open ? <div className="grid grid-cols-2 gap-2 px-3 pb-2 sm:grid-cols-3 lg:grid-cols-6">{field("plant", "Plant")}{field("sloc", "Storage Location")}{field("material", "Material")}{field("pc", "Profit Centre")}
         <div className="flex items-end gap-2"><Button type="button" variant="outline" size="sm" className="h-8 flex-1 text-xs" onClick={() => { setF({ plant: [], sloc: [], material: [], pc: [] }); setPage(0); }}>Clear</Button><Button type="button" variant="reset" size="sm" className="h-8 flex-1 text-xs" onClick={() => { setF(EMPTY); setPage(0); }}>Reset</Button></div></div> : null}
     </div>
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
       {([
-        ["Closing Stock", cr(t.value), "#1f6fd1", Wallet],
-        ["Closing Qty", full(t.qty, 0), "#0f9d8a", Package],
-        [`${labels[0]} Days`, cr(t.v[0]!), "#2f8f4e", Timer],
-        [`${labels[1]} Days`, cr(t.v[1]!), "#e0a030", Hourglass],
-        [`${labels[2]} Days`, cr(t.v[2]!), "#e07b39", CalendarClock],
         [`${labels[3]} Days`, cr(t.v[3]!), "#d64550", TimerOff],
+        [`${labels[2]} Days`, cr(t.v[2]!), "#e07b39", CalendarClock],
+        [`${labels[1]} Days`, cr(t.v[1]!), "#e0a030", Hourglass],
+        [`${labels[0]} Days`, cr(t.v[0]!), "#2f8f4e", Timer],
+        ["Total Val", cr(t.v.reduce((a, b) => a + b, 0)), "#1f6fd1", Wallet],
       ] as const).map(([label, value, tone, Icon]) => <div key={label} className="min-w-0 rounded-xl px-2.5 py-2 text-primary-foreground shadow-md" style={{ background: `linear-gradient(135deg, ${tone}cc, ${tone})` }}>
         <p className="flex items-center gap-1 text-[10px] font-semibold opacity-95"><Icon className="size-3 shrink-0" />{label}</p>
         <p title={value} className="mt-1 truncate text-sm font-bold tabular-nums leading-tight sm:text-base">{value}</p></div>)}
