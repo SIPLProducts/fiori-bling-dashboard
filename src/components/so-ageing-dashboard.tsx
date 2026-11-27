@@ -25,9 +25,7 @@ function BucketColumns({ data, labels }: { data: { name: string; b1: number; b2:
   return <div className="h-64"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
     <defs>{BUCKET_COLORS.map((c, i) => <linearGradient key={i} id={`${id}${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity={0.6} /><stop offset="100%" stopColor={c} /></linearGradient>)}</defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-    {angled
-      ? <XAxis dataKey="name" interval={0} height={84} angle={-35} textAnchor="end" tick={{ fontSize: 9, fill: "var(--foreground)" }} tickFormatter={(v: string) => (v.length > 18 ? `${v.slice(0, 17)}…` : v)} />
-      : <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />}
+    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--foreground)" }} interval={0} />
     <YAxis tick={{ fontSize: 10, fill: "var(--foreground)" }} width={52} tickFormatter={(v: number) => v.toFixed(2)} />
     <Tooltip formatter={(v: number, k) => [`${v.toFixed(2)} Cr`, labels[Number(String(k).slice(1)) - 1] ?? k]} />
     <Legend formatter={(k: string) => `${labels[Number(k.slice(1)) - 1]} days`} wrapperStyle={{ fontSize: 10 }} />
@@ -39,7 +37,7 @@ function SingleColumns({ data, color, label, angled = false }: { data: { name: s
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   if (!data.length) return <p className="py-8 text-center text-xs text-muted-foreground">No data</p>;
   const rows = data.map((d) => ({ name: d.name, full: d.full ?? d.name, v: d.value / CR }));
-  return <div className="h-64"><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
+  return <div className={angled ? "h-80" : "h-64"}><ResponsiveContainer><BarChart data={rows} margin={{ top: 10, left: -8, right: 6 }}>
     <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.6} /><stop offset="100%" stopColor={color} /></linearGradient></defs>
     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
     {angled
