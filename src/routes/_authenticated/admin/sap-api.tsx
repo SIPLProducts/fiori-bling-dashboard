@@ -1,3 +1,4 @@
+import { isSoAgeingEndpoint } from "@/lib/so-ageing-map";
 import { useEffect, useMemo, useState } from "react";
 import { applyDateWindow, buildPayloadText, parsePayloadFields, stripJsonComments } from "@/lib/payload-fields";
 import { getPayloadPath, setPayloadPaths } from "@/lib/payload-paths";
@@ -803,6 +804,15 @@ function withDefaultDates(input: EndpointInput): EndpointInput {
   if (isZcashFlowName(input.name) || isZcashFlowName(input.endpoint_path)) return input;
   if (isOrderBookName(input.name) || isOrderBookName(input.endpoint_path)) return input;
   if (isSitEndpoint(input.name) || isSitEndpoint(input.endpoint_path)) return input;
+  if (isSoAgeingEndpoint(input.name) || isSoAgeingEndpoint(input.endpoint_path)) {
+    // Inventory Aging: only P_BUDAT (today, set at send time); never BUDAT_F/BUDAT_T.
+    try {
+      const p = JSON.parse(input.body_template || "{}") as Record<string, unknown>;
+      if (!("BUDAT_F" in p || "BUDAT_T" in p)) return input;
+      delete p["BUDAT_F"]; delete p["BUDAT_T"];
+      return { ...input, body_template: JSON.stringify(p, null, 2) };
+    } catch { return input; }
+  }
   if (isDailyProductionEndpoint(input.name) || isDailyProductionEndpoint(input.endpoint_path)) {
     const p = parsePayload(input.body_template);
     if (!p) return input;
@@ -1149,10 +1159,11 @@ function EndpointDetail({
   const isZcash = !isOrderBook && (isZcashFlowName(form.name) || isZcashFlowName(form.endpoint_path));
   const isSit = isSitEndpoint(form.name) || isSitEndpoint(form.endpoint_path);
   const isDpr = isDailyProductionEndpoint(form.name) || isDailyProductionEndpoint(form.endpoint_path);
-  const usesPostingDates =
+  const isAgeing = isSoAgeingEndpoint(form.name) || isSoAgeingEndpoint(form.endpoint_path);
+  const usesPostingDates = !isAgeing && (
     isDpr || isOpenPoEndpoint(form.name) || isOpenPoEndpoint(form.endpoint_path) ||
     isPurchaseOrdersEndpoint(form.name) || isPurchaseOrdersEndpoint(form.endpoint_path) ||
-    form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"];
+    form.posting_range !== "custom" || !!payload?.["BUDAT_F"] || !!payload?.["BUDAT_T"]);
   const usesPayloadFields = !isZcash && !isOpenSalesOrders && (isOrderBook || isSit || /salesregister/i.test(`${form.name}${form.endpoint_path}`.replace(/[^a-z0-9]/gi, "")) || !usesPostingDates);
   const requestDate = dateFromSapValue(payload?.["fkdat"] ?? "") ?? new Date();
   const payloadInvalid = form.body_template.trim().length > 0 && payload === null;
@@ -1366,6 +1377,7 @@ function EndpointDetail({
 
         <TabsContent value="request">
           <div className="space-y-5 rounded-md border border-border bg-card p-5 shadow-tile">
+            {isAgeing ? <p className="text-xs text-muted-foreground">P_BUDAT is sent as today's date (YYYYMMDD) on every sync.</p> : null}
             {usesPayloadFields ? (
               <PayloadRequestFields
                 value={form.body_template}

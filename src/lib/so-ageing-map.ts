@@ -74,6 +74,7 @@ export function withSoAgeingDate(raw: string | null | undefined, now: Date = new
     const today = `${ist.getUTCFullYear()}${String(ist.getUTCMonth() + 1).padStart(2, "0")}${String(ist.getUTCDate()).padStart(2, "0")}`;
     const saved = String(obj["P_BUDAT"] ?? "").replace(/-/g, "").trim();
     void saved; void scheduled; obj["P_BUDAT"] = today;
+    for (const k of Object.keys(obj)) if (/_(FROM|TO)$/.test(k) && (obj[k] === "" || obj[k] == null)) obj[k] = [];
     const defs: Record<string, string> = { P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
     for (const k of Object.keys(defs)) { const d = String(obj[k] ?? "").replace(/\D/g, ""); obj[k] = d ? d.padStart(4, "0").slice(-4) : defs[k]; }
     return JSON.stringify(obj);

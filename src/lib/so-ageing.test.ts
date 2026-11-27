@@ -19,3 +19,15 @@ describe("SO Ageing", () => {
     expect(ageTotals([r]).v[1]).toBeCloseTo(1685719.62);
   });
 });
+
+describe("Inventory Aging request body", () => {
+  it("matches the SAP payload exactly", () => {
+    const keys = ["WERKS", "MATNR", "MTART", "MATKL", "LGORT"];
+    const input: Record<string, string> = { P_BUDAT: "", BUDAT_F: "20261127", BUDAT_T: "20261127", P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
+    for (const k of keys) { input[`${k}_FROM`] = ""; input[`${k}_TO`] = ""; }
+    const out = JSON.parse(withSoAgeingDate(JSON.stringify(input), new Date("2026-11-27T06:00:00Z"))!);
+    const expected: Record<string, unknown> = { P_BUDAT: "20261127", P2_BKT1: "0090", P2_BKT2: "0180", P2_BKT3: "0365" };
+    for (const k of keys) { expected[`${k}_FROM`] = []; expected[`${k}_TO`] = []; }
+    expect(out).toEqual(expected);
+  });
+});
